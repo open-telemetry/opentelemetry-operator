@@ -1,7 +1,7 @@
 # Uncomment this after https://github.com/open-telemetry/opentelemetry-operator/issues/958 is resolved
 # Unfortunately kuttl doesn't have a way to skip tests
 
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: labeldrop
@@ -13,11 +13,11 @@ spec:
     prometheusCR:
       enabled: true
 
-  config: |
+  config:
     receivers:
       jaeger:
           protocols:
-            grpc:
+            grpc: {}
 
       # Collect own metrics
       prometheus:
@@ -35,11 +35,8 @@ spec:
           endpoint: http://labeldrop-targetallocator
           interval: 30s
           collector_id: ${POD_NAME}
-
-    processors:
-
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

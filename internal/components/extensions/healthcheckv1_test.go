@@ -17,7 +17,7 @@ import (
 
 func TestHealthCheckV1Probe(t *testing.T) {
 	type args struct {
-		config interface{}
+		config any
 	}
 	tests := []struct {
 		name    string
@@ -28,7 +28,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Valid path and custom port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:8080",
 					"path":     "/healthz",
 				},
@@ -46,7 +46,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Valid path and default port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1",
 					"path":     "/healthz",
 				},
@@ -64,7 +64,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Empty path and custom port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:9090",
 					"path":     "",
 				},
@@ -82,7 +82,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Empty path and default port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1",
 					"path":     "",
 				},
@@ -100,7 +100,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Nil path and custom port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:7070",
 				},
 			},
@@ -117,7 +117,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Nil path and default port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1",
 				},
 			},
@@ -134,7 +134,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Invalid endpoint",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": 123,
 					"path":     "/healthz",
 				},
@@ -145,7 +145,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 		{
 			name: "Zero custom port, default port fallback",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:0",
 					"path":     "/healthz",
 				},
@@ -176,20 +176,20 @@ func TestHealthCheckV1Probe(t *testing.T) {
 
 func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 	type args struct {
-		config interface{}
+		config any
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]interface{}
+		want    map[string]any
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "Empty endpoint and path",
 			args: args{
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": fmt.Sprintf("%s:%d", components.DefaultRecAddress, defaultHealthcheckV1Port),
 				"path":     defaultHealthcheckV1Path,
 			},
@@ -198,11 +198,11 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "Empty endpoint with custom path",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"path": "/custom-health",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": fmt.Sprintf("%s:%d", components.DefaultRecAddress, defaultHealthcheckV1Port),
 				"path":     "/custom-health",
 			},
@@ -211,11 +211,11 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "Endpoint with port only",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": ":8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": fmt.Sprintf("%s:8080", components.DefaultRecAddress),
 				"path":     defaultHealthcheckV1Path,
 			},
@@ -224,12 +224,12 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "Endpoint with custom address and port",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:9090",
 					"path":     "/healthz",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "127.0.0.1:9090",
 				"path":     "/healthz",
 			},
@@ -238,11 +238,11 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "Endpoint with empty address",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": ":7070",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": fmt.Sprintf("%s:7070", components.DefaultRecAddress),
 				"path":     defaultHealthcheckV1Path,
 			},
@@ -251,11 +251,11 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "IPv6 address",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "[::1]:8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "[::1]:8080",
 				"path":     defaultHealthcheckV1Path,
 			},
@@ -264,7 +264,7 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 		{
 			name: "Invalid endpoint type",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": 123,
 				},
 			},
@@ -280,7 +280,7 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 				return
 			}
 
-			gotMap, ok := got.(map[string]interface{})
+			gotMap, ok := got.(map[string]any)
 			if ok {
 				assert.Equalf(t, tt.want, gotMap, "GetDefaultConfig(%v)", tt.args.config)
 			} else if tt.want != nil {

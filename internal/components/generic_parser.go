@@ -12,9 +12,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-var (
-	_ Parser = &GenericParser[SingleEndpointConfig]{}
-)
+var _ Parser = &GenericParser[SingleEndpointConfig]{}
 
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
@@ -30,7 +28,7 @@ type GenericParser[T any] struct {
 	defaultsApplier Defaulter[T]
 }
 
-func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error) {
 	if g.settings == nil || g.defaultsApplier == nil {
 		return config, nil
 	}
@@ -39,14 +37,22 @@ func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface
 		return config, nil
 	}
 
+	// Apply options to build the DefaultConfig
+	defaultCfg := &DefaultConfig{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(defaultCfg)
+		}
+	}
+
 	var parsed T
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.defaultsApplier(logger, g.settings.defaultRecAddr, g.settings.port, parsed)
+	return g.defaultsApplier(logger, defaultCfg, g.settings.defaultRecAddr, g.settings.port, parsed)
 }
 
-func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	if g.livenessGen == nil {
 		return nil, nil
 	}
@@ -57,7 +63,7 @@ func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface
 	return g.livenessGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	if g.readinessGen == nil {
 		return nil, nil
 	}
@@ -68,7 +74,7 @@ func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config interfac
 	return g.readinessGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (g *GenericParser[T]) GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	if g.startupGen == nil {
 		return nil, nil
 	}
@@ -79,7 +85,7 @@ func (g *GenericParser[T]) GetStartupProbe(logger logr.Logger, config interface{
 	return g.startupGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
+func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config any) ([]rbacv1.PolicyRule, error) {
 	if g.rbacGen == nil {
 		return nil, nil
 	}
@@ -90,7 +96,7 @@ func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) 
 	return g.rbacGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error) {
+func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {
 	if g.envVarGen == nil {
 		return nil, nil
 	}
@@ -101,7 +107,7 @@ func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config in
 	return g.envVarGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
+func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config any) ([]corev1.ServicePort, error) {
 	if g.portParser == nil {
 		return nil, nil
 	}

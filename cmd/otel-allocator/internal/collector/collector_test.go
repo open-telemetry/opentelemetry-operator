@@ -6,6 +6,7 @@ package collector
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/embedded"
-	"go.uber.org/atomic"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -22,11 +22,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 )
 
-var logger = logf.Log.WithName("collector-unit-tests")
-var labelMap = map[string]string{
-	"app.kubernetes.io/instance":   "default.test",
-	"app.kubernetes.io/managed-by": "opentelemetry-operator",
-}
+var (
+	logger   = logf.Log.WithName("collector-unit-tests")
+	labelMap = map[string]string{
+		"app.kubernetes.io/instance":   "default.test",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	}
+)
+
 var labelSelector = metav1.LabelSelector{
 	MatchLabels: labelMap,
 }
@@ -40,7 +43,7 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 	r.value.Store(value)
 }
 
-func (r *reportingGauge) Enabled(_ context.Context) bool {
+func (*reportingGauge) Enabled(context.Context) bool {
 	return true
 }
 
@@ -478,13 +481,11 @@ func Test_closeChannel(t *testing.T) {
 	podWatcher := getTestPodWatcher(0 * time.Second)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
-		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
+	wg.Go(func() {
+		err := podWatcher.Watch("default", &labelSelector, func(map[string]*allocation.Collector) {})
 		require.NoError(t, err)
-	}()
+	})
 
 	podWatcher.Close()
 	wg.Wait()

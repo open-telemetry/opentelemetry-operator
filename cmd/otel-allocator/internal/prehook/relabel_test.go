@@ -186,11 +186,11 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startingIndex int) ([]*target.Item, int, []*target.Item, map[string][]*relabel.Config, error) {
-	toReturn := []*target.Item{}
-	expected := []*target.Item{}
-	numItemsRemaining := n
-	relabelConfig := make(map[string][]*relabel.Config)
+func makeNNewTargets(rCfgs []relabelConfigObj, n, numCollectors, startingIndex int) (toReturn []*target.Item, numItemsRemaining int, expected []*target.Item, relabelConfig map[string][]*relabel.Config, err error) {
+	toReturn = []*target.Item{}
+	expected = []*target.Item{}
+	numItemsRemaining = n
+	relabelConfig = make(map[string][]*relabel.Config)
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		jobName := fmt.Sprintf("test-job-%d", i)
@@ -259,7 +259,6 @@ func TestApply(t *testing.T) {
 		relabelCfg[key] = nil
 	}
 
-	// cfg = createMockConfig(relabelCfg)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems = allocatorPrehook.Apply(targets)
 	// relabelCfg is empty so targets should be unfiltered
@@ -282,7 +281,6 @@ func TestApplyHashmodAction(t *testing.T) {
 }
 
 func TestApplyEmptyRelabelCfg(t *testing.T) {
-
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
@@ -432,7 +430,8 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 
 	addr := lb.Get(model.AddressLabel)
 
-	if err = config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
+	err = config.CheckTargetAddress(model.LabelValue(addr))
+	if err != nil {
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 

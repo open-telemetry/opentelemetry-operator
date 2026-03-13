@@ -564,8 +564,8 @@ func TestConvertTo(t *testing.T) {
 				},
 			},
 			Config: v1beta1.Config{
-				Receivers: v1beta1.AnyConfig{Object: map[string]interface{}{}},
-				Exporters: v1beta1.AnyConfig{Object: map[string]interface{}{}},
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{}},
 				Service: v1beta1.Service{
 					Pipelines: map[string]*v1beta1.Pipeline{},
 				},

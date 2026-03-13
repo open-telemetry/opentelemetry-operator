@@ -119,7 +119,7 @@ func (t *Item) GetEndpointSliceName() string {
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-func NewItem(jobName string, targetURL string, itemLabels labels.Labels, collectorName string, opts ...ItemOption) *Item {
+func NewItem(jobName, targetURL string, itemLabels labels.Labels, collectorName string, opts ...ItemOption) *Item {
 	item := &Item{
 		JobName:       jobName,
 		TargetURL:     targetURL,
@@ -142,8 +142,8 @@ func LabelsHashWithJobName(ls labels.Labels, jobName string) uint64 {
 	binary.LittleEndian.PutUint64(labelsHashBytes[:], labelsHash)
 	hash := hasherPool.Get().(*xxhash.Digest)
 	hash.Reset()
-	_, _ = hash.Write(labelsHashBytes[:]) // nolint: errcheck // xxhash.Write can't fail
-	_, _ = hash.WriteString(jobName)      // nolint: errcheck // xxhash.Write can't fail
+	_, _ = hash.Write(labelsHashBytes[:])
+	_, _ = hash.WriteString(jobName)
 	result := hash.Sum64()
 	hasherPool.Put(hash)
 	return result

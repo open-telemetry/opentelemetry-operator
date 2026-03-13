@@ -6,7 +6,8 @@ package collector
 import (
 	"fmt"
 	"path"
-	"sort"
+	"slices"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/proxy"
@@ -28,7 +29,7 @@ const maxPortLen = 15
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = cfg.CollectorImage
 	}
 
@@ -76,7 +77,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	for k, v := range argsMap {
 		sortedArgs = append(sortedArgs, fmt.Sprintf("--%s=%s", k, v))
 	}
-	sort.Strings(sortedArgs)
+	slices.Sort(sortedArgs)
 	args = append(args, sortedArgs...)
 
 	if len(otelcol.Spec.VolumeMounts) > 0 {
@@ -219,8 +220,8 @@ func getContainerPorts(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollecto
 		ports = append(specPorts, resultingInferredPorts...)
 	}
 
-	sort.Slice(ports, func(i, j int) bool {
-		return ports[i].Name < ports[j].Name
+	slices.SortFunc(ports, func(i, j corev1.ContainerPort) int {
+		return strings.Compare(i.Name, j.Name)
 	})
 	return ports
 }

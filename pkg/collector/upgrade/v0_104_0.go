@@ -52,7 +52,7 @@ func TAUnifyEnvVarExpansion(otelcol *v1beta1.OpenTelemetryCollector) {
 		otelcol.Spec.Args = make(map[string]string)
 	}
 	args, ok := otelcol.Spec.Args[baseFlag]
-	if !ok || len(args) == 0 {
+	if !ok || args == "" {
 		otelcol.Spec.Args[baseFlag] = "-" + fgFlag
 	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
 		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag
@@ -72,7 +72,7 @@ func ComponentUseLocalHostAsDefaultHost(otelcol *v1beta1.OpenTelemetryCollector)
 		otelcol.Spec.Args = make(map[string]string)
 	}
 	args, ok := otelcol.Spec.Args[baseFlag]
-	if !ok || len(args) == 0 {
+	if !ok || args == "" {
 		otelcol.Spec.Args[baseFlag] = "-" + fgFlag
 	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
 		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag

@@ -10,17 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-var nginxSdkInitContainerTestCommand = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"nginx.conf\" \"<<SID-PLACEHOLDER>>\""
-var nginxSdkInitContainerTestCommandCustomFile = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"custom-nginx.conf\" \"<<SID-PLACEHOLDER>>\""
-var nginxSdkInitContainerI13nScript = "\nNGINX_AGENT_DIR_FULL=$1\t\\n\nNGINX_AGENT_CONF_DIR_FULL=$2 \\n\nNGINX_CONFIG_FILE=$3 \\n\nNGINX_SID_PLACEHOLDER=$4 \\n\nNGINX_SID_VALUE=$5 \\n\necho \"Input Parameters: $@\" \\n\nset -x \\n\n\\n\ncp -r /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \\n\n\\n\nNGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \\n\nNGINX_AGENT_LOG_DIR=$(echo \"${NGINX_AGENT_DIR_FULL}/logs\" | sed 's,/,\\\\/,g') \\n\n\\n\ncat ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml \\n\necho -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g\" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nsed -i \"1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nmv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \\n\n\t\t"
+var (
+	nginxSdkInitContainerTestCommand           = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"nginx.conf\" \"<<SID-PLACEHOLDER>>\""
+	nginxSdkInitContainerTestCommandCustomFile = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"custom-nginx.conf\" \"<<SID-PLACEHOLDER>>\""
+	nginxSdkInitContainerI13nScript            = "\nNGINX_AGENT_DIR_FULL=$1\t\\n\nNGINX_AGENT_CONF_DIR_FULL=$2 \\n\nNGINX_CONFIG_FILE=$3 \\n\nNGINX_SID_PLACEHOLDER=$4 \\n\nNGINX_SID_VALUE=$5 \\n\necho \"Input Parameters: $@\" \\n\nset -x \\n\n\\n\ncp -r /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \\n\n\\n\nNGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \\n\nNGINX_AGENT_LOG_DIR=$(echo \"${NGINX_AGENT_DIR_FULL}/logs\" | sed 's,/,\\\\/,g') \\n\n\\n\ncat ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml \\n\necho -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g\" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nsed -i \"1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nmv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \\n\n\t\t"
+)
 
 func TestInjectNginxSDK(t *testing.T) {
-
 	tests := []struct {
 		name string
 		v1alpha1.Nginx
@@ -44,12 +45,12 @@ func TestInjectNginxSDK(t *testing.T) {
 						{},
 					},
 				},
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -144,7 +145,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				ConfigFile: "/opt/nginx/custom-nginx.conf",
 			},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -154,7 +155,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -239,7 +240,8 @@ func TestInjectNginxSDK(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		// === Test init-container-incompatible fields not copied =============================
 		{
 			name: "Init-container-incompatible fields not copied",
@@ -247,7 +249,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				Image: "foo/bar:1",
 			},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -266,7 +268,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -366,7 +368,7 @@ func TestInjectNginxSDK(t *testing.T) {
 			name:  "Pod Namespace specified",
 			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 					Name:      "my-nginx-6c44bcbdd",
 				},
@@ -377,7 +379,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 					Name:      "my-nginx-6c44bcbdd",
 				},
@@ -481,7 +483,6 @@ func TestInjectNginxSDK(t *testing.T) {
 }
 
 func TestInjectNginxUnknownNamespace(t *testing.T) {
-
 	tests := []struct {
 		name string
 		v1alpha1.Nginx
@@ -492,7 +493,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 			name:  "Clone Container not present, unknown namespace",
 			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -502,7 +503,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{

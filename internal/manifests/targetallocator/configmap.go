@@ -31,9 +31,9 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 	taSpec := instance.Spec
 
-	taConfig := make(map[interface{}]interface{})
+	taConfig := make(map[any]any)
 	// Set config if global or scrape configs set
-	config := map[string]interface{}{}
+	config := map[string]any{}
 	var (
 		globalConfig      map[string]any
 		scrapeConfigs     []v1beta1.AnyConfig
@@ -87,11 +87,17 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
 	if taSpec.PrometheusCR.Enabled {
-		prometheusCRConfig := map[interface{}]interface{}{
+		prometheusCRConfig := map[any]any{
 			"enabled": true,
 		}
 		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
 			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
+		}
+		if taSpec.PrometheusCR.EvaluationInterval.Size() > 0 {
+			prometheusCRConfig["evaluation_interval"] = taSpec.PrometheusCR.EvaluationInterval.Duration
+		}
+		if taSpec.PrometheusCR.ScrapeProtocols != nil {
+			prometheusCRConfig["scrape_protocols"] = taSpec.PrometheusCR.ScrapeProtocols
 		}
 
 		if taSpec.PrometheusCR.ScrapeClasses != nil {
@@ -106,19 +112,23 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
 		}
 
+		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
+		prometheusCRConfig["pod_monitor_namespace_selector"] = taSpec.PrometheusCR.PodMonitorNamespaceSelector
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
 
+		prometheusCRConfig["scrape_config_namespace_selector"] = taSpec.PrometheusCR.ScrapeConfigNamespaceSelector
 		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
 
+		prometheusCRConfig["probe_namespace_selector"] = taSpec.PrometheusCR.ProbeNamespaceSelector
 		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
 
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
 	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-		taConfig["https"] = map[string]interface{}{
+		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
 			"ca_file_path":       filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
@@ -188,7 +198,7 @@ func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig
 	type promReceiverConfig struct {
 		Prometheus struct {
 			Config struct {
-				Global map[string]interface{} `mapstructure:"global"`
+				Global map[string]any `mapstructure:"global"`
 			} `mapstructure:"config"`
 		} `mapstructure:"prometheus"`
 	}

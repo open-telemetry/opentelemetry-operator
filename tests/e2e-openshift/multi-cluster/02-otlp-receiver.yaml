@@ -1,10 +1,10 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: otlp-receiver
   namespace: chainsaw-multi-cluster-receive
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:

@@ -29,7 +29,7 @@ func (s *perNodeStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {
 	s.fallbackStrategy = fallbackStrategy
 }
 
-func (s *perNodeStrategy) GetName() string {
+func (*perNodeStrategy) GetName() string {
 	return perNodeStrategyName
 }
 

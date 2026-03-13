@@ -143,19 +143,19 @@ func TestGetInstanceId(t *testing.T) {
 type mockConnection struct{}
 
 // Connection implements types.Connection.
-func (m *mockConnection) Connection() net.Conn {
+func (*mockConnection) Connection() net.Conn {
 	panic("unimplemented")
 }
 
 // Disconnect implements types.Connection.
-func (m *mockConnection) Disconnect() error {
+func (*mockConnection) Disconnect() error {
 	panic("unimplemented")
 }
 
-func (m *mockConnection) Send(ctx context.Context, msg *protobufs.ServerToAgent) error {
+func (*mockConnection) Send(context.Context, *protobufs.ServerToAgent) error {
 	return nil
 }
 
-func (m *mockConnection) Close() error {
+func (*mockConnection) Close() error {
 	return nil
 }

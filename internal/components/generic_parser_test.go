@@ -4,6 +4,8 @@
 package components_test
 
 import (
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -19,7 +21,7 @@ import (
 func TestGenericParser_GetPorts(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -35,7 +37,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -52,7 +54,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -69,7 +71,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithProtocol(corev1.ProtocolUDP).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -87,7 +89,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    []corev1.ServicePort{},
 			wantErr: assert.Error,
@@ -108,7 +110,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 func TestGenericParser_GetRBACRules(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -118,9 +120,9 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}
 
-	rbacGenFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
+	rbacGenFunc := func(_ logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return []rbacv1.PolicyRule{
 			{
@@ -137,7 +139,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -155,7 +157,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -173,7 +175,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    nil,
 			wantErr: assert.Error,
@@ -183,7 +185,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewBuilder[*components.SingleEndpointConfig]().WithName("test").MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    nil,
 			wantErr: assert.NoError,
@@ -214,7 +216,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 func TestGenericParser_GetProbe(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name             string
@@ -227,9 +229,9 @@ func TestGenericParser_GetProbe(t *testing.T) {
 		wantReadinessErr assert.ErrorAssertionFunc
 		wantStartupErr   assert.ErrorAssertionFunc
 	}
-	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
+	probeFunc := func(_ logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -247,7 +249,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -284,7 +286,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -321,7 +323,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -335,7 +337,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithLivenessGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -349,7 +351,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -425,14 +427,15 @@ func TestGenericParser_GetProbe(t *testing.T) {
 
 func TestGenericParser_GetDefaultConfig(t *testing.T) {
 	type args struct {
-		logger logr.Logger
-		config interface{}
+		logger     logr.Logger
+		config     any
+		tlsProfile components.TLSProfile
 	}
 	type testCase[T any] struct {
 		name    string
 		g       *components.GenericParser[T]
 		args    args
-		want    interface{}
+		want    any
 		wantErr assert.ErrorAssertionFunc
 	}
 
@@ -442,11 +445,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    &components.GenericParser[*components.SingleEndpointConfig]{},
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "http://localhost:8080",
 			},
 			wantErr: assert.NoError,
@@ -456,11 +459,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "http://localhost:8080",
 			},
 			wantErr: assert.NoError,
@@ -470,12 +473,113 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": nil,
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "127.0.0.1:8080",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "valid settings with defaultsApplier and TLS profile",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]any{
+					"endpoint": nil,
+					"tls":      map[string]any{},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]any{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]any{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile not injected when config.TLS is nil",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]any{
+					"endpoint": nil,
+					// no "tls" key - TLS config is nil
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]any{
+				"endpoint": "127.0.0.1:8080",
+				// no TLS injected because config.TLS was nil
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing MinVersion",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]any{
+					"endpoint": nil,
+					"tls": map[string]any{
+						"min_version": "1.3", // already set
+					},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]any{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]any{
+					"min_version":   "1.3", // not overridden
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing Ciphers",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]any{
+					"endpoint": nil,
+					"tls": map[string]any{
+						"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"}, // already set
+					},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]any{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]any{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"}, // not overridden
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS 1.3 profile does not inject cipher suites",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]any{
+					"endpoint": nil,
+					"tls":      map[string]any{},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}),
+			},
+			want: map[string]any{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]any{
+					"min_version": "1.3",
+					// no cipher_suites - TLS 1.3 doesn't allow configuring them
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -484,11 +588,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:9090",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "127.0.0.1:9090",
 			},
 			wantErr: assert.NoError,
@@ -507,7 +611,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config)
+			var opts []components.DefaultOption
+			if tt.args.tlsProfile != nil {
+				opts = append(opts, components.WithTLSProfile(tt.args.tlsProfile))
+			}
+			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config, opts...)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
 				return
 			}

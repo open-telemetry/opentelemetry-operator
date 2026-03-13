@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
@@ -6,19 +6,17 @@ metadata:
     operatorVersion: "latest"
 spec:
   replicas: 2
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          grpc:
+          grpc: {}
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

@@ -4,7 +4,6 @@
 package processors
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -33,7 +32,7 @@ type K8sAttributeConfig struct {
 
 func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
 	// These policies need to be added always
-	var prs = []rbacv1.PolicyRule{
+	prs := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
 			Resources: []string{"pods", "namespaces"},
@@ -52,7 +51,7 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 	}
 	addedReplicasetPolicy := false
 	for _, m := range config.Extract.Metadata {
-		metadataField := fmt.Sprint(m)
+		metadataField := m
 		if (metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name" || metadataField == "service.name") && !addedReplicasetPolicy {
 			prs = append(prs, replicasetPolicy)
 			addedReplicasetPolicy = true

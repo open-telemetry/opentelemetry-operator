@@ -23,13 +23,15 @@ func Service(params Params) *corev1.Service {
 	ports = append(ports, corev1.ServicePort{
 		Name:       "targetallocation",
 		Port:       80,
-		TargetPort: intstr.FromString("http")})
+		TargetPort: intstr.FromString("http"),
+	})
 
 	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "targetallocation-https",
 			Port:       443,
-			TargetPort: intstr.FromString("https")})
+			TargetPort: intstr.FromString("https"),
+		})
 	}
 
 	return &corev1.Service{

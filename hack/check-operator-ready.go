@@ -75,7 +75,6 @@ func main() {
 		}
 		return true, nil
 	})
-
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -108,7 +107,6 @@ func main() {
 		}
 		return true, nil
 	})
-
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

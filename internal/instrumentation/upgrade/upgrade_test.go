@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -59,7 +60,7 @@ func TestUpgrade(t *testing.T) {
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
 	}
-	err = v1alpha1.NewInstrumentationWebhook(
+	err = webhook.NewInstrumentationWebhook(
 		logr.Discard(),
 		testScheme,
 		cfg,

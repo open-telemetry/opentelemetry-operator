@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	GrpcProtocol          = "grpc"
-	HttpProtocol          = "http"
-	UnsetPort       int32 = 0
-	PortNotFoundErr       = errors.New("port should not be empty")
+	GrpcProtocol    = "grpc"
+	HttpProtocol    = "http"
+	UnsetPort       int32
+	PortNotFoundErr = errors.New("port should not be empty")
 )
 
 type PortRetriever interface {
@@ -42,9 +42,27 @@ type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config Com
 // It's expected that type Config is the configuration used by a parser.
 type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]corev1.EnvVar, error)
 
+// DefaultConfig holds configuration options for applying defaults to components.
+type DefaultConfig struct {
+	// TLSProfile provides TLS settings to inject into components with tls: blocks.
+	TLSProfile TLSProfile
+}
+
+// DefaultOption is a functional option for configuring defaults behavior.
+type DefaultOption func(*DefaultConfig)
+
+// WithTLSProfile sets the TLS profile to use when applying defaults.
+// When set, TLS settings (min_version, cipher_suites) are injected into
+// components that have a tls: block with cert_file configured.
+func WithTLSProfile(tls TLSProfile) DefaultOption {
+	return func(cfg *DefaultConfig) {
+		cfg.TLSProfile = tls
+	}
+}
+
 // Defaulter is a function that applies given defaults to the passed Config.
 // It's expected that type Config is the configuration used by a parser.
-type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultCfg *DefaultConfig, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]any, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -52,8 +70,9 @@ type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr str
 // - mycomponent
 // we extract the "mycomponent" part and see if we have a parser for the component.
 func ComponentType(name string) string {
-	if strings.Contains(name, "/") {
-		return name[:strings.Index(name, "/")]
+	before, _, ok := strings.Cut(name, "/")
+	if ok {
+		return before
 	}
 	return name
 }
@@ -62,13 +81,12 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	var err error
 	var port int64
 
-	r := regexp.MustCompile(":[0-9]+")
+	r := regexp.MustCompile(`:\d+`)
 
 	if r.MatchString(endpoint) {
 		portStr := r.FindString(endpoint)
-		cleanedPortStr := strings.Replace(portStr, ":", "", -1)
+		cleanedPortStr := strings.ReplaceAll(portStr, ":", "")
 		port, err = strconv.ParseInt(cleanedPortStr, 10, 32)
-
 		if err != nil {
 			return UnsetPort, err
 		}
@@ -78,34 +96,35 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 		return UnsetPort, PortNotFoundErr
 	}
 
-	return int32(port), err //nolint: gosec // disable G115, this is guaranteed to not overflow due to the bitSize in the ParseInt call
+	return int32(port), err
 }
 
 type ParserRetriever func(string) Parser
 
 type Parser interface {
 	// GetDefaultConfig returns a config with set default values.
+	// Optional DefaultOption arguments can customize behavior (e.g., WithTLSProfile for TLS defaults).
 	// NOTE: Config merging must be done by the caller if desired.
-	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+	GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error)
 
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
-	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
+	Ports(logger logr.Logger, name string, config any) ([]corev1.ServicePort, error)
 
 	// GetRBACRules returns the rbac rules for this component
-	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+	GetRBACRules(logger logr.Logger, config any) ([]rbacv1.PolicyRule, error)
 
 	// GetLivenessProbe returns a liveness probe set for the collector
-	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// GetEnvironmentVariables returns a list of environment variables for the collector
-	GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error)
+	GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error)
 
 	// GetReadinessProbe returns a readiness probe set for the collector
-	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// GetStartupProbe returns a startup probe set for the collector
-	GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string

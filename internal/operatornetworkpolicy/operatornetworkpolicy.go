@@ -34,8 +34,10 @@ type networkPolicy struct {
 	apiServerNamespaceSelector *metav1.LabelSelector
 }
 
-var _ manager.Runnable = (*networkPolicy)(nil)
-var _ manager.LeaderElectionRunnable = (*networkPolicy)(nil)
+var (
+	_ manager.Runnable               = (*networkPolicy)(nil)
+	_ manager.LeaderElectionRunnable = (*networkPolicy)(nil)
+)
 
 func NewOperatorNetworkPolicy(clientset kubernetes.Interface, scheme *runtime.Scheme, options ...Option) manager.Runnable {
 	n := &networkPolicy{
@@ -192,6 +194,6 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 	return nil
 }
 
-func (d *networkPolicy) NeedLeaderElection() bool {
+func (*networkPolicy) NeedLeaderElection() bool {
 	return true
 }

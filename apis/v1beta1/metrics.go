@@ -61,7 +61,7 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) {
+func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) { //nolint:revive //context-as-argument
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
@@ -116,28 +116,27 @@ func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
 	}
 
 	for i := range list.Items {
-		m.create(ctx, &list.Items[i])
+		m.Create(ctx, &list.Items[i])
 	}
 	return nil
 }
 
-func (m *Metrics) create(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Create(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, true)
 	m.updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
-func (m *Metrics) delete(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Delete(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, false)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func (m *Metrics) update(ctx context.Context, oldCollector *OpenTelemetryCollector, newCollector *OpenTelemetryCollector) {
-	m.delete(ctx, oldCollector)
-	m.create(ctx, newCollector)
+func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
+	m.Delete(ctx, oldCollector)
+	m.Create(ctx, newCollector)
 }
 
 func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
-
 	inc := 1
 	if !up {
 		inc = -1
@@ -148,6 +147,7 @@ func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collecto
 		attribute.Key("type").String(string(collector.Spec.Mode)),
 	))
 }
+
 func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
 	components := getComponentsFromConfig(collector.Spec.Config)
 	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
@@ -155,10 +155,9 @@ func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTe
 	moveCounter(ctx, collector, components.processors, m.processorCounter, up)
 	moveCounter(ctx, collector, components.extensions, m.extensionsCounter, up)
 	moveCounter(ctx, collector, components.connectors, m.connectorsCounter, up)
-
 }
 
-func extractElements(elements map[string]interface{}) []string {
+func extractElements(elements map[string]any) []string {
 	// TODO: we should get rid of this method and centralize the parse logic
 	//		see https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 	if elements == nil {
@@ -178,7 +177,6 @@ func extractElements(elements map[string]interface{}) []string {
 }
 
 func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
-
 	info := &componentDefinitions{
 		receivers: extractElements(yamlContent.Receivers.Object),
 		exporters: extractElements(yamlContent.Exporters.Object),
@@ -200,7 +198,8 @@ func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 }
 
 func moveCounter(
-	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool) {
+	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
+) {
 	for _, exporter := range types {
 		inc := 1
 		if !up {

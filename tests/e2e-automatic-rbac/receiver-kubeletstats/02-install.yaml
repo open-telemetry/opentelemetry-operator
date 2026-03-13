@@ -1,17 +1,16 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   namespace: chainsaw-kubeletstats
 spec:
-  config: |
+  config:
     receivers:
       kubeletstats:
         extra_metadata_labels:
           - container.id
-    processors:
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

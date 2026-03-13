@@ -24,7 +24,7 @@ apiVersion: v1
 data:
   collector.yaml: |
     exporters:
-        debug: null
+        debug: {}
     receivers:
         jaeger:
             protocols:

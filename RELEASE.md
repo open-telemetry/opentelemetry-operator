@@ -48,10 +48,11 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.145.0 | @iblancasa      |
-| v0.146.0 | @jaronoff97     |
 | v0.147.0 | @yuriolisa      |
 | v0.148.0 | @TylerHelmuth   |
 | v0.149.0 | @frzifus        |
 | v0.150.0 | @pavolloffay    |
 | v0.151.0 | @swiatekm       |
+| v0.152.0 | @iblancasa      |
+| v0.153.0 | @atoulme        |
+| v0.154.0 | @jaronoff97     |

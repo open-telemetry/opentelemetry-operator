@@ -5,7 +5,7 @@ package targetallocator
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/proxy"
@@ -21,9 +21,9 @@ import (
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
+func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = cfg.TargetAllocatorImage
 	}
 
@@ -48,7 +48,7 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 	}}
 	volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
 
-	var envVars = instance.Spec.Env
+	envVars := instance.Spec.Env
 	if envVars == nil {
 		envVars = []corev1.EnvVar{}
 	}
@@ -101,7 +101,7 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 	for k, v := range argsMap {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-	sort.Strings(args)
+	slices.Sort(args)
 
 	readinessProbe := instance.Spec.ReadinessProbe
 	if readinessProbe == nil {

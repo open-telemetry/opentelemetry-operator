@@ -47,7 +47,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 
 	// if no annotations are found at all, just return the same pod
 	annValue := annotationValue(ns, pod)
-	if len(annValue) == 0 {
+	if annValue == "" {
 		logger.V(1).Info("annotation not present in deployment, skipping sidecar injection")
 		return pod, nil
 	}

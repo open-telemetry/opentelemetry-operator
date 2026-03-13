@@ -1,23 +1,21 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   labels:
     opentelemetry.io/opamp-reporting: "true"
 spec:
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          grpc:
+          grpc: {}
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

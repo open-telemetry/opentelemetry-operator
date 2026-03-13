@@ -74,7 +74,7 @@ func (k *Watcher) Watch(
 	notify := make(chan struct{}, 1)
 	go k.rateLimitedCollectorHandler(notify, informer.GetStore(), fn)
 
-	notifyFunc := func(_ interface{}) {
+	notifyFunc := func(_ any) {
 		select {
 		case notify <- struct{}{}:
 		default:
@@ -83,7 +83,7 @@ func (k *Watcher) Watch(
 	k.mutex.Lock()
 	k.eventHandlerReg, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: notifyFunc,
-		UpdateFunc: func(oldObj, newObj interface{}) {
+		UpdateFunc: func(_, newObj any) {
 			notifyFunc(newObj)
 		},
 		DeleteFunc: notifyFunc,
@@ -151,7 +151,7 @@ func (k *Watcher) Close() {
 	close(k.close)
 }
 
-func (k *Watcher) isPodUnhealthy(pod *v1.Pod, collectorNotReadyGracePeriod time.Duration) bool {
+func (*Watcher) isPodUnhealthy(pod *v1.Pod, collectorNotReadyGracePeriod time.Duration) bool {
 	if collectorNotReadyGracePeriod == 0*time.Second {
 		return false
 	}

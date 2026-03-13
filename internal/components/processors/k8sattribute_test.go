@@ -15,7 +15,7 @@ import (
 
 func TestGenerateK8SAttrRbacRules(t *testing.T) {
 	type args struct {
-		config interface{}
+		config any
 	}
 	tests := []struct {
 		name    string
@@ -26,11 +26,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 		{
 			name: "default config with empty metadata",
 			args: args{
-				config: map[string]interface{}{
-					"extract": map[string]interface{}{
+				config: map[string]any{
+					"extract": map[string]any{
 						"metadata":    []string{},
-						"labels":      []interface{}{},
-						"annotations": []interface{}{},
+						"labels":      []any{},
+						"annotations": []any{},
 					},
 				},
 			},
@@ -51,11 +51,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 		{
 			name: "config with deployment metadata",
 			args: args{
-				config: map[string]interface{}{
-					"extract": map[string]interface{}{
+				config: map[string]any{
+					"extract": map[string]any{
 						"metadata":    []string{"k8s.deployment.uid", "k8s.deployment.name"},
-						"labels":      []interface{}{},
-						"annotations": []interface{}{},
+						"labels":      []any{},
+						"annotations": []any{},
 					},
 				},
 			},
@@ -76,11 +76,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 		{
 			name: "config with node metadata",
 			args: args{
-				config: map[string]interface{}{
-					"extract": map[string]interface{}{
+				config: map[string]any{
+					"extract": map[string]any{
 						"metadata":    []string{"k8s.node.name"},
-						"labels":      []interface{}{},
-						"annotations": []interface{}{},
+						"labels":      []any{},
+						"annotations": []any{},
 					},
 				},
 			},
@@ -109,11 +109,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 		{
 			name: "config with invalid metadata",
 			args: args{
-				config: map[string]interface{}{
-					"extract": map[string]interface{}{
+				config: map[string]any{
+					"extract": map[string]any{
 						"metadata":    []string{"invalid.metadata"},
-						"labels":      []interface{}{},
-						"annotations": []interface{}{},
+						"labels":      []any{},
+						"annotations": []any{},
 					},
 				},
 			},
@@ -129,11 +129,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 		{
 			name: "config with service.name metadata",
 			args: args{
-				config: map[string]interface{}{
-					"extract": map[string]interface{}{
+				config: map[string]any{
+					"extract": map[string]any{
 						"metadata":    []string{"service.name"},
-						"labels":      []interface{}{},
-						"annotations": []interface{}{},
+						"labels":      []any{},
+						"annotations": []any{},
 					},
 				},
 			},

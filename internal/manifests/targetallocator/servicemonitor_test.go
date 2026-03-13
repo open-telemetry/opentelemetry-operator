@@ -40,7 +40,6 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s-targetallocator", params.TargetAllocator.Name), actual.Name)
 	assert.Equal(t, params.TargetAllocator.Namespace, actual.Namespace)
 	assert.Equal(t, "targetallocation", actual.Spec.Endpoints[0].Port)
-
 }
 
 func TestDesiredServiceMonitorsWithEmptyExtraLabels(t *testing.T) {
@@ -119,7 +118,7 @@ func TestDesiredServiceMonitorsWithExtraLabels(t *testing.T) {
 		"environment":                  "production",
 		"custom.io/key":                "custom-value",
 	}
-	assert.Equal(t, expectedLabels, actual.ObjectMeta.Labels)
+	assert.Equal(t, expectedLabels, actual.Labels)
 
 	expectedSelectorLabels := map[string]string{
 		"app.kubernetes.io/component":  "opentelemetry-targetallocator",

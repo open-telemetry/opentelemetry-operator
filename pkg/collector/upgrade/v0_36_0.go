@@ -15,7 +15,7 @@ import (
 )
 
 func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if len(otelcol.Spec.Config) == 0 {
+	if otelcol.Spec.Config == "" {
 		return otelcol, nil
 	}
 
@@ -25,7 +25,7 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	// upgrading the receivers
-	receivers, ok := cfg["receivers"].(map[interface{}]interface{})
+	receivers, ok := cfg["receivers"].(map[any]any)
 	if !ok {
 		// no receivers? no need to fail because of that
 		return otelcol, nil
@@ -37,7 +37,7 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		// Change tls config key from tls_settings to tls in otlp.protocols.grpc
 		if strings.HasPrefix(k1.(string), "otlp") {
-			otlpConfig, withOTLP := v1.(map[interface{}]interface{})
+			otlpConfig, withOTLP := v1.(map[any]any)
 			if !withOTLP {
 				// no otlpConfig? no need to fail because of that
 				return otelcol, nil
@@ -45,7 +45,7 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 			for k2, v2 := range otlpConfig {
 				// protocols config
 				if k2 == "protocols" {
-					protocConfig, withProtocConfig := v2.(map[interface{}]interface{})
+					protocConfig, withProtocConfig := v2.(map[any]any)
 					if !withProtocConfig {
 						// no protocolConfig? no need to fail because of that
 						return otelcol, nil
@@ -53,20 +53,21 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					for k3, v3 := range protocConfig {
 						// grpc config
 						if k3 == "grpc" || k3 == "http" {
-							grpcHTTPConfig, withHTTPConfig := v3.(map[interface{}]interface{})
+							grpcHTTPConfig, withHTTPConfig := v3.(map[any]any)
 							if !withHTTPConfig {
 								// no grpcHTTPConfig? no need to fail because of that
 								return otelcol, nil
 							}
 							for k4, v4 := range grpcHTTPConfig {
 								// change tls_settings to tls
-								if k4.(string) == "tls_settings" {
-									grpcHTTPConfig["tls"] = v4
-									delete(grpcHTTPConfig, "tls_settings")
-									existing := &corev1.ConfigMap{}
-									updated := existing.DeepCopy()
-									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
+								if k4.(string) != "tls_settings" {
+									continue
 								}
+								grpcHTTPConfig["tls"] = v4
+								delete(grpcHTTPConfig, "tls_settings")
+								existing := &corev1.ConfigMap{}
+								updated := existing.DeepCopy()
+								u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
 							}
 						}
 					}
@@ -77,7 +78,7 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	cfg["receivers"] = receivers
 
 	// upgrading the exporters
-	exporters, ok := cfg["exporters"].(map[interface{}]interface{})
+	exporters, ok := cfg["exporters"].(map[any]any)
 	if !ok {
 		// no exporters? no need to fail because of that
 		return otelcol, nil
@@ -89,12 +90,12 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		// Move all tls config into separate field i,e, tls.*
 		if strings.HasPrefix(k1.(string), "otlp") {
-			otlpConfig, ok := v1.(map[interface{}]interface{})
+			otlpConfig, ok := v1.(map[any]any)
 			if !ok {
 				// no otlpConfig? no need to fail because of that
 				return otelcol, nil
 			}
-			tlsConfig := make(map[interface{}]interface{}, 5)
+			tlsConfig := make(map[any]any, 5)
 			for key, value := range otlpConfig {
 				if key == "ca_file" || key == "cert_file" || key == "key_file" || key == "min_version" || key == "max_version" ||
 					key == "insecure" || key == "insecure_skip_verify" || key == "server_name_override" {

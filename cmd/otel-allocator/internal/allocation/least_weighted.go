@@ -17,11 +17,11 @@ func newleastWeightedStrategy() Strategy {
 	return &leastWeightedStrategy{}
 }
 
-func (s *leastWeightedStrategy) GetName() string {
+func (*leastWeightedStrategy) GetName() string {
 	return leastWeightedStrategyName
 }
 
-func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
+func (*leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
 	// if a collector is already assigned, do nothing
 	// TODO: track this in a separate map
 	if item.CollectorName != "" {
@@ -34,17 +34,13 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 	jobName := item.JobName
 	for _, v := range collectors {
 		// If the initial collector is empty, set the initial collector to the first element of map
-		if col == nil {
-			col = v
-		} else if v.NumTargets < col.NumTargets {
+		if col == nil || v.NumTargets < col.NumTargets {
 			col = v
 		} else if v.NumTargets == col.NumTargets {
 			vPerJob := v.TargetsPerJob[jobName]
 			colPerJob := col.TargetsPerJob[jobName]
 			// Tiebreaker: prefer collector with fewer targets from this job
-			if vPerJob < colPerJob {
-				col = v
-			} else if vPerJob == colPerJob && v.Name < col.Name {
+			if vPerJob < colPerJob || (vPerJob == colPerJob && v.Name < col.Name) {
 				// Final tiebreaker: use collector name for deterministic assignment
 				col = v
 			}
@@ -53,6 +49,6 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 	return col, nil
 }
 
-func (s *leastWeightedStrategy) SetCollectors(_ map[string]*Collector) {}
+func (*leastWeightedStrategy) SetCollectors(map[string]*Collector) {}
 
-func (s *leastWeightedStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}
+func (*leastWeightedStrategy) SetFallbackStrategy(Strategy) {}

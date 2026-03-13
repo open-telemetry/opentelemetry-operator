@@ -1,10 +1,11 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -33,41 +35,41 @@ type OpAMPBridgeWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	opampBridge, ok := obj.(*OpAMPBridge)
+func (o *OpAMPBridgeWebhook) Default(_ context.Context, obj runtime.Object) error {
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
 	return o.defaulter(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
+func (o *OpAMPBridgeWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := newObj.(*OpAMPBridge)
+func (o *OpAMPBridgeWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := newObj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
 	}
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
+func (o *OpAMPBridgeWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok || opampBridge == nil {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
+func (*OpAMPBridgeWebhook) defaulter(r *v1alpha1.OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
-		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
+		r.Spec.UpgradeStrategy = v1alpha1.UpgradeStrategyAutomatic
 	}
 
 	if r.Labels == nil {
@@ -80,26 +82,26 @@ func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 
 	// ReportsStatus Capability must be set
 	if r.Spec.Capabilities == nil {
-		r.Spec.Capabilities = make(map[OpAMPBridgeCapability]bool)
+		r.Spec.Capabilities = make(map[v1alpha1.OpAMPBridgeCapability]bool)
 	}
-	enabled, found := r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus]
+	enabled, found := r.Spec.Capabilities[v1alpha1.OpAMPBridgeCapabilityReportsStatus]
 	if !enabled || !found {
-		r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus] = true
+		r.Spec.Capabilities[v1alpha1.OpAMPBridgeCapabilityReportsStatus] = true
 	}
 	return nil
 }
 
-func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+func (*OpAMPBridgeWebhook) validate(r *v1alpha1.OpAMPBridge) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint
-	if len(strings.TrimSpace(r.Spec.Endpoint)) == 0 {
-		return warnings, fmt.Errorf("the OpAMP server endpoint is not specified")
+	if strings.TrimSpace(r.Spec.Endpoint) == "" {
+		return warnings, errors.New("the OpAMP server endpoint is not specified")
 	}
 
 	// validate OpAMPBridge capabilities
 	if len(r.Spec.Capabilities) == 0 {
-		return warnings, fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
+		return warnings, errors.New("the capabilities supported by OpAMP Bridge are not specified")
 	}
 
 	// validate port config
@@ -114,7 +116,7 @@ func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error
 
 	// check for maximum replica count
 	if r.Spec.Replicas != nil && *r.Spec.Replicas > 1 {
-		return warnings, fmt.Errorf("replica count must not be greater than 1")
+		return warnings, errors.New("replica count must not be greater than 1")
 	}
 	return warnings, nil
 }
@@ -126,7 +128,7 @@ func SetupOpAMPBridgeWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		cfg:    cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpAMPBridge{}).
+		For(&v1alpha1.OpAMPBridge{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()

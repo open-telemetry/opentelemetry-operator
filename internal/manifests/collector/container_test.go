@@ -29,7 +29,7 @@ var metricContainerPort = corev1.ContainerPort{
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	var defaultConfig = `receivers:
+	defaultConfig := `receivers:
   otlp:
     protocols:
     http:
@@ -89,7 +89,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 }
 
 func TestContainerPorts(t *testing.T) {
-	var goodConfig = `receivers:
+	goodConfig := `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
@@ -477,7 +477,6 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	c2 := Container(config.New(), testLogger, v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &isPrivileged,
 					RunAsUser:  &uid,
@@ -666,7 +665,7 @@ func TestContainerImagePullPolicy(t *testing.T) {
 }
 
 func TestContainerEnvFrom(t *testing.T) {
-	//prepare
+	// prepare
 	envFrom1 := corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{
@@ -746,7 +745,6 @@ service:
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
-	// verify
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
@@ -803,7 +801,6 @@ service:
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
-	// verify
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
@@ -1140,7 +1137,8 @@ service:
     pipelines:
         metrics:
             receivers: [kubeletstats]
-`)},
+`),
+				},
 			},
 			expectedEnvVars: []corev1.EnvVar{
 				{
@@ -1261,7 +1259,6 @@ service:
 
 			envVars := getContainerEnvVars(test.otelcol, testLogger)
 			assert.ElementsMatch(t, test.expectedEnvVars, envVars)
-
 		})
 	}
 }

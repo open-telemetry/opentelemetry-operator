@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"hash"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -94,8 +94,8 @@ func TestDiscovery(t *testing.T) {
 			assert.NoError(t, err)
 
 			gotTargets := <-results
-			sort.Strings(gotTargets)
-			sort.Strings(tt.want)
+			slices.Sort(gotTargets)
+			slices.Sort(tt.want)
 			assert.Equal(t, tt.want, gotTargets)
 
 			// check the updated scrape configs
@@ -340,7 +340,6 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 				assert.Equal(t, lastValidHash, manager.scrapeConfigsHash)
 				assert.Equal(t, lastValidConfig, scu.mockCfg)
 			}
-
 		})
 	}
 }
@@ -503,11 +502,11 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	d.processTargetGroups("test", groups, results)
 
 	i := 0
-	results[0].Labels.Range(func(l labels.Label) { //nolint:gosec
+	results[0].Labels.Range(func(l labels.Label) {
 		expected := string(rune('a' + i))
 		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
 		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
-		i += 1
+		i++
 	})
 }
 
@@ -538,7 +537,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 		ScrapeConfigs: make([]*promconfig.ScrapeConfig, numConfigs),
 	}
 
-	for i := 0; i < numConfigs; i++ {
+	for i := range numConfigs {
 		cfg.ScrapeConfigs[i] = &scrapeConfig
 	}
 

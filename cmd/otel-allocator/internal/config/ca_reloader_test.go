@@ -19,7 +19,7 @@ func TestCAReloader_Reload(t *testing.T) {
 	// Generate initial CA certificate
 	caPEM1, _ := generateTestCertificate(t)
 	caPath := filepath.Join(tmpDir, "ca.crt")
-	require.NoError(t, os.WriteFile(caPath, caPEM1, 0600))
+	require.NoError(t, os.WriteFile(caPath, caPEM1, 0o600))
 
 	logger := ctrl.Log.WithName("test")
 	reloader, err := NewCAReloader(caPath, logger)
@@ -30,7 +30,7 @@ func TestCAReloader_Reload(t *testing.T) {
 
 	// Generate new CA certificate
 	caPEM2, _ := generateTestCertificate(t)
-	require.NoError(t, os.WriteFile(caPath, caPEM2, 0600))
+	require.NoError(t, os.WriteFile(caPath, caPEM2, 0o600))
 
 	// Reload CA
 	err = reloader.Reload()
@@ -47,7 +47,7 @@ func TestCAReloader_InvalidCA(t *testing.T) {
 	// Create valid CA first
 	validCAPEM, _ := generateTestCertificate(t)
 	caPath := filepath.Join(tmpDir, "ca.crt")
-	require.NoError(t, os.WriteFile(caPath, validCAPEM, 0600))
+	require.NoError(t, os.WriteFile(caPath, validCAPEM, 0o600))
 
 	logger := ctrl.Log.WithName("test")
 	reloader, err := NewCAReloader(caPath, logger)
@@ -57,7 +57,7 @@ func TestCAReloader_InvalidCA(t *testing.T) {
 	require.NotNil(t, oldCA)
 
 	// Write invalid CA
-	require.NoError(t, os.WriteFile(caPath, []byte("invalid"), 0600))
+	require.NoError(t, os.WriteFile(caPath, []byte("invalid"), 0o600))
 
 	// Reload should fail
 	err = reloader.Reload()

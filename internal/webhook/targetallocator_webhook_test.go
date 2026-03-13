@@ -1,10 +1,11 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -19,6 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	kubeTesting "k8s.io/client-go/testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
@@ -28,24 +30,24 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
 
-	if err := AddToScheme(testScheme); err != nil {
+	if err := v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
 
 	tests := []struct {
 		name            string
-		targetallocator TargetAllocator
-		expected        TargetAllocator
+		targetallocator v1alpha1.TargetAllocator
+		expected        v1alpha1.TargetAllocator
 	}{
 		{
 			name:            "all fields default",
-			targetallocator: TargetAllocator{},
-			expected: TargetAllocator{
+			targetallocator: v1alpha1.TargetAllocator{},
+			expected: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{},
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &one,
 					},
@@ -54,16 +56,16 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "consistent hashing strategy",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
 				},
 			},
-			expected: TargetAllocator{
+			expected: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{},
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &one,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -79,18 +81,18 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "provided values in spec",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &five,
 					},
 				},
 			},
-			expected: TargetAllocator{
+			expected: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{},
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &five,
 					},
@@ -99,19 +101,19 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "doesn't override unmanaged",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
 					},
 				},
 			},
-			expected: TargetAllocator{
+			expected: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{},
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
@@ -121,8 +123,8 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "Defined PDB",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
 							MinAvailable: &intstr.IntOrString{
@@ -133,11 +135,11 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expected: TargetAllocator{
+			expected: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{},
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &one,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -153,7 +155,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				TargetAllocatorImage: "ta:v0.0.0",
@@ -174,21 +175,21 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	three := int32(3)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
-		targetallocator  TargetAllocator
+		targetallocator  v1alpha1.TargetAllocator
 		expectedErr      string
 		expectedWarnings []string
 		shouldFailSar    bool
 	}{
 		{
 			name:            "valid empty spec",
-			targetallocator: TargetAllocator{},
+			targetallocator: v1alpha1.TargetAllocator{},
 		},
 		{
 			name: "valid full spec",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &three,
 						Ports: []v1beta1.PortsSpec{
@@ -213,12 +214,12 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		{
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
-			targetallocator: TargetAllocator{
+			targetallocator: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-ta",
 					Namespace: "test-ns",
 				},
-				Spec: TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 						Enabled: true,
 					},
@@ -246,14 +247,14 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		{
 			name:          "prom CR no admissions warning",
 			shouldFailSar: false, // force SAR okay
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{},
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{},
 			},
 		},
 		{
 			name: "invalid port name",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Ports: []v1beta1.PortsSpec{
 							{
@@ -272,8 +273,8 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "invalid port name, too long",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Ports: []v1beta1.PortsSpec{
 							{
@@ -290,8 +291,8 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "invalid port num",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Ports: []v1beta1.PortsSpec{
 							{
@@ -308,8 +309,8 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "allowNamespaces and denyNamespaces can't both be set",
-			targetallocator: TargetAllocator{
-				Spec: TargetAllocatorSpec{
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 						Enabled:         true,
 						AllowNamespaces: []string{"ns1"},
@@ -322,7 +323,6 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "targetallocator:v0.0.0",
@@ -352,11 +352,11 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {
-			return false, nil, fmt.Errorf("must be a create for a SAR")
+			return false, nil, errors.New("must be a create for a SAR")
 		}
 		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
 		if !ok || sar == nil {
-			return false, nil, fmt.Errorf("bad object")
+			return false, nil, errors.New("bad object")
 		}
 		sar.Status = authv1.SubjectAccessReviewStatus{
 			Allowed: !shouldFailSAR,

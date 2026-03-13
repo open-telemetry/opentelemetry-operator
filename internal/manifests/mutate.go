@@ -32,9 +32,7 @@ func (e *ImmutableFieldChangeErr) Error() string {
 	return fmt.Sprintf("Immutable field change attempted: %s", e.Field)
 }
 
-var (
-	ImmutableChangeErr *ImmutableFieldChangeErr
-)
+var ImmutableChangeErr *ImmutableFieldChangeErr
 
 // MutateFuncFor returns a mutate function based on the
 // existing resource's concrete type. It supports currently
@@ -80,109 +78,109 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			existing.SetOwnerReferences(ownerRefs)
 		}
 
-		switch existing.(type) {
+		switch existing := existing.(type) {
 		case *corev1.ConfigMap:
-			cm := existing.(*corev1.ConfigMap)
+			cm := existing
 			wantCm := desired.(*corev1.ConfigMap)
 			mutateConfigMap(cm, wantCm)
 
 		case *corev1.Service:
-			svc := existing.(*corev1.Service)
+			svc := existing
 			wantSvc := desired.(*corev1.Service)
 			mutateService(svc, wantSvc)
 
 		case *corev1.ServiceAccount:
-			sa := existing.(*corev1.ServiceAccount)
+			sa := existing
 			wantSa := desired.(*corev1.ServiceAccount)
 			mutateServiceAccount(sa, wantSa)
 
 		case *rbacv1.ClusterRole:
-			cr := existing.(*rbacv1.ClusterRole)
+			cr := existing
 			wantCr := desired.(*rbacv1.ClusterRole)
 			mutateClusterRole(cr, wantCr)
 
 		case *rbacv1.ClusterRoleBinding:
-			crb := existing.(*rbacv1.ClusterRoleBinding)
+			crb := existing
 			wantCrb := desired.(*rbacv1.ClusterRoleBinding)
 			mutateClusterRoleBinding(crb, wantCrb)
 
 		case *rbacv1.Role:
-			r := existing.(*rbacv1.Role)
+			r := existing
 			wantR := desired.(*rbacv1.Role)
 			mutateRole(r, wantR)
 
 		case *rbacv1.RoleBinding:
-			rb := existing.(*rbacv1.RoleBinding)
+			rb := existing
 			wantRb := desired.(*rbacv1.RoleBinding)
 			mutateRoleBinding(rb, wantRb)
 
 		case *appsv1.Deployment:
-			dpl := existing.(*appsv1.Deployment)
+			dpl := existing
 			wantDpl := desired.(*appsv1.Deployment)
 			return mutateDeployment(dpl, wantDpl)
 
 		case *appsv1.DaemonSet:
-			dpl := existing.(*appsv1.DaemonSet)
+			dpl := existing
 			wantDpl := desired.(*appsv1.DaemonSet)
 			return mutateDaemonset(dpl, wantDpl)
 
 		case *appsv1.StatefulSet:
-			sts := existing.(*appsv1.StatefulSet)
+			sts := existing
 			wantSts := desired.(*appsv1.StatefulSet)
 			return mutateStatefulSet(sts, wantSts)
 
 		case *monitoringv1.ServiceMonitor:
-			svcMonitor := existing.(*monitoringv1.ServiceMonitor)
+			svcMonitor := existing
 			wantSvcMonitor := desired.(*monitoringv1.ServiceMonitor)
 			mutateServiceMonitor(svcMonitor, wantSvcMonitor)
 
 		case *monitoringv1.PodMonitor:
-			podMonitor := existing.(*monitoringv1.PodMonitor)
+			podMonitor := existing
 			wantPodMonitor := desired.(*monitoringv1.PodMonitor)
 			mutatePodMonitor(podMonitor, wantPodMonitor)
 
 		case *networkingv1.Ingress:
-			ing := existing.(*networkingv1.Ingress)
+			ing := existing
 			wantIng := desired.(*networkingv1.Ingress)
 			mutateIngress(ing, wantIng)
 
 		case *networkingv1.NetworkPolicy:
-			ds := existing.(*networkingv1.NetworkPolicy)
+			ds := existing
 			wantDs := desired.(*networkingv1.NetworkPolicy)
 			mutateNetworkPolicy(ds, wantDs)
 
 		case *autoscalingv2.HorizontalPodAutoscaler:
-			existingHPA := existing.(*autoscalingv2.HorizontalPodAutoscaler)
+			existingHPA := existing
 			desiredHPA := desired.(*autoscalingv2.HorizontalPodAutoscaler)
 			mutateAutoscalingHPA(existingHPA, desiredHPA)
 
 		case *policyV1.PodDisruptionBudget:
-			existingPDB := existing.(*policyV1.PodDisruptionBudget)
+			existingPDB := existing
 			desiredPDB := desired.(*policyV1.PodDisruptionBudget)
 			mutatePolicyV1PDB(existingPDB, desiredPDB)
 
 		case *routev1.Route:
-			rt := existing.(*routev1.Route)
+			rt := existing
 			wantRt := desired.(*routev1.Route)
 			mutateRoute(rt, wantRt)
 
 		case *corev1.Secret:
-			pr := existing.(*corev1.Secret)
+			pr := existing
 			wantPr := desired.(*corev1.Secret)
 			mutateSecret(pr, wantPr)
 
 		case *cmv1.Certificate:
-			cert := existing.(*cmv1.Certificate)
+			cert := existing
 			wantCert := desired.(*cmv1.Certificate)
 			mutateCertificate(cert, wantCert)
 
 		case *cmv1.Issuer:
-			issuer := existing.(*cmv1.Issuer)
+			issuer := existing
 			wantIssuer := desired.(*cmv1.Issuer)
 			mutateIssuer(issuer, wantIssuer)
 
 		case *v1alpha1.TargetAllocator:
-			ta := existing.(*v1alpha1.TargetAllocator)
+			ta := existing
 			wantTa := desired.(*v1alpha1.TargetAllocator)
 			mutateTargetAllocator(ta, wantTa)
 
@@ -194,7 +192,7 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 	}
 }
 
-func mergeWithOverride(dst, src interface{}) error {
+func mergeWithOverride(dst, src any) error {
 	return mergo.Merge(dst, src, mergo.WithOverride)
 }
 
@@ -306,11 +304,7 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
@@ -330,11 +324,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.Strategy = desired.Spec.Strategy
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
@@ -368,11 +358,7 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateCertificate(existing, desired *cmv1.Certificate) {
@@ -399,7 +385,6 @@ func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 	existing.Spec = desired.Spec
 
 	return nil
-
 }
 
 func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {

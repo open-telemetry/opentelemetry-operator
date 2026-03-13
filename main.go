@@ -19,7 +19,9 @@ import (
 	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
@@ -32,6 +34,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -49,6 +52,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
@@ -60,6 +64,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	wh "github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
@@ -75,6 +80,7 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -139,7 +145,7 @@ func main() {
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
 		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(watchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
@@ -157,6 +163,40 @@ func main() {
 				setupLog.Error(err, "error setting up TLS")
 			}
 		},
+	}
+	var initialTLSProfileSpec configv1.TLSProfileSpec
+	// Fetch TLS profile from the cluster if enabled
+	if cfg.TLS.UseClusterProfile {
+		// Create a temporary client for TLS profile fetch (before the manager is created).
+		// The TLS profile should be set before the manager starts.
+		tempClient, errClient := client.New(restConfig, client.Options{Scheme: scheme})
+		if errClient != nil {
+			setupLog.Error(errClient, "unable to create temporary client for TLS profile fetch")
+			os.Exit(1)
+		}
+
+		// Fetch initial TLS profile using controller-runtime-common
+		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(context.Background(), tempClient)
+		if err != nil {
+			setupLog.Error(err, "unable to get TLS profile from cluster")
+			os.Exit(1)
+		}
+
+		// Convert to TLS options function for operator's own TLS (webhooks, metrics)
+		tlsConfigFunc, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(initialTLSProfileSpec)
+		if len(unsupportedCiphers) > 0 {
+			setupLog.Info("some TLS ciphers from cluster profile are not supported by Go", "unsupportedCiphers", unsupportedCiphers)
+		}
+
+		// Add cluster profile to the TLS funcs, it will override the statically provided config.
+		optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, tlsConfigFunc)
+	}
+	if cfg.TLS.ConfigureOperands {
+		tlsCfg := &tls.Config{}
+		for _, t := range optionsTlSOptsFuncs {
+			t(tlsCfg)
+		}
+		cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites)
 	}
 
 	// Configure metrics server options
@@ -210,7 +250,33 @@ func main() {
 		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
+	// Create a cancellable context for graceful shutdown on TLS profile change
+	signalCtx := ctrl.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(signalCtx)
+	defer cancel()
+
+	// Setup TLS profile watcher for graceful restart on TLS profile change.
+	// When the cluster's TLS security profile changes (e.g., from Intermediate to Modern),
+	// the watcher detects this and cancels the context, triggering a graceful shutdown.
+	// The operator pod will restart and apply the new TLS settings to webhooks, metrics,
+	// and operand configurations. This approach is recommended by OpenShift because:
+	// 1. TLS profile changes are cluster-level security policy changes
+	// 2. All connections (existing and new) should use the new profile uniformly
+	// 3. It avoids complexity of hot-reloading TLS config on existing connections
+	if cfg.TLS.UseClusterProfile {
+		watcher := &openshifttls.SecurityProfileWatcher{
+			Client:                mgr.GetClient(),
+			InitialTLSProfileSpec: initialTLSProfileSpec,
+			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
+				setupLog.Info("TLS security profile changed, triggering graceful restart")
+				cancel()
+			},
+		}
+		if err = watcher.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to setup TLS profile watcher")
+			os.Exit(1)
+		}
+	}
 
 	// Apply feature gates from Config if set (could be from file or env vars)
 	// This must be done before checking feature gates like EnableOperatorNetworkPolicy
@@ -417,18 +483,22 @@ func main() {
 				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
 				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
-			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+			// TLS defaults for operands are now applied at reconciliation time (ConfigMap generation)
+			// via cfg.Internal.OperandTLSProfile, which was set earlier in this function.
+			// This ensures collectors automatically get updated TLS settings when the operator
+			// restarts after a cluster TLS profile change.
+			if err = wh.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 				os.Exit(1)
 			}
 		}
 		if cfg.TargetAllocatorAvailability == targetallocator.Available {
-			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
+			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
 			}
 		}
-		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
+		if err = wh.SetupInstrumentationWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
@@ -442,7 +512,7 @@ func main() {
 		})
 
 		if cfg.OpAmpBridgeAvailability == opampbridge.Available {
-			if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
+			if err = wh.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
 				os.Exit(1)
 			}
@@ -459,6 +529,12 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+	if cfg.EnableWebhooks {
+		if err := mgr.AddReadyzCheck("webhook", mgr.GetWebhookServer().StartedChecker()); err != nil {
+			setupLog.Error(err, "unable to set up webhook ready check")
+			os.Exit(1)
+		}
 	}
 
 	setupLog.Info("starting manager")
@@ -478,7 +554,7 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if len(endpointSlices.Items) == 0 {
-		return fmt.Errorf("no EndpointSlice found for kubernetes service in default namespace")
+		return errors.New("no EndpointSlice found for kubernetes service in default namespace")
 	}
 
 	for _, endpointSlice := range endpointSlices.Items {
@@ -496,11 +572,11 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if cfg.Internal.KubeAPIServerPort == 0 {
-		return fmt.Errorf("no https port found in kubernetes EndpointSlice")
+		return errors.New("no https port found in kubernetes EndpointSlice")
 	}
 
 	if len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return fmt.Errorf("no endpoint IPs found in kubernetes EndpointSlice")
+		return errors.New("no endpoint IPs found in kubernetes EndpointSlice")
 	}
 
 	setupLog.Info("Discovered Kubernetes API server", "port", cfg.Internal.KubeAPIServerPort, "ips", cfg.Internal.KubeAPIServerIPs)
@@ -510,12 +586,12 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
-		return fmt.Errorf("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
+		return errors.New("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
 	}
 
 	// Check if API server info was discovered
 	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return fmt.Errorf("Kubernetes API server info not discovered from EndpointSlice")
+		return errors.New("Kubernetes API server info not discovered from EndpointSlice") //nolint:staticcheck // ST1005
 	}
 
 	var policyOpts []operatornetworkpolicy.Option
@@ -575,13 +651,9 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 	return nil
 }
 
-func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {
-	split := strings.Split(fipsFlag, ",")
-	var receivers []string
-	var exporters []string
-	var processors []string
-	var extensions []string
-	for _, val := range split {
+func parseFipsFlag(fipsFlag string) (receivers, exporters, processors, extensions []string) {
+	split := strings.SplitSeq(fipsFlag, ",")
+	for val := range split {
 		val = strings.TrimSpace(val)
 		typeAndName := strings.Split(val, ".")
 		if len(typeAndName) == 2 {

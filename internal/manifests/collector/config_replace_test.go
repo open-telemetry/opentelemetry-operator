@@ -29,11 +29,11 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+		prometheusConfig := promCfgMap["config"].(map[any]any)
 
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
-		expectedTAConfig := map[interface{}]interface{}{
+		expectedTAConfig := map[any]any{
 			"endpoint":     "http://test-targetallocator:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
@@ -54,11 +54,11 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+		prometheusConfig := promCfgMap["config"].(map[any]any)
 
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
-		expectedTAConfig := map[interface{}]interface{}{
+		expectedTAConfig := map[any]any{
 			"endpoint":     "http://test-targetallocator:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
@@ -98,7 +98,6 @@ func TestPrometheusParser(t *testing.T) {
 		}
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
-
 }
 
 func TestReplaceConfig(t *testing.T) {
@@ -117,7 +116,6 @@ func TestReplaceConfig(t *testing.T) {
 	})
 
 	t.Run("should remove scrape configs if TargetAllocator is enabled", func(t *testing.T) {
-
 		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
@@ -139,6 +137,6 @@ func TestReplaceConfig(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		assert.Equal(t, customInterval.Duration.String(), promCfgMap["target_allocator"].(map[interface{}]interface{})["interval"])
+		assert.Equal(t, customInterval.Duration.String(), promCfgMap["target_allocator"].(map[any]any)["interval"])
 	})
 }

@@ -46,7 +46,6 @@ func TestNoCollectorReassignment(t *testing.T) {
 
 	newTargetItems := s.TargetItems()
 	assert.Equal(t, targetItems, newTargetItems)
-
 }
 
 // Tests that the newly added collector instance does not get assigned any target when the targets remain the same.
@@ -101,7 +100,6 @@ func TestNoAssignmentToNewCollector(t *testing.T) {
 
 // Tests that the delta in number of targets per collector is less than 15% of an even distribution.
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
-
 	// prepare allocator with 3 collectors and 'random' amount of targets
 	s, _ := New("least-weighted", logger)
 
@@ -129,7 +127,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	toDelete := len(targets) / 2
 	counter := 0
 	for index := range targets {
-		shouldDelete := rand.Intn(toDelete) //nolint:gosec
+		shouldDelete := rand.Intn(toDelete)
 		if counter < shouldDelete {
 			targets = slices.Delete(targets, index, index)
 		}

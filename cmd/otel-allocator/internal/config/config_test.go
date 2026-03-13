@@ -4,6 +4,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -657,7 +658,7 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name:        "no namespace",
 			fileConfig:  Config{PrometheusCR: PrometheusCRConfig{Enabled: true}},
-			expectedErr: fmt.Errorf("collector namespace must be set"),
+			expectedErr: errors.New("collector namespace must be set"),
 		},
 		{
 			name:        "promCR enabled, no Prometheus config",
@@ -667,12 +668,12 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name:        "promCR disabled, no Prometheus config",
 			fileConfig:  Config{PromConfig: nil},
-			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+			expectedErr: errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
 			name:        "promCR disabled, Prometheus config present, no scrapeConfigs",
 			fileConfig:  Config{PromConfig: &promconfig.Config{}},
-			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+			expectedErr: errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
 			name: "promCR disabled, Prometheus config present, scrapeConfigs present",
@@ -701,12 +702,11 @@ func TestValidateConfig(t *testing.T) {
 				},
 				CollectorNamespace: "default",
 			},
-			expectedErr: fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set"),
+			expectedErr: errors.New("only one of allowNamespaces or denyNamespaces can be set"),
 		},
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)
@@ -748,7 +748,6 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			allowList, denyList := tc.promCRConfig.GetAllowDenyLists()
 			assert.Equal(t, tc.expectedAllowList, allowList)
@@ -779,7 +778,7 @@ users:
   user:
     token: dummy-token
 `
-		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0600)
+		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0o600)
 		require.NoError(t, err)
 		return kubeConfigPath
 	}
@@ -788,7 +787,7 @@ users:
 		// Setup: create empty config file and dummy kube config
 		tempDir := t.TempDir()
 		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
-		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -823,7 +822,7 @@ https:
   enabled: false
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -858,7 +857,7 @@ https:
 kube_config_file_path: "/config/kube.config"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -911,7 +910,7 @@ https:
 kube_config_file_path: "` + kubeConfigPath + `"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		// Prepare args for Load function with only config file path
@@ -936,7 +935,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		// Setup: create empty config file and dummy kube config
 		tempDir := t.TempDir()
 		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
-		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -973,7 +972,7 @@ prometheus_cr:
 kube_config_file_path: "` + kubeConfigPath + `"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		// Environment variable sets value

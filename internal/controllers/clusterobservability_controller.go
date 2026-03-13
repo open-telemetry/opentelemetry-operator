@@ -5,7 +5,9 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -91,7 +93,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	log := r.log.WithValues("clusterobservability", req.NamespacedName)
 
 	var instance v1alpha1.ClusterObservability
-	if err := r.Client.Get(ctx, req.NamespacedName, &instance); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch ClusterObservability")
 		}
@@ -112,7 +114,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	if !isActive {
 		// This instance is conflicted, update status and skip reconciliation
 		params := r.getParams(instance)
-		return coStatus.HandleReconcileStatus(ctx, log, params, fmt.Errorf("multiple ClusterObservability resources detected"))
+		return coStatus.HandleReconcileStatus(ctx, log, params, errors.New("multiple ClusterObservability resources detected"))
 	}
 
 	// TODO: Add upgrade support
@@ -240,7 +242,6 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 
 				return r.Update(ctx, latest)
 			})
-
 			if err != nil {
 				return fmt.Errorf("failed to update OpenTelemetryCollector %s: %w", key, err)
 			}
@@ -270,7 +271,6 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 
 				return r.Update(ctx, latest)
 			})
-
 			if err != nil {
 				return fmt.Errorf("failed to update Instrumentation %s: %w", key, err)
 			}
@@ -296,30 +296,28 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 	existing.SetGroupVersionKind(unstructuredObj.GroupVersionKind())
 
 	key := client.ObjectKeyFromObject(unstructuredObj)
-	getErr := r.Client.Get(ctx, key, existing)
+	getErr := r.Get(ctx, key, existing)
 	if getErr != nil && !apierrors.IsNotFound(getErr) {
 		return fmt.Errorf("failed to get existing unstructured resource %s: %w", unstructuredObj.GetName(), getErr)
 	}
 
 	if apierrors.IsNotFound(getErr) {
 		// Create new resource
-		if createErr := r.Client.Create(ctx, unstructuredObj); createErr != nil {
+		if createErr := r.Create(ctx, unstructuredObj); createErr != nil {
 			return fmt.Errorf("failed to create unstructured resource %s: %w", unstructuredObj.GetName(), createErr)
 		}
 		log.Info("Created unstructured resource",
 			"kind", unstructuredObj.GetKind(),
 			"name", unstructuredObj.GetName())
-	} else {
 		// Check if update is needed by comparing specs
-		if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
-			unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
-			if updateErr := r.Client.Update(ctx, unstructuredObj); updateErr != nil {
-				return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
-			}
-			log.Info("Updated unstructured resource",
-				"kind", unstructuredObj.GetKind(),
-				"name", unstructuredObj.GetName())
+	} else if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
+		unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
+		if updateErr := r.Update(ctx, unstructuredObj); updateErr != nil {
+			return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
 		}
+		log.Info("Updated unstructured resource",
+			"kind", unstructuredObj.GetKind(),
+			"name", unstructuredObj.GetName())
 	}
 
 	return nil
@@ -371,7 +369,7 @@ func (r *ClusterObservabilityReconciler) SetupCaches(mgr ctrl.Manager) error {
 }
 
 // findClusterObservabilityForNamespace finds ClusterObservability instances when namespaces change.
-func (r *ClusterObservabilityReconciler) findClusterObservabilityForNamespace(_ context.Context, obj client.Object) []ctrl.Request {
+func (r *ClusterObservabilityReconciler) findClusterObservabilityForNamespace(context.Context, client.Object) []ctrl.Request {
 	ctx := context.Background()
 
 	var clusterObservabilityList v1alpha1.ClusterObservabilityList
@@ -505,7 +503,6 @@ func (r *ClusterObservabilityReconciler) cleanupManagedResources(ctx context.Con
 
 // cleanupClusterScopedResources removes cluster-scoped resources that can't use owner references.
 func (r *ClusterObservabilityReconciler) cleanupClusterScopedResources(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-
 	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		agentCollectorName := fmt.Sprintf("%s-%s", instance.Name, clusterobservability.AgentCollectorSuffix)
 		sccName := fmt.Sprintf("%s-hostaccess", agentCollectorName)
@@ -530,7 +527,7 @@ func (r *ClusterObservabilityReconciler) cleanupClusterScopedResources(ctx conte
 // GetOwnedResourceTypes returns CRs directly created by ClusterObservability.
 // Note: We only track OpenTelemetry CRs we create, not the underlying K8s resources
 // (those are managed by OpenTelemetryCollector controller).
-func (r *ClusterObservabilityReconciler) GetOwnedResourceTypes() []client.Object {
+func (*ClusterObservabilityReconciler) GetOwnedResourceTypes() []client.Object {
 	return []client.Object{
 		&v1beta1.OpenTelemetryCollector{},
 		&v1alpha1.Instrumentation{},
@@ -553,9 +550,7 @@ func (r *ClusterObservabilityReconciler) findClusterObservabilityOwnedObjects(ct
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 	}
 
 	return ownedObjects, nil

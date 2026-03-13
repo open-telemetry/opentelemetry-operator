@@ -5,7 +5,7 @@ package upgrade
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -20,9 +20,9 @@ func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, nil
 	}
 
-	//Removing deprecated Spec.Args (--metrics-addr and --metrics-level) based on
+	// Removing deprecated Spec.Args (--metrics-addr and --metrics-level) based on
 	// https://github.com/open-telemetry/opentelemetry-collector/pull/4695
-	//Both args can be used now on the Spec.Config
+	// Both args can be used now on the Spec.Config
 	foundMetricsArgs := make(map[string]string)
 	for argKey, argValue := range otelcol.Spec.Args {
 		if argKey == "--metrics-addr" || argKey == "--metrics-level" {
@@ -37,20 +37,20 @@ func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		if err != nil {
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to parse configuration: %w", err)
 		}
-		serviceConfig, ok := cfg["service"].(map[interface{}]interface{})
+		serviceConfig, ok := cfg["service"].(map[any]any)
 		if !ok {
-			cfg["service"] = make(map[interface{}]interface{})
-			serviceConfig, _ = cfg["service"].(map[interface{}]interface{})
+			cfg["service"] = make(map[any]any)
+			serviceConfig, _ = cfg["service"].(map[any]any)
 		}
-		telemetryConfig, ok := serviceConfig["telemetry"].(map[interface{}]interface{})
+		telemetryConfig, ok := serviceConfig["telemetry"].(map[any]any)
 		if !ok {
-			serviceConfig["telemetry"] = make(map[interface{}]interface{})
-			telemetryConfig, _ = serviceConfig["telemetry"].(map[interface{}]interface{})
+			serviceConfig["telemetry"] = make(map[any]any)
+			telemetryConfig, _ = serviceConfig["telemetry"].(map[any]any)
 		}
-		metricsConfig, ok := telemetryConfig["metrics"].(map[interface{}]interface{})
+		metricsConfig, ok := telemetryConfig["metrics"].(map[any]any)
 		if !ok {
-			telemetryConfig["metrics"] = make(map[interface{}]interface{})
-			metricsConfig, _ = telemetryConfig["metrics"].(map[interface{}]interface{})
+			telemetryConfig["metrics"] = make(map[any]any)
+			metricsConfig, _ = telemetryConfig["metrics"].(map[any]any)
 		}
 
 		// if there are already those Args under Spec.Config
@@ -73,7 +73,7 @@ func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		for k := range foundMetricsArgs {
 			keys = append(keys, k)
 		}
-		sort.Strings(keys)
+		slices.Sort(keys)
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()
 		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", keys))

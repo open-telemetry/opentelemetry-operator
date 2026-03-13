@@ -46,9 +46,7 @@ const (
 	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
 )
 
-var (
-	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
-)
+var DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 
 var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
 	monitoringv1.OpenMetricsText1_0_0,
@@ -109,13 +107,13 @@ func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
+		if t != reflect.TypeFor[model.Duration]() && t != reflect.TypeFor[time.Duration]() {
 			return data, nil
 		}
 
@@ -129,13 +127,13 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&promconfig.Config{}) {
+		if t != reflect.TypeFor[*promconfig.Config]() {
 			return data, nil
 		}
 
@@ -163,13 +161,13 @@ func MapToLabelSelector() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&metav1.LabelSelector{}) {
+		if t != reflect.TypeFor[*metav1.LabelSelector]() {
 			return data, nil
 		}
 
@@ -291,7 +289,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		return err
 	}
 
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = yaml.Unmarshal(yamlFile, &m)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
@@ -311,11 +309,7 @@ func unmarshal(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	if err := decoder.Decode(m); err != nil {
-		return err
-	}
-
-	return nil
+	return decoder.Decode(m)
 }
 
 func CreateDefaultConfig() Config {
@@ -377,14 +371,14 @@ func Load(args []string) (*Config, error) {
 // ValidateConfig validates the cli and file configs together.
 func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
-	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
-		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	if !config.PrometheusCR.Enabled && !scrapeConfigsPresent {
+		return errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	if config.CollectorNamespace == "" {
-		return fmt.Errorf("collector namespace must be set")
+		return errors.New("collector namespace must be set")
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
-		return fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set")
+		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
 	}
 	return nil
 }
@@ -404,7 +398,7 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 
 	// Register callback to reload CA when server cert changes
 	// Since Kubernetes updates secrets atomically, the CA will be updated at the same time
-	certWatcher.RegisterCallback(func(cert tls.Certificate) {
+	certWatcher.RegisterCallback(func(tls.Certificate) {
 		if reloadErr := caReloader.Reload(); reloadErr != nil {
 			logger.Error(reloadErr, "Failed to reload CA via callback")
 		}
@@ -421,7 +415,7 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 		VerifyConnection: func(cs tls.ConnectionState) error {
 			// Require client certificate
 			if len(cs.PeerCertificates) == 0 {
-				return fmt.Errorf("no client certificate provided")
+				return errors.New("no client certificate provided")
 			}
 
 			// Verify using current CA pool (which can be reloaded)
@@ -449,8 +443,8 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 
 // GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
 // If the deny list is empty, it defaults to an empty map.
-func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string]struct{}) {
-	allowList := map[string]struct{}{}
+func (c PrometheusCRConfig) GetAllowDenyLists() (allowList, denyList map[string]struct{}) {
+	allowList = map[string]struct{}{}
 	if len(c.AllowNamespaces) != 0 {
 		for _, ns := range c.AllowNamespaces {
 			allowList[ns] = struct{}{}
@@ -459,7 +453,7 @@ func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string
 		allowList = map[string]struct{}{v1.NamespaceAll: {}}
 	}
 
-	denyList := map[string]struct{}{}
+	denyList = map[string]struct{}{}
 	if len(c.DenyNamespaces) != 0 {
 		for _, ns := range c.DenyNamespaces {
 			denyList[ns] = struct{}{}
