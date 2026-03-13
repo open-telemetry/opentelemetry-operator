@@ -101,6 +101,21 @@ type Pipeline struct {
 	Receivers  []string `json:"receivers" yaml:"receivers"`
 }
 
+// Config encapsulates collector config.
+type Config struct {
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Receivers AnyConfig `json:"receivers" yaml:"receivers"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Exporters AnyConfig `json:"exporters" yaml:"exporters"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Processors *AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Connectors *AnyConfig `json:"connectors,omitempty" yaml:"connectors,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Service    Service    `json:"service" yaml:"service"`
+}
+
 // GetEnabledComponents constructs a list of enabled components by component type.
 func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]any {
 	toReturn := map[ComponentKind]map[string]any{
@@ -131,21 +146,6 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]any {
 		toReturn[KindExtension][componentId] = struct{}{}
 	}
 	return toReturn
-}
-
-// Config encapsulates collector config.
-type Config struct {
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Receivers AnyConfig `json:"receivers" yaml:"receivers"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Exporters AnyConfig `json:"exporters" yaml:"exporters"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Processors *AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Connectors *AnyConfig `json:"connectors,omitempty" yaml:"connectors,omitempty"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
-	Service    Service    `json:"service" yaml:"service"`
 }
 
 // getRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
