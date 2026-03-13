@@ -25,7 +25,6 @@ linters:
         - appendCombine
         - assignOp
         - builtinShadow
-        - commentedOutCode
         - deferInLoop
         - emptyFallthrough
         - exitAfterDefer
