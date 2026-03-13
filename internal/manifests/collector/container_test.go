@@ -745,7 +745,6 @@ service:
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
-	// verify
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
@@ -802,7 +801,6 @@ service:
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
-	// verify
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
