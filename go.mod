@@ -25,7 +25,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid v1.3.1
-	github.com/open-telemetry/opamp-go v0.15.0
+	github.com/open-telemetry/opamp-go v0.23.0
 	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
 	github.com/operator-framework/api v0.38.0
 	github.com/operator-framework/operator-lib v0.19.0
@@ -259,6 +259,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/michel-laterman/proxy-connect-dialer-go v0.1.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/openshift/library-go v0.0.0-20260210145149-d0e860e8d752 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
