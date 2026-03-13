@@ -367,10 +367,12 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg)
-	if err != nil {
-		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
-		os.Exit(1)
+	if cfg.EnableInstrumentationCRDs {
+		err = addDependencies(ctx, mgr, cfg)
+		if err != nil {
+			setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+			os.Exit(1)
+		}
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler

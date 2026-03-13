@@ -403,6 +403,11 @@ e2e-instrumentation-default: e2e-instrumentation
 e2e-instrumentation: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
 
+# no-crds end-to-tests
+.PHONY: e2e-no-crds
+e2e-no-crds: chainsaw
+	$(CHAINSAW) test --set managerimage=$(IMG) --set javaimage=$(INSTRUMENTATION_JAVA_IMG) --namespace default --test-dir ./tests/e2e-no-crds --report-name  e2e-no-crds
+
 # Log operator pod information for debugging
 .PHONY: e2e-log-operator
 e2e-log-operator:
@@ -477,6 +482,10 @@ e2e-crd-validations: chainsaw
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+	@mkdir -p ./.testresults/e2e
+
+.PHONY: prepare-e2e-no-crds
+prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all load-images-instrumentation
 	@mkdir -p ./.testresults/e2e
 
 # Run operator-sdk scorecard tests for bundles
