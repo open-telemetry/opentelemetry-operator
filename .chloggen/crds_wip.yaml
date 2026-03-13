@@ -13,4 +13,23 @@ issues: [4201]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  With this change, you can deploy the manager as a mutating webhook without setting up a v1alpha1.Instrumentation custom resource
+  or the v1alpha1.Instrumentation CRD.
+  
+  Instead, you can now set up instrumentation by configuring the manager via its config file with these settings:
+  ```yaml
+    ignore-missing-collector-crds: true 
+    enable-instrumentation-crds: false # Ignore that the CRD is not registered.
+    enable-multi-instrumentation: false
+    instrumentations: # Static configuration for our instrumentation
+      spec:
+        exporter:
+          endpoint: http://collector.default.svc:4318
+        propagators:
+          - tracecontext
+          - baggage
+          - b3
+        java:
+          image: "java-autoinstrumentation:dev"
+  ```
