@@ -259,7 +259,6 @@ func TestApply(t *testing.T) {
 		relabelCfg[key] = nil
 	}
 
-	// cfg = createMockConfig(relabelCfg)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems = allocatorPrehook.Apply(targets)
 	// relabelCfg is empty so targets should be unfiltered
@@ -431,7 +430,8 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 
 	addr := lb.Get(model.AddressLabel)
 
-	if err = config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
+	err = config.CheckTargetAddress(model.LabelValue(addr))
+	if err != nil {
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 

@@ -97,7 +97,7 @@ func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) 
 
 	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)
 	if len(javaSpec.Extensions) > 0 {
-		javaJVMArgument = javaJVMArgument + fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", containerMountPath)
+		javaJVMArgument += fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", containerMountPath)
 	}
 
 	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)

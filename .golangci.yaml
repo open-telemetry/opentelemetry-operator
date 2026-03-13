@@ -23,9 +23,7 @@ linters:
       disabled-checks:
         - appendAssign
         - appendCombine
-        - assignOp
         - builtinShadow
-        - commentedOutCode
         - deferInLoop
         - emptyFallthrough
         - exitAfterDefer
@@ -33,6 +31,7 @@ linters:
         - importShadow
         - rangeValCopy
         - sloppyReassign
+        - typeDefFirst
         - whyNoLint
       enable-all: true
     goheader:
