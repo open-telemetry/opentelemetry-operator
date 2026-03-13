@@ -36,7 +36,7 @@ func Truncate(format string, max int, values ...any) string {
 					excess = 0
 				} else {
 					value = "" // skip this value entirely
-					excess = excess - len(s)
+					excess -= len(s)
 				}
 			}
 
