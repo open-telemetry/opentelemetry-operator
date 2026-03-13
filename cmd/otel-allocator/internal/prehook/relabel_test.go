@@ -431,7 +431,8 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 
 	addr := lb.Get(model.AddressLabel)
 
-	if err = config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
+	err = config.CheckTargetAddress(model.LabelValue(addr))
+	if err != nil {
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 
