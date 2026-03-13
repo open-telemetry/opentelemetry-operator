@@ -1366,9 +1366,6 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 	err = mdClient.Tracker().Update(secretGVR, updatedSecretMeta, namespace)
 	require.NoError(t, err)
 
-	// Give time for the tracker update to propagate to the informer
-	time.Sleep(100 * time.Millisecond)
-
 	// Wait for the informer event to be processed and verify the store was updated automatically
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		got, err = w.LoadConfig(context.Background())
