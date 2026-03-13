@@ -39,6 +39,7 @@ type podMutationWebhook struct {
 	logger      logr.Logger
 	podMutators []PodMutator
 	config      config.Config
+	metrics     PodMutationMetricsRecorder
 }
 
 // PodMutator mutates a pod.
@@ -47,13 +48,14 @@ type PodMutator interface {
 }
 
 // NewWebhookHandler creates a new WebhookHandler.
-func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder admission.Decoder, cl client.Client, podMutators []PodMutator) WebhookHandler {
+func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder admission.Decoder, cl client.Client, podMutators []PodMutator, metrics PodMutationMetricsRecorder) WebhookHandler {
 	return &podMutationWebhook{
 		config:      cfg,
 		decoder:     decoder,
 		logger:      logger,
 		client:      cl,
 		podMutators: podMutators,
+		metrics:     metrics,
 	}
 }
 
