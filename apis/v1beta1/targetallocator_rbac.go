@@ -27,6 +27,10 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 		Resources: []string{"configmaps"},
 		Verbs:     []string{"get"},
 	}, {
+		APIGroups: []string{""},
+		Resources: []string{"secrets"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
 		APIGroups: []string{"discovery.k8s.io"},
 		Resources: []string{"endpointslices"},
 		Verbs:     []string{"get", "list", "watch"},
