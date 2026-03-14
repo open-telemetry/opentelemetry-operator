@@ -1230,7 +1230,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 }
 
 // TestSecretInformerUpdatesStore verifies that when a secret is updated through the informer,
-// the asset store is automatically updated and LoadConfig reflects the new values
+// the asset store is automatically updated and LoadConfig reflects the new values.
 func TestSecretInformerUpdatesStore(t *testing.T) {
 	namespace := "test"
 	portName := "web"
