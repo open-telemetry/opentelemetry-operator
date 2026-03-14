@@ -367,10 +367,12 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg)
-	if err != nil {
-		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
-		os.Exit(1)
+	if cfg.EnableInstrumentationCRDs {
+		err = addDependencies(ctx, mgr, cfg)
+		if err != nil {
+			setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+			os.Exit(1)
+		}
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
@@ -643,7 +645,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 			mgr.GetEventRecorderFor("opentelemetry-operator"),
 			cfg,
 		)
-		return u.ManagedInstances(c)
+		return u.ManagedInstances(c, cfg)
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
