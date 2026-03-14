@@ -823,8 +823,16 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
 			}
+
+			// Wait for the reconciler's cache to see the collector
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				actual := &v1beta1.OpenTelemetryCollector{}
+				getErr := reconciler.Get(clientCtx, nsn, actual)
+				assert.NoError(collect, getErr)
+			}, time.Second*10, time.Millisecond*100)
+
 			_, reconcileErr := reconciler.Reconcile(clientCtx, req)
-			assert.NoError(t, reconcileErr)
+			require.NoError(t, reconcileErr)
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				list, listErr := getAllOwnedResources(clientCtx, reconciler, collector, opts...)
@@ -838,7 +846,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			tc.mutateCollector(collector)
 			err = k8sClient.Update(clientCtx, collector)
 			require.NoError(t, err)
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
 				actual := &v1beta1.OpenTelemetryCollector{}
 				err = reconciler.Get(clientCtx, nsn, actual)
 				assert.NoError(collect, err)
@@ -846,7 +854,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			}, time.Second*30, time.Millisecond*100)
 
 			_, reconcileErr = reconciler.Reconcile(clientCtx, req)
-			assert.NoError(t, reconcileErr)
+			require.NoError(t, reconcileErr)
 
 			expectedResourceCount := expectedStartingResourceCount - tc.expectedResourcesDeletedCount
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -1448,6 +1456,14 @@ func TestUpgrade(t *testing.T) {
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
 				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
 				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
+				assert.NoError(collect, getErr)
+				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
+			}, time.Second*10, time.Millisecond*10)
+
+			// Wait for the reconciler's cache to see the correct status
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
+				getErr := reconciler.Get(testCtx, nsn, freshOtelcol)
 				assert.NoError(collect, getErr)
 				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
 			}, time.Second*10, time.Millisecond*10)
