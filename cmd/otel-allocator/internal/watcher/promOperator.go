@@ -63,7 +63,13 @@ func NewPrometheusCRWatcher(
 	allowList, denyList := cfg.PrometheusCR.GetAllowDenyLists()
 
 	monitoringInformerFactory := informers.NewMonitoringInformerFactories(allowList, denyList, monitoringclient, allocatorconfig.DefaultResyncTime, nil)
-	metaDataInformerFactory := informers.NewMetadataInformerFactory(allowList, denyList, mdClient, allocatorconfig.DefaultResyncTime, nil)
+
+	// Scope the metadata informer factory to the collector namespace only.
+	// This is used for the secrets informer so that it only needs namespace-scoped RBAC
+	// (a Role in kube-system) rather than cluster-wide secrets list/watch access.
+	secretsAllowList := map[string]struct{}{cfg.CollectorNamespace: {}}
+	metaDataInformerFactory := informers.NewMetadataInformerFactory(secretsAllowList, denyList, mdClient, allocatorconfig.DefaultResyncTime, nil)
+
 	monitoringInformers, err := getInformers(monitoringInformerFactory, cfg.ClusterConfig, promLogger, metaDataInformerFactory)
 	if err != nil {
 		return nil, err
@@ -314,6 +320,8 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformer
 	}
 
+	// Use the namespace-scoped secrets metadata informer factory so that secrets
+	// list/watch only requires a namespaced Role instead of cluster-wide access.
 	secretInformers, err := informers.NewInformersForResourceWithTransform(metaDataInformerFactory, v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)), informers.PartialObjectMetadataStrip(operator.SecretGVK()))
 	if err != nil {
 		return nil, err
