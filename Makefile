@@ -74,6 +74,33 @@ INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
+# E2E test application images published to ghcr.io
+E2E_TEST_APP_IMGS ?= \
+	${IMG_PREFIX}/e2e-test-app-python:main \
+	${IMG_PREFIX}/e2e-test-app-java:main \
+	${IMG_PREFIX}/e2e-test-app-nodejs:main \
+	${IMG_PREFIX}/e2e-test-app-dotnet:main \
+	${IMG_PREFIX}/e2e-test-app-golang:main \
+	${IMG_PREFIX}/e2e-test-app-apache-httpd:main \
+	${IMG_PREFIX}/e2e-test-app-metrics-basic-auth:main
+
+# Third-party images used in e2e tests, pre-pulled to reduce flakiness
+E2E_TEST_EXTERNAL_IMGS ?= \
+	docker.io/curlimages/curl:latest \
+	docker.io/library/rabbitmq:3 \
+	ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1 \
+	docker.io/library/alpine:latest \
+	docker.io/library/rabbitmq:latest \
+	docker.io/library/busybox:latest \
+	docker.io/nginxinc/nginx-unprivileged:1.25.3 \
+	docker.io/nicolaka/netshoot:latest \
+	ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.121.0 \
+	ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s \
+	ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0 \
+	docker.io/jaegertracing/jaeger:latest \
+	docker.io/library/python:3.8-slim \
+	docker.io/nginxinc/nginx-unprivileged:1.26.2
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -947,9 +974,17 @@ else
 	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION))
 endif
 
+# Pull external images used by e2e tests so they can be included in the image archive
+.PHONY: pull-test-images
+pull-test-images:
+	@for img in $(E2E_TEST_APP_IMGS) $(E2E_TEST_EXTERNAL_IMGS); do \
+		echo "Pulling $$img..."; \
+		docker pull "$$img" || echo "WARNING: failed to pull $$img, skipping"; \
+	done
+
 # Create container image archive with all images
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all pull-test-images
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -963,6 +998,9 @@ endif
 	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
+	@for img in $(E2E_TEST_APP_IMGS) $(E2E_TEST_EXTERNAL_IMGS); do \
+		echo "$$img" >>$(IMAGE_LIST_FILE); \
+	done
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
 
 ##@ Validation
