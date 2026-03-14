@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+type: Opaque
+stringData:
+  username: user
+  password: t0p$ecreT
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          value: user
+        - name: BASIC_AUTH_PASSWORD
+          value: t0p$ecreT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+  labels:
+    app: metrics-app
+spec:
+  ports:
+  - name: metrics
+    port: 9123
+    targetPort: 9123
+    protocol: TCP
+  selector:
+    app: metrics-app
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+  labels:
+    app: metrics-app
+spec:
+  selector:
+    matchLabels:
+      app: metrics-app
+  endpoints:
+  - port: metrics
+    interval: 10s
+    basicAuth:
+      username:
+        name: metrics-app-secret
+        key: username
+      password:
+        name: metrics-app-secret
+        key: password
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-in-config
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-config
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - |
+              CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+              echo "$CONFIG" | grep -q "metrics-servicemonitor" && \
+              echo "$CONFIG" | grep -q "basic_auth" && \
+              echo "$CONFIG" | grep -q "user"

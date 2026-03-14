@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: targetallocator-prometheuscr-secrets
+spec:
+  steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: targetallocator-prometheuscr-secrets
+        - name: clusterRoleBindingName
+          value: (join('-', ['ta', $namespace]))
+  - name: step-00-initial-setup
+    try:
+    - apply:
+        template: true
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-01-create-secret-and-servicemonitor
+    try:
+    - apply:
+        file: 01-install.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-02-update-secret
+    try:
+    - apply:
+        file: 02-install.yaml
+    - assert:
+        file: 02-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-03-delete-secret
+    try:
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Secret
+          name: metrics-app-secret
+    - assert:
+        file: 03-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator

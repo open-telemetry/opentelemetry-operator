@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-cr-secrets-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-cr-secrets-targetallocator
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-cr-secrets-targetallocator

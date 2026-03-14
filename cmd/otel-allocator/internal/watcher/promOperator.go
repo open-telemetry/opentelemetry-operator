@@ -13,6 +13,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/go-logr/logr"
+	promMonitoring "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
@@ -54,11 +56,21 @@ func NewPrometheusCRWatcher(
 	slogger := slog.New(logr.ToSlogHandler(logger))
 	var resourceSelector *prometheus.ResourceSelector
 
+	mdClient, err := metadata.NewForConfig(cfg.ClusterConfig)
+	if err != nil {
+		return nil, err
+	}
 	allowList, denyList := cfg.PrometheusCR.GetAllowDenyLists()
 
-	factory := informers.NewMonitoringInformerFactories(allowList, denyList, monitoringclient, allocatorconfig.DefaultResyncTime, nil)
+	monitoringInformerFactory := informers.NewMonitoringInformerFactories(allowList, denyList, monitoringclient, allocatorconfig.DefaultResyncTime, nil)
 
-	monitoringInformers, err := getInformers(factory, cfg.ClusterConfig, promLogger)
+	// Scope the metadata informer factory to the collector namespace only.
+	// This is used for the secrets informer so that it only needs namespace-scoped RBAC
+	// (a Role in kube-system) rather than cluster-wide secrets list/watch access.
+	secretsAllowList := map[string]struct{}{cfg.CollectorNamespace: {}}
+	metaDataInformerFactory := informers.NewMetadataInformerFactory(secretsAllowList, denyList, mdClient, allocatorconfig.DefaultResyncTime, nil)
+
+	monitoringInformers, err := getInformers(monitoringInformerFactory, cfg.ClusterConfig, promLogger, metaDataInformerFactory)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +209,7 @@ func checkCRDAvailability(dcl discovery.DiscoveryInterface, resourceName string)
 
 	apiGroups := apiList.Groups
 	for _, group := range apiGroups {
-		if group.Name == "monitoring.coreos.com" {
+		if group.Name == promMonitoring.GroupName {
 			for _, version := range group.Versions {
 				resources, err := dcl.ServerResourcesForGroupVersion(version.GroupVersion)
 				if err != nil {
@@ -247,7 +259,7 @@ func createInformerIfAvailable(
 }
 
 // getInformers returns a map of informers for the given resources.
-func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger) (map[string]*informers.ForResource, error) {
+func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger, metaDataInformerFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
 
 	// Get the discovery client
@@ -306,6 +318,16 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 	if scrapeConfigInformer != nil {
 		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformer
+	}
+
+	// Use the namespace-scoped secrets metadata informer factory so that secrets
+	// list/watch only requires a namespaced Role instead of cluster-wide access.
+	secretInformers, err := informers.NewInformersForResourceWithTransform(metaDataInformerFactory, v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)), informers.PartialObjectMetadataStrip(operator.SecretGVK()))
+	if err != nil {
+		return nil, err
+	}
+	if secretInformers != nil {
+		informersMap[string(v1.ResourceSecrets)] = secretInformers
 	}
 
 	return informersMap, nil
@@ -374,29 +396,62 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 			continue
 		}
 
-		// only send an event notification if there isn't one already
-		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			// these functions only write to the notification channel if it's empty to avoid blocking
-			// if scrape config updates are being rate-limited
-			AddFunc: func(any) {
-				select {
-				case notifyEvents <- struct{}{}:
-				default:
-				}
-			},
-			UpdateFunc: func(any, any) {
-				select {
-				case notifyEvents <- struct{}{}:
-				default:
-				}
-			},
-			DeleteFunc: func(any) {
-				select {
-				case notifyEvents <- struct{}{}:
-				default:
-				}
-			},
-		})
+		// Use a custom event handler for secrets since secret update requires asset store to be updated so that CRs can pick up updated secrets.
+		if name == string(v1.ResourceSecrets) {
+			w.logger.Info("Using custom event handler for secrets informer", "informer", name)
+			// only send an event notification if there isn't one already
+			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
+				// these functions only write to the notification channel if it's empty to avoid blocking
+				// if scrape config updates are being rate-limited
+				AddFunc: func(_ any) {
+					select {
+					case notifyEvents <- struct{}{}:
+					default:
+					}
+				},
+				UpdateFunc: func(oldObj, newObj any) {
+					if w.handleSecretUpdate(oldObj, newObj) {
+						select {
+						case notifyEvents <- struct{}{}:
+						default:
+						}
+					}
+				},
+				DeleteFunc: func(obj any) {
+					if w.handleSecretDelete(obj) {
+						select {
+						case notifyEvents <- struct{}{}:
+						default:
+						}
+					}
+				},
+			})
+		} else {
+			w.logger.Info("Using default event handler for informer", "informer", name)
+			// only send an event notification if there isn't one already
+			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
+				// these functions only write to the notification channel if it's empty to avoid blocking
+				// if scrape config updates are being rate-limited
+				AddFunc: func(any) {
+					select {
+					case notifyEvents <- struct{}{}:
+					default:
+					}
+				},
+				UpdateFunc: func(any, any) {
+					select {
+					case notifyEvents <- struct{}{}:
+					default:
+					}
+				},
+				DeleteFunc: func(any) {
+					select {
+					case notifyEvents <- struct{}{}:
+					default:
+					}
+				},
+			})
+		}
 	}
 	if !success {
 		return errors.New("failed to sync one of the caches")
@@ -407,6 +462,88 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 
 	<-w.stopChannel
 	return nil
+}
+
+// handleSecretUpdate handles secret update events and returns true if the config needs to be reloaded.
+func (w *PrometheusCRWatcher) handleSecretUpdate(oldObj, newObj any) bool {
+	oldMeta, _ := oldObj.(metav1.ObjectMetaAccessor)
+	newMeta, _ := newObj.(metav1.ObjectMetaAccessor)
+	secretName := newMeta.GetObjectMeta().GetName()
+	secretNamespace := newMeta.GetObjectMeta().GetNamespace()
+
+	_, exists, err := w.store.GetObject(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	})
+	if !exists || err != nil {
+		if err != nil {
+			w.logger.Debug("unexpected store error when checking if secret exists, skipping update", "secret", secretName, "error", err)
+		}
+		// if the secret does not exist in the store, we skip the update
+		return false
+	}
+
+	newSecret, err := w.store.GetSecretClient().Secrets(secretNamespace).Get(context.Background(), secretName, metav1.GetOptions{})
+	if err != nil {
+		w.logger.Debug("unexpected store error when getting updated secret", "secret", secretName, "error", err)
+		return false
+	}
+
+	w.logger.Debug("Updating secret in store", "newObjName", newMeta.GetObjectMeta().GetName(), "newobjnamespace", newMeta.GetObjectMeta().GetNamespace())
+	if err := w.store.UpdateObject(newSecret); err != nil {
+		w.logger.Debug("unexpected store error when updating secret", "secret", newMeta.GetObjectMeta().GetName(), "error", err)
+		return false
+	}
+
+	w.logger.Debug(
+		"Successfully updated store, sending update event to notifyEvents channel",
+		"oldObjName", oldMeta.GetObjectMeta().GetName(),
+		"oldobjnamespace", oldMeta.GetObjectMeta().GetNamespace(),
+		"newObjName", newMeta.GetObjectMeta().GetName(),
+		"newobjnamespace", newMeta.GetObjectMeta().GetNamespace(),
+	)
+	return true
+}
+
+// handleSecretDelete handles secret delete events and returns true if the config needs to be reloaded.
+func (w *PrometheusCRWatcher) handleSecretDelete(obj any) bool {
+	secretMeta, _ := obj.(metav1.ObjectMetaAccessor)
+	secretName := secretMeta.GetObjectMeta().GetName()
+	secretNamespace := secretMeta.GetObjectMeta().GetNamespace()
+
+	// check if the secret exists in the store
+	secretObj := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	}
+	_, exists, err := w.store.GetObject(secretObj)
+	// if the secret does not exist in the store, we skip the delete
+	if !exists || err != nil {
+		if err != nil {
+			w.logger.Debug("unexpected store error when checking if secret exists, skipping delete", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
+		}
+		// if the secret does not exist in the store, we skip the delete
+		return false
+	}
+
+	w.logger.Debug("Deleting secret from store", "objName", secretMeta.GetObjectMeta().GetName(), "objnamespace", secretMeta.GetObjectMeta().GetNamespace())
+	// if the secret exists in the store, we delete it
+	// and send an event notification to the notifyEvents channel
+	if err := w.store.DeleteObject(secretObj); err != nil {
+		w.logger.Debug("unexpected store error when deleting secret", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
+		return false
+	}
+
+	w.logger.Debug(
+		"Successfully removed secret from store, sending update event to notifyEvents channel",
+		"objName", secretMeta.GetObjectMeta().GetName(),
+		"objnamespace", secretMeta.GetObjectMeta().GetNamespace(),
+	)
+	return true
 }
 
 // rateLimitedEventSender sends events to the upstreamEvents channel whenever it gets a notification on the notifyEvents channel,

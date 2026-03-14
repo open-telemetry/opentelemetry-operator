@@ -13,6 +13,7 @@ import (
 )
 
 // targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
+// These rules are expected to be granted via a ClusterRole.
 var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	{
 		APIGroups: []string{"monitoring.coreos.com"},
@@ -43,12 +44,24 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	},
 }
 
+// targetAllocatorCRNamespacedPolicyRules are the policy rules that should be granted
+// via a Role (namespace-scoped) rather than a ClusterRole. Secrets are namespace-scoped
+// and should not be granted cluster-wide access.
+var targetAllocatorCRNamespacedPolicyRules = []*rbacv1.PolicyRule{
+	{
+		APIGroups: []string{""},
+		Resources: []string{"secrets"},
+		Verbs:     []string{"get", "list", "watch"},
+	},
+}
+
 func CheckTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
 	namespace string,
 	serviceAccountName string,
 ) (warnings []string, err error) {
+	// Check cluster-scoped rules (ClusterRole)
 	subjectAccessReviews, err := reviewer.CheckPolicyRules(
 		ctx,
 		serviceAccountName,
@@ -58,6 +71,19 @@ func CheckTargetAllocatorPrometheusCRPolicyRules(
 	if err != nil {
 		return []string{}, fmt.Errorf("unable to check rbac rules %w", err)
 	}
+
+	// Check namespace-scoped rules (Role) — secrets should be scoped to the namespace
+	namespacedReviews, err := reviewer.CheckPolicyRules(
+		ctx,
+		serviceAccountName,
+		namespace,
+		targetAllocatorCRNamespacedPolicyRules...,
+	)
+	if err != nil {
+		return []string{}, fmt.Errorf("unable to check namespace-scoped rbac rules %w", err)
+	}
+	subjectAccessReviews = append(subjectAccessReviews, namespacedReviews...)
+
 	if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
 		return rbac.WarningsGroupedByResource(deniedReviews), nil
 	}
