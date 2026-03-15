@@ -65,16 +65,13 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
 
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
-func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context, cfg config.Config) error {
+func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
+	u.Logger.Info("looking for managed Instrumentation instances to upgrade")
 	list := &v1alpha1.InstrumentationList{}
-	if cfg.EnableInstrumentationCRDs {
-		u.Logger.Info("looking for managed Instrumentation instances to upgrade")
-		if err := u.Client.List(ctx, list); err != nil {
-			return fmt.Errorf("failed to list: %w", err)
-		}
-	} else {
-		list.Items = []v1alpha1.Instrumentation{cfg.Instrumentation}
+	if err := u.Client.List(ctx, list); err != nil {
+		return fmt.Errorf("failed to list: %w", err)
 	}
+
 	for i := range list.Items {
 		toUpgrade := list.Items[i]
 		upgraded := u.upgrade(ctx, toUpgrade)
