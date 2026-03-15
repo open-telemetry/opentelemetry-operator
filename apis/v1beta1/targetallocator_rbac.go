@@ -13,7 +13,6 @@ import (
 )
 
 // targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
-// These rules are expected to be granted via a ClusterRole.
 var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	{
 		APIGroups: []string{"monitoring.coreos.com"},
