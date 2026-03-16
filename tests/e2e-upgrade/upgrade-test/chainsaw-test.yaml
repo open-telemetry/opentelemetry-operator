@@ -18,9 +18,14 @@ spec:
         timeout: 5m
         content: |
           make -C ../../../ deploy
-    - script:
-        timeout: 5m
-        content: |
+          # Delete the leader election lease from the old operator. v0.86.0 does
+          # not set LeaderElectionReleaseOnCancel, so the lease is held until it
+          # expires (137s). Deleting it lets the new operator acquire leadership
+          # immediately.
+          kubectl delete lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io --ignore-not-found
+          # Wait for cert-manager to inject the CA bundle into the CRD conversion
+          # webhook. Without it the API server cannot reach the conversion webhook
+          # and v1beta1 requests fail with "context deadline exceeded".
           while [ -z "$(kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}')" ]; do
             sleep 1
           done
