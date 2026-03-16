@@ -35,3 +35,38 @@ spec:
         file: 02-upgrade-collector.yaml
     - assert:
         file: 02-assert.yaml
+    catch:
+    - podLogs:
+        namespace: opentelemetry-operator-system
+        selector: control-plane=controller-manager
+    - script:
+        content: |
+          echo "=== CRD conversion webhook config ==="
+          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion}' | python3 -m json.tool 2>/dev/null || true
+          echo ""
+          echo "=== Leader election lease ==="
+          kubectl get lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io -o yaml 2>/dev/null || echo "lease not found"
+          echo ""
+          echo "=== Operator deployment status ==="
+          kubectl get deployment -n opentelemetry-operator-system -o wide 2>/dev/null || true
+          echo ""
+          echo "=== Operator pods ==="
+          kubectl get pods -n opentelemetry-operator-system -o wide 2>/dev/null || true
+          echo ""
+          echo "=== Webhook configurations ==="
+          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o yaml 2>/dev/null || true
+          kubectl get validatingwebhookconfiguration opentelemetry-operator-validating-webhook-configuration -o yaml 2>/dev/null || true
+          echo ""
+          echo "=== API server logs (last 50 lines, filtered) ==="
+          kubectl logs -n kube-system -l component=kube-apiserver --tail=50 2>/dev/null || true
+          echo ""
+          echo "=== cert-manager logs (last 30 lines) ==="
+          kubectl logs -n cert-manager -l app=cert-manager --tail=30 2>/dev/null || true
+          kubectl logs -n cert-manager -l app=cainjector --tail=30 2>/dev/null || true
+          echo ""
+          echo "=== OpenTelemetryCollector CR status ==="
+          kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces -o yaml 2>/dev/null || true
+          echo ""
+          echo "=== Collector deployment ==="
+          kubectl get deployment -A -l app.kubernetes.io/managed-by=opentelemetry-operator -o wide 2>/dev/null || true
+        timeout: 30s
