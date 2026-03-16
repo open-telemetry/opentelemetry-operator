@@ -2,61 +2,13 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: instrumentation-java
+  name: instrumentation-no-crds
 spec:
   steps:
-  - name: Install certs
-    try:
-      - apply:
-          file: install-certs.yaml
-  - name: Register certs
-    try:
-      - command:
-          entrypoint: kubectl
-          args:
-            - certificate
-            - approve
-            - operator
   - name: step-00
     try:
     - apply:
         file: 00-install-collector.yaml
-    - script:
-        env:
-          - name: JAVAIMAGE
-            value: ($values.javaimage)
-        content:
-          sed -e "s|JAVAIMAGE|$JAVAIMAGE|g" manager-config.tmpl > /tmp/configmap.yaml
-    - apply:
-        file: /tmp/configmap.yaml
-    - apply:
-        bindings:
-          - name: managerimage
-            value: ($values.managerimage)
-        file: 00-install-operator.yaml
-        template: true
-    - command:
-        entrypoint: kubectl
-        args:
-         - get
-         - pod
-         - -n
-         - ${NAMESPACE}
-         - -l
-         - app=operator
-         - -o
-         - jsonpath={.items[0].metadata.name}
-        outputs:
-          - name: podName
-            value: ($stdout)
-    - wait:
-        apiVersion: v1
-        kind: Pod
-        name: ($podName)
-        namespace: ($namespace)
-        timeout: 1m
-        for:
-          condition: { name: "Ready", value: "true" }
   - name: step-01
     try:
     - apply:
@@ -148,7 +100,7 @@ spec:
           content: |
             #!/bin/bash
             # set -ex
-            kubectl logs ${podName} | grep my-java
+            kubectl logs ${podName} -n ${NAMESPACE} | grep my-java
     catch:
       - podLogs:
           selector: app=my-java

@@ -30,4 +30,4 @@ data:
               value: "true"
             - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
               value: "false"
-          image: JAVAIMAGE
+          image: ${INSTRUMENTATION_JAVA_IMG} # Interpolated via envsubst in make file

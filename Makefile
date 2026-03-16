@@ -328,6 +328,18 @@ deploy: set-image-controller
 undeploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Deploy without CRDs
+# Deploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: deploy-no-crds
+deploy-no-crds: set-image-controller
+	$(KUSTOMIZE) build config/no-crds | INSTRUMENTATION_JAVA_IMG=$(INSTRUMENTATION_JAVA_IMG) envsubst | kubectl apply -f -
+	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
+
+# Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: undeploy-no-crds
+undeploy-no-crds: set-image-controller
+	$(KUSTOMIZE) build config/no-crds | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
@@ -406,7 +418,7 @@ e2e-instrumentation: chainsaw
 # no-crds end-to-tests
 .PHONY: e2e-no-crds
 e2e-no-crds: chainsaw
-	$(CHAINSAW) test --set managerimage=$(IMG) --set javaimage=$(INSTRUMENTATION_JAVA_IMG) --namespace default --test-dir ./tests/e2e-no-crds --report-name  e2e-no-crds
+	$(CHAINSAW) test --test-dir ./tests/e2e-no-crds --report-name e2e-no-crds
 
 # Log operator pod information for debugging
 .PHONY: e2e-log-operator
@@ -485,7 +497,7 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 	@mkdir -p ./.testresults/e2e
 
 .PHONY: prepare-e2e-no-crds
-prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all load-images-instrumentation
+prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
 
 # Run operator-sdk scorecard tests for bundles
