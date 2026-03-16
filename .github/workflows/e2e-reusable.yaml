@@ -153,6 +153,7 @@ jobs:
         path: .testresults/e2e/*.xml
         name: e2e-junit-${{ matrix.group }}-${{ matrix.kube-version }}
         retention-days: 7
+        overwrite: true
 
   e2e-tests-check:
     runs-on: ubuntu-latest
@@ -183,3 +184,4 @@ jobs:
       with:
         name: Event File
         path: ${{ github.event_path }}
+        overwrite: true
