@@ -1,0 +1,62 @@
+---
+# Update the secret with new credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+type: Opaque
+stringData:
+  username: newuser
+  password: newP@ssw0rd
+---
+# Update the app to use new credentials
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          value: newuser
+        - name: BASIC_AUTH_PASSWORD
+          value: newP@ssw0rd
+---
+# Job to verify secret update was processed
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-update
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-update
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - |
+              CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+              echo "$CONFIG" | grep -q "metrics-servicemonitor" && \
+              echo "$CONFIG" | grep -q "basic_auth" && \
+              echo "$CONFIG" | grep -q "newuser"
