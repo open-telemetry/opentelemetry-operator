@@ -4,7 +4,6 @@
 package instrumentation
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -4965,30 +4964,30 @@ func TestMutatePod(t *testing.T) {
 				test.setFeatureGates(t)
 			}
 
-			err := k8sClient.Create(context.Background(), &test.ns)
+			err := k8sClient.Create(t.Context(), &test.ns)
 			require.NoError(t, err)
 			defer func() {
-				_ = k8sClient.Delete(context.Background(), &test.ns)
+				_ = k8sClient.Delete(t.Context(), &test.ns)
 			}()
 			if test.secret != nil {
-				err = k8sClient.Create(context.Background(), test.secret)
+				err = k8sClient.Create(t.Context(), test.secret)
 				require.NoError(t, err)
 				defer func() {
-					_ = k8sClient.Delete(context.Background(), test.secret)
+					_ = k8sClient.Delete(t.Context(), test.secret)
 				}()
 			}
 			if test.configMap != nil {
-				err = k8sClient.Create(context.Background(), test.configMap)
+				err = k8sClient.Create(t.Context(), test.configMap)
 				require.NoError(t, err)
 				defer func() {
-					_ = k8sClient.Delete(context.Background(), test.configMap)
+					_ = k8sClient.Delete(t.Context(), test.configMap)
 				}()
 			}
 
-			err = k8sClient.Create(context.Background(), &test.inst)
+			err = k8sClient.Create(t.Context(), &test.inst)
 			require.NoError(t, err)
 
-			pod, err := mutator.Mutate(context.Background(), test.ns, test.pod)
+			pod, err := mutator.Mutate(t.Context(), test.ns, test.pod)
 			if test.err == "" {
 				require.NoError(t, err)
 				assert.Equal(t, test.expected, pod)
@@ -5151,10 +5150,10 @@ func TestInitContainerInstrumentation(t *testing.T) {
 		},
 	}
 
-	err := k8sClient.Create(context.Background(), inst)
+	err := k8sClient.Create(t.Context(), inst)
 	require.NoError(t, err)
 	defer func() {
-		_ = k8sClient.Delete(context.Background(), inst)
+		_ = k8sClient.Delete(t.Context(), inst)
 	}()
 
 	ns := corev1.Namespace{
@@ -5185,7 +5184,7 @@ func TestInitContainerInstrumentation(t *testing.T) {
 
 	mutator := NewMutator(logr.Discard(), k8sClient, nil, config.New())
 
-	result, err := mutator.Mutate(context.Background(), ns, pod)
+	result, err := mutator.Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	// Check that instrumentation init container was added BEFORE the target init container
@@ -5236,9 +5235,9 @@ func TestInitContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
 		},
 	}
-	err := k8sClient.Create(context.Background(), inst)
+	err := k8sClient.Create(t.Context(), inst)
 	require.NoError(t, err)
-	defer func() { _ = k8sClient.Delete(context.Background(), inst) }()
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
 	ape := false
@@ -5264,7 +5263,7 @@ func TestInitContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(context.Background(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)
@@ -5283,9 +5282,9 @@ func TestRegularContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
 		},
 	}
-	err := k8sClient.Create(context.Background(), inst)
+	err := k8sClient.Create(t.Context(), inst)
 	require.NoError(t, err)
-	defer func() { _ = k8sClient.Delete(context.Background(), inst) }()
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
 	ape := false
@@ -5305,7 +5304,7 @@ func TestRegularContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(context.Background(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)
@@ -5324,9 +5323,9 @@ func TestInitContainerInstrumentationNilSecurityContext(t *testing.T) {
 			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
 		},
 	}
-	err := k8sClient.Create(context.Background(), inst)
+	err := k8sClient.Create(t.Context(), inst)
 	require.NoError(t, err)
-	defer func() { _ = k8sClient.Delete(context.Background(), inst) }()
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
 	pod := corev1.Pod{
@@ -5343,7 +5342,7 @@ func TestInitContainerInstrumentationNilSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(context.Background(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)
