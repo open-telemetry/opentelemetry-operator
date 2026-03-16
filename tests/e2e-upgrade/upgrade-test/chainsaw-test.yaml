@@ -18,6 +18,10 @@ spec:
         timeout: 5m
         content: |
           make -C ../../../ deploy
+    - script:
+        timeout: 5m
+        content: |
+          go run ../../../hack/check-operator-ready.go
   - name: step-02
     try:
     - apply:
