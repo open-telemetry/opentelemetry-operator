@@ -21,7 +21,9 @@ spec:
     - script:
         timeout: 5m
         content: |
-          go run ../../../hack/check-operator-ready.go
+          while [ -z "$(kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}')" ]; do
+            sleep 1
+          done
   - name: step-02
     try:
     - apply:
