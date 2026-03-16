@@ -29,6 +29,29 @@ spec:
           while [ -z "$(kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}')" ]; do
             sleep 1
           done
+          # Wait for the new operator deployment to be available. During the
+          # upgrade, the old pod is deleted before the new one is ready. The CRD
+          # update triggers the API server's internal cacher to reinitialize,
+          # which requires calling the conversion webhook. If the webhook pod
+          # isn't ready yet, the cacher gets stuck in an error loop and all
+          # v1beta1 requests time out.
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n opentelemetry-operator-system --timeout=120s
+          # Verify the conversion webhook is actually functional by making a test
+          # request. The API server cacher may still be recovering from errors
+          # during the upgrade window, so retry until it works.
+          echo "Waiting for v1beta1 API to become available..."
+          for i in $(seq 1 60); do
+            if kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces > /dev/null 2>&1; then
+              echo "v1beta1 API is available"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "ERROR: v1beta1 API did not become available after 60s"
+              exit 1
+            fi
+            sleep 1
+          done
   - name: step-02
     try:
     - apply:
