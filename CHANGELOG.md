@@ -2,6 +2,31 @@
 
 <!-- next version -->
 
+## 0.147.0
+
+### 🛑 Breaking changes 🛑
+
+- `apis/v1beta1`: Move webhooks from the apis/v1beta1 package to the internal package internal/webhook (#4846)
+- `v1alpha1`: Move webhooks from the apis/v1alpha1 package to the internal package internal/webhook (#4837)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix Service Monitor/Pod Monitor in TargetAllocator doesnt pick up updates to secrets (#4091)
+  Fixes issue where service/pod Monitors don't pick up updates to secrets.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.147.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.147.0)
+* [OpenTelemetry Contrib - v0.147.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.147.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.71.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.71.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.146.0
 
 ### 💡 Enhancements 💡
