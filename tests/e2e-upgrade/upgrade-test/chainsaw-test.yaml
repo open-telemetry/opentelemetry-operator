@@ -18,28 +18,12 @@ spec:
         timeout: 5m
         content: |
           make -C ../../../ deploy
-          # Delete the leader election lease from the old operator. v0.86.0 does
-          # not set LeaderElectionReleaseOnCancel, so the lease is held until it
-          # expires (137s). Deleting it lets the new operator acquire leadership
-          # immediately.
-          kubectl delete lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io --ignore-not-found
-          # Wait for cert-manager to inject the CA bundle into the CRD conversion
-          # webhook. Without it the API server cannot reach the conversion webhook
-          # and v1beta1 requests fail with "context deadline exceeded".
-          while [ -z "$(kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}')" ]; do
-            sleep 1
-          done
-          # Wait for the new operator deployment to be available. During the
-          # upgrade, the old pod is deleted before the new one is ready. The CRD
-          # update triggers the API server's internal cacher to reinitialize,
-          # which requires calling the conversion webhook. If the webhook pod
-          # isn't ready yet, the cacher gets stuck in an error loop and all
-          # v1beta1 requests time out.
-          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
-            -n opentelemetry-operator-system --timeout=120s
-          # Verify the conversion webhook is actually functional by making a test
-          # request. The API server cacher may still be recovering from errors
-          # during the upgrade window, so retry until it works.
+          # Wait for the v1beta1 API to become functional. During the upgrade,
+          # the CRD update triggers the API server's internal cacher to
+          # reinitialize, which requires calling the conversion webhook. If the
+          # webhook pod isn't ready yet, the cacher gets stuck in an error loop
+          # and v1beta1 requests time out. This poll covers both the webhook TLS
+          # setup (caBundle injection) and cacher recovery.
           echo "Waiting for v1beta1 API to become available..."
           for i in $(seq 1 60); do
             if kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces > /dev/null 2>&1; then
@@ -52,6 +36,16 @@ spec:
             fi
             sleep 1
           done
+          # Wait for the new operator to acquire the leader election lease.
+          # v0.86.0 does not set LeaderElectionReleaseOnCancel, so the old
+          # lease is held until it expires (137s). Delete it so the new
+          # operator can acquire leadership immediately.
+          kubectl delete lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io --ignore-not-found
+          echo "Waiting for leader election..."
+          while [ -z "$(kubectl get lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io -o jsonpath='{.spec.holderIdentity}' 2>/dev/null)" ]; do
+            sleep 1
+          done
+          echo "Leader elected"
   - name: step-02
     try:
     - apply:
@@ -63,33 +57,13 @@ spec:
         namespace: opentelemetry-operator-system
         selector: control-plane=controller-manager
     - script:
+        timeout: 30s
         content: |
-          echo "=== CRD conversion webhook config ==="
-          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion}' | python3 -m json.tool 2>/dev/null || true
-          echo ""
-          echo "=== Leader election lease ==="
-          kubectl get lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io -o yaml 2>/dev/null || echo "lease not found"
-          echo ""
-          echo "=== Operator deployment status ==="
-          kubectl get deployment -n opentelemetry-operator-system -o wide 2>/dev/null || true
-          echo ""
           echo "=== Operator pods ==="
           kubectl get pods -n opentelemetry-operator-system -o wide 2>/dev/null || true
-          echo ""
-          echo "=== Webhook configurations ==="
-          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o yaml 2>/dev/null || true
-          kubectl get validatingwebhookconfiguration opentelemetry-operator-validating-webhook-configuration -o yaml 2>/dev/null || true
-          echo ""
-          echo "=== API server logs (last 50 lines, filtered) ==="
-          kubectl logs -n kube-system -l component=kube-apiserver --tail=50 2>/dev/null || true
-          echo ""
-          echo "=== cert-manager logs (last 30 lines) ==="
-          kubectl logs -n cert-manager -l app=cert-manager --tail=30 2>/dev/null || true
-          kubectl logs -n cert-manager -l app=cainjector --tail=30 2>/dev/null || true
           echo ""
           echo "=== OpenTelemetryCollector CR status ==="
           kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces -o yaml 2>/dev/null || true
           echo ""
-          echo "=== Collector deployment ==="
-          kubectl get deployment -A -l app.kubernetes.io/managed-by=opentelemetry-operator -o wide 2>/dev/null || true
-        timeout: 30s
+          echo "=== API server logs (last 30 lines) ==="
+          kubectl logs -n kube-system -l component=kube-apiserver --tail=30 2>/dev/null || true
