@@ -12,18 +12,18 @@ import (
 var _ components.Parser = &PrometheusParser{}
 
 // PrometheusParser handles the prometheus receiver, which has a unique config
-// structure (config.scrape_configs[].tls_config) that doesn't fit the
-// SingleEndpointConfig or MultiProtocolEndpointConfig patterns.
-// It embeds GenericParser for the no-op methods and only overrides GetDefaultConfig.
+// structure (config.scrape_configs[].tls_config) that doesn't fit the standard
+// OTel tls: block pattern. It overrides GetDefaultConfig to walk the
+// Prometheus-specific config.scrape_configs[].tls_config path.
 type PrometheusParser struct {
-	*components.GenericParser[any]
+	*ScraperParser
 }
 
 // NewPrometheusParser returns a parser for the prometheus receiver that applies
 // TLS profile defaults to scrape_configs[].tls_config blocks.
 func NewPrometheusParser() *PrometheusParser {
 	return &PrometheusParser{
-		GenericParser: NewScraperParser("prometheus"),
+		ScraperParser: NewScraperParser("prometheus"),
 	}
 }
 
