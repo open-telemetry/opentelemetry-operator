@@ -27,7 +27,8 @@ type JaegerQueryExtensionConfig struct {
 }
 
 type jaegerHTTPAddress struct {
-	Endpoint string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	Endpoint string              `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	TLS      *components.TLSConfig `mapstructure:"tls,omitempty" yaml:"tls,omitempty"`
 }
 
 func (g *JaegerQueryExtensionConfig) GetPortNumOrDefault(logger logr.Logger, p int32) int32 {
@@ -66,7 +67,7 @@ func NewJaegerQueryExtensionParserBuilder() components.Builder[*JaegerQueryExten
 	return components.NewBuilder[*JaegerQueryExtensionConfig]().WithPort(port).WithName(name).WithPortParser(ParseJaegerQueryExtensionConfig).WithDefaultsApplier(endpointDefaulter).WithDefaultRecAddress(components.DefaultRecAddress).WithTargetPort(port)
 }
 
-func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]any, error) {
+func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]any, error) {
 	if config == nil {
 		config = &JaegerQueryExtensionConfig{}
 	}
@@ -77,6 +78,15 @@ func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAdd
 		v := strings.Split(config.HTTP.Endpoint, ":")
 		if len(v) < 2 || v[0] == "" {
 			config.HTTP.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
+		}
+	}
+
+	if defaultCfg != nil && defaultCfg.TLSProfile != nil && config.HTTP.TLS != nil {
+		if config.HTTP.TLS.MinVersion == "" && defaultCfg.TLSProfile.MinTLSVersionOTEL() != "" {
+			config.HTTP.TLS.MinVersion = defaultCfg.TLSProfile.MinTLSVersionOTEL()
+		}
+		if config.HTTP.TLS.Ciphers == nil && len(defaultCfg.TLSProfile.CipherSuiteNames()) > 0 {
+			config.HTTP.TLS.Ciphers = defaultCfg.TLSProfile.CipherSuiteNames()
 		}
 	}
 
