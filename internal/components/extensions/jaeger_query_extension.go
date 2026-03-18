@@ -27,7 +27,7 @@ type JaegerQueryExtensionConfig struct {
 }
 
 type jaegerHTTPAddress struct {
-	Endpoint string              `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	Endpoint string                `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
 	TLS      *components.TLSConfig `mapstructure:"tls,omitempty" yaml:"tls,omitempty"`
 }
 
