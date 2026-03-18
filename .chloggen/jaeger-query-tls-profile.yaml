@@ -8,7 +8,7 @@ component: collector
 note: Add TLS security profile injection for health_check and jaeger_query extensions
 
 # One or more tracking issues related to the change
-issues: [5985]
+issues: [4871]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
