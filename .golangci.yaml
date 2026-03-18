@@ -25,13 +25,10 @@ linters:
         - appendCombine
         - builtinShadow
         - deferInLoop
-        - emptyFallthrough
         - exitAfterDefer
         - hugeParam
         - importShadow
         - rangeValCopy
-        - sloppyReassign
-        - typeDefFirst
         - whyNoLint
       enable-all: true
     goheader:
