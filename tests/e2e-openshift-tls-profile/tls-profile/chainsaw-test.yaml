@@ -1,0 +1,208 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: tls-profile
+spec:
+  # Must run alone because it patches the cluster-wide APIServer resource.
+  concurrent: false
+  namespace: chainsaw-otel-tls-profile
+  # Revert APIServer TLS profile on any failure to prevent cluster-wide impact.
+  catch:
+  - script:
+      timeout: 5m
+      content: |
+        oc patch apiserver cluster --type json \
+          -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+  steps:
+  # Step 0: Create TLS certificate and deploy tls-scanner pod.
+  - name: step-00
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          openssl req -x509 -newkey rsa:2048 \
+            -keyout /tmp/tls.key -out /tmp/tls.crt \
+            -days 1 -nodes \
+            -subj "/CN=tls-profile-test-collector.${NAMESPACE}.svc" \
+            -addext "subjectAltName=DNS:tls-profile-test-collector.${NAMESPACE}.svc,DNS:tls-profile-test-collector,DNS:tls-profile-test-collector.${NAMESPACE}.svc.cluster.local"
+          kubectl create secret tls collector-tls-certs \
+            --cert=/tmp/tls.crt --key=/tmp/tls.key \
+            -n "$NAMESPACE"
+          rm -f /tmp/tls.key /tmp/tls.crt
+    - apply:
+        file: 00-install-tls-scanner.yaml
+    - assert:
+        file: 00-assert.yaml
+
+  # Step 1: Apply collector A (multi-component with TLS) and assert it's running.
+  # Covers S1 (Intermediate injection), S2 (no injection without tls block),
+  # S3 (multi-protocol), S4 (single-endpoint), S5 (exporter with TLS).
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 2: Verify Intermediate profile injection on CR fields.
+  - name: step-02
+    try:
+    - script:
+        timeout: 1m
+        content: ./02-verify-intermediate.sh
+
+  # Step 3: Functional TLS verification via nmap - Intermediate profile.
+  - name: step-03
+    try:
+    - script:
+        timeout: 3m
+        content: ./03-verify-nmap-intermediate.sh
+
+  # Step 4: Save current APIServer TLS profile and patch to Modern.
+  # Falls back to Custom (TLS 1.0 + GCM ciphers) on OCP < 4.14 where Modern is unsupported.
+  - name: step-04
+    try:
+    - script:
+        timeout: 1m
+        content: ./04-patch-profile.sh
+    catch:
+    - script:
+        timeout: 1m
+        content: ./11-revert-apiserver.sh
+
+  # Step 5: Wait for the operator to restart and re-reconcile the collector
+  # with the changed TLS profile. The operator detects the profile change,
+  # restarts, and regenerates the ConfigMap with the new TLS settings,
+  # which triggers a deployment rollout.
+  # Covers S7 (changed profile) and S8 (dynamic profile change).
+  - name: step-05
+    try:
+    - script:
+        timeout: 5m
+        content: |
+          #!/bin/bash
+          set -ex
+          EXPECTED_MIN=$(kubectl get configmap tls-profile-expected -n "$NAMESPACE" \
+            -o jsonpath='{.data.min_version}')
+          echo "Waiting for operator to restart and re-reconcile with min_version=$EXPECTED_MIN"
+
+          # Wait for the operator to be ready after the TLS profile change triggers a restart.
+          # The operator pod may be replaced so we poll for a Running+Ready pod.
+          for i in $(seq 1 60); do
+            ready=$(kubectl get pods -n opentelemetry-operator -l app.kubernetes.io/name=opentelemetry-operator \
+              -o jsonpath='{range .items[*]}{.status.phase} {.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' \
+              | grep -c "Running True" || true)
+            if [ "$ready" -ge 1 ]; then
+              echo "Operator pod is ready"
+              break
+            fi
+            echo "Waiting for operator pod to be ready... ($i/60)"
+            sleep 5
+          done
+
+          # Wait for the deployment to reference a ConfigMap with the new TLS profile.
+          # The operator re-reconciles the collector, generates a new ConfigMap with
+          # updated TLS settings, and updates the deployment's volume reference.
+          for i in $(seq 1 60); do
+            # Get the ConfigMap name from the deployment's volume reference
+            CM_NAME=$(kubectl get deployment tls-profile-test-collector -n "$NAMESPACE" \
+              -o jsonpath='{.spec.template.spec.volumes[?(@.name=="otc-internal")].configMap.name}' 2>/dev/null || true)
+            if [ -n "$CM_NAME" ]; then
+              ACTUAL_MIN=$(kubectl get configmap "$CM_NAME" -n "$NAMESPACE" \
+                -o jsonpath='{.data.collector\.yaml}' 2>/dev/null | yq '.receivers.otlp.protocols.grpc.tls.min_version' 2>/dev/null || true)
+              if [ "$ACTUAL_MIN" = "$EXPECTED_MIN" ]; then
+                echo "Deployment references ConfigMap $CM_NAME with expected min_version=$ACTUAL_MIN"
+                break
+              fi
+              echo "Deployment ConfigMap $CM_NAME has min_version=$ACTUAL_MIN, expected $EXPECTED_MIN ($i/60)"
+            else
+              echo "Deployment volume reference not found yet ($i/60)"
+            fi
+            sleep 5
+          done
+
+          # Wait for the deployment rollout to complete with the new pods.
+          kubectl rollout status deployment/tls-profile-test-collector -n "$NAMESPACE" --timeout=120s
+    - assert:
+        file: 01-assert.yaml
+    catch:
+    - script:
+        timeout: 1m
+        content: ./11-revert-apiserver.sh
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 6: Verify changed profile injection on CR fields.
+  - name: step-06
+    try:
+    - script:
+        timeout: 1m
+        content: ./06-verify-changed-profile.sh
+    catch:
+    - script:
+        timeout: 1m
+        content: ./11-revert-apiserver.sh
+
+  # Step 7: Functional TLS verification via nmap - changed profile.
+  - name: step-07
+    try:
+    - script:
+        timeout: 3m
+        content: ./07-verify-nmap-changed.sh
+    catch:
+    - script:
+        timeout: 1m
+        content: ./11-revert-apiserver.sh
+
+  # Step 8: Revert APIServer TLS profile.
+  - name: step-08
+    try:
+    - script:
+        timeout: 5m
+        content: ./11-revert-apiserver.sh
+
+  # Step 9: Delete collector A, apply collector B (user overrides).
+  # Covers S6 (user-specified values preserved).
+  - name: step-09
+    try:
+    - script:
+        timeout: 5m
+        content: |
+          #!/bin/bash
+          set -ex
+          oc delete otelcol tls-profile-test -n "$NAMESPACE" --ignore-not-found
+          oc wait --for=delete otelcol/tls-profile-test -n "$NAMESPACE" --timeout=60s 2>/dev/null || true
+          # Wait for the operator to be ready after the TLS profile revert triggers a restart.
+          # The operator pod may be replaced so we poll for a Running+Ready pod.
+          for i in $(seq 1 60); do
+            ready=$(kubectl get pods -n opentelemetry-operator -l app.kubernetes.io/name=opentelemetry-operator \
+              -o jsonpath='{range .items[*]}{.status.phase} {.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' \
+              | grep -c "Running True" || true)
+            if [ "$ready" -ge 1 ]; then
+              echo "Operator pod is ready"
+              break
+            fi
+            echo "Waiting for operator pod to be ready... ($i/60)"
+            sleep 5
+          done
+    - apply:
+        file: 09-install-user-override.yaml
+    - assert:
+        file: 09-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 10: Verify user-specified values are preserved.
+  - name: step-10
+    try:
+    - script:
+        timeout: 1m
+        content: ./10-verify-user-override.sh
