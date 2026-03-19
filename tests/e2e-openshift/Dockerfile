@@ -39,6 +39,10 @@ RUN curl -LO https://github.com/grafana/loki/releases/latest/download/logcli-lin
     && chmod +x logcli-linux-amd64 \
     && mv logcli-linux-amd64 /usr/local/bin/logcli
 
+# Install yq (for YAML processing in TLS profile tests)
+RUN curl -L -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+    && chmod +x /usr/local/bin/yq
+
 # Install AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \

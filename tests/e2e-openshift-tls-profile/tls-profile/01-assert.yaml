@@ -1,0 +1,11 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: tls-profile-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-profile-test-collector
+status:
+  readyReplicas: 1

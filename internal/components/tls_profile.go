@@ -41,8 +41,6 @@ func TLSVersionToCollectorFormat(version uint16) string {
 		return "1.1"
 	case tls.VersionTLS13:
 		return "1.3"
-	case tls.VersionTLS12:
-		fallthrough
 	default:
 		return "1.2"
 	}
