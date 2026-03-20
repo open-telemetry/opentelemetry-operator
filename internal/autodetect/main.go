@@ -41,6 +41,7 @@ type AutoDetect interface {
 	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 	NativeSidecarSupport() (bool, error)
+	KubeletFineGrainedAuthzSupport() (bool, error)
 }
 
 type k8sVersionDiscovery interface {
@@ -278,6 +279,17 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 	return currentVersion.AtLeast(minimumVersion), nil
 }
 
+// KubeletFineGrainedAuthzSupport checks if nodes/pods subresource is supported for kubeletstats receiver (k8s >= 1.33.0).
+func (a *autoDetect) KubeletFineGrainedAuthzSupport() (bool, error) {
+	currentVersion, err := a.k8sDetector.GetKubernetesVersion()
+	if err != nil {
+		return false, err
+	}
+
+	minimumVersion := version.MustParseGeneric("1.33.0")
+	return currentVersion.AtLeast(minimumVersion), nil
+}
+
 // ApplyAutoDetect attempts to automatically detect relevant information for this operator.
 func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger) error {
 	logger.V(2).Info("auto-detecting the configuration based on the environment")
@@ -338,6 +350,14 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	}
 	c.Internal.NativeSidecarSupport = nativeSidecarSupport
 	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
+
+	kubeletFineGrainedAuthzSupport, err := autoDetect.KubeletFineGrainedAuthzSupport()
+	if err != nil {
+		logger.V(2).Info("failed to detect kubelet fine grained authz support", "reason", err)
+	} else {
+		c.Internal.KubeletFineGrainedAuthzSupport = kubeletFineGrainedAuthzSupport
+		logger.V(2).Info("determined kubelet fine grained authz support", "availability", c.Internal.KubeletFineGrainedAuthzSupport)
+	}
 
 	return nil
 }
