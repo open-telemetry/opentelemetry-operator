@@ -10,6 +10,7 @@ import (
 	"slices"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -1105,58 +1106,60 @@ func Test_CanUpdateIdentity(t *testing.T) {
 }
 
 func TestAgent_ListensForUpdates(t *testing.T) {
-	mockClient := &mockOpampClient{}
-	mockProxy := newMockProxy(nil, nil, nil)
-	conf := config.NewConfig(logr.Discard())
-	applier := getFakeApplier(t, conf)
+	synctest.Test(t, func(t *testing.T) {
+		mockClient := &mockOpampClient{}
+		mockProxy := newMockProxy(nil, nil, nil)
+		conf := config.NewConfig(logr.Discard())
+		applier := getFakeApplier(t, conf)
 
-	agent := NewAgent(logr.Discard(), applier, conf, mockClient, mockProxy)
-	err := agent.Start()
-	require.NoError(t, err, "should be able to start agent")
-	defer agent.Shutdown()
-	mockClient.mu.Lock()
-	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
-	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
-	mockClient.mu.Unlock()
-	mockInstanceId := uuid.New()
-	mockProxy.mu.Lock()
-	mockProxy.healths = map[uuid.UUID]*protobufs.ComponentHealth{
-		mockInstanceId: {
-			Healthy:            true,
-			StartTimeUnixNano:  0,
-			StatusTimeUnixNano: 0,
-		},
-	}
-	mockProxy.configs = map[uuid.UUID]*protobufs.EffectiveConfig{
-		mockInstanceId: {
-			ConfigMap: &protobufs.AgentConfigMap{
-				ConfigMap: map[string]*protobufs.AgentConfigFile{
-					"": {
-						Body:        []byte("hello"),
-						ContentType: "text",
+		agent := NewAgent(logr.Discard(), applier, conf, mockClient, mockProxy)
+		err := agent.Start()
+		require.NoError(t, err, "should be able to start agent")
+
+		mockClient.mu.Lock()
+		assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
+		assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+		mockClient.mu.Unlock()
+		mockInstanceId := uuid.New()
+		mockProxy.mu.Lock()
+		mockProxy.healths = map[uuid.UUID]*protobufs.ComponentHealth{
+			mockInstanceId: {
+				Healthy:            true,
+				StartTimeUnixNano:  0,
+				StatusTimeUnixNano: 0,
+			},
+		}
+		mockProxy.configs = map[uuid.UUID]*protobufs.EffectiveConfig{
+			mockInstanceId: {
+				ConfigMap: &protobufs.AgentConfigMap{
+					ConfigMap: map[string]*protobufs.AgentConfigFile{
+						"": {
+							Body:        []byte("hello"),
+							ContentType: "text",
+						},
 					},
 				},
 			},
-		},
-	}
-	mockProxy.mu.Unlock()
+		}
+		mockProxy.mu.Unlock()
 
-	mockClient.mu.Lock()
-	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
-	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
-	mockClient.mu.Unlock()
-
-	// Simulate an update from the proxy
-	go func() {
-		mockProxy.sendUpdate()
-	}()
-
-	assert.Eventually(t, func() bool {
 		mockClient.mu.Lock()
-		defer mockClient.mu.Unlock()
-		return len(mockClient.lastHealth.ComponentHealthMap) == 1 &&
-			len(mockClient.lastEffectiveConfig.ConfigMap.ConfigMap) == 1
-	}, 3*time.Second, 1*time.Second)
+		assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
+		assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+		mockClient.mu.Unlock()
+
+		// Simulate an update from the proxy
+		mockProxy.sendUpdate()
+		synctest.Wait()
+
+		mockClient.mu.Lock()
+		assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 1)
+		assert.Len(t, mockClient.lastEffectiveConfig.ConfigMap.ConfigMap, 1)
+		mockClient.mu.Unlock()
+
+		agent.Shutdown()
+		synctest.Wait()
+	})
 }
 
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {
