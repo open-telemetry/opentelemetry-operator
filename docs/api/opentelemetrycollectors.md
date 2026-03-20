@@ -20382,6 +20382,16 @@ for the generated workload. By default, a PDB with a MaxUnavailable of one is se
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>podManagementPolicy</b></td>
+        <td>enum</td>
+        <td>
+          PodManagementPolicy defines the pod creation and termination order in StatefulSet.<br/>
+          <br/>
+            <i>Enum</i>: OrderedReady, Parallel<br/>
+            <i>Default</i>: Parallel<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext-1">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
