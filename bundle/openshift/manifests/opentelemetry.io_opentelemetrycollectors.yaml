@@ -7315,6 +7315,12 @@ spec:
                     type: array
                     x-kubernetes-list-type: atomic
                 type: object
+              podManagementPolicy:
+                default: Parallel
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podSecurityContext:
                 properties:
                   appArmorProfile:

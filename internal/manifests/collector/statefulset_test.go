@@ -983,3 +983,57 @@ func TestStatefulSetHostPIDCanBeSet(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, d2.Spec.Template.Spec.HostPID)
 }
+
+func TestStatefulSetPodManagementPolicy(t *testing.T) {
+	tests := []struct {
+		name                        string
+		podManagementPolicy         appsv1.PodManagementPolicyType
+		expectedPodManagementPolicy appsv1.PodManagementPolicyType
+	}{
+		{
+			name:                        "default to Parallel",
+			podManagementPolicy:         "",
+			expectedPodManagementPolicy: appsv1.ParallelPodManagement,
+		},
+		{
+			name:                        "explicit Parallel",
+			podManagementPolicy:         appsv1.ParallelPodManagement,
+			expectedPodManagementPolicy: appsv1.ParallelPodManagement,
+		},
+		{
+			name:                        "explicit OrderedReady",
+			podManagementPolicy:         appsv1.OrderedReadyPodManagement,
+			expectedPodManagementPolicy: appsv1.OrderedReadyPodManagement,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// prepare
+			otelcol := v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-instance",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: "statefulset",
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						PodManagementPolicy: test.podManagementPolicy,
+					},
+				},
+			}
+
+			cfg := config.New()
+
+			params := manifests.Params{
+				OtelCol: otelcol,
+				Config:  cfg,
+				Log:     testLogger,
+			}
+
+			ss, err := StatefulSet(params)
+
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedPodManagementPolicy, ss.Spec.PodManagementPolicy)
+		})
+	}
+}
