@@ -5,7 +5,6 @@ package collector
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,8 +27,6 @@ type Watcher struct {
 	log                          logr.Logger
 	k8sClient                    kubernetes.Interface
 	close                        chan struct{}
-	eventHandlerReg              cache.ResourceEventHandlerRegistration
-	mutex                        sync.Mutex
 	minUpdateInterval            time.Duration
 	collectorNotReadyGracePeriod time.Duration
 	collectorsDiscovered         metric.Int64Gauge
@@ -80,30 +77,19 @@ func (k *Watcher) Watch(
 		default:
 		}
 	}
-	k.mutex.Lock()
-	k.eventHandlerReg, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: notifyFunc,
 		UpdateFunc: func(_, newObj any) {
 			notifyFunc(newObj)
 		},
 		DeleteFunc: notifyFunc,
 	})
-	k.mutex.Unlock()
 	if err != nil {
 		return err
 	}
 
 	informer.Run(k.close)
 	return nil
-}
-
-func (k *Watcher) isSynced() bool {
-	k.mutex.Lock()
-	defer k.mutex.Unlock()
-	if k.eventHandlerReg == nil {
-		return false
-	}
-	return k.eventHandlerReg.HasSynced()
 }
 
 // rateLimitedCollectorHandler runs fn on collectors present in the store whenever it gets a notification on the notify channel,
