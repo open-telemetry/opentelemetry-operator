@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: stateful-collector
 spec:
-  podManagementPolicy: Parallel
+  podManagementPolicy: OrderedReady
   template:
     spec:
        containers:
