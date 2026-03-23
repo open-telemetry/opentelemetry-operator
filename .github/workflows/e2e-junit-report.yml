@@ -15,7 +15,6 @@ permissions:
 jobs:
   report:
     permissions:
-      checks: write
       pull-requests: write
       actions: read
     runs-on: ubuntu-latest
@@ -42,3 +41,4 @@ jobs:
           comment_title: 'E2E Test Results'
           comment_mode: 'failures'
           check_name: 'E2E Test Results'
+          check_run: false
