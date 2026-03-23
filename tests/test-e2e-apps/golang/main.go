@@ -15,13 +15,13 @@ import (
 )
 
 // getRandomNumber generates a random integer between min and max (inclusive).
-func getRandomNumber(min, max int) (int, error) {
-	if min > max {
-		return 0, fmt.Errorf("min (%d) cannot be greater than max (%d)", min, max)
+func getRandomNumber(minimum, maximum int) (int, error) {
+	if minimum > maximum {
+		return 0, fmt.Errorf("min (%d) cannot be greater than max (%d)", minimum, maximum)
 	}
 
 	// Calculate the range size.
-	rangeSize := big.NewInt(int64(max - min + 1))
+	rangeSize := big.NewInt(int64(maximum - minimum + 1))
 
 	// Generate a random number n, where 0 <= n < rangeSize.
 	n, err := rand.Int(rand.Reader, rangeSize)
@@ -33,7 +33,7 @@ func getRandomNumber(min, max int) (int, error) {
 	// Convert the big.Int result back to a regular int.
 	// Add min to shift the range from [0, rangeSize) to [min, max].
 	// n.Int64() is safe here because rangeSize fits in int64 if max-min+1 does.
-	result := int(n.Int64()) + min
+	result := int(n.Int64()) + minimum
 	return result, nil
 }
 
