@@ -6,6 +6,7 @@ spec:
   mode: statefulset
   terminationGracePeriodSeconds: 600
   replicas: 3
+  podManagementPolicy: OrderedReady
   volumes:
   - name: testvolume
   volumeMounts:

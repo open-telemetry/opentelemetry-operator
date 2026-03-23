@@ -263,4 +263,10 @@ type StatefulSetCommonFields struct {
 	// Note that the custom service name is not created by the operator.
 	// +optional
 	ServiceName string `json:"serviceName,omitempty"`
+
+	// PodManagementPolicy defines the pod creation and termination order in StatefulSet.
+	// +optional
+	// +kubebuilder:default:=Parallel
+	// +kubebuilder:validation:Enum=OrderedReady;Parallel
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 }

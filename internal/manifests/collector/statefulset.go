@@ -33,6 +33,11 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 		serviceName = naming.HeadlessService(params.OtelCol.Name)
 	}
 
+	podManagementPolicy := params.OtelCol.Spec.PodManagementPolicy
+	if podManagementPolicy == "" {
+		podManagementPolicy = appsv1.ParallelPodManagement
+	}
+
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -71,7 +76,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 				},
 			},
 			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
-			PodManagementPolicy:                  "Parallel",
+			PodManagementPolicy:                  podManagementPolicy,
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,
 		},
