@@ -20242,6 +20242,15 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspechttproute">httpRoute</a></b></td>
+        <td>object</td>
+        <td>
+          HttpRoute is used to specify how OpenTelemetry Collector is exposed via Gateway API HTTPRoute.
+This functionality is only available if one of the valid modes is set.
+Valid modes are: deployment, daemonset and statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
