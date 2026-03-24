@@ -20,6 +20,7 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -53,6 +54,7 @@ var ImmutableChangeErr *ImmutableFieldChangeErr
 // - Route
 // - Secret
 // - TargetAllocator
+// - HTTPRoute
 // In order for the operator to reconcile other types, they must be added here.
 // The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
 // to be set by the controller-runtime package through a client get call.
@@ -143,6 +145,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			ing := existing
 			wantIng := desired.(*networkingv1.Ingress)
 			mutateIngress(ing, wantIng)
+
+		case *gatewayv1.HTTPRoute:
+			httpRoute := existing
+			wantHTTPRoute := desired.(*gatewayv1.HTTPRoute)
+			mutateHTTPRoute(httpRoute, wantHTTPRoute)
 
 		case *networkingv1.NetworkPolicy:
 			ds := existing
@@ -253,6 +260,12 @@ func mutateIngress(existing, desired *networkingv1.Ingress) {
 	existing.Spec.DefaultBackend = desired.Spec.DefaultBackend
 	existing.Spec.Rules = desired.Spec.Rules
 	existing.Spec.TLS = desired.Spec.TLS
+}
+
+func mutateHTTPRoute(existing, desired *gatewayv1.HTTPRoute) {
+	existing.Spec.Hostnames = desired.Spec.Hostnames
+	existing.Spec.ParentRefs = desired.Spec.ParentRefs
+	existing.Spec.Rules = desired.Spec.Rules
 }
 
 func mutateNetworkPolicy(existing, desired *networkingv1.NetworkPolicy) {
