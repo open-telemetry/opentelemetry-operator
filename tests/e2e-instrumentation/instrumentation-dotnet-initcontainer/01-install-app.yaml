@@ -19,6 +19,8 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     env:
     - name: ASPNETCORE_URLS
       value: "http://+:8080"
@@ -42,4 +44,6 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     command: ["sleep", "infinity"]
