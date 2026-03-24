@@ -39,9 +39,9 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 		return pod, errors.New("go instrumentation cannot be injected into a pod, multiple containers configured")
 	}
 
-	true := true
+	truee := true
 	zero := int64(0)
-	pod.Spec.ShareProcessNamespace = &true
+	pod.Spec.ShareProcessNamespace = &truee
 
 	goAgent := corev1.Container{
 		Name:      sideCarName,
@@ -49,7 +49,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 		Resources: goSpec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:  &zero,
-			Privileged: &true,
+			Privileged: &truee,
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

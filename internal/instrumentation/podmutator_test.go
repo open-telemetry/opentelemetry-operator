@@ -21,7 +21,7 @@ import (
 )
 
 func TestMutatePod(t *testing.T) {
-	true := true
+	truee := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -280,12 +280,12 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:      "otel-auto-secret-my-certs",
-									ReadOnly:  true,
+									ReadOnly:  truee,
 									MountPath: "/otel-auto-instrumentation-secret-my-certs",
 								},
 								{
 									Name:      "otel-auto-configmap-my-ca-bundle",
-									ReadOnly:  true,
+									ReadOnly:  truee,
 									MountPath: "/otel-auto-instrumentation-configmap-my-ca-bundle",
 								},
 							},
@@ -866,7 +866,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNodeJSAutoInstrumentation: true,
+				EnableNodeJSAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1140,7 +1140,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNodeJSAutoInstrumentation: true,
+				EnableNodeJSAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1428,7 +1428,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnablePythonAutoInstrumentation: true,
+				EnablePythonAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1734,7 +1734,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnablePythonAutoInstrumentation: true,
+				EnablePythonAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2028,7 +2028,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2226,7 +2226,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2536,7 +2536,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2692,7 +2692,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &true,
+					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -2702,7 +2702,7 @@ func TestMutatePod(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &true,
+								Privileged: &truee,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -2795,7 +2795,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableGoAutoInstrumentation: true,
+				EnableGoAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -3050,7 +3050,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableApacheHttpdInstrumentation: true,
+				EnableApacheHttpdInstrumentation: truee,
 			},
 		},
 		{
@@ -3308,7 +3308,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNginxAutoInstrumentation: true,
+				EnableNginxAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -3391,9 +3391,9 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableNodeJSAutoInstrumentation: true,
-				EnablePythonAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableNodeJSAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: truee,
 				EnableDotNetAutoInstrumentation: false,
 			},
 		},
@@ -4296,11 +4296,11 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableJavaAutoInstrumentation:   true,
-				EnableNodeJSAutoInstrumentation: true,
-				EnablePythonAutoInstrumentation: true,
-				EnableDotNetAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableJavaAutoInstrumentation:   truee,
+				EnableNodeJSAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: truee,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -4606,7 +4606,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:    true,
+				EnableMultiInstrumentation:    truee,
 				EnableJavaAutoInstrumentation: false,
 			},
 		},
@@ -4804,8 +4804,8 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableDotNetAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -4907,7 +4907,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
+				EnableMultiInstrumentation:      truee,
 				EnableDotNetAutoInstrumentation: false,
 				EnableNodeJSAutoInstrumentation: false,
 			},

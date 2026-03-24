@@ -49,9 +49,9 @@ func (otc *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 }
 
 func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
-	copy := in.DeepCopy()
+	c := in.DeepCopy()
 	cfg := &v1beta1.Config{}
-	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
+	if err := go_yaml.Unmarshal([]byte(c.Spec.Config), cfg); err != nil {
 		// It is critical that the conversion does not fail!
 		// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#response
 		// Thus, if unmarshalling fails, we return a valid, empty config.
@@ -76,7 +76,7 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	}
 
 	return v1beta1.OpenTelemetryCollector{
-		ObjectMeta: copy.ObjectMeta,
+		ObjectMeta: c.ObjectMeta,
 		Status: v1beta1.OpenTelemetryCollectorStatus{
 			Scale: v1beta1.ScaleSubresourceStatus{
 				Selector:       in.Status.Scale.Selector,
@@ -88,66 +88,66 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				ManagementState:               v1beta1.ManagementStateType(copy.Spec.ManagementState),
-				Resources:                     copy.Spec.Resources,
-				NodeSelector:                  copy.Spec.NodeSelector,
-				Args:                          copy.Spec.Args,
-				Replicas:                      copy.Spec.Replicas,
-				PodDisruptionBudget:           tov1beta1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
-				SecurityContext:               copy.Spec.SecurityContext,
-				PodSecurityContext:            copy.Spec.PodSecurityContext,
-				PodAnnotations:                copy.Spec.PodAnnotations,
-				ServiceAccount:                copy.Spec.ServiceAccount,
-				Image:                         copy.Spec.Image,
-				ImagePullPolicy:               copy.Spec.ImagePullPolicy,
-				VolumeMounts:                  copy.Spec.VolumeMounts,
-				Ports:                         tov1beta1Ports(copy.Spec.Ports),
-				Env:                           copy.Spec.Env,
-				EnvFrom:                       copy.Spec.EnvFrom,
-				Tolerations:                   copy.Spec.Tolerations,
-				Volumes:                       copy.Spec.Volumes,
-				Affinity:                      copy.Spec.Affinity,
-				Lifecycle:                     copy.Spec.Lifecycle,
-				TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
-				TopologySpreadConstraints:     copy.Spec.TopologySpreadConstraints,
-				HostNetwork:                   copy.Spec.HostNetwork,
-				ShareProcessNamespace:         copy.Spec.ShareProcessNamespace,
-				PriorityClassName:             copy.Spec.PriorityClassName,
-				InitContainers:                copy.Spec.InitContainers,
-				AdditionalContainers:          copy.Spec.AdditionalContainers,
-				TrafficDistribution:           copy.Spec.TrafficDistribution,
+				ManagementState:               v1beta1.ManagementStateType(c.Spec.ManagementState),
+				Resources:                     c.Spec.Resources,
+				NodeSelector:                  c.Spec.NodeSelector,
+				Args:                          c.Spec.Args,
+				Replicas:                      c.Spec.Replicas,
+				PodDisruptionBudget:           tov1beta1PodDisruptionBudget(c.Spec.PodDisruptionBudget),
+				SecurityContext:               c.Spec.SecurityContext,
+				PodSecurityContext:            c.Spec.PodSecurityContext,
+				PodAnnotations:                c.Spec.PodAnnotations,
+				ServiceAccount:                c.Spec.ServiceAccount,
+				Image:                         c.Spec.Image,
+				ImagePullPolicy:               c.Spec.ImagePullPolicy,
+				VolumeMounts:                  c.Spec.VolumeMounts,
+				Ports:                         tov1beta1Ports(c.Spec.Ports),
+				Env:                           c.Spec.Env,
+				EnvFrom:                       c.Spec.EnvFrom,
+				Tolerations:                   c.Spec.Tolerations,
+				Volumes:                       c.Spec.Volumes,
+				Affinity:                      c.Spec.Affinity,
+				Lifecycle:                     c.Spec.Lifecycle,
+				TerminationGracePeriodSeconds: c.Spec.TerminationGracePeriodSeconds,
+				TopologySpreadConstraints:     c.Spec.TopologySpreadConstraints,
+				HostNetwork:                   c.Spec.HostNetwork,
+				ShareProcessNamespace:         c.Spec.ShareProcessNamespace,
+				PriorityClassName:             c.Spec.PriorityClassName,
+				InitContainers:                c.Spec.InitContainers,
+				AdditionalContainers:          c.Spec.AdditionalContainers,
+				TrafficDistribution:           c.Spec.TrafficDistribution,
 			},
 			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
-				VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
+				VolumeClaimTemplates: c.Spec.VolumeClaimTemplates,
 			},
-			Autoscaler:      tov1beta1Autoscaler(copy.Spec.Autoscaler, copy.Spec.MinReplicas, copy.Spec.MaxReplicas),
-			TargetAllocator: tov1beta1TA(copy.Spec.TargetAllocator),
-			Mode:            v1beta1.Mode(copy.Spec.Mode),
-			UpgradeStrategy: v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy),
+			Autoscaler:      tov1beta1Autoscaler(c.Spec.Autoscaler, c.Spec.MinReplicas, c.Spec.MaxReplicas),
+			TargetAllocator: tov1beta1TA(c.Spec.TargetAllocator),
+			Mode:            v1beta1.Mode(c.Spec.Mode),
+			UpgradeStrategy: v1beta1.UpgradeStrategy(c.Spec.UpgradeStrategy),
 			Config:          *cfg,
 			Ingress: v1beta1.Ingress{
-				Type:             v1beta1.IngressType(copy.Spec.Ingress.Type),
-				RuleType:         v1beta1.IngressRuleType(copy.Spec.Ingress.RuleType),
-				Hostname:         copy.Spec.Ingress.Hostname,
-				Annotations:      copy.Spec.Ingress.Annotations,
-				TLS:              copy.Spec.Ingress.TLS,
-				IngressClassName: copy.Spec.Ingress.IngressClassName,
+				Type:             v1beta1.IngressType(c.Spec.Ingress.Type),
+				RuleType:         v1beta1.IngressRuleType(c.Spec.Ingress.RuleType),
+				Hostname:         c.Spec.Ingress.Hostname,
+				Annotations:      c.Spec.Ingress.Annotations,
+				TLS:              c.Spec.Ingress.TLS,
+				IngressClassName: c.Spec.Ingress.IngressClassName,
 				Route: v1beta1.OpenShiftRoute{
-					Termination: v1beta1.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
+					Termination: v1beta1.TLSRouteTerminationType(c.Spec.Ingress.Route.Termination),
 				},
 			},
-			LivenessProbe: tov1beta1Probe(copy.Spec.LivenessProbe),
+			LivenessProbe: tov1beta1Probe(c.Spec.LivenessProbe),
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
-					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
-					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
+					EnableMetrics:                c.Spec.Observability.Metrics.EnableMetrics,
+					DisablePrometheusAnnotations: c.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
 			},
-			ConfigMaps:              tov1beta1ConfigMaps(copy.Spec.ConfigMaps),
-			DaemonSetUpdateStrategy: copy.Spec.UpdateStrategy,
+			ConfigMaps:              tov1beta1ConfigMaps(c.Spec.ConfigMaps),
+			DaemonSetUpdateStrategy: c.Spec.UpdateStrategy,
 			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
-				Type:          copy.Spec.DeploymentUpdateStrategy.Type,
-				RollingUpdate: copy.Spec.DeploymentUpdateStrategy.RollingUpdate,
+				Type:          c.Spec.DeploymentUpdateStrategy.Type,
+				RollingUpdate: c.Spec.DeploymentUpdateStrategy.RollingUpdate,
 			},
 		},
 	}
@@ -300,14 +300,14 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 }
 
 func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
-	copy := in.DeepCopy()
-	configYaml, err := copy.Spec.Config.Yaml()
+	c := in.DeepCopy()
+	configYaml, err := c.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
 
 	return &OpenTelemetryCollector{
-		ObjectMeta: copy.ObjectMeta,
+		ObjectMeta: c.ObjectMeta,
 		Status: OpenTelemetryCollectorStatus{
 			Scale: ScaleSubresourceStatus{
 				Selector:       in.Status.Scale.Selector,
@@ -319,61 +319,61 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 		},
 
 		Spec: OpenTelemetryCollectorSpec{
-			ManagementState:      ManagementStateType(copy.Spec.ManagementState),
-			Resources:            copy.Spec.Resources,
-			NodeSelector:         copy.Spec.NodeSelector,
-			Args:                 copy.Spec.Args,
-			Replicas:             copy.Spec.Replicas,
-			Autoscaler:           tov1alpha1Autoscaler(copy.Spec.Autoscaler),
-			PodDisruptionBudget:  tov1alpha1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
-			SecurityContext:      copy.Spec.SecurityContext,
-			PodSecurityContext:   copy.Spec.PodSecurityContext,
-			PodAnnotations:       copy.Spec.PodAnnotations,
-			TargetAllocator:      tov1alpha1TA(copy.Spec.TargetAllocator),
-			Mode:                 Mode(copy.Spec.Mode),
-			ServiceAccount:       copy.Spec.ServiceAccount,
-			Image:                copy.Spec.Image,
-			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
-			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
+			ManagementState:      ManagementStateType(c.Spec.ManagementState),
+			Resources:            c.Spec.Resources,
+			NodeSelector:         c.Spec.NodeSelector,
+			Args:                 c.Spec.Args,
+			Replicas:             c.Spec.Replicas,
+			Autoscaler:           tov1alpha1Autoscaler(c.Spec.Autoscaler),
+			PodDisruptionBudget:  tov1alpha1PodDisruptionBudget(c.Spec.PodDisruptionBudget),
+			SecurityContext:      c.Spec.SecurityContext,
+			PodSecurityContext:   c.Spec.PodSecurityContext,
+			PodAnnotations:       c.Spec.PodAnnotations,
+			TargetAllocator:      tov1alpha1TA(c.Spec.TargetAllocator),
+			Mode:                 Mode(c.Spec.Mode),
+			ServiceAccount:       c.Spec.ServiceAccount,
+			Image:                c.Spec.Image,
+			UpgradeStrategy:      UpgradeStrategy(c.Spec.UpgradeStrategy),
+			ImagePullPolicy:      c.Spec.ImagePullPolicy,
 			Config:               configYaml,
-			VolumeMounts:         copy.Spec.VolumeMounts,
-			Ports:                tov1alpha1Ports(copy.Spec.Ports),
-			Env:                  copy.Spec.Env,
-			EnvFrom:              copy.Spec.EnvFrom,
-			VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
-			Tolerations:          copy.Spec.Tolerations,
-			Volumes:              copy.Spec.Volumes,
+			VolumeMounts:         c.Spec.VolumeMounts,
+			Ports:                tov1alpha1Ports(c.Spec.Ports),
+			Env:                  c.Spec.Env,
+			EnvFrom:              c.Spec.EnvFrom,
+			VolumeClaimTemplates: c.Spec.VolumeClaimTemplates,
+			Tolerations:          c.Spec.Tolerations,
+			Volumes:              c.Spec.Volumes,
 			Ingress: Ingress{
-				Type:             IngressType(copy.Spec.Ingress.Type),
-				RuleType:         IngressRuleType(copy.Spec.Ingress.RuleType),
-				Hostname:         copy.Spec.Ingress.Hostname,
-				Annotations:      copy.Spec.Ingress.Annotations,
-				TLS:              copy.Spec.Ingress.TLS,
-				IngressClassName: copy.Spec.Ingress.IngressClassName,
+				Type:             IngressType(c.Spec.Ingress.Type),
+				RuleType:         IngressRuleType(c.Spec.Ingress.RuleType),
+				Hostname:         c.Spec.Ingress.Hostname,
+				Annotations:      c.Spec.Ingress.Annotations,
+				TLS:              c.Spec.Ingress.TLS,
+				IngressClassName: c.Spec.Ingress.IngressClassName,
 				Route: OpenShiftRoute{
-					Termination: TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
+					Termination: TLSRouteTerminationType(c.Spec.Ingress.Route.Termination),
 				},
 			},
-			HostNetwork:                   copy.Spec.HostNetwork,
-			ShareProcessNamespace:         copy.Spec.ShareProcessNamespace,
-			PriorityClassName:             copy.Spec.PriorityClassName,
-			Affinity:                      copy.Spec.Affinity,
-			Lifecycle:                     copy.Spec.Lifecycle,
-			TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
-			LivenessProbe:                 tov1alpha1Probe(copy.Spec.LivenessProbe),
-			InitContainers:                copy.Spec.InitContainers,
-			AdditionalContainers:          copy.Spec.AdditionalContainers,
+			HostNetwork:                   c.Spec.HostNetwork,
+			ShareProcessNamespace:         c.Spec.ShareProcessNamespace,
+			PriorityClassName:             c.Spec.PriorityClassName,
+			Affinity:                      c.Spec.Affinity,
+			Lifecycle:                     c.Spec.Lifecycle,
+			TerminationGracePeriodSeconds: c.Spec.TerminationGracePeriodSeconds,
+			LivenessProbe:                 tov1alpha1Probe(c.Spec.LivenessProbe),
+			InitContainers:                c.Spec.InitContainers,
+			AdditionalContainers:          c.Spec.AdditionalContainers,
 			Observability: ObservabilitySpec{
 				Metrics: MetricsConfigSpec{
-					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
-					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
+					EnableMetrics:                c.Spec.Observability.Metrics.EnableMetrics,
+					DisablePrometheusAnnotations: c.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
 			},
-			TopologySpreadConstraints: copy.Spec.TopologySpreadConstraints,
-			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
-			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
-			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
-			TrafficDistribution:       copy.Spec.TrafficDistribution,
+			TopologySpreadConstraints: c.Spec.TopologySpreadConstraints,
+			ConfigMaps:                tov1alpha1ConfigMaps(c.Spec.ConfigMaps),
+			UpdateStrategy:            c.Spec.DaemonSetUpdateStrategy,
+			DeploymentUpdateStrategy:  c.Spec.DeploymentUpdateStrategy,
+			TrafficDistribution:       c.Spec.TrafficDistribution,
 		},
 	}, nil
 }

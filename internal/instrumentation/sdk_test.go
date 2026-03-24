@@ -1426,7 +1426,7 @@ func TestInjectDotNet(t *testing.T) {
 
 func TestInjectGo(t *testing.T) {
 	falsee := false
-	true := true
+	truee := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -1536,7 +1536,7 @@ func TestInjectGo(t *testing.T) {
 			},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &true,
+					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{
 						{
 							Name:  "app",
@@ -1547,7 +1547,7 @@ func TestInjectGo(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &true,
+								Privileged: &truee,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -1653,7 +1653,7 @@ func TestInjectGo(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &true,
+					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{
 						{
 							Name:  "app",
@@ -1664,7 +1664,7 @@ func TestInjectGo(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &true,
+								Privileged: &truee,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -1776,7 +1776,7 @@ func TestInjectGo(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &true,
+					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{
 						{
 							Name:  "istio-proxy",
@@ -1791,7 +1791,7 @@ func TestInjectGo(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &true,
+								Privileged: &truee,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
