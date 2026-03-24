@@ -31,11 +31,6 @@ func ReceiverFor(name string) components.Parser {
 	return components.NewSilentSinglePortParserBuilder(components.ComponentType(name), components.UnsetPort).MustBuild()
 }
 
-// NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
-func NewScraperParser(name string) *components.GenericParser[any] {
-	return components.NewBuilder[any]().WithName(name).WithPort(components.UnsetPort).MustBuild()
-}
-
 var componentParsers = []components.Parser{
 	components.NewMultiPortReceiverBuilder("otlp").
 		AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
@@ -133,7 +128,7 @@ var componentParsers = []components.Parser{
 	components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
 		WithRbacGen(generatek8sobjectsRbacRules).
 		MustBuild(),
-	NewScraperParser("prometheus"),
+	NewPrometheusParser(),
 	NewScraperParser("sshcheck"),
 	NewScraperParser("cloudfoundry"),
 	NewScraperParser("vcenter"),
