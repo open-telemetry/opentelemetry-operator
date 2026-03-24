@@ -136,7 +136,7 @@ func Route(otelcol, prefix string) string {
 }
 
 // HTTPRoute builds the HTTPRoute name based on the instance.
-func HTTPRoute(otelcol string, prefix string) string {
+func HTTPRoute(otelcol, prefix string) string {
 	return DNSName(Truncate("%s-%s-httproute", 63, otelcol, prefix))
 }
 
