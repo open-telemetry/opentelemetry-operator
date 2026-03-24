@@ -281,7 +281,6 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 }
 
 func (a *autoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
-
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
 		return gatewayapi.ApiNotAvailable, err
