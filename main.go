@@ -417,6 +417,16 @@ func main() {
 		}
 	}
 
+	if err = controllers.NewInstrumentationReconciler(controllers.InstrumentationReconcilerParams{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Instrumentation"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("instrumentation"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Instrumentation")
+		os.Exit(1)
+	}
+
 	if featuregate.EnableClusterObservability.IsEnabled() {
 		setupLog.Info("ClusterObservability feature is enabled")
 		if err = controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{

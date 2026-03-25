@@ -11,6 +11,12 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// AutoUpdate determines whether the operator should automatically update
+	// the instrumentation images when the operator is upgraded.
+	// Disabled by default.
+	// +optional
+	AutoUpdate *bool `json:"autoUpdate,omitempty"`
+
 	// Exporter defines exporter configuration.
 	// +optional
 	Exporter `json:"exporter,omitempty"`
