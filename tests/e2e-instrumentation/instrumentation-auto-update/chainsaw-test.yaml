@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-auto-update
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-instrumentation.yaml
+    - apply:
+        file: 00-install-app.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app=my-java-auto-update
+  - name: step-01-update-image
+    try:
+    - apply:
+        file: 01-update-image.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+    - podLogs:
+        selector: app=my-java-auto-update
+  - name: step-02-update-env
+    try:
+    - apply:
+        file: 02-update-env.yaml
+    - assert:
+        file: 02-assert.yaml
+    - script:
+        content: |
+          kubectl get pod -n ${NAMESPACE} -l app=my-java-auto-update -o jsonpath='{.items[0].spec.containers[0].env[?(@.name=="OTEL_INSTRUMENTATION_JDBC_ENABLED")].value}'
+        check:
+          ($stdout): "false"
+    catch:
+    - podLogs:
+        selector: app=my-java-auto-update
