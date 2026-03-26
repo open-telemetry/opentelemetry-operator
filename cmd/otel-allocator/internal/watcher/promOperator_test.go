@@ -94,13 +94,16 @@ func (f *fakeFactoriesForNamespaces) ForResource(_ string, resource schema.Group
 	}, nil
 }
 
-// testSources holds the FakeControllerSource for each resource type so that tests can
-// dynamically add/modify objects after informers are started.
-type testSources struct {
-	serviceMonitors *fcache.FakeControllerSource
-	podMonitors     *fcache.FakeControllerSource
-	probes          *fcache.FakeControllerSource
-	scrapeConfigs   *fcache.FakeControllerSource
+// testWatcher bundles a PrometheusCRWatcher with fake sources for use in tests.
+// Tests access only the fields they need.
+type testWatcher struct {
+	*PrometheusCRWatcher
+	NamespaceSource      *fcache.FakeControllerSource
+	ServiceMonitorSource *fcache.FakeControllerSource
+	PodMonitorSource     *fcache.FakeControllerSource
+	ProbeSource          *fcache.FakeControllerSource
+	ScrapeConfigSource   *fcache.FakeControllerSource
+	MetadataClient       *metadatafake.FakeMetadataClient
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -1154,25 +1157,37 @@ func TestLoadConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				w, _, _, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
+				tw := newTestWatcher(t, tt.cfg)
+				for _, sm := range tt.serviceMonitors {
+					tw.ServiceMonitorSource.Add(sm)
+				}
+				for _, pm := range tt.podMonitors {
+					tw.PodMonitorSource.Add(pm)
+				}
+				for _, prb := range tt.probes {
+					tw.ProbeSource.Add(prb)
+				}
+				for _, sc := range tt.scrapeConfigs {
+					tw.ScrapeConfigSource.Add(sc)
+				}
 
 				// Start namespace informers in order to populate cache.
-				go w.nsInformer.Run(w.stopChannel)
+				go tw.nsInformer.Run(tw.stopChannel)
 				synctest.Wait()
 
-				for _, informer := range w.informers {
+				for _, informer := range tw.informers {
 					// Start informers in order to populate cache.
-					informer.Start(w.stopChannel)
+					informer.Start(tw.stopChannel)
 				}
 				synctest.Wait()
 
-				got, err := w.LoadConfig(context.Background())
+				got, err := tw.LoadConfig(context.Background())
 				assert.NoError(t, err)
 
 				sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 				assert.Equal(t, tt.want.ScrapeConfigs, got.ScrapeConfigs)
 
-				close(w.stopChannel)
+				close(tw.stopChannel)
 				synctest.Wait()
 			})
 		})
@@ -1263,28 +1278,31 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	}
 
 	synctest.Test(t, func(t *testing.T) {
-		w, source, _, _ := getTestPrometheusCRWatcher(t, namespace, nil, podMonitors, nil, nil, cfg)
+		tw := newTestWatcher(t, cfg)
+		for _, pm := range podMonitors {
+			tw.PodMonitorSource.Add(pm)
+		}
 		events := make(chan Event, 1)
 		eventInterval := 5 * time.Millisecond
 
-		defer w.Close()
-		w.eventInterval = eventInterval
+		defer tw.Close()
+		tw.eventInterval = eventInterval
 
 		go func() {
-			watchErr := w.Watch(events, make(chan error))
+			watchErr := tw.Watch(events, make(chan error))
 			require.NoError(t, watchErr)
 		}()
 		// Advance time past the informer sync polling period to let Watch complete setup.
 		time.Sleep(watchSyncDuration)
 		synctest.Wait()
 
-		got, err := w.LoadConfig(context.Background())
+		got, err := tw.LoadConfig(context.Background())
 		assert.NoError(t, err)
 
 		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 		assert.Equal(t, want_before.ScrapeConfigs, got.ScrapeConfigs)
 
-		source.Modify(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
+		tw.NamespaceSource.Modify(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
 			Name: "labellednamespace",
 			Labels: map[string]string{
 				"label2": "label2",
@@ -1294,7 +1312,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		time.Sleep(eventInterval)
 		synctest.Wait()
 
-		got, err = w.LoadConfig(context.Background())
+		got, err = tw.LoadConfig(context.Background())
 		assert.NoError(t, err)
 
 		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
@@ -1352,8 +1370,9 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 	}
 
 	synctest.Test(t, func(t *testing.T) {
-		w, _, _, mdClient := getTestPrometheusCRWatcher(t, namespace, []*monitoringv1.ServiceMonitor{sm}, nil, nil, nil, cfg)
-		defer w.Close()
+		tw := newTestWatcher(t, cfg)
+		tw.ServiceMonitorSource.Add(sm)
+		defer tw.Close()
 
 		// Add initial secret to the metadata client's tracker so the informer can watch it
 		secretGVR := v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets))
@@ -1368,17 +1387,17 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 				ResourceVersion: "1",
 			},
 		}
-		err := mdClient.Tracker().Add(initialSecretMeta)
+		err := tw.MetadataClient.Tracker().Add(initialSecretMeta)
 		require.NoError(t, err)
 
 		events := make(chan Event, 1)
 		errors := make(chan error, 1)
 		eventInterval := 5 * time.Millisecond
-		w.eventInterval = eventInterval
+		tw.eventInterval = eventInterval
 
 		// Start Watch in a goroutine - this registers the secret informer event handlers
 		go func() {
-			watchErr := w.Watch(events, errors)
+			watchErr := tw.Watch(events, errors)
 			require.NoError(t, watchErr)
 		}()
 
@@ -1388,7 +1407,7 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 		<-events
 
 		// Initial config should reflect the original secret values.
-		got, err := w.LoadConfig(context.Background())
+		got, err := tw.LoadConfig(context.Background())
 		require.NoError(t, err)
 		require.NotEmpty(t, got.ScrapeConfigs)
 
@@ -1416,7 +1435,7 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 				"password": []byte("newpassword"),
 			},
 		}
-		_, err = w.k8sClient.CoreV1().Secrets(namespace).Update(context.Background(), updatedSecret, metav1.UpdateOptions{})
+		_, err = tw.k8sClient.CoreV1().Secrets(namespace).Update(context.Background(), updatedSecret, metav1.UpdateOptions{})
 		require.NoError(t, err)
 
 		// Update the metadata client's tracker to trigger the informer's UpdateFunc
@@ -1431,7 +1450,7 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 				ResourceVersion: "2",
 			},
 		}
-		err = mdClient.Tracker().Update(secretGVR, updatedSecretMeta, namespace)
+		err = tw.MetadataClient.Tracker().Update(secretGVR, updatedSecretMeta, namespace)
 		require.NoError(t, err)
 
 		// Wait for the informer event to be processed
@@ -1439,7 +1458,7 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 		time.Sleep(eventInterval)
 		synctest.Wait()
 
-		got, err = w.LoadConfig(context.Background())
+		got, err = tw.LoadConfig(context.Background())
 		require.NoError(t, err)
 
 		smSC = nil
@@ -1477,18 +1496,18 @@ func TestRateLimit(t *testing.T) {
 		eventInterval := 500 * time.Millisecond
 		cfg := allocatorconfig.Config{}
 
-		w, _, sources, _ := getTestPrometheusCRWatcher(t, namespace, nil, nil, nil, nil, cfg)
-		defer w.Close()
-		w.eventInterval = eventInterval
+		tw := newTestWatcher(t, cfg)
+		defer tw.Close()
+		tw.eventInterval = eventInterval
 
 		go func() {
-			watchErr := w.Watch(events, make(chan error))
+			watchErr := tw.Watch(events, make(chan error))
 			require.NoError(t, watchErr)
 		}()
 		time.Sleep(watchSyncDuration)
 		synctest.Wait()
 
-		sources.serviceMonitors.Add(serviceMonitor)
+		tw.ServiceMonitorSource.Add(serviceMonitor)
 		synctest.Wait()
 		time.Sleep(eventInterval)
 		synctest.Wait()
@@ -1496,13 +1515,13 @@ func TestRateLimit(t *testing.T) {
 
 		// Send two updates and verify that the elapsed time is at least eventInterval
 		startTime := time.Now()
-		sources.serviceMonitors.Modify(serviceMonitor)
+		tw.ServiceMonitorSource.Modify(serviceMonitor)
 		synctest.Wait()
 		time.Sleep(eventInterval)
 		synctest.Wait()
 		<-events
 
-		sources.serviceMonitors.Modify(serviceMonitor)
+		tw.ServiceMonitorSource.Modify(serviceMonitor)
 		synctest.Wait()
 		time.Sleep(eventInterval)
 		synctest.Wait()
@@ -1582,21 +1601,24 @@ func TestDefaultDurations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				w, _, _, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
-				defer w.Close()
+				tw := newTestWatcher(t, tt.cfg)
+				for _, sm := range tt.serviceMonitors {
+					tw.ServiceMonitorSource.Add(sm)
+				}
+				defer tw.Close()
 
 				events := make(chan Event, 1)
 				eventInterval := 5 * time.Millisecond
-				w.eventInterval = eventInterval
+				tw.eventInterval = eventInterval
 
 				go func() {
-					watchErr := w.Watch(events, make(chan error))
+					watchErr := tw.Watch(events, make(chan error))
 					require.NoError(t, watchErr)
 				}()
 				time.Sleep(watchSyncDuration)
 				synctest.Wait()
 
-				got, err := w.LoadConfig(context.Background())
+				got, err := tw.LoadConfig(context.Background())
 				assert.NoError(t, err)
 
 				assert.NotEmpty(t, got.ScrapeConfigs)
@@ -1610,17 +1632,12 @@ func TestDefaultDurations(t *testing.T) {
 	}
 }
 
-// getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake sources
-// and test secrets. Returns the watcher, namespace source, resource sources, and metadata client for secret updates.
-func getTestPrometheusCRWatcher(
-	t *testing.T,
-	namespace string,
-	svcMonitors []*monitoringv1.ServiceMonitor,
-	podMonitors []*monitoringv1.PodMonitor,
-	probes []*monitoringv1.Probe,
-	scrapeConfigs []*promv1alpha1.ScrapeConfig,
-	cfg allocatorconfig.Config,
-) (*PrometheusCRWatcher, *fcache.FakeControllerSource, *testSources, *metadatafake.FakeMetadataClient) {
+// newTestWatcher creates a testWatcher with fake sources for the given config.
+// Callers add resources to the returned sources (e.g. tw.ServiceMonitorSource.Add)
+// before starting informers.
+func newTestWatcher(t *testing.T, cfg allocatorconfig.Config) *testWatcher {
+	t.Helper()
+
 	k8sClient := fake.NewSimpleClientset()
 	_, err := k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1629,9 +1646,7 @@ func getTestPrometheusCRWatcher(
 		},
 		Data: map[string][]byte{"username": []byte("admin"), "password": []byte("password")},
 	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(t, err)
-	}
+	require.NoError(t, err)
 	_, err = k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "bearer",
@@ -1639,82 +1654,82 @@ func getTestPrometheusCRWatcher(
 		},
 		Data: map[string][]byte{"token": []byte("bearer-token")},
 	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(t, err)
+	require.NoError(t, err)
+
+	// newSource creates a FakeControllerSource and registers cleanup.
+	newSource := func() *fcache.FakeControllerSource {
+		s := fcache.NewFakeControllerSource()
+		t.Cleanup(func() { s.Broadcaster.Shutdown() })
+		return s
 	}
 
-	// Create FakeControllerSource per resource type and populate with initial objects.
-	smSource := fcache.NewFakeControllerSource()
-	t.Cleanup(func() { smSource.Broadcaster.Shutdown() })
-	for _, sm := range svcMonitors {
-		if sm != nil {
-			smSource.Add(sm)
-		}
-	}
-
-	pmSource := fcache.NewFakeControllerSource()
-	t.Cleanup(func() { pmSource.Broadcaster.Shutdown() })
-	for _, pm := range podMonitors {
-		if pm != nil {
-			pmSource.Add(pm)
-		}
-	}
-
-	probeSource := fcache.NewFakeControllerSource()
-	t.Cleanup(func() { probeSource.Broadcaster.Shutdown() })
-	for _, prb := range probes {
-		if prb != nil {
-			probeSource.Add(prb)
-		}
-	}
-
-	scSource := fcache.NewFakeControllerSource()
-	t.Cleanup(func() { scSource.Broadcaster.Shutdown() })
-	for _, scc := range scrapeConfigs {
-		if scc != nil {
-			scSource.Add(scc)
-		}
-	}
+	smSource := newSource()
+	pmSource := newSource()
+	probeSource := newSource()
+	scSource := newSource()
+	nsSource := newSource()
 
 	// Build fake factories backed by the sources.
-	smGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName)
-	pmGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName)
-	probeGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName)
-	scGVR := promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName)
+	type gvrInfo struct {
+		gvr      schema.GroupVersionResource
+		source   *fcache.FakeControllerSource
+		exemplar runtime.Object
+	}
+	resources := []gvrInfo{
+		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName), smSource, &monitoringv1.ServiceMonitor{}},
+		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName), pmSource, &monitoringv1.PodMonitor{}},
+		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName), probeSource, &monitoringv1.Probe{}},
+		{promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName), scSource, &promv1alpha1.ScrapeConfig{}},
+	}
+
+	sources := make(map[schema.GroupVersionResource]*fcache.FakeControllerSource, len(resources))
+	exemplars := make(map[schema.GroupVersionResource]runtime.Object, len(resources))
+	for _, r := range resources {
+		sources[r.gvr] = r.source
+		exemplars[r.gvr] = r.exemplar
+	}
 
 	fakeFactory := &fakeFactoriesForNamespaces{
-		sources: map[schema.GroupVersionResource]*fcache.FakeControllerSource{
-			smGVR:    smSource,
-			pmGVR:    pmSource,
-			probeGVR: probeSource,
-			scGVR:    scSource,
-		},
-		exemplars: map[schema.GroupVersionResource]runtime.Object{
-			smGVR:    &monitoringv1.ServiceMonitor{},
-			pmGVR:    &monitoringv1.PodMonitor{},
-			probeGVR: &monitoringv1.Probe{},
-			scGVR:    &promv1alpha1.ScrapeConfig{},
-		},
+		sources:    sources,
+		exemplars:  exemplars,
 		namespaces: sets.New[string](v1.NamespaceAll),
 	}
 
-	// Create fake metadata client for secret informer — the metadata fake client
-	// properly declares IsWatchListSemanticsUnSupported so its informers sync correctly.
+	// Create fake metadata client for secret informer.
 	mdScheme := metadatafake.NewTestScheme()
 	_ = metav1.AddMetaToScheme(mdScheme)
 	mdClient := metadatafake.NewSimpleMetadataClient(mdScheme)
 	metadataFactory := informers.NewMetadataInformerFactory(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mdClient, 1*time.Second, nil)
 
-	informersMap, err := getTestInformers(fakeFactory, metadataFactory)
-	if err != nil {
-		t.Fatal(t, err)
+	// Build informers via a for-range loop over name→GVR.
+	informerDefs := map[string]schema.GroupVersionResource{
+		monitoringv1.ServiceMonitorName: monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
+		monitoringv1.PodMonitorName:     monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
+		monitoringv1.ProbeName:          monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
+		promv1alpha1.ScrapeConfigName:   promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
+	}
+	informersMap := make(map[string]*informers.ForResource, len(informerDefs)+1)
+	for name, gvr := range informerDefs {
+		inf, infErr := informers.NewInformersForResource(fakeFactory, gvr)
+		require.NoError(t, infErr)
+		informersMap[name] = inf
+	}
+	// Secret informer from metadata factory.
+	secretInformer, err := informers.NewInformersForResourceWithTransform(
+		metadataFactory,
+		v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)),
+		informers.PartialObjectMetadataStrip(operator.SecretGVK()),
+	)
+	require.NoError(t, err)
+	if secretInformer != nil {
+		informersMap[string(v1.ResourceSecrets)] = secretInformer
 	}
 
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
+			Namespace: "test",
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
@@ -1737,17 +1752,13 @@ func getTestPrometheusCRWatcher(
 	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
 	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
-	if err != nil {
-		t.Fatal(t, err)
-	}
+	require.NoError(t, err)
 
 	store := assets.NewStoreBuilder(k8sClient.CoreV1(), k8sClient.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
 	eventRecorder := operator.NewFakeRecorder(10, prom)
 
-	nsSource := fcache.NewFakeControllerSource()
-	t.Cleanup(func() { nsSource.Broadcaster.Shutdown() })
 	nsSource.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
 	nsSource.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
 		Name: "labellednamespace",
@@ -1762,7 +1773,8 @@ func getTestPrometheusCRWatcher(
 	resourceSelector, err := prometheus.NewResourceSelector(promOperatorLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
 	require.NoError(t, err)
 
-	return &PrometheusCRWatcher{
+	return &testWatcher{
+		PrometheusCRWatcher: &PrometheusCRWatcher{
 			logger:                          slog.Default(),
 			k8sClient:                       k8sClient,
 			informers:                       informersMap,
@@ -1776,12 +1788,14 @@ func getTestPrometheusCRWatcher(
 			resourceSelector:                resourceSelector,
 			store:                           store,
 			prometheusCR:                    prom,
-		}, nsSource, &testSources{
-			serviceMonitors: smSource,
-			podMonitors:     pmSource,
-			probes:          probeSource,
-			scrapeConfigs:   scSource,
-		}, mdClient
+		},
+		NamespaceSource:      nsSource,
+		ServiceMonitorSource: smSource,
+		PodMonitorSource:     pmSource,
+		ProbeSource:          probeSource,
+		ScrapeConfigSource:   scSource,
+		MetadataClient:       mdClient,
+	}
 }
 
 // Remove relable configs fields from scrape configs for testing,
@@ -1791,51 +1805,6 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
 	}
-}
-
-// getTestInformers creates informers for testing without CRD availability checks.
-func getTestInformers(factory, secretFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
-	informersMap := make(map[string]*informers.ForResource)
-
-	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
-	if err != nil {
-		return nil, err
-	}
-	informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
-
-	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
-	if err != nil {
-		return nil, err
-	}
-	informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
-
-	probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
-	if err != nil {
-		return nil, err
-	}
-	informersMap[monitoringv1.ProbeName] = probeInformers
-
-	scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
-	if err != nil {
-		return nil, err
-	}
-	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
-
-	if secretFactory != nil {
-		secretInformer, err := informers.NewInformersForResourceWithTransform(
-			secretFactory,
-			v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)),
-			informers.PartialObjectMetadataStrip(operator.SecretGVK()),
-		)
-		if err != nil {
-			return nil, err
-		}
-		if secretInformer != nil {
-			informersMap[string(v1.ResourceSecrets)] = secretInformer
-		}
-	}
-
-	return informersMap, nil
 }
 
 // TestCRDAvailabilityChecks tests the CRDs' availability.

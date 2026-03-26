@@ -19,10 +19,10 @@ var (
 // Truncate will shorten the length of the instance name so that it contains at most max chars when combined with the fixed part
 // If the fixed part is already bigger than the max, this function is noop.
 // source: https://github.com/jaegertracing/jaeger-operator/blob/91e3b69ee5c8761bbda9d3cf431400a73fc1112a/pkg/util/truncate.go#L17
-func Truncate(format string, max int, values ...any) string {
+func Truncate(format string, maximum int, values ...any) string {
 	var truncated []any
 	result := fmt.Sprintf(format, values...)
-	if excess := len(result) - max; excess > 0 {
+	if excess := len(result) - maximum; excess > 0 {
 		// we try to reduce the first string we find
 		for _, value := range values {
 			if excess == 0 {
@@ -46,8 +46,8 @@ func Truncate(format string, max int, values ...any) string {
 	}
 
 	// if at this point, the result is still bigger than max, apply a hard cap:
-	if len(result) > max {
-		return result[:max]
+	if len(result) > maximum {
+		return result[:maximum]
 	}
 
 	return trimNonAlphaNumeric(result)

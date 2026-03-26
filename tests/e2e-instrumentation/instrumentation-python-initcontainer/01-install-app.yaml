@@ -19,6 +19,8 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     command: ["/bin/sh", "-c"]
     # Start app, generate telemetry, wait for flush, then exit
     args:
@@ -39,4 +41,6 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     command: ["sleep", "infinity"]

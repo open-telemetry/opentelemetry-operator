@@ -4,7 +4,6 @@
 package instrumentation
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -21,7 +20,7 @@ import (
 )
 
 func TestMutatePod(t *testing.T) {
-	true := true
+	truee := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -280,12 +279,12 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:      "otel-auto-secret-my-certs",
-									ReadOnly:  true,
+									ReadOnly:  truee,
 									MountPath: "/otel-auto-instrumentation-secret-my-certs",
 								},
 								{
 									Name:      "otel-auto-configmap-my-ca-bundle",
-									ReadOnly:  true,
+									ReadOnly:  truee,
 									MountPath: "/otel-auto-instrumentation-configmap-my-ca-bundle",
 								},
 							},
@@ -866,7 +865,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNodeJSAutoInstrumentation: true,
+				EnableNodeJSAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1140,7 +1139,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNodeJSAutoInstrumentation: true,
+				EnableNodeJSAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1428,7 +1427,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnablePythonAutoInstrumentation: true,
+				EnablePythonAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -1734,7 +1733,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnablePythonAutoInstrumentation: true,
+				EnablePythonAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2028,7 +2027,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2226,7 +2225,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2536,7 +2535,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -2692,7 +2691,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &true,
+					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -2702,7 +2701,7 @@ func TestMutatePod(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &true,
+								Privileged: &truee,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -2795,7 +2794,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableGoAutoInstrumentation: true,
+				EnableGoAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -3050,7 +3049,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableApacheHttpdInstrumentation: true,
+				EnableApacheHttpdInstrumentation: truee,
 			},
 		},
 		{
@@ -3308,7 +3307,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableNginxAutoInstrumentation: true,
+				EnableNginxAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -3391,9 +3390,9 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableNodeJSAutoInstrumentation: true,
-				EnablePythonAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableNodeJSAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: truee,
 				EnableDotNetAutoInstrumentation: false,
 			},
 		},
@@ -4296,11 +4295,11 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableJavaAutoInstrumentation:   true,
-				EnableNodeJSAutoInstrumentation: true,
-				EnablePythonAutoInstrumentation: true,
-				EnableDotNetAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableJavaAutoInstrumentation:   truee,
+				EnableNodeJSAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: truee,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -4606,7 +4605,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:    true,
+				EnableMultiInstrumentation:    truee,
 				EnableJavaAutoInstrumentation: false,
 			},
 		},
@@ -4804,8 +4803,8 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
-				EnableDotNetAutoInstrumentation: true,
+				EnableMultiInstrumentation:      truee,
+				EnableDotNetAutoInstrumentation: truee,
 			},
 		},
 		{
@@ -4907,7 +4906,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:      true,
+				EnableMultiInstrumentation:      truee,
 				EnableDotNetAutoInstrumentation: false,
 				EnableNodeJSAutoInstrumentation: false,
 			},
@@ -4965,30 +4964,30 @@ func TestMutatePod(t *testing.T) {
 				test.setFeatureGates(t)
 			}
 
-			err := k8sClient.Create(context.Background(), &test.ns)
+			err := k8sClient.Create(t.Context(), &test.ns)
 			require.NoError(t, err)
 			defer func() {
-				_ = k8sClient.Delete(context.Background(), &test.ns)
+				_ = k8sClient.Delete(t.Context(), &test.ns)
 			}()
 			if test.secret != nil {
-				err = k8sClient.Create(context.Background(), test.secret)
+				err = k8sClient.Create(t.Context(), test.secret)
 				require.NoError(t, err)
 				defer func() {
-					_ = k8sClient.Delete(context.Background(), test.secret)
+					_ = k8sClient.Delete(t.Context(), test.secret)
 				}()
 			}
 			if test.configMap != nil {
-				err = k8sClient.Create(context.Background(), test.configMap)
+				err = k8sClient.Create(t.Context(), test.configMap)
 				require.NoError(t, err)
 				defer func() {
-					_ = k8sClient.Delete(context.Background(), test.configMap)
+					_ = k8sClient.Delete(t.Context(), test.configMap)
 				}()
 			}
 
-			err = k8sClient.Create(context.Background(), &test.inst)
+			err = k8sClient.Create(t.Context(), &test.inst)
 			require.NoError(t, err)
 
-			pod, err := mutator.Mutate(context.Background(), test.ns, test.pod)
+			pod, err := mutator.Mutate(t.Context(), test.ns, test.pod)
 			if test.err == "" {
 				require.NoError(t, err)
 				assert.Equal(t, test.expected, pod)
@@ -5151,10 +5150,10 @@ func TestInitContainerInstrumentation(t *testing.T) {
 		},
 	}
 
-	err := k8sClient.Create(context.Background(), inst)
+	err := k8sClient.Create(t.Context(), inst)
 	require.NoError(t, err)
 	defer func() {
-		_ = k8sClient.Delete(context.Background(), inst)
+		_ = k8sClient.Delete(t.Context(), inst)
 	}()
 
 	ns := corev1.Namespace{
@@ -5185,7 +5184,7 @@ func TestInitContainerInstrumentation(t *testing.T) {
 
 	mutator := NewMutator(logr.Discard(), k8sClient, nil, config.New())
 
-	result, err := mutator.Mutate(context.Background(), ns, pod)
+	result, err := mutator.Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	// Check that instrumentation init container was added BEFORE the target init container
@@ -5226,4 +5225,127 @@ func TestInitContainerInstrumentation(t *testing.T) {
 	assert.True(t, foundLogLevel, "Should have OTEL_LOG_LEVEL env var (from injectPythonSDKToContainer)")
 	assert.True(t, foundPythonPath, "Should have PYTHONPATH env var (from injectPythonSDKToContainer)")
 	assert.True(t, foundServiceName, "Should have OTEL_SERVICE_NAME env var (from injectCommonSDKConfig)")
+}
+
+func TestInitContainerInstrumentationCopiesSecurityContext(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{Name: "python-inst-sc", Namespace: "default"},
+		Spec: v1alpha1.InstrumentationSpec{
+			Python:   v1alpha1.Python{Image: "otel/python:1"},
+			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
+		},
+	}
+	err := k8sClient.Create(t.Context(), inst)
+	require.NoError(t, err)
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
+
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
+	ape := false
+	rnr := true
+	targetSC := &corev1.SecurityContext{
+		AllowPrivilegeEscalation: &ape,
+		RunAsNonRoot:             &rnr,
+		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	}
+
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-pod-init-sc", Namespace: "default",
+			Annotations: map[string]string{
+				annotationInjectPython:        "true",
+				annotationInjectContainerName: "python-init",
+			},
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{{Name: "python-init", SecurityContext: targetSC}},
+			Containers:     []corev1.Container{{Name: "main-app"}},
+		},
+	}
+
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	require.NoError(t, err)
+
+	injected := findContainerByName(pythonInitContainerName, &result)
+	require.NotNil(t, injected)
+	require.NotNil(t, injected.SecurityContext)
+	assert.Equal(t, targetSC.AllowPrivilegeEscalation, injected.SecurityContext.AllowPrivilegeEscalation)
+	assert.Equal(t, targetSC.Capabilities, injected.SecurityContext.Capabilities)
+	assert.Equal(t, targetSC.SeccompProfile, injected.SecurityContext.SeccompProfile)
+}
+
+func TestRegularContainerInstrumentationCopiesSecurityContext(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{Name: "python-inst-sc-regular", Namespace: "default"},
+		Spec: v1alpha1.InstrumentationSpec{
+			Python:   v1alpha1.Python{Image: "otel/python:1"},
+			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
+		},
+	}
+	err := k8sClient.Create(t.Context(), inst)
+	require.NoError(t, err)
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
+
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
+	ape := false
+	targetSC := &corev1.SecurityContext{
+		AllowPrivilegeEscalation: &ape,
+		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	}
+
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-pod-regular-sc", Namespace: "default",
+			Annotations: map[string]string{annotationInjectPython: "true"},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{Name: "main-app", SecurityContext: targetSC}},
+		},
+	}
+
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	require.NoError(t, err)
+
+	injected := findContainerByName(pythonInitContainerName, &result)
+	require.NotNil(t, injected)
+	require.NotNil(t, injected.SecurityContext)
+	assert.Equal(t, targetSC.AllowPrivilegeEscalation, injected.SecurityContext.AllowPrivilegeEscalation)
+	assert.Equal(t, targetSC.Capabilities, injected.SecurityContext.Capabilities)
+	assert.Equal(t, targetSC.SeccompProfile, injected.SecurityContext.SeccompProfile)
+}
+
+func TestInitContainerInstrumentationNilSecurityContext(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{Name: "python-inst-sc-nil", Namespace: "default"},
+		Spec: v1alpha1.InstrumentationSpec{
+			Python:   v1alpha1.Python{Image: "otel/python:1"},
+			Exporter: v1alpha1.Exporter{Endpoint: "http://collector:4318"},
+		},
+	}
+	err := k8sClient.Create(t.Context(), inst)
+	require.NoError(t, err)
+	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
+
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-pod-init-nil-sc", Namespace: "default",
+			Annotations: map[string]string{
+				annotationInjectPython:        "true",
+				annotationInjectContainerName: "python-init",
+			},
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{{Name: "python-init"}},
+			Containers:     []corev1.Container{{Name: "main-app"}},
+		},
+	}
+
+	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	require.NoError(t, err)
+
+	injected := findContainerByName(pythonInitContainerName, &result)
+	require.NotNil(t, injected)
+	assert.Nil(t, injected.SecurityContext)
 }
