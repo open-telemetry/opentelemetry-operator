@@ -1,0 +1,36 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: simplest-chainsaw-k8s-leader-elector-cluster-role
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-k8s-leader-elector.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-chainsaw-k8s-leader-elector-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: simplest-chainsaw-k8s-leader-elector-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: simplest-chainsaw-k8s-leader-elector-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: simplest-collector
+  namespace: chainsaw-k8s-leader-elector
