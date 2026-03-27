@@ -55,6 +55,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
 					HostPID:                       params.OtelCol.Spec.HostPID,
 					HostUsers:                     params.OtelCol.Spec.HostUsers,
+					HostAliases:                   params.OtelCol.Spec.HostAliases,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
