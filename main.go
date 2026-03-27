@@ -367,10 +367,12 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg)
-	if err != nil {
-		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
-		os.Exit(1)
+	if cfg.EnableInstrumentationCRDs {
+		err = addInstrumentationUpgrader(ctx, mgr, cfg)
+		if err != nil {
+			setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+			os.Exit(1)
+		}
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
@@ -634,7 +636,7 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	return nil
 }
 
-func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
+func addInstrumentationUpgrader(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := instrumentationupgrade.NewInstrumentationUpgrade(
