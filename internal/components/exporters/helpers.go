@@ -17,6 +17,6 @@ func ParserFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	// We want the default for exporters to fail silently.
-	return components.NewBuilder[any]().WithName(name).MustBuild()
+	// Default exporter parser applies TLS profile defaults but returns no ports.
+	return NewExporterParser(name)
 }
