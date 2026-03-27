@@ -380,7 +380,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Recorder: mgr.GetEventRecorder("opentelemetry-operator"),
 			Reviewer: reviewer,
 			Version:  v,
 		})
@@ -395,7 +395,7 @@ func main() {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
-			mgr.GetEventRecorderFor("targetallocator"),
+			mgr.GetEventRecorder("targetallocator"),
 			cfg,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
 		).SetupWithManager(mgr); err != nil {
@@ -410,7 +410,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+			Recorder: mgr.GetEventRecorder("opamp-bridge"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 			os.Exit(1)
@@ -424,7 +424,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("ClusterObservability"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("cluster-observability"),
+			Recorder: mgr.GetEventRecorder("cluster-observability"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ClusterObservability")
 			os.Exit(1)
@@ -507,7 +507,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 				}),
 		})
 
@@ -640,7 +640,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 		u := instrumentationupgrade.NewInstrumentationUpgrade(
 			mgr.GetClient(),
 			ctrl.Log.WithName("instrumentation-upgrade"),
-			mgr.GetEventRecorderFor("opentelemetry-operator"),
+			mgr.GetEventRecorder("opentelemetry-operator"),
 			cfg,
 		)
 		return u.ManagedInstances(c)

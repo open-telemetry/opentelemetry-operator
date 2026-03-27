@@ -42,7 +42,7 @@ func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 				existing := &corev1.ConfigMap{}
 				updated := existing.DeepCopy()
-				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+"receiver config according to the upstream otlp receiver changes in 0.41.0 release.", k2))
+				u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.41.0 has re-structured the %s inside otlp "+"receiver config according to the upstream otlp receiver changes in 0.41.0 release.", k2)
 			}
 		}
 	}

@@ -6,7 +6,7 @@ package targetallocator
 import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -60,7 +60,7 @@ func Build(params Params) ([]client.Object, error) {
 
 type Params struct {
 	Client          client.Client
-	Recorder        record.EventRecorder
+	Recorder        events.EventRecorder
 	Scheme          *runtime.Scheme
 	Log             logr.Logger
 	Collector       *v1beta1.OpenTelemetryCollector

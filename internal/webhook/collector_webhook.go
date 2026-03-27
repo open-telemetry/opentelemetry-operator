@@ -13,7 +13,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -48,7 +48,7 @@ type CollectorWebhook struct {
 	metrics  *v1beta1.Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 }
 
 func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTelemetryCollector) error {
@@ -109,7 +109,7 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	}
 	for _, event := range events {
 		if c.recorder != nil {
-			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
+			c.recorder.Eventf(otelcol, nil, event.Type, event.Reason, event.Reason, event.Message)
 		}
 	}
 	return nil
@@ -406,7 +406,7 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
-	recorder record.EventRecorder,
+	recorder events.EventRecorder,
 	metrics *v1beta1.Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
@@ -424,7 +424,7 @@ func NewCollectorWebhook(
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *v1beta1.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorder("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).

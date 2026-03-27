@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -40,7 +40,7 @@ func Test0_56_0Upgrade(t *testing.T) {
 		Log:      logger,
 		Version:  makeVersion("0.56.0"),
 		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+		Recorder: events.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
 	upgradedInstanceV1beta1, err := versionUpgrade.ManagedInstance(context.Background(), convertTov1beta1(t, collectorInstance))
 	assert.NoError(t, err)
