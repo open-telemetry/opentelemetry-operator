@@ -7320,7 +7320,6 @@ spec:
                     x-kubernetes-list-type: atomic
                 type: object
               podManagementPolicy:
-                default: Parallel
                 enum:
                 - OrderedReady
                 - Parallel
