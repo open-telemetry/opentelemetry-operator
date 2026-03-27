@@ -37,7 +37,7 @@ func upgrade0_9_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*
 				delete(exporter, "reconnection_delay")
 				existing := &corev1.ConfigMap{}
 				updated := existing.DeepCopy()
-				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.9.0 removed the property reconnection_delay for exporter %q", k))
+				u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.9.0 removed the property reconnection_delay for exporter %q", k)
 				exporters[k] = exporter
 			case string:
 				if exporter == "" {

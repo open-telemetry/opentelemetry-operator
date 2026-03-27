@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,7 +38,7 @@ func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
 		testScheme,
-		record.NewFakeRecorder(10),
+		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
 	)
@@ -109,7 +109,7 @@ func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
 		testScheme,
-		record.NewFakeRecorder(10),
+		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
 	)
@@ -147,7 +147,7 @@ func TestUnmanaged_TargetAllocator(t *testing.T) {
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
 		testScheme,
-		record.NewFakeRecorder(10),
+		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
 	)
@@ -203,7 +203,7 @@ func TestBuildError_TargetAllocator(t *testing.T) {
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
 		testScheme,
-		record.NewFakeRecorder(10),
+		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
 	)

@@ -46,7 +46,7 @@ func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					}
 
 					otelcol.Spec.Config = string(res)
-					u.Recorder.Event(otelcol, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt))
+					u.Recorder.Eventf(otelcol, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt)
 				}
 			default:
 				return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, the extension %q is invalid (expected string or map but was %t)", keyExt, valExt)

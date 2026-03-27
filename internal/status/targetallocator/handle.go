@@ -28,7 +28,7 @@ const (
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params targetallocator.Params, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating target allocator status")
 	if err != nil {
-		params.Recorder.Event(&params.TargetAllocator, eventTypeWarning, reasonError, err.Error())
+		params.Recorder.Eventf(&params.TargetAllocator, nil, eventTypeWarning, reasonError, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
 	changed := params.TargetAllocator.DeepCopy()
@@ -43,6 +43,6 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params targetal
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
 	}
-	params.Recorder.Event(changed, eventTypeNormal, reasonInfo, "applied status changes")
+	params.Recorder.Eventf(changed, nil, eventTypeNormal, reasonInfo, reasonInfo, "applied status changes")
 	return ctrl.Result{}, nil
 }

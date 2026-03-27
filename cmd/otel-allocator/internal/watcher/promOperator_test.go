@@ -188,6 +188,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/simple/0",
@@ -215,6 +216,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -304,6 +306,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -383,6 +386,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -477,6 +481,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
@@ -504,6 +509,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -598,6 +604,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
@@ -625,6 +632,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -701,6 +709,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -777,6 +786,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -846,6 +856,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -917,6 +928,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -992,6 +1004,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -1067,6 +1080,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -1134,6 +1148,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricNameValidationScheme:     model.UTF8Validation,
 						MetricNameEscapingScheme:       model.AllowUTF8,
 						ScrapeNativeHistograms:         ptr.To(false),
+						ExtraScrapeMetrics:             ptr.To(false),
 					},
 				},
 			},
@@ -1253,6 +1268,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				MetricNameValidationScheme:     model.UTF8Validation,
 				MetricNameEscapingScheme:       model.AllowUTF8,
 				ScrapeNativeHistograms:         ptr.To(false),
+				ExtraScrapeMetrics:             ptr.To(false),
 			},
 		},
 	}
@@ -1622,7 +1638,7 @@ func TestDefaultDurations(t *testing.T) {
 func newTestWatcher(t *testing.T, cfg allocatorconfig.Config) *testWatcher {
 	t.Helper()
 
-	k8sClient := fake.NewSimpleClientset()
+	k8sClient := fake.NewClientset()
 	_, err := k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic-auth",
@@ -1819,7 +1835,7 @@ func TestCRDAvailabilityChecks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create fake discovery client
 			fakeDiscovery := &fakediscovery.FakeDiscovery{
-				Fake: &fake.NewSimpleClientset().Fake,
+				Fake: &fake.NewClientset().Fake,
 			}
 
 			// Set up resources

@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -25,7 +25,7 @@ type autoInstConfig struct {
 type InstrumentationUpgrade struct {
 	Client                     client.Client
 	Logger                     logr.Logger
-	Recorder                   record.EventRecorder
+	Recorder                   events.EventRecorder
 	DefaultAutoInstJava        string
 	DefaultAutoInstNodeJS      string
 	DefaultAutoInstPython      string
@@ -36,7 +36,7 @@ type InstrumentationUpgrade struct {
 	defaultAnnotationToConfig  map[string]autoInstConfig
 }
 
-func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
+func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder events.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {"enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {"enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation},
