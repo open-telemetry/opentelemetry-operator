@@ -79,25 +79,26 @@ func (langInsts *languageInstrumentations) hasAnyInstrumentation() bool {
 func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bool, error) {
 	var instrWithoutContainers int
 	var instrWithContainers int
-	var allContainers []string
 	var instrumentationWithNoContainers bool
-
-	// Check for instrumentations with and without containers.
+	// Validate each enabled instrumentation independently.
+	// The same target container name is allowed across different languages
+	// (e.g., Java + Go on the same app container), but duplicates within a
+	// single instrumentation list are still invalid.
 	for _, inst := range instrumentationsList(&langInsts) {
-		if inst.Instrumentation != nil {
-			instrWithContainers += isInstrWithContainers(*inst)
-			instrWithoutContainers += isInstrWithoutContainers(*inst)
-			allContainers = append(allContainers, inst.Containers...)
-			if len(inst.Containers) == 0 {
-				instrumentationWithNoContainers = true
-			}
+		if inst.Instrumentation == nil {
+			continue
 		}
-	}
 
-	// Look for duplicated containers.
-	containerDuplicates := findDuplicatedContainers(allContainers)
-	if containerDuplicates != nil {
-		return false, containerDuplicates
+		instrWithContainers += isInstrWithContainers(*inst)
+		instrWithoutContainers += isInstrWithoutContainers(*inst)
+
+		if len(inst.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+
+		if containerDuplicates := findDuplicatedContainers(inst.Containers); containerDuplicates != nil {
+			return false, containerDuplicates
+		}
 	}
 
 	// Look for mixed multiple instrumentations with and without container names.
