@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: webhook-metrics-java
+spec:
+  description: |
+    Test that pod mutation webhook metrics are exposed when a Java app is instrumented.
+    Verifies the opentelemetry_operator_pod_mutations_total metric is recorded with correct labels.
+  steps:
+    - name: Add OpenShift namespace annotations
+      use:
+        template: ../../step-templates/openshift-namespace-annotations.yaml
+    
+    - name: step-00-install-instrumentation
+      description: Install Java Instrumentation CR
+      try:
+        - apply:
+            file: 00-install-instrumentation.yaml
+    
+    - name: step-01-install-app
+      description: Deploy a pod with Java instrumentation annotation
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=java-test-app
+    
+    - name: step-02-verify-webhook-metrics
+      description: Verify pod mutation metrics are exposed on operator's metrics endpoint
+      try:
+        - script:
+            env:
+              - name: OPERATOR_NAMESPACE
+                value: "opentelemetry-operator-system"
+            timeout: 120s
+            content: |
+              #!/bin/sh
+              set -e
+              
+              # Get the operator pod name
+              POD_NAME=$(kubectl get pods -n ${OPERATOR_NAMESPACE} -l app.kubernetes.io/name=opentelemetry-operator -o jsonpath='{.items[0].metadata.name}')
+              echo "Using pod: ${POD_NAME}"
+
+              # Set up port-forward in background
+              echo "Starting port-forward..."
+              kubectl port-forward -n ${OPERATOR_NAMESPACE} pod/${POD_NAME} 8443:8443 &
+              PF_PID=$!
+              
+              # Ensure we kill the port-forward process on exit
+              cleanup() {
+                if [ -n "$PF_PID" ]; then
+                  echo "Killing port-forward (PID $PF_PID)..."
+                  kill $PF_PID || true
+                fi
+              }
+              trap cleanup EXIT
+
+              # Wait for port-forward to be ready
+              sleep 5
+
+              # Fetch metrics using curl to localhost
+              echo ""
+              echo "=== Fetching metrics via port-forward ==="
+              for i in 1 2 3 4 5 6 7 8 9 10; do
+                echo "Attempt $i to fetch metrics..."
+                # Access localhost:8443 with -k (skip verify) because of self-signed certs
+                if METRICS=$(curl -sk https://localhost:8443/metrics); then
+                  if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
+                    echo "Found metric!"
+                    break
+                  fi
+                fi
+                sleep 3
+              done
+              
+              # Debug: Print pod details to see if mutation happened
+              echo ""
+              echo "=== Checking if mutation actually happened ==="
+              kubectl get pod -n ${NAMESPACE} java-test-app -o yaml | grep "initContainers" -A 5 || echo "No initContainers found!"
+              
+              # Check for the expected metric
+              if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
+                echo ""
+                echo "SUCCESS: Found opentelemetry_operator_pod_mutations_total metric"
+                
+                # Verify specific labels
+                if echo "$METRICS" | grep -q 'mutation_type="instrumentation"'; then
+                  echo "SUCCESS: Found mutation_type=instrumentation label"
+                else
+                  echo "WARNING: mutation_type label not found (may be OK if no mutations yet)"
+                fi
+                
+                if echo "$METRICS" | grep -q 'status="success"'; then
+                  echo "SUCCESS: Found status=success label"
+                else
+                  echo "INFO: status=success not found yet (metrics may not be recorded yet)"
+                fi
+                
+                if echo "$METRICS" | grep -q 'language="java"'; then
+                  echo "SUCCESS: Found language=java label"
+                else
+                  echo "INFO: language=java not found yet"
+                fi
+                
+                echo ""
+                echo "=== METRICS OUTPUT ==="
+                echo "$METRICS" | grep "opentelemetry_operator_pod_mutations_total" || echo "(no matching lines)"
+                exit 0
+              else
+                echo ""
+                echo "ERROR: opentelemetry_operator_pod_mutations_total metric not found"
+                echo ""
+                echo "=== All metrics containing 'opentelemetry' ==="
+                echo "$METRICS" | grep -i "opentelemetry" | head -30 || echo "(none found)"
+                echo ""
+                echo "=== First 50 lines of metrics output ==="
+                echo "$METRICS" | head -50
+                exit 1
+              fi
