@@ -1511,6 +1511,19 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              hostAliases:
+                items:
+                  properties:
+                    hostnames:
+                      items:
+                        type: string
+                      type: array
+                    ip:
+                      type: string
+                  required:
+                  - ip
+                  type: object
+                type: array
               hostNetwork:
                 type: boolean
               image:
@@ -6283,6 +6296,19 @@ spec:
                           type: boolean
                       type: object
                       x-kubernetes-map-type: atomic
+                  type: object
+                type: array
+              hostAliases:
+                items:
+                  properties:
+                    hostnames:
+                      items:
+                        type: string
+                      type: array
+                    ip:
+                      type: string
+                  required:
+                  - ip
                   type: object
                 type: array
               hostNetwork:
