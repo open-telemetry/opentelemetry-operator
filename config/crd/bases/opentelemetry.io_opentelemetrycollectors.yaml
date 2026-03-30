@@ -1525,6 +1525,7 @@ spec:
                   - ip
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               hostNetwork:
                 type: boolean
               image:
@@ -6313,6 +6314,7 @@ spec:
                   - ip
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               hostNetwork:
                 type: boolean
               hostPID:
