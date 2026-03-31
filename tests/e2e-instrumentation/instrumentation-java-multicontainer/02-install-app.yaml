@@ -38,7 +38,7 @@ spec:
           timeoutSeconds: 2
           failureThreshold: 3
       - name: myrabbit
-        image: docker.io/library/rabbitmq:3
+        image: mirror.gcr.io/library/rabbitmq:3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

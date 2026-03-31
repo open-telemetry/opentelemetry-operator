@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: docker.io/library/busybox:latest
+        image: mirror.gcr.io/library/busybox:latest
         command: ["/bin/sh", "/scripts/generate-logs.sh"]
         volumeMounts:
         - name: scripts
