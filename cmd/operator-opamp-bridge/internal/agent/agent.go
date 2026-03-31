@@ -6,8 +6,10 @@ package agent
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -258,6 +260,33 @@ func (agent *Agent) Start() error {
 		PackagesStateProvider: nil,
 		Capabilities:          agent.config.GetCapabilities(),
 	}
+
+	// Configure TLS based on explicit tls settings.
+	if agent.config.TLS != nil {
+		if agent.config.TLS.Insecure {
+			parsedURL, parseErr := url.Parse(settings.OpAMPServerURL)
+			if parseErr != nil {
+				return fmt.Errorf("invalid OpAMP server endpoint %q: %w", settings.OpAMPServerURL, parseErr)
+			}
+
+			switch parsedURL.Scheme {
+			case "wss":
+				parsedURL.Scheme = "ws"
+			case "https":
+				parsedURL.Scheme = "http"
+			}
+
+			settings.OpAMPServerURL = parsedURL.String()
+			agent.logger.Info("TLS is disabled for the OpAMP client connection (tls.insecure=true). This connection is not encrypted.")
+		} else if agent.config.TLS.InsecureSkipVerify {
+			// TLS enabled but skip certificate verification.
+			settings.TLSConfig = &tls.Config{
+				InsecureSkipVerify: true, //nolint:gosec // User explicitly opted in via tls.insecure_skip_verify.
+			}
+			agent.logger.Info("TLS is enabled for the OpAMP client connection but certificate verification is skipped (tls.insecure_skip_verify=true)")
+		}
+	}
+
 	err = agent.opampClient.SetAgentDescription(agent.agentDescription)
 	if err != nil {
 		return err

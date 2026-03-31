@@ -137,3 +137,16 @@ spec:
                           receivers:
                             - jaeger
                             - otlp
+    - name: Ensure no errors in bridge logs
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              logs=$(kubectl logs -l app.kubernetes.io/name=test-opamp-bridge -n $NAMESPACE)
+              echo "$logs"
+              # Check for any "level":"error" or "bad handshake"
+              if echo "$logs" | grep -qiE "\"level\":\"error\"|bad handshake"; then
+                echo "Found an error in the logs!"
+                exit 1
+              fi
+              echo "No errors found."
