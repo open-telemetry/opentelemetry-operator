@@ -165,6 +165,22 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			expectedErr: "the capabilities supported by OpAMP Bridge are not specified",
 		},
 		{
+			name: "insecure and insecure skip verify both set",
+			opampBridge: v1alpha1.OpAMPBridge{
+				Spec: v1alpha1.OpAMPBridgeSpec{
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					TLS: &v1alpha1.OpAMPBridgeTLSConfig{
+						Insecure:           true,
+						InsecureSkipVerify: true,
+					},
+					Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+						v1alpha1.OpAMPBridgeCapabilityReportsStatus: true,
+					},
+				},
+			},
+			expectedErr: "tls.insecure and tls.insecure_skip_verify cannot both be true",
+		},
+		{
 			name: "replica count greater than 1 should return error",
 			opampBridge: v1alpha1.OpAMPBridge{
 				ObjectMeta: metav1.ObjectMeta{

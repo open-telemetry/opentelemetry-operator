@@ -62,3 +62,5 @@ spec:
     receivers:
       - otlp
   endpoint: ws://e2e-test-app-bridge-server:4320/v1/opamp
+  tls:
+    insecure: true
