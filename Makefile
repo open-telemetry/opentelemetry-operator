@@ -690,6 +690,8 @@ KIND_VERSION ?= v0.31.0
 CHAINSAW_VERSION ?= v0.2.14
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
+# renovate: datasource=go depName=sigs.k8s.io/controller-runtime/tools/setup-envtest
+ENVTEST_VERSION ?= v0.23.3
 
 # Install all development tools
 .PHONY: install-tools
@@ -719,7 +721,7 @@ controller-gen: ## Download controller-gen locally if necessary.
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
 CRDOC = $(shell pwd)/bin/crdoc
 # Download crdoc locally if necessary
