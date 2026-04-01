@@ -26,7 +26,7 @@ const (
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, otelcol v1beta1.OpenTelemetryCollector, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating collector status")
 	if err != nil {
-		params.Recorder.Event(&otelcol, corev1.EventTypeWarning, reasonError, err.Error())
+		params.Recorder.Eventf(&otelcol, nil, corev1.EventTypeWarning, reasonError, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -34,13 +34,13 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	statusErr := updateCollectorStatus(ctx, params.Client, changed)
 
 	if statusErr != nil {
-		params.Recorder.Event(changed, corev1.EventTypeWarning, reasonStatusFailure, statusErr.Error())
+		params.Recorder.Eventf(changed, nil, corev1.EventTypeWarning, reasonStatusFailure, reasonStatusFailure, statusErr.Error())
 		return ctrl.Result{}, statusErr
 	}
 	statusPatch := client.MergeFrom(&otelcol)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
 	}
-	params.Recorder.Event(changed, corev1.EventTypeNormal, reasonInfo, "applied status changes")
+	params.Recorder.Eventf(changed, nil, corev1.EventTypeNormal, reasonInfo, reasonInfo, "applied status changes")
 	return ctrl.Result{}, nil
 }

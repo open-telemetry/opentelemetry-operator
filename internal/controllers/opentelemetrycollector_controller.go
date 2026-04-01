@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -56,7 +56,7 @@ var ownedClusterObjectTypes = []client.Object{
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
@@ -67,7 +67,7 @@ type OpenTelemetryCollectorReconciler struct {
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config

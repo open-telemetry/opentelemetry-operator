@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +38,7 @@ import (
 // ClusterObservabilityReconciler reconciles a ClusterObservability object.
 type ClusterObservabilityReconciler struct {
 	client.Client
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
@@ -47,7 +47,7 @@ type ClusterObservabilityReconciler struct {
 // ClusterObservabilityReconcilerParams is the set of options to build a new ClusterObservabilityReconciler.
 type ClusterObservabilityReconcilerParams struct {
 	client.Client
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
@@ -127,7 +127,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 
 	if configChanged {
 		log.Info("Configuration changes detected - triggering full reconciliation")
-		r.recorder.Event(&instance, corev1.EventTypeNormal, "ConfigChanged",
+		r.recorder.Eventf(&instance, nil, corev1.EventTypeNormal, "ConfigChanged", "ConfigChanged",
 			"Collector configuration has changed, updating managed resources")
 	}
 
@@ -431,9 +431,9 @@ func (r *ClusterObservabilityReconciler) validateSingleton(ctx context.Context, 
 
 	if !isWinner {
 		// This resource is conflicted, emit an event and update status
-		r.recorder.Event(instance, corev1.EventTypeWarning, "Conflicted",
-			fmt.Sprintf("Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
-				oldestResource.Namespace, oldestResource.Name))
+		r.recorder.Eventf(instance, nil, corev1.EventTypeWarning, "Conflicted", "Conflicted",
+			"Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
+			oldestResource.Namespace, oldestResource.Name)
 		log.Info("ClusterObservability resource is conflicted",
 			"active", fmt.Sprintf("%s/%s", oldestResource.Namespace, oldestResource.Name),
 			"conflicted", fmt.Sprintf("%s/%s", instance.Namespace, instance.Name))
@@ -441,9 +441,9 @@ func (r *ClusterObservabilityReconciler) validateSingleton(ctx context.Context, 
 		// This resource is the winner, emit events for conflicted ones
 		for _, conflicted := range activeResources {
 			if conflicted.UID != instance.UID {
-				r.recorder.Event(&conflicted, corev1.EventTypeWarning, "Conflicted",
-					fmt.Sprintf("Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
-						instance.Namespace, instance.Name))
+				r.recorder.Eventf(&conflicted, nil, corev1.EventTypeWarning, "Conflicted", "Conflicted",
+					"Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
+					instance.Namespace, instance.Name)
 			}
 		}
 		log.Info("ClusterObservability resource is active", "conflicted-count", len(activeResources)-1)
@@ -464,8 +464,8 @@ func (r *ClusterObservabilityReconciler) handleDeletion(ctx context.Context, log
 	// Clean up all managed resources
 	if err := r.cleanupManagedResources(ctx, log, instance); err != nil {
 		log.Error(err, "failed to cleanup managed resources")
-		r.recorder.Event(instance, corev1.EventTypeWarning, "CleanupFailed",
-			fmt.Sprintf("Failed to cleanup managed resources: %v", err))
+		r.recorder.Eventf(instance, nil, corev1.EventTypeWarning, "CleanupFailed", "CleanupFailed",
+			"Failed to cleanup managed resources: %v", err)
 		return ctrl.Result{RequeueAfter: time.Second * 30}, err
 	}
 
@@ -483,7 +483,7 @@ func (r *ClusterObservabilityReconciler) handleDeletion(ctx context.Context, log
 	}
 
 	log.Info("Successfully cleaned up ClusterObservability resources")
-	r.recorder.Event(instance, corev1.EventTypeNormal, "Deleted", "ClusterObservability and all managed resources cleaned up")
+	r.recorder.Eventf(instance, nil, corev1.EventTypeNormal, "Deleted", "Deleted", "ClusterObservability and all managed resources cleaned up")
 
 	return ctrl.Result{}, nil
 }

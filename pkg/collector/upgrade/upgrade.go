@@ -11,7 +11,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -21,7 +21,7 @@ import (
 
 type VersionUpgrade struct {
 	Client   client.Client
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	Version  version.Version
 	Log      logr.Logger
 }
@@ -60,7 +60,7 @@ func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTeleme
 	if err != nil {
 		const msg = "automated update not possible. Configuration must be corrected manually and CR instance must be re-created."
 		itemLogger.Info(msg)
-		u.Recorder.Event(&original, corev1.EventTypeWarning, "Upgrade", msg)
+		u.Recorder.Eventf(&original, nil, corev1.EventTypeWarning, "Upgrade", "Upgrade", msg)
 		return err
 	}
 	if !reflect.DeepEqual(upgraded, original) {

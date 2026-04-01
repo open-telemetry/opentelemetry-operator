@@ -14,7 +14,7 @@ func upgrade0_15_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	delete(otelcol.Spec.Args, "--legacy-metrics")
 	existing := &corev1.ConfigMap{}
 	updated := existing.DeepCopy()
-	u.Recorder.Event(updated, "Normal", "Upgrade", "upgrade to v0.15.0 dropped the deprecated metrics arguments")
+	u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.15.0 dropped the deprecated metrics arguments")
 
 	return otelcol, nil
 }

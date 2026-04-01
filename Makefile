@@ -690,6 +690,8 @@ KIND_VERSION ?= v0.31.0
 CHAINSAW_VERSION ?= v0.2.14
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
+# renovate: datasource=git-refs packageName=https://github.com/kubernetes-sigs/controller-runtime versioning=loose
+ENVTEST_VERSION ?= release-0.23
 
 # Install all development tools
 .PHONY: install-tools
@@ -719,7 +721,7 @@ controller-gen: ## Download controller-gen locally if necessary.
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
 CRDOC = $(shell pwd)/bin/crdoc
 # Download crdoc locally if necessary
@@ -743,7 +745,7 @@ define go-install-tool
 @set -e ; \
 BIN="$(1)"; PKG="$(2)"; VER="$(3)"; \
 DIR="$$(dirname "$$BIN")"; mkdir -p "$$DIR"; \
-if [ -x "$$BIN" ] && [ "$$VER" != "latest" ]; then \
+if [ -x "$$BIN" ] && [ "$$VER" != "latest" ] && echo "$$VER" | grep -q '^v'; then \
   CUR=$$(go version -m "$$BIN" 2>/dev/null | awk '$$1=="mod"{print $$3; exit}'); \
   if [ "$$CUR" = "$$VER" ]; then \
     exit 0; \

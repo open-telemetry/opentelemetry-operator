@@ -46,7 +46,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	isConflicted := err != nil && isConflictError(err)
 
 	if err != nil && !isConflicted {
-		params.Recorder.Event(&params.ClusterObservability, corev1.EventTypeWarning, reasonError, err.Error())
+		params.Recorder.Eventf(&params.ClusterObservability, nil, corev1.EventTypeWarning, reasonError, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -59,11 +59,11 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	}
 
 	if isConflicted {
-		params.Recorder.Event(changed, corev1.EventTypeNormal, reasonInfo, "status updated - resource is conflicted")
+		params.Recorder.Eventf(changed, nil, corev1.EventTypeNormal, reasonInfo, reasonInfo, "status updated - resource is conflicted")
 		return ctrl.Result{}, nil // No need to requeue - we watch for changes
 	}
 
-	params.Recorder.Event(changed, corev1.EventTypeNormal, reasonInfo, "applied status changes")
+	params.Recorder.Eventf(changed, nil, corev1.EventTypeNormal, reasonInfo, reasonInfo, "applied status changes")
 	return ctrl.Result{}, nil
 }
 
