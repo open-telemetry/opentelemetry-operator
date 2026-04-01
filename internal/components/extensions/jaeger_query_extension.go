@@ -81,14 +81,7 @@ func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defa
 		}
 	}
 
-	if defaultCfg != nil && defaultCfg.TLSProfile != nil && config.HTTP.TLS != nil {
-		if config.HTTP.TLS.MinVersion == "" && defaultCfg.TLSProfile.MinTLSVersionOTEL() != "" {
-			config.HTTP.TLS.MinVersion = defaultCfg.TLSProfile.MinTLSVersionOTEL()
-		}
-		if config.HTTP.TLS.Ciphers == nil && len(defaultCfg.TLSProfile.CipherSuiteNames()) > 0 {
-			config.HTTP.TLS.Ciphers = defaultCfg.TLSProfile.CipherSuiteNames()
-		}
-	}
+	config.HTTP.TLS.ApplyTLSProfileDefaults(defaultCfg.TLSProfile)
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)

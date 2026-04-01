@@ -17,6 +17,26 @@ type TLSProfileProvider interface {
 	GetTLSProfile(ctx context.Context) (TLSProfile, error)
 }
 
+// TLSConfig holds OTel-format TLS settings that can be injected into component configs.
+type TLSConfig struct {
+	Ciphers    []string `mapstructure:"cipher_suites,omitempty"`
+	MinVersion string   `mapstructure:"min_version,omitempty"`
+}
+
+// ApplyTLSProfileDefaults sets MinVersion and Ciphers from the given TLS
+// profile when the corresponding fields are not already configured.
+func (t *TLSConfig) ApplyTLSProfileDefaults(profile TLSProfile) {
+	if t == nil || profile == nil {
+		return
+	}
+	if t.MinVersion == "" && profile.MinTLSVersionOTEL() != "" {
+		t.MinVersion = profile.MinTLSVersionOTEL()
+	}
+	if t.Ciphers == nil && len(profile.CipherSuiteNames()) > 0 {
+		t.Ciphers = profile.CipherSuiteNames()
+	}
+}
+
 // TLSProfile holds the TLS configuration to inject into collector components.
 // These settings are derived from the cluster's TLS security profile.
 type TLSProfile interface {

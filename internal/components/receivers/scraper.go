@@ -64,14 +64,7 @@ func scraperDefaulter(defaultCfg *components.DefaultConfig, config *ScraperConfi
 		config = &ScraperConfig{}
 	}
 
-	if defaultCfg != nil && defaultCfg.TLSProfile != nil && config.TLS != nil {
-		if config.TLS.MinVersion == "" && defaultCfg.TLSProfile.MinTLSVersionOTEL() != "" {
-			config.TLS.MinVersion = defaultCfg.TLSProfile.MinTLSVersionOTEL()
-		}
-		if config.TLS.Ciphers == nil && len(defaultCfg.TLSProfile.CipherSuiteNames()) > 0 {
-			config.TLS.Ciphers = defaultCfg.TLSProfile.CipherSuiteNames()
-		}
-	}
+	config.TLS.ApplyTLSProfileDefaults(defaultCfg.TLSProfile)
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)

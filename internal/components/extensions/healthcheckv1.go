@@ -39,14 +39,7 @@ func healthCheckV1AddressDefaulter(_ logr.Logger, defaultConfig *components.Defa
 		config.Path = defaultHealthcheckV1Path
 	}
 
-	if defaultConfig != nil && defaultConfig.TLSProfile != nil && config.TLS != nil {
-		if config.TLS.MinVersion == "" && defaultConfig.TLSProfile.MinTLSVersionOTEL() != "" {
-			config.TLS.MinVersion = defaultConfig.TLSProfile.MinTLSVersionOTEL()
-		}
-		if config.TLS.Ciphers == nil && len(defaultConfig.TLSProfile.CipherSuiteNames()) > 0 {
-			config.TLS.Ciphers = defaultConfig.TLSProfile.CipherSuiteNames()
-		}
-	}
+	config.TLS.ApplyTLSProfileDefaults(defaultConfig.TLSProfile)
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)
