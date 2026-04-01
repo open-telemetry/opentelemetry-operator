@@ -14,7 +14,7 @@ spec:
       type: RuntimeDefault
   containers:
   - name: myapp
-    image: docker.io/library/python:3.8-slim
+    image: mirror.gcr.io/library/python:3.8-slim
     command: ["python", "-c", "import time; time.sleep(3600)"]
     securityContext:
       allowPrivilegeEscalation: false
