@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -377,6 +378,9 @@ func TestExtensionService(t *testing.T) {
 										"http": map[string]any{
 											"endpoint": "0.0.0.0:16686",
 										},
+										"grpc": map[string]any{
+											"endpoint": "0.0.0.0:16685",
+										},
 									},
 								},
 							},
@@ -392,10 +396,17 @@ func TestExtensionService(t *testing.T) {
 						IntVal: 16686,
 					},
 				},
+				{
+					Name: "port-16685",
+					Port: 16685,
+					TargetPort: intstr.IntOrString{
+						IntVal: 16685,
+					},
+				},
 			},
 		},
 		{
-			name: "when the extension has both http and grpc endpoint",
+			name: "when the extension has both http and grpc endpoint with same port",
 			params: manifests.Params{
 				Config: config.Config{},
 				Log:    testLogger,
@@ -501,10 +512,12 @@ func TestExtensionService(t *testing.T) {
 				assert.NotNil(t, actual)
 				assert.Equal(t, actual.Name, naming.ExtensionService(tc.params.OtelCol.Name))
 				// ports assertion
-				assert.Equal(t, len(tc.expectedPorts), len(actual.Spec.Ports))
-				assert.Equal(t, tc.expectedPorts[0].Name, actual.Spec.Ports[0].Name)
-				assert.Equal(t, tc.expectedPorts[0].Port, actual.Spec.Ports[0].Port)
-				assert.Equal(t, tc.expectedPorts[0].TargetPort.IntVal, actual.Spec.Ports[0].TargetPort.IntVal)
+				require.Equal(t, len(tc.expectedPorts), len(actual.Spec.Ports))
+				for i, expectedPort := range tc.expectedPorts {
+					assert.Equal(t, expectedPort.Name, actual.Spec.Ports[i].Name)
+					assert.Equal(t, expectedPort.Port, actual.Spec.Ports[i].Port)
+					assert.Equal(t, expectedPort.TargetPort.IntVal, actual.Spec.Ports[i].TargetPort.IntVal)
+				}
 			} else {
 				// no ports, no service
 				assert.Nil(t, actual)

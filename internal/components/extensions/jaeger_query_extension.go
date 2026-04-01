@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -24,9 +25,14 @@ var _ components.Parser = &components.GenericParser[*JaegerQueryExtensionConfig]
 
 type JaegerQueryExtensionConfig struct {
 	HTTP jaegerHTTPAddress `mapstructure:"http,omitempty" yaml:"http,omitempty"`
+	GRPC jaegerGRPCAddress `mapstructure:"grpc,omitempty" yaml:"grpc,omitempty"`
 }
 
 type jaegerHTTPAddress struct {
+	Endpoint string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+}
+
+type jaegerGRPCAddress struct {
 	Endpoint string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
 }
 
@@ -56,10 +62,27 @@ func ParseJaegerQueryExtensionConfig(logger logr.Logger, name string, defaultPor
 		logger.WithValues("receiver", defaultPort.Name).Error(err, "couldn't parse the endpoint's port and no default port set")
 		return []corev1.ServicePort{}, err
 	}
-	port := cfg.GetPortNumOrDefault(logger, defaultPort.Port)
+	httpPort := cfg.GetPortNumOrDefault(logger, defaultPort.Port)
 	svcPort := defaultPort
-	svcPort.Name = naming.PortName(name, port)
-	return []corev1.ServicePort{components.ConstructServicePort(svcPort, port)}, nil
+	svcPort.Name = naming.PortName(name, httpPort)
+	ports := []corev1.ServicePort{components.ConstructServicePort(svcPort, httpPort)}
+
+	// Add gRPC port if explicitly configured
+	if cfg.GRPC.Endpoint != "" {
+		grpcPortNum, err := components.PortFromEndpoint(cfg.GRPC.Endpoint)
+		if err != nil {
+			logger.WithValues("extension", name).Error(err, "couldn't parse the gRPC endpoint's port")
+		} else if grpcPortNum != httpPort {
+			// Only add gRPC port if it differs from the HTTP port
+			grpcSvcPort := &corev1.ServicePort{
+				TargetPort: intstr.FromInt32(grpcPortNum),
+			}
+			grpcSvcPort.Name = naming.PortName(fmt.Sprintf("%s-grpc", name), grpcPortNum)
+			ports = append(ports, components.ConstructServicePort(grpcSvcPort, grpcPortNum))
+		}
+	}
+
+	return ports, nil
 }
 
 func NewJaegerQueryExtensionParserBuilder() components.Builder[*JaegerQueryExtensionConfig] {
@@ -80,7 +103,19 @@ func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAdd
 		}
 	}
 
+	// Apply default host for gRPC endpoint if configured but missing host
+	if config.GRPC.Endpoint != "" {
+		v := strings.Split(config.GRPC.Endpoint, ":")
+		if len(v) < 2 || v[0] == "" {
+			config.GRPC.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
+		}
+	}
+
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)
+	// Remove empty gRPC config to avoid injecting unwanted configuration
+	if config.GRPC.Endpoint == "" {
+		delete(res, "grpc")
+	}
 	return res, err
 }
