@@ -12,9 +12,6 @@ import (
 
 var _ components.Parser = &ExporterParser{}
 
-// ExporterConfig represents the minimal config for push-based exporters.
-// Only the tls: block is relevant for defaulting; other fields are preserved
-// by the caller's mergo.Merge.
 type ExporterConfig struct {
 	TLS *components.TLSConfig `mapstructure:"tls,omitempty"`
 }
