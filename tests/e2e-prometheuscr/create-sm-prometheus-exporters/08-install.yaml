@@ -121,6 +121,6 @@ spec:
         - /bin/sh
         - -c
         - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
-        image: docker.io/curlimages/curl:latest
+        image: mirror.gcr.io/curlimages/curl:latest
         name: check-metrics
       restartPolicy: OnFailure
