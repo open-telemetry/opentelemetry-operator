@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: jaeger-inmemory
 spec:
-  image: docker.io/jaegertracing/jaeger:latest
+  image: mirror.gcr.io/jaegertracing/jaeger:latest
   config:
     service:
       extensions: [jaeger_storage, jaeger_query]

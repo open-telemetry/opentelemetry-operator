@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -187,36 +188,39 @@ func Test_runWatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
-			defer func() {
-				close(podWatcher.close)
-			}()
-			var actual map[string]*allocation.Collector
-			mapMutex := sync.Mutex{}
-			for _, k := range tt.args.collectorMap {
-				p := pod(k.Name)
-				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
-				assert.NoError(t, err)
-			}
-			go func() {
-				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
-					mapMutex.Lock()
-					defer mapMutex.Unlock()
-					actual = colMap
-				})
-				require.NoError(t, err)
-			}()
-			assert.Eventually(t, podWatcher.isSynced, time.Second*30, time.Millisecond*100)
+			synctest.Test(t, func(t *testing.T) {
+				podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
+				var actual map[string]*allocation.Collector
+				mapMutex := sync.Mutex{}
+				for _, k := range tt.args.collectorMap {
+					p := pod(k.Name)
+					_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+					assert.NoError(t, err)
+				}
+				go func() {
+					err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
+						mapMutex.Lock()
+						defer mapMutex.Unlock()
+						actual = colMap
+					})
+					require.NoError(t, err)
+				}()
+				synctest.Wait()
 
-			tt.args.kubeFn(t, podWatcher)
+				tt.args.kubeFn(t, podWatcher)
+				synctest.Wait()
+				time.Sleep(podWatcher.minUpdateInterval)
+				synctest.Wait()
 
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				mapMutex.Lock()
-				defer mapMutex.Unlock()
-				assert.Len(collect, actual, len(tt.want))
-				assert.Equal(collect, tt.want, actual)
-				assert.Equal(collect, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
-			}, time.Second*30, time.Millisecond*100)
+				assert.Len(t, actual, len(tt.want))
+				assert.Equal(t, tt.want, actual)
+				assert.Equal(t, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
+				mapMutex.Unlock()
+
+				close(podWatcher.close)
+				synctest.Wait()
+			})
 		})
 	}
 }
@@ -305,45 +309,49 @@ func Test_gracePeriodWithNonRunningPodPhase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			timeNow := time.Now()
-			podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
-			defer func() {
-				close(podWatcher.close)
-			}()
-			var actual map[string]*allocation.Collector
-			mapMutex := sync.Mutex{}
-			for _, k := range tt.args.collectorMap {
-				var p *v1.Pod
-				switch k.Name {
-				case "test-pod-running":
-					p = podWithPodPhaseAndStartTime(k.Name, v1.PodRunning, timeNow)
-				case "test-pod-unknown-within-grace-period":
-					p = podWithPodPhaseAndStartTime(k.Name, v1.PodUnknown,
-						timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(podWatcher.collectorNotReadyGracePeriod/2))
-				case "test-pod-pending-over-grace-period":
-					p = podWithPodPhaseAndStartTime(k.Name, v1.PodPending,
-						timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(-podWatcher.collectorNotReadyGracePeriod/2))
+			synctest.Test(t, func(t *testing.T) {
+				timeNow := time.Now()
+				podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
+				var actual map[string]*allocation.Collector
+				mapMutex := sync.Mutex{}
+				for _, k := range tt.args.collectorMap {
+					var p *v1.Pod
+					switch k.Name {
+					case "test-pod-running":
+						p = podWithPodPhaseAndStartTime(k.Name, v1.PodRunning, timeNow)
+					case "test-pod-unknown-within-grace-period":
+						p = podWithPodPhaseAndStartTime(k.Name, v1.PodUnknown,
+							timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(podWatcher.collectorNotReadyGracePeriod/2))
+					case "test-pod-pending-over-grace-period":
+						p = podWithPodPhaseAndStartTime(k.Name, v1.PodPending,
+							timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(-podWatcher.collectorNotReadyGracePeriod/2))
+					}
+					_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+					assert.NoError(t, err)
 				}
-				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
-				assert.NoError(t, err)
-			}
 
-			go func() {
-				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
-					mapMutex.Lock()
-					defer mapMutex.Unlock()
-					actual = colMap
-				})
-				require.NoError(t, err)
-			}()
+				go func() {
+					err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
+						mapMutex.Lock()
+						defer mapMutex.Unlock()
+						actual = colMap
+					})
+					require.NoError(t, err)
+				}()
 
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+				synctest.Wait()
+				time.Sleep(podWatcher.minUpdateInterval)
+				synctest.Wait()
+
 				mapMutex.Lock()
-				defer mapMutex.Unlock()
-				assert.Len(collect, actual, len(tt.want))
-				assert.Equal(collect, actual, tt.want)
-				assert.Equal(collect, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
-			}, time.Second*3, time.Millisecond)
+				assert.Len(t, actual, len(tt.want))
+				assert.Equal(t, actual, tt.want)
+				assert.Equal(t, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
+				mapMutex.Unlock()
+
+				close(podWatcher.close)
+				synctest.Wait()
+			})
 		})
 	}
 }
@@ -433,60 +441,65 @@ func Test_gracePeriodWithNonReadyPodCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			timeNow := time.Now()
-			podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
-			defer func() {
-				close(podWatcher.close)
-			}()
-			var actual map[string]*allocation.Collector
-			mapMutex := sync.Mutex{}
-			for _, k := range tt.args.collectorMap {
-				var p *v1.Pod
-				switch k.Name {
-				case "test-pod-ready":
-					p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionTrue, timeNow)
-				case "test-pod-non-ready-within-grace-period":
-					p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionFalse,
-						timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(podWatcher.collectorNotReadyGracePeriod/2))
-				case "test-pod-non-ready-over-grace-period":
-					p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionFalse,
-						timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(-podWatcher.collectorNotReadyGracePeriod/2))
+			synctest.Test(t, func(t *testing.T) {
+				timeNow := time.Now()
+				podWatcher := getTestPodWatcher(tt.args.collectorNotReadyGracePeriod)
+				var actual map[string]*allocation.Collector
+				mapMutex := sync.Mutex{}
+				for _, k := range tt.args.collectorMap {
+					var p *v1.Pod
+					switch k.Name {
+					case "test-pod-ready":
+						p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionTrue, timeNow)
+					case "test-pod-non-ready-within-grace-period":
+						p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionFalse,
+							timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(podWatcher.collectorNotReadyGracePeriod/2))
+					case "test-pod-non-ready-over-grace-period":
+						p = podWithPodReadyConditionStatusAndLastTransitionTime(k.Name, v1.ConditionFalse,
+							timeNow.Add(-1*podWatcher.collectorNotReadyGracePeriod).Add(-podWatcher.collectorNotReadyGracePeriod/2))
+					}
+					_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+					assert.NoError(t, err)
 				}
-				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
-				assert.NoError(t, err)
-			}
 
-			go func() {
-				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
-					mapMutex.Lock()
-					defer mapMutex.Unlock()
-					actual = colMap
-				})
-				require.NoError(t, err)
-			}()
+				go func() {
+					err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
+						mapMutex.Lock()
+						defer mapMutex.Unlock()
+						actual = colMap
+					})
+					require.NoError(t, err)
+				}()
 
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+				synctest.Wait()
+				time.Sleep(podWatcher.minUpdateInterval)
+				synctest.Wait()
+
 				mapMutex.Lock()
-				defer mapMutex.Unlock()
-				assert.Len(collect, actual, len(tt.want))
-				assert.Equal(collect, actual, tt.want)
-				assert.Equal(collect, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
-			}, time.Second*3, time.Millisecond)
+				assert.Len(t, actual, len(tt.want))
+				assert.Equal(t, actual, tt.want)
+				assert.Equal(t, podWatcher.collectorsDiscovered.(*reportingGauge).value.Load(), int64(len(actual)))
+				mapMutex.Unlock()
+
+				close(podWatcher.close)
+				synctest.Wait()
+			})
 		})
 	}
 }
 
 // this tests runWatch in the case of watcher channel closing.
 func Test_closeChannel(t *testing.T) {
-	podWatcher := getTestPodWatcher(0 * time.Second)
+	synctest.Test(t, func(t *testing.T) {
+		podWatcher := getTestPodWatcher(0 * time.Second)
 
-	var wg sync.WaitGroup
+		go func() {
+			err := podWatcher.Watch("default", &labelSelector, func(map[string]*allocation.Collector) {})
+			require.NoError(t, err)
+		}()
 
-	wg.Go(func() {
-		err := podWatcher.Watch("default", &labelSelector, func(map[string]*allocation.Collector) {})
-		require.NoError(t, err)
+		synctest.Wait()
+		podWatcher.Close()
+		synctest.Wait()
 	})
-
-	podWatcher.Close()
-	wg.Wait()
 }

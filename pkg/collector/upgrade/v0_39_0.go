@@ -33,7 +33,7 @@ func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					delete(memoryLimiter, k2)
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
+					u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1)
 				}
 			}
 		}
@@ -89,7 +89,7 @@ func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 								receiversList[i] = strings.Replace(k4.(string), "httpd", "apache", 1)
 								existing := &corev1.ConfigMap{}
 								updated := existing.DeepCopy()
-								u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
+								u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i])
 							}
 						}
 					}

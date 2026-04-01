@@ -15,20 +15,19 @@ permissions:
 jobs:
   report:
     permissions:
-      checks: write
       pull-requests: write
       actions: read
     runs-on: ubuntu-latest
     steps:
       - name: Download Test Report
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
+        uses: dawidd6/action-download-artifact@8a338493df3d275e4a7a63bcff3b8fe97e51a927 # v19
         with:
           path: '.testresults/e2e'
           name: 'e2e-junit-.*'
           name_is_regexp: 'true'
           run_id: ${{ github.event.workflow_run.id || inputs.e2e_workflow_id }}
       - name: Download Github Event File
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
+        uses: dawidd6/action-download-artifact@8a338493df3d275e4a7a63bcff3b8fe97e51a927 # v19
         with:
           name: 'Event File'
           run_id: ${{ github.event.workflow_run.id || inputs.e2e_workflow_id }}
@@ -42,3 +41,4 @@ jobs:
           comment_title: 'E2E Test Results'
           comment_mode: 'failures'
           check_name: 'E2E Test Results'
+          check_run: false

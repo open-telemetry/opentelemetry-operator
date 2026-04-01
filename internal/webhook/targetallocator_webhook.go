@@ -6,7 +6,6 @@ package webhook
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,8 +22,8 @@ import (
 )
 
 var (
-	_ admission.CustomValidator = &TargetAllocatorWebhook{}
-	_ admission.CustomDefaulter = &TargetAllocatorWebhook{}
+	_ admission.Validator[*v1alpha1.TargetAllocator] = &TargetAllocatorWebhook{}
+	_ admission.Defaulter[*v1alpha1.TargetAllocator] = &TargetAllocatorWebhook{}
 )
 
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1beta1-targetallocator,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=targetallocators,verbs=create;update,versions=v1beta1,name=mtargetallocatorbeta.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -39,36 +38,20 @@ type TargetAllocatorWebhook struct {
 	reviewer *rbac.Reviewer
 }
 
-func (w TargetAllocatorWebhook) Default(_ context.Context, obj runtime.Object) error {
-	targetallocator, ok := obj.(*v1alpha1.TargetAllocator)
-	if !ok {
-		return fmt.Errorf("expected an TargetAllocator, received %T", obj)
-	}
+func (w TargetAllocatorWebhook) Default(_ context.Context, targetallocator *v1alpha1.TargetAllocator) error {
 	return w.defaulter(targetallocator)
 }
 
-func (w TargetAllocatorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*v1alpha1.TargetAllocator)
-	if !ok {
-		return nil, fmt.Errorf("expected an TargetAllocator, received %T", obj)
-	}
-	return w.validate(ctx, otelcol)
+func (w TargetAllocatorWebhook) ValidateCreate(ctx context.Context, ta *v1alpha1.TargetAllocator) (admission.Warnings, error) {
+	return w.validate(ctx, ta)
 }
 
-func (w TargetAllocatorWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*v1alpha1.TargetAllocator)
-	if !ok {
-		return nil, fmt.Errorf("expected an TargetAllocator, received %T", newObj)
-	}
-	return w.validate(ctx, otelcol)
+func (w TargetAllocatorWebhook) ValidateUpdate(ctx context.Context, _, ta *v1alpha1.TargetAllocator) (admission.Warnings, error) {
+	return w.validate(ctx, ta)
 }
 
-func (w TargetAllocatorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*v1alpha1.TargetAllocator)
-	if !ok || otelcol == nil {
-		return nil, fmt.Errorf("expected an TargetAllocator, received %T", obj)
-	}
-	return w.validate(ctx, otelcol)
+func (w TargetAllocatorWebhook) ValidateDelete(ctx context.Context, ta *v1alpha1.TargetAllocator) (admission.Warnings, error) {
+	return w.validate(ctx, ta)
 }
 
 func (TargetAllocatorWebhook) defaulter(ta *v1alpha1.TargetAllocator) error {
@@ -140,8 +123,7 @@ func SetupTargetAllocatorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *
 		scheme:   mgr.GetScheme(),
 		cfg:      cfg,
 	}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.TargetAllocator{}).
+	return ctrl.NewWebhookManagedBy(mgr, &v1alpha1.TargetAllocator{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()

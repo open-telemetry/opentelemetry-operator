@@ -48,7 +48,7 @@ func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 				delete(influxdbConfig, fieldKey)
 				existing := &corev1.ConfigMap{}
 				updated := existing.DeepCopy()
-				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
+				u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k)
 				continue
 			}
 		}

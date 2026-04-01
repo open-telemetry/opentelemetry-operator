@@ -23,7 +23,6 @@ linters:
       disabled-checks:
         - appendAssign
         - appendCombine
-        - builtinShadow
         - deferInLoop
         - exitAfterDefer
         - hugeParam

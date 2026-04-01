@@ -8,7 +8,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-ta
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           volumeMounts:
             - name: tls-secret
               mountPath: /etc/tls
@@ -53,7 +53,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: verify-cert
-          image: docker.io/nicolaka/netshoot:latest
+          image: mirror.gcr.io/nicolaka/netshoot:latest
           command:
             - /bin/sh
             - -c
