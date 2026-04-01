@@ -25,7 +25,7 @@ type healthcheckV1Config struct {
 	Path                            string `mapstructure:"path"`
 }
 
-func healthCheckV1AddressDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAddr string, port int32, config healthcheckV1Config) (map[string]any, error) {
+func healthCheckV1AddressDefaulter(_ logr.Logger, defaultConfig *components.DefaultConfig, defaultRecAddr string, port int32, config healthcheckV1Config) (map[string]any, error) {
 	if config.Endpoint == "" {
 		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
 	} else {
@@ -39,13 +39,14 @@ func healthCheckV1AddressDefaulter(_ logr.Logger, _ *components.DefaultConfig, d
 		config.Path = defaultHealthcheckV1Path
 	}
 
+	config.TLS.ApplyTLSProfileDefaults(defaultConfig.TLSProfile)
+
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)
 	return res, err
 }
 
 // healthCheckV1Probe returns the probe configuration for the healthcheck v1 extension.
-// Right now no TLS config is parsed.
 func healthCheckV1Probe(logger logr.Logger, config healthcheckV1Config) (*corev1.Probe, error) {
 	// These defaults shouldn't be needed if healthCheckV1AddressDefaulter is applied,
 	// but since the function runs only when manifests are deployed,
