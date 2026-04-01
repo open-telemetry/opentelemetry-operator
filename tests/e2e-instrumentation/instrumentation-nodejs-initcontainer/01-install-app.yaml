@@ -19,6 +19,8 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     env:
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
@@ -42,4 +44,6 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     command: ["sleep", "infinity"]

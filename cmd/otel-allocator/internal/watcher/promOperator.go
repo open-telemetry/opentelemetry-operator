@@ -19,7 +19,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
-	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
+	k8sutil "github.com/prometheus-operator/prometheus-operator/pkg/k8s"
 	"github.com/prometheus-operator/prometheus-operator/pkg/listwatch"
 	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"

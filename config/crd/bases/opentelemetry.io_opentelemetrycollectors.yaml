@@ -4482,6 +4482,10 @@ spec:
                                     type: integer
                                   signerName:
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -7303,7 +7307,6 @@ spec:
                     x-kubernetes-list-type: atomic
                 type: object
               podManagementPolicy:
-                default: Parallel
                 enum:
                 - OrderedReady
                 - Parallel
@@ -9585,6 +9588,10 @@ spec:
                                     type: integer
                                   signerName:
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName

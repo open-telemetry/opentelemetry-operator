@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -58,7 +58,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 		Client:   k8sClient,
 		Log:      opampBridgeLogger,
 		Scheme:   testScheme,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: events.NewFakeRecorder(10),
 		Config:   cfg,
 	})
 	require.NoError(t, autodetect.ApplyAutoDetect(opampBridgeMockAutoDetector, &cfg, logr.Discard()))

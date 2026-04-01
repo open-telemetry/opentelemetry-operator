@@ -85,7 +85,7 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		})
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()
-		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
+		u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys)
 	}
 	return otelcol, nil
 }

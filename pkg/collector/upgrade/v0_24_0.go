@@ -39,7 +39,7 @@ func upgrade0_24_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					extension["endpoint"] = fmt.Sprintf("0.0.0.0:%d", port)
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
+					u.Recorder.Eventf(updated, nil, "Normal", "Upgrade", "Upgrade", "upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k)
 				}
 			case string:
 				if extension == "" {

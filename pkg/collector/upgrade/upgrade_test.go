@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -121,7 +121,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
-				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+				Recorder: events.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 
 			// test
@@ -201,7 +201,7 @@ func TestEnvVarUpdates(t *testing.T) {
 		Log:      logger,
 		Version:  currentV,
 		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+		Recorder: events.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
 
 	// test
@@ -239,7 +239,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
-				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+				Recorder: events.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 			// test
 			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
@@ -278,7 +278,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
-				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+				Recorder: events.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 
 			// test
