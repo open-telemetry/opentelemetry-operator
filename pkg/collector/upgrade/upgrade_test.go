@@ -168,7 +168,7 @@ func TestEnvVarUpdates(t *testing.T) {
 				},
 				Exporters: v1beta1.AnyConfig{
 					Object: map[string]any{
-						"debug": nil,
+						"debug": map[string]any{},
 					},
 				},
 				Service: v1beta1.Service{
