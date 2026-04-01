@@ -498,6 +498,7 @@ func TestDeploymentHostUsers(t *testing.T) {
 	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
 	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
 }
+
 func TestDeploymentHostAliases(t *testing.T) {
 	// Test default (unset)
 	targetAllocator := targetAllocatorInstance()

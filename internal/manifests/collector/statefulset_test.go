@@ -395,6 +395,7 @@ func TestStatefulSetHostUsers(t *testing.T) {
 	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
 	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
 }
+
 func TestStatefulSetHostAliases(t *testing.T) {
 	// Test default (unset)
 	otelcol1 := v1beta1.OpenTelemetryCollector{

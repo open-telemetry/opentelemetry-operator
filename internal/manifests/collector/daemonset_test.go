@@ -181,6 +181,7 @@ func TestDaemonsetHostUsers(t *testing.T) {
 	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
 	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
 }
+
 func TestDaemonsetHostAliases(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
