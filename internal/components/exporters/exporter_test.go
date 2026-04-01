@@ -20,10 +20,9 @@ func TestExporterParserTLSProfile(t *testing.T) {
 	})
 
 	tests := []struct {
-		name             string
-		config           map[string]any
-		expectMinVersion string
-		expectCiphers    []string
+		name           string
+		config         map[string]any
+		expectedConfig any
 	}{
 		{
 			name: "applies min_version and cipher_suites to tls block",
@@ -31,8 +30,12 @@ func TestExporterParserTLSProfile(t *testing.T) {
 				"endpoint": "tempo.example.com:4317",
 				"tls":      map[string]any{},
 			},
-			expectMinVersion: "1.2",
-			expectCiphers:    []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+			expectedConfig: map[string]any{
+				"tls": map[string]any{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
 		},
 		{
 			name: "does not override existing min_version",
@@ -42,8 +45,12 @@ func TestExporterParserTLSProfile(t *testing.T) {
 					"min_version": "1.3",
 				},
 			},
-			expectMinVersion: "1.3",
-			expectCiphers:    []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+			expectedConfig: map[string]any{
+				"tls": map[string]any{
+					"min_version":   "1.3",
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
 		},
 		{
 			name: "does not override existing cipher_suites",
@@ -53,28 +60,29 @@ func TestExporterParserTLSProfile(t *testing.T) {
 					"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"},
 				},
 			},
-			expectMinVersion: "1.2",
-			expectCiphers:    []string{"TLS_AES_256_GCM_SHA384"},
+			expectedConfig: map[string]any{
+				"tls": map[string]any{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"},
+				},
+			},
 		},
 		{
 			name: "does not add tls block when not present",
 			config: map[string]any{
 				"endpoint": "tempo.example.com:4317",
 			},
-			expectMinVersion: "",
-			expectCiphers:    nil,
+			expectedConfig: map[string]any{},
 		},
 		{
-			name:             "handles nil config",
-			config:           nil,
-			expectMinVersion: "",
-			expectCiphers:    nil,
+			name:           "handles nil config",
+			config:         nil,
+			expectedConfig: nil,
 		},
 		{
-			name:             "handles empty config",
-			config:           map[string]any{},
-			expectMinVersion: "",
-			expectCiphers:    nil,
+			name:           "handles empty config",
+			config:         map[string]any{},
+			expectedConfig: map[string]any{},
 		},
 	}
 
@@ -89,29 +97,7 @@ func TestExporterParserTLSProfile(t *testing.T) {
 
 			result, err := parser.GetDefaultConfig(logr.Discard(), config, components.WithTLSProfile(tlsProfile))
 			require.NoError(t, err)
-
-			if tt.config == nil {
-				assert.Nil(t, result)
-				return
-			}
-
-			resultMap := result.(map[string]any)
-			tlsCfg, hasTLS := resultMap["tls"]
-			if tt.expectMinVersion == "" && tt.expectCiphers == nil {
-				if hasTLS {
-					tlsMap := tlsCfg.(map[string]any)
-					_, hasMin := tlsMap["min_version"]
-					_, hasCipher := tlsMap["cipher_suites"]
-					assert.False(t, hasMin, "should not have min_version")
-					assert.False(t, hasCipher, "should not have cipher_suites")
-				}
-				return
-			}
-
-			require.True(t, hasTLS)
-			tlsMap := tlsCfg.(map[string]any)
-			assert.Equal(t, tt.expectMinVersion, tlsMap["min_version"])
-			assert.Equal(t, tt.expectCiphers, tlsMap["cipher_suites"])
+			assert.Equal(t, tt.expectedConfig, result)
 		})
 	}
 }
