@@ -1,0 +1,4 @@
+change_type: enhancement
+component: operator
+note: Added hostAliases support for OpenTelemetryCollector and TargetAllocator pods
+issues: [896]

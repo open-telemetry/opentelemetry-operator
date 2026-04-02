@@ -499,6 +499,30 @@ func TestDeploymentHostUsers(t *testing.T) {
 	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
 }
 
+func TestDeploymentHostAliases(t *testing.T) {
+	// Test default (unset)
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.HostAliases)
+
+	// Test hostAliases set
+	aliases := []v1.HostAlias{{IP: "1.2.3.4", Hostnames: []string{"host.local"}}}
+	params.TargetAllocator.Spec.HostAliases = aliases
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, aliases, d2.Spec.Template.Spec.HostAliases)
+}
+
 func TestDeploymentShareProcessNamespace(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()
