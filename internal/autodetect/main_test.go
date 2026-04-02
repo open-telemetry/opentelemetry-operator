@@ -378,6 +378,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		NativeSidecarSupportFunc: func() (bool, error) {
 			return true, nil
 		},
+		KubeletFineGrainedAuthzSupportFunc: func() (bool, error) {
+			return true, nil
+		},
 	}
 	cfg := config.New()
 
@@ -402,19 +405,21 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
 	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
+	require.Equal(t, true, cfg.Internal.KubeletFineGrainedAuthzSupport)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
-	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
-	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
-	CollectorAvailabilityFunc       func() (collector.Availability, error)
-	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
-	NativeSidecarSupportFunc        func() (bool, error)
+	OpenShiftRoutesAvailabilityFunc    func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc      func() (prometheus.Availability, error)
+	RBACPermissionsFunc                func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc        func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc    func() (targetallocator.Availability, error)
+	CollectorAvailabilityFunc          func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc        func() (opampbridge.Availability, error)
+	NativeSidecarSupportFunc           func() (bool, error)
+	KubeletFineGrainedAuthzSupportFunc func() (bool, error)
 }
 
 func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
@@ -473,6 +478,13 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	if m.NativeSidecarSupportFunc != nil {
 		return m.NativeSidecarSupportFunc()
+	}
+	return false, nil
+}
+
+func (m *mockAutoDetect) KubeletFineGrainedAuthzSupport() (bool, error) {
+	if m.KubeletFineGrainedAuthzSupportFunc != nil {
+		return m.KubeletFineGrainedAuthzSupportFunc()
 	}
 	return false, nil
 }

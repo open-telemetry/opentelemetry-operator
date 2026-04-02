@@ -20,8 +20,13 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
-	} else if len(rules) == 0 {
+	}
+	if len(rules) == 0 {
 		return nil, nil
+	}
+
+	if !params.Config.Internal.KubeletFineGrainedAuthzSupport {
+		replaceNodesPodsWithNodesProxy(rules)
 	}
 
 	name := naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace)
@@ -46,8 +51,13 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
-	} else if len(rules) == 0 {
+	}
+	if len(rules) == 0 {
 		return nil, nil
+	}
+
+	if !params.Config.Internal.KubeletFineGrainedAuthzSupport {
+		replaceNodesPodsWithNodesProxy(rules)
 	}
 
 	name := naming.ClusterRoleBinding(params.OtelCol.Name, params.OtelCol.Namespace)
@@ -87,6 +97,10 @@ func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
 		return nil, err
 	}
 
+	if !params.Config.Internal.KubeletFineGrainedAuthzSupport {
+		replaceNodesPodsWithNodesProxy(rules)
+	}
+
 	r := []*rbacv1.PolicyRule{}
 
 	for _, rule := range rules {
@@ -99,4 +113,19 @@ func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
 		return rbac.WarningsGroupedByResource(deniedReviews), nil
 	}
 	return nil, nil
+}
+
+func replaceNodesPodsWithNodesProxy(rules []rbacv1.PolicyRule) {
+	for i := range rules {
+		for j, resource := range rules[i].Resources {
+			if resource == "nodes/pods" {
+				// Create a new slice for Resources to avoid modifying the backing array
+				// which may be shared across multiple calls or statically allocated.
+				newResources := make([]string, len(rules[i].Resources))
+				copy(newResources, rules[i].Resources)
+				newResources[j] = "nodes/proxy"
+				rules[i].Resources = newResources
+			}
+		}
+	}
 }
