@@ -1198,3 +1198,67 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 	}
 	return toReturn, nil
 }
+
+func TestAgent_Start_TLSConfig(t *testing.T) {
+	tests := []struct {
+		name               string
+		endpoint           string
+		insecure           bool
+		insecureSkipVerify bool
+		expectNil          bool
+		expectSkip         bool
+		expectURL          string
+	}{
+		{
+			name:      "Insecure (no TLS)",
+			endpoint:  "wss://127.0.0.1:4320/v1/opamp",
+			insecure:  true,
+			expectNil: true,
+			expectURL: "ws://127.0.0.1:4320/v1/opamp",
+		},
+		{
+			name:               "Secure with Skip Verify",
+			endpoint:           "wss://127.0.0.1:4320/v1/opamp",
+			insecure:           false,
+			insecureSkipVerify: true,
+			expectNil:          false,
+			expectSkip:         true,
+			expectURL:          "wss://127.0.0.1:4320/v1/opamp",
+		},
+		{
+			name:               "Secure (verify enabled)",
+			endpoint:           "wss://127.0.0.1:4320/v1/opamp",
+			insecure:           false,
+			insecureSkipVerify: false,
+			expectNil:          true,
+			expectURL:          "wss://127.0.0.1:4320/v1/opamp",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockOpampClient{}
+			conf := config.NewConfig(logr.Discard())
+			conf.Endpoint = tt.endpoint
+			conf.TLS = &v1alpha1.OpAMPBridgeTLSConfig{
+				Insecure:           tt.insecure,
+				InsecureSkipVerify: tt.insecureSkipVerify,
+			}
+			applier := getFakeApplier(t, conf)
+			mp := newMockProxy(nil, nil, nil)
+			agent := NewAgent(l, applier, conf, mockClient, mp)
+
+			err := agent.Start()
+			require.NoError(t, err)
+
+			if tt.expectNil {
+				assert.Nil(t, mockClient.settings.TLSConfig)
+			} else {
+				require.NotNil(t, mockClient.settings.TLSConfig)
+				assert.Equal(t, tt.expectSkip, mockClient.settings.TLSConfig.InsecureSkipVerify)
+			}
+			assert.Equal(t, tt.expectURL, mockClient.settings.OpAMPServerURL)
+			agent.Shutdown()
+		})
+	}
+}
