@@ -32,7 +32,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var setupLog = ctrl.Log.WithName("setup")
@@ -93,7 +92,7 @@ func main() {
 	allocatorOpts := []allocation.Option{
 		allocation.WithFilter(allocatorPrehook),
 		allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy),
-		allocation.WithLabeledMetrics(featuregate.EnableTargetAllocatorLabeledMetrics.IsEnabled()),
+		allocation.WithLabeledMetrics(cfg.LabeledMetrics),
 	}
 	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocatorOpts...)
 	if allocErr != nil {
