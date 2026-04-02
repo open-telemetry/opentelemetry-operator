@@ -297,7 +297,7 @@ func TestWithFilterOption(t *testing.T) {
 	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
 		filterCalled := false
 		mockFilter := &mockFilterImpl{
-			applyFunc: func(targets []*target.Item) []*target.Item {
+			applyFunc: func(_ []*target.Item) []*target.Item {
 				filterCalled = true
 				// drop all targets
 				return []*target.Item{}
