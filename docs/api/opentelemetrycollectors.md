@@ -20265,6 +20265,15 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspechttproute">httpRoute</a></b></td>
+        <td>object</td>
+        <td>
+          HttpRoute is used to specify how OpenTelemetry Collector is exposed via Gateway API HTTPRoute.
+This functionality is only available if one of the valid modes is set.
+Valid modes are: deployment, daemonset and statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -26710,6 +26719,59 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.httpRoute
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+HttpRoute is used to specify how OpenTelemetry Collector is exposed via Gateway API HTTPRoute.
+This functionality is only available if one of the valid modes is set.
+Valid modes are: deployment, daemonset and statefulset.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the HTTP route configuration is enabled.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>gateway</b></td>
+        <td>string</td>
+        <td>
+          Gateway specifies the name of the Gateway resource to associate with the HTTP route.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>gatewayNamespace</b></td>
+        <td>string</td>
+        <td>
+          GatewayNamespace specifies the namespace of the Gateway resource.
+Default is the same namespace as the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostnames</b></td>
+        <td>[]string</td>
+        <td>
+          Hostnames specifies the hostnames for the HTTP route.
+Multiple hostnames can be specified to match requests with any of the given hostnames.
+If empty, the route matches requests with any hostname.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

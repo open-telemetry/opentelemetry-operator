@@ -1,3 +1,7 @@
+# Run e2e tests for httpRoute
+.PHONY: e2e-httproute
+e2e-httproute: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -319,7 +323,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 ##@ Deploy
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller
+deploy: install-gateway-api-crds set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
@@ -476,7 +480,7 @@ e2e-crd-validations: chainsaw
 
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
 	@mkdir -p ./.testresults/e2e
 
 # Run operator-sdk scorecard tests for bundles
@@ -590,6 +594,10 @@ endif
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
+
+.PHONY: install-gateway-api-crds
+install-gateway-api-crds:
+	./hack/install-gateway-api-crds.sh
 
 # This only installs the CRDs Target Allocator supports
 .PHONY: install-targetallocator-prometheus-crds
