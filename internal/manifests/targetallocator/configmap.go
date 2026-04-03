@@ -84,6 +84,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
+	if featuregate.EnableTargetAllocatorLabeledMetrics.IsEnabled() {
+		taConfig["labeled_metrics"] = true
+	}
+
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
 	if taSpec.PrometheusCR.Enabled {
