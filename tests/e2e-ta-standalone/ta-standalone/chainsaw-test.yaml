@@ -85,14 +85,8 @@ spec:
 
     - name: Scale up collectors to 3
       try:
-        - command:
-            entrypoint: kubectl
-            args:
-              - scale
-              - statefulset/collector
-              - --replicas=3
-              - -n
-              - ($namespace)
+        - script:
+            content: kubectl scale statefulset/collector --replicas=3 -n $NAMESPACE
         - assert:
             resource:
               apiVersion: apps/v1
@@ -140,14 +134,8 @@ spec:
 
     - name: Scale down collectors to 2
       try:
-        - command:
-            entrypoint: kubectl
-            args:
-              - scale
-              - statefulset/collector
-              - --replicas=2
-              - -n
-              - ($namespace)
+        - script:
+            content: kubectl scale statefulset/collector --replicas=2 -n $NAMESPACE
         - sleep:
             duration: 40s
 
