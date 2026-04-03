@@ -67,9 +67,9 @@ spec:
               echo "collector-0: $C0"
               echo "collector-1: $C1"
 
-              # Count targets by matching known target addresses
-              C0_COUNT=$(echo "$C0" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
-              C1_COUNT=$(echo "$C1" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
+              # Count targets by matching __address__ labels (exactly one per target)
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
               echo "collector-0 count: $C0_COUNT, collector-1 count: $C1_COUNT"
 
               [ "$C0_COUNT" -ge 1 ] || (echo "FAIL: collector-0 has no targets" && exit 1)
@@ -122,9 +122,9 @@ spec:
               echo "collector-1: $C1"
               echo "collector-2: $C2"
 
-              C0_COUNT=$(echo "$C0" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
-              C1_COUNT=$(echo "$C1" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
-              C2_COUNT=$(echo "$C2" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C2_COUNT=$(echo "$C2" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
               echo "collector-0: $C0_COUNT, collector-1: $C1_COUNT, collector-2: $C2_COUNT"
 
               # collector-2 must have at least 1 target after scale-up
@@ -162,7 +162,7 @@ spec:
               # collector-2 should have no targets after scale-down
               C2=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-2")
               echo "collector-2 after scale-down: $C2"
-              if echo "$C2" | grep -q "target-"; then
+              if echo "$C2" | grep -q '"__address__":"target-'; then
                 echo "FAIL: collector-2 still has targets after scale-down"
                 exit 1
               fi
@@ -170,8 +170,8 @@ spec:
               # All 6 targets should be on collector-0 and collector-1
               C0=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-0")
               C1=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-1")
-              C0_COUNT=$(echo "$C0" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
-              C1_COUNT=$(echo "$C1" | grep -oE 'target-[a-f]:8080' | wc -l | tr -d ' ')
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
               TOTAL=$((C0_COUNT + C1_COUNT))
 
               echo "collector-0: $C0_COUNT, collector-1: $C1_COUNT, total: $TOTAL"
@@ -213,7 +213,7 @@ spec:
               # Unknown collector_id should return empty array (no target addresses)
               UNKNOWN=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=nonexistent")
               echo "GET unknown collector_id: $UNKNOWN"
-              if echo "$UNKNOWN" | grep -q "target-"; then
+              if echo "$UNKNOWN" | grep -q '"__address__":"target-'; then
                 echo "FAIL: expected no targets for unknown collector"
                 exit 1
               fi
