@@ -1,0 +1,209 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: ta-standalone
+spec:
+  bindings:
+    - name: clusterRoleName
+      value: (join('-', ['ta-standalone', $namespace]))
+    - name: clusterRoleBindingName
+      value: (join('-', ['ta-standalone-binding', $namespace]))
+    - name: TARGETALLOCATOR_IMG
+      value: (env('TARGETALLOCATOR_IMG'))
+    - name: COLLECTOR_IMG
+      value: (env('COLLECTOR_IMG'))
+  steps:
+    - name: Setup RBAC
+      try:
+        - apply:
+            template: true
+            file: 00-rbac.yaml
+
+    - name: Deploy TA config
+      try:
+        - apply:
+            file: 01-ta-config.yaml
+
+    - name: Deploy TA and collectors
+      try:
+        - apply:
+            template: true
+            file: 02-ta-deployment.yaml
+        - apply:
+            template: true
+            file: 03-collectors.yaml
+        - assert:
+            file: 03-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=ta-standalone
+
+    - name: Wait for TA to discover collectors
+      try:
+        - sleep:
+            duration: 40s
+
+    - name: Verify targets distributed across both collectors
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+              TA_PROXY="/api/v1/namespaces/$NAMESPACE/services/ta-standalone:80/proxy"
+
+              # Query all targets for test-targets job
+              TARGETS=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets")
+              echo "All targets: $TARGETS"
+
+              # All 6 targets must be present somewhere
+              for t in target-a target-b target-c target-d target-e target-f; do
+                echo "$TARGETS" | grep -q "$t:8080" || (echo "FAIL: $t not found in response" && exit 1)
+              done
+
+              # Verify per-collector distribution
+              C0=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-0")
+              C1=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-1")
+              echo "collector-0: $C0"
+              echo "collector-1: $C1"
+
+              # Count targets by matching __address__ labels (exactly one per target)
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              echo "collector-0 count: $C0_COUNT, collector-1 count: $C1_COUNT"
+
+              [ "$C0_COUNT" -ge 1 ] || (echo "FAIL: collector-0 has no targets" && exit 1)
+              [ "$C1_COUNT" -ge 1 ] || (echo "FAIL: collector-1 has no targets" && exit 1)
+
+              TOTAL=$((C0_COUNT + C1_COUNT))
+              [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 total targets, got $TOTAL" && exit 1)
+
+              echo "PASS: targets distributed across both collectors"
+      catch:
+        - podLogs:
+            selector: app=ta-standalone
+
+    - name: Scale up collectors to 3
+      try:
+        - script:
+            content: kubectl scale statefulset/collector --replicas=3 -n $NAMESPACE
+        - assert:
+            resource:
+              apiVersion: apps/v1
+              kind: StatefulSet
+              metadata:
+                name: collector
+              status:
+                readyReplicas: 3
+
+    - name: Wait for TA to discover collector-2
+      try:
+        - sleep:
+            duration: 40s
+
+    - name: Verify targets redistributed to 3 collectors
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+              TA_PROXY="/api/v1/namespaces/$NAMESPACE/services/ta-standalone:80/proxy"
+
+              C0=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-0")
+              C1=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-1")
+              C2=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-2")
+              echo "collector-0: $C0"
+              echo "collector-1: $C1"
+              echo "collector-2: $C2"
+
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C2_COUNT=$(echo "$C2" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              echo "collector-0: $C0_COUNT, collector-1: $C1_COUNT, collector-2: $C2_COUNT"
+
+              # collector-2 must have at least 1 target after scale-up
+              [ "$C2_COUNT" -ge 1 ] || (echo "FAIL: collector-2 has no targets after scale-up" && exit 1)
+
+              TOTAL=$((C0_COUNT + C1_COUNT + C2_COUNT))
+              [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 total targets, got $TOTAL" && exit 1)
+
+              echo "PASS: targets redistributed to 3 collectors after scale-up"
+      catch:
+        - podLogs:
+            selector: app=ta-standalone
+
+    - name: Scale down collectors to 2
+      try:
+        - script:
+            content: kubectl scale statefulset/collector --replicas=2 -n $NAMESPACE
+        - sleep:
+            duration: 40s
+
+    - name: Verify collector-2 targets reassigned
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+              TA_PROXY="/api/v1/namespaces/$NAMESPACE/services/ta-standalone:80/proxy"
+
+              # collector-2 should have no targets after scale-down
+              C2=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-2")
+              echo "collector-2 after scale-down: $C2"
+              if echo "$C2" | grep -q '"__address__":"target-'; then
+                echo "FAIL: collector-2 still has targets after scale-down"
+                exit 1
+              fi
+
+              # All 6 targets should be on collector-0 and collector-1
+              C0=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-0")
+              C1=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=collector-1")
+              C0_COUNT=$(echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              C1_COUNT=$(echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | wc -l | tr -d ' ')
+              TOTAL=$((C0_COUNT + C1_COUNT))
+
+              echo "collector-0: $C0_COUNT, collector-1: $C1_COUNT, total: $TOTAL"
+              [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 targets, got $TOTAL" && exit 1)
+
+              echo "PASS: all targets reassigned after scale-down"
+      catch:
+        - podLogs:
+            selector: app=ta-standalone
+
+    - name: Verify HTTP API contract
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              set -e
+              TA_PROXY="/api/v1/namespaces/$NAMESPACE/services/ta-standalone:80/proxy"
+
+              # GET /jobs should return test-targets job
+              JOBS=$(kubectl get --raw "$TA_PROXY/jobs")
+              echo "GET /jobs: $JOBS"
+              echo "$JOBS" | grep -q "test-targets" || (echo "FAIL: /jobs missing test-targets" && exit 1)
+
+              # GET /scrape_configs should return config
+              CONFIGS=$(kubectl get --raw "$TA_PROXY/scrape_configs")
+              echo "GET /scrape_configs: $CONFIGS"
+              echo "$CONFIGS" | grep -q "test-targets" || (echo "FAIL: /scrape_configs missing test-targets" && exit 1)
+
+              # GET /livez should return 200
+              kubectl get --raw "$TA_PROXY/livez" \
+                && echo "GET /livez: OK" \
+                || (echo "FAIL: /livez not healthy" && exit 1)
+
+              # GET /readyz should return 200
+              kubectl get --raw "$TA_PROXY/readyz" \
+                && echo "GET /readyz: OK" \
+                || (echo "FAIL: /readyz not ready" && exit 1)
+
+              # Unknown collector_id should return empty array (no target addresses)
+              UNKNOWN=$(kubectl get --raw "$TA_PROXY/jobs/test-targets/targets?collector_id=nonexistent")
+              echo "GET unknown collector_id: $UNKNOWN"
+              if echo "$UNKNOWN" | grep -q '"__address__":"target-'; then
+                echo "FAIL: expected no targets for unknown collector"
+                exit 1
+              fi
+
+              echo "PASS: HTTP API contract verified"

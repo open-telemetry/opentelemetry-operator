@@ -83,6 +83,7 @@ jobs:
         - e2e-multi-instrumentation
         - e2e-metadata-filters
         - e2e-ta-collector-mtls
+        - e2e-ta-standalone
         - e2e-crd-validations
         include:
         - group: e2e-instrumentation-default
@@ -97,6 +98,8 @@ jobs:
           setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
         - group: e2e-ta-collector-mtls
           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
+        - group: e2e-ta-standalone
+          setup: "prepare-e2e-ta-standalone"
         - group: e2e-automatic-rbac
           setup: "add-rbac-permissions-to-operator prepare-e2e"
 
