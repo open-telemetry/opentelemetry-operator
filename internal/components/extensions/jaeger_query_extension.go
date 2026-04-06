@@ -29,7 +29,8 @@ type JaegerQueryExtensionConfig struct {
 }
 
 type jaegerHTTPAddress struct {
-	Endpoint string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	Endpoint string                `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	TLS      *components.TLSConfig `mapstructure:"tls,omitempty" yaml:"tls,omitempty"`
 }
 
 type jaegerGRPCAddress struct {
@@ -89,7 +90,7 @@ func NewJaegerQueryExtensionParserBuilder() components.Builder[*JaegerQueryExten
 	return components.NewBuilder[*JaegerQueryExtensionConfig]().WithPort(port).WithName(name).WithPortParser(ParseJaegerQueryExtensionConfig).WithDefaultsApplier(endpointDefaulter).WithDefaultRecAddress(components.DefaultRecAddress).WithTargetPort(port)
 }
 
-func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]any, error) {
+func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]any, error) {
 	if config == nil {
 		config = &JaegerQueryExtensionConfig{}
 	}
@@ -110,6 +111,8 @@ func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAdd
 			config.GRPC.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
 		}
 	}
+
+	config.HTTP.TLS.ApplyTLSProfileDefaults(defaultCfg.TLSProfile)
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)

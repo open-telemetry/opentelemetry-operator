@@ -70,7 +70,7 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
-  - image: docker.io/library/rabbitmq:3
+  - image: mirror.gcr.io/library/rabbitmq:3
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

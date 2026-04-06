@@ -144,7 +144,7 @@ spec:
           ports:
           - containerPort: 8080
         - name: nginxapp
-          image: docker.io/nginxinc/nginx-unprivileged:1.26.2
+          image: mirror.gcr.io/nginxinc/nginx-unprivileged:1.26.2
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
