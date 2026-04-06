@@ -10,9 +10,6 @@ spec:
         - containerPort: 16686
           name: jaeger-query
           protocol: TCP
-        - containerPort: 16685
-          name: port-16685
-          protocol: TCP
         - containerPort: 8888
           name: metrics
           protocol: TCP
@@ -21,6 +18,9 @@ spec:
           protocol: TCP
         - containerPort: 4318
           name: otlp-http
+          protocol: TCP
+        - containerPort: 16685
+          name: port-16685
           protocol: TCP
 status:
   readyReplicas: 1

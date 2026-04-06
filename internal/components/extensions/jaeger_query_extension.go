@@ -116,5 +116,9 @@ func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defa
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)
+	// Remove empty gRPC config to avoid injecting unwanted configuration
+	if config.GRPC.Endpoint == "" {
+		delete(res, "grpc")
+	}
 	return res, err
 }
