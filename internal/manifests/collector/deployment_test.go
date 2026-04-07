@@ -350,6 +350,50 @@ func TestDeploymentHostUsers(t *testing.T) {
 	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
 }
 
+func TestDeploymentHostAliases(t *testing.T) {
+	// Test default (unset)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.HostAliases)
+
+	// Test hostAliases set
+	aliases := []v1.HostAlias{{IP: "1.2.3.4", Hostnames: []string{"host.local"}}}
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-hostaliases",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostAliases: aliases,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	assert.Equal(t, aliases, d2.Spec.Template.Spec.HostAliases)
+}
+
 func TestDeploymentDNSPolicy(t *testing.T) {
 	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{

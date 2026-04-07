@@ -179,6 +179,14 @@ For more info, see https://prometheus.io/docs/prometheus/latest/configuration/co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspechostaliasesindex">hostAliases</a></b></td>
+        <td>[]object</td>
+        <td>
+          HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+This is only valid for non-hostNetwork pods and is not supported on Windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -5605,6 +5613,41 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.hostAliases[index]
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+pod's hosts file.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>ip</b></td>
+        <td>string</td>
+        <td>
+          IP address of the host file entry.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>hostnames</b></td>
+        <td>[]string</td>
+        <td>
+          Hostnames for the above IP address.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
