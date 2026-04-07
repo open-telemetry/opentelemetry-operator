@@ -42,8 +42,6 @@ func (t *TLSConfig) ApplyTLSProfileDefaults(profile TLSProfile) {
 type TLSProfile interface {
 	// MinTLSVersionOTEL returns the minimum TLS version in OpenTelemetry collector format (e.g., "1.2").
 	MinTLSVersionOTEL() string
-	// MinTLSVersionPrometheus returns the minimum TLS version in Prometheus format (e.g., "TLS12").
-	MinTLSVersionPrometheus() string
 	// MinTLSVersion returns the minimum TLS version as a Go crypto/tls constant.
 	MinTLSVersion() uint16
 	// CipherSuites returns the cipher suites as Go crypto/tls constants.
@@ -65,20 +63,6 @@ func TLSVersionToCollectorFormat(version uint16) string {
 		return "1.3"
 	default:
 		return "1.2"
-	}
-}
-
-// TLSVersionToPrometheusFormat converts a TLS version constant to Prometheus format string (e.g., "TLS12").
-func TLSVersionToPrometheusFormat(version uint16) string {
-	switch version {
-	case tls.VersionTLS10:
-		return "TLS10"
-	case tls.VersionTLS11:
-		return "TLS11"
-	case tls.VersionTLS13:
-		return "TLS13"
-	default:
-		return "TLS12"
 	}
 }
 
@@ -112,10 +96,6 @@ func (p StaticTLSProfile) MinTLSVersionGolang() string {
 
 func (p StaticTLSProfile) MinTLSVersionOTEL() string {
 	return TLSVersionToCollectorFormat(p.minVersion)
-}
-
-func (p StaticTLSProfile) MinTLSVersionPrometheus() string {
-	return TLSVersionToPrometheusFormat(p.minVersion)
 }
 
 func (p StaticTLSProfile) MinTLSVersion() uint16 {
