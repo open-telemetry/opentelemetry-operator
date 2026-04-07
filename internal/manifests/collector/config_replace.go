@@ -4,11 +4,7 @@
 package collector
 
 import (
-	"time"
-
 	go_yaml "github.com/goccy/go-yaml"
-	promconfig "github.com/prometheus/prometheus/config"
-	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -16,20 +12,6 @@ import (
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
-
-type targetAllocator struct {
-	Endpoint    string        `yaml:"endpoint"`
-	Interval    time.Duration `yaml:"interval"`
-	CollectorID string        `yaml:"collector_id"`
-	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
-	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
-	HTTPSDConfig any `yaml:"http_sd_config,omitempty"`
-}
-
-type Config struct {
-	PromConfig        *promconfig.Config `yaml:"config"`
-	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
-}
 
 func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1alpha1.TargetAllocator, options ...ta.TAOption) (string, error) {
 	collectorSpec := otelcol.Spec

@@ -433,12 +433,10 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 
 			// Verify that all targets have different hashes
 			targetHashes := make(map[ItemHash]bool)
-			for _, target := range gotTargets {
-				hash := target.Hash()
-				if _, exists := targetHashes[hash]; exists {
-					t.Errorf("Duplicate hash %d found for target %s (%s)", hash, target.TargetURL, target.JobName)
-				}
-				targetHashes[hash] = true
+			for _, tgt := range gotTargets {
+				h := tgt.Hash()
+				assert.False(t, targetHashes[h], "Duplicate hash %d found for target %s (%s)", h, tgt.TargetURL, tgt.JobName)
+				targetHashes[h] = true
 			}
 			assert.Equal(t, len(gotTargets), len(targetHashes), "Number of unique hashes should match number of targets")
 		})
