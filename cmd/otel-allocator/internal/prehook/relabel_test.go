@@ -483,3 +483,205 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 	}
 	return res, preRelabelLabels, nil
 }
+
+func TestNewPrehookValid(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+}
+
+func TestNewPrehookInvalid(t *testing.T) {
+	hook := New("nonexistent-filter", logger)
+	assert.Nil(t, hook)
+}
+
+func TestNewPrehookEmpty(t *testing.T) {
+	hook := New("", logger)
+	assert.Nil(t, hook)
+}
+
+func TestApplyNilTargets(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	// Empty relabel config - should pass targets through
+	hook.SetConfig(map[string][]*relabel.Config{})
+	result := hook.Apply(nil)
+	assert.Nil(t, result)
+}
+
+func TestApplyEmptyTargets(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	hook.SetConfig(map[string][]*relabel.Config{
+		"job1": {
+			{
+				SourceLabels:         model.LabelNames{"i"},
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Separator:            ";",
+				Action:               "keep",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	})
+	result := hook.Apply([]*target.Item{})
+	assert.Empty(t, result)
+}
+
+func TestApplyAllDropped(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	// Create targets with "i" label
+	targets := make([]*target.Item, 5)
+	for i := range 5 {
+		ls := labels.New(
+			labels.Label{Name: "i", Value: strconv.Itoa(i)},
+			labels.Label{Name: model.AddressLabel, Value: "addr"},
+			labels.Label{Name: model.JobLabel, Value: "job1"},
+			labels.Label{Name: model.ScrapeIntervalLabel, Value: "10s"},
+			labels.Label{Name: model.ScrapeTimeoutLabel, Value: "10s"},
+			labels.Label{Name: model.SchemeLabel, Value: "http"},
+			labels.Label{Name: model.MetricsPathLabel, Value: "/metrics"},
+			labels.Label{Name: model.InstanceLabel, Value: "addr"},
+		)
+		targets[i] = target.NewItem("job1", fmt.Sprintf("url-%d", i), ls, "")
+	}
+
+	// Drop all targets
+	hook.SetConfig(map[string][]*relabel.Config{
+		"job1": {
+			{
+				SourceLabels:         model.LabelNames{"i"},
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Separator:            ";",
+				Action:               "drop",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	})
+	result := hook.Apply(targets)
+	assert.Empty(t, result)
+}
+
+func TestApplyAllKept(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	targets := make([]*target.Item, 3)
+	for i := range 3 {
+		ls := labels.New(
+			labels.Label{Name: "app", Value: "myapp"},
+			labels.Label{Name: model.AddressLabel, Value: "addr"},
+			labels.Label{Name: model.JobLabel, Value: "job1"},
+			labels.Label{Name: model.ScrapeIntervalLabel, Value: "10s"},
+			labels.Label{Name: model.ScrapeTimeoutLabel, Value: "10s"},
+			labels.Label{Name: model.SchemeLabel, Value: "http"},
+			labels.Label{Name: model.MetricsPathLabel, Value: "/metrics"},
+			labels.Label{Name: model.InstanceLabel, Value: "addr"},
+		)
+		targets[i] = target.NewItem("job1", fmt.Sprintf("url-%d", i), ls, "")
+	}
+
+	// Keep all targets matching "myapp"
+	hook.SetConfig(map[string][]*relabel.Config{
+		"job1": {
+			{
+				SourceLabels:         model.LabelNames{"app"},
+				Regex:                relabel.MustNewRegexp("myapp"),
+				Separator:            ";",
+				Action:               "keep",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	})
+	result := hook.Apply(targets)
+	assert.Len(t, result, 3)
+}
+
+func TestGetConfigReturnsCopy(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	cfg := map[string][]*relabel.Config{
+		"job1": {
+			{
+				SourceLabels:         model.LabelNames{"i"},
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Separator:            ";",
+				Action:               "keep",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	}
+	hook.SetConfig(cfg)
+
+	retrieved := hook.GetConfig()
+	assert.NotNil(t, retrieved)
+	assert.Contains(t, retrieved, "job1")
+
+	// Modifying the retrieved config should not affect the hook's internal state
+	delete(retrieved, "job1")
+	retrievedAgain := hook.GetConfig()
+	assert.Contains(t, retrievedAgain, "job1")
+}
+
+func TestApplyMultipleJobsIndependent(t *testing.T) {
+	hook := New("relabel-config", logger)
+	assert.NotNil(t, hook)
+
+	mkTarget := func(job, urlSuffix, labelVal string) *target.Item {
+		ls := labels.New(
+			labels.Label{Name: "env", Value: labelVal},
+			labels.Label{Name: model.AddressLabel, Value: "addr"},
+			labels.Label{Name: model.JobLabel, Value: job},
+			labels.Label{Name: model.ScrapeIntervalLabel, Value: "10s"},
+			labels.Label{Name: model.ScrapeTimeoutLabel, Value: "10s"},
+			labels.Label{Name: model.SchemeLabel, Value: "http"},
+			labels.Label{Name: model.MetricsPathLabel, Value: "/metrics"},
+			labels.Label{Name: model.InstanceLabel, Value: "addr"},
+		)
+		return target.NewItem(job, "url-"+urlSuffix, ls, "")
+	}
+
+	targets := []*target.Item{
+		mkTarget("job-keep", "1", "prod"),
+		mkTarget("job-keep", "2", "prod"),
+		mkTarget("job-drop", "3", "staging"),
+		mkTarget("job-drop", "4", "staging"),
+	}
+
+	hook.SetConfig(map[string][]*relabel.Config{
+		"job-keep": {
+			{
+				SourceLabels:         model.LabelNames{"env"},
+				Regex:                relabel.MustNewRegexp("prod"),
+				Separator:            ";",
+				Action:               "keep",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+		"job-drop": {
+			{
+				SourceLabels:         model.LabelNames{"env"},
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Separator:            ";",
+				Action:               "drop",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	})
+
+	result := hook.Apply(targets)
+	// job-keep targets should remain, job-drop targets should be removed
+	assert.Len(t, result, 2)
+	for _, item := range result {
+		assert.Equal(t, "job-keep", item.JobName)
+	}
+}
