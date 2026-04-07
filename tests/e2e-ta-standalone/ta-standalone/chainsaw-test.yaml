@@ -78,6 +78,12 @@ spec:
               TOTAL=$((C0_COUNT + C1_COUNT))
               [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 total targets, got $TOTAL" && exit 1)
 
+              # Save initial assignment for later comparison
+              echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c0-initial.txt
+              echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c1-initial.txt
+              echo "Initial collector-0 targets:"; cat /tmp/c0-initial.txt
+              echo "Initial collector-1 targets:"; cat /tmp/c1-initial.txt
+
               echo "PASS: targets distributed across both collectors"
       catch:
         - podLogs:
@@ -127,7 +133,21 @@ spec:
               TOTAL=$((C0_COUNT + C1_COUNT + C2_COUNT))
               [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 total targets, got $TOTAL" && exit 1)
 
-              echo "PASS: targets redistributed to 3 collectors after scale-up"
+              # Verify minimal churn: targets that stayed on collector-0 and collector-1
+              echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c0-after-scaleup.txt
+              echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c1-after-scaleup.txt
+
+              # Count how many targets stayed on their original collector
+              STAYED_C0=$(comm -12 /tmp/c0-initial.txt /tmp/c0-after-scaleup.txt | wc -l | tr -d ' ')
+              STAYED_C1=$(comm -12 /tmp/c1-initial.txt /tmp/c1-after-scaleup.txt | wc -l | tr -d ' ')
+              TOTAL_STAYED=$((STAYED_C0 + STAYED_C1))
+              echo "Targets that stayed on original collector: $TOTAL_STAYED out of 6 (c0: $STAYED_C0, c1: $STAYED_C1)"
+
+              # With consistent-hashing, adding 1 collector to 2 should move ~1/3 (2 of 6).
+              # At least 3 out of 6 must stay on their original collector.
+              [ "$TOTAL_STAYED" -ge 3 ] || (echo "FAIL: too much churn — only $TOTAL_STAYED/6 targets stayed, expected >= 3" && exit 1)
+
+              echo "PASS: targets redistributed to 3 collectors with minimal churn"
       catch:
         - podLogs:
             selector: app=ta-standalone
@@ -164,6 +184,30 @@ spec:
 
               echo "collector-0: $C0_COUNT, collector-1: $C1_COUNT, total: $TOTAL"
               [ "$TOTAL" -eq 6 ] || (echo "FAIL: expected 6 targets, got $TOTAL" && exit 1)
+
+              # Verify assignment restored to pre-scale-up state
+              # With consistent-hashing, removing collector-2 should return targets
+              # to the same collectors they were on before scale-up.
+              echo "$C0" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c0-after-scaledown.txt
+              echo "$C1" | grep -oE '"__address__":"target-[a-f]:8080"' | sort > /tmp/c1-after-scaledown.txt
+
+              if diff -q /tmp/c0-initial.txt /tmp/c0-after-scaledown.txt > /dev/null 2>&1 && \
+                 diff -q /tmp/c1-initial.txt /tmp/c1-after-scaledown.txt > /dev/null 2>&1; then
+                echo "Assignment fully restored to pre-scale-up state"
+              else
+                echo "WARNING: assignment not identical to pre-scale-up (may differ due to hash ring implementation)"
+                echo "Initial c0:"; cat /tmp/c0-initial.txt
+                echo "Current c0:"; cat /tmp/c0-after-scaledown.txt
+                echo "Initial c1:"; cat /tmp/c1-initial.txt
+                echo "Current c1:"; cat /tmp/c1-after-scaledown.txt
+
+                # At minimum, most targets should return — allow at most 1 target difference
+                RESTORED_C0=$(comm -12 /tmp/c0-initial.txt /tmp/c0-after-scaledown.txt | wc -l | tr -d ' ')
+                RESTORED_C1=$(comm -12 /tmp/c1-initial.txt /tmp/c1-after-scaledown.txt | wc -l | tr -d ' ')
+                TOTAL_RESTORED=$((RESTORED_C0 + RESTORED_C1))
+                echo "Targets restored to original collector: $TOTAL_RESTORED out of 6"
+                [ "$TOTAL_RESTORED" -ge 5 ] || (echo "FAIL: too few targets restored — $TOTAL_RESTORED/6, expected >= 5" && exit 1)
+              fi
 
               echo "PASS: all targets reassigned after scale-down"
       catch:
