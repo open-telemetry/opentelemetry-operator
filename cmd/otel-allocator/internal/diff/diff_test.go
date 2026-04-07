@@ -4,8 +4,9 @@
 package diff
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type HasherString string
@@ -86,12 +87,152 @@ func TestDiffMaps(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "both empty maps",
+			args: args{
+				current: map[string]Hasher[string]{},
+				new:     map[string]Hasher[string]{},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{},
+				removals:  map[string]Hasher[string]{},
+			},
+		},
+		{
+			name: "empty current, non-empty new",
+			args: args{
+				current: map[string]Hasher[string]{},
+				new: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+				removals: map[string]Hasher[string]{},
+			},
+		},
+		{
+			name: "non-empty current, empty new",
+			args: args{
+				current: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+				new: map[string]Hasher[string]{},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{},
+				removals: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+			},
+		},
+		{
+			name: "identical maps",
+			args: args{
+				current: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+					"c": HasherString("3"),
+				},
+				new: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+					"c": HasherString("3"),
+				},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{},
+				removals:  map[string]Hasher[string]{},
+			},
+		},
+		{
+			name: "same key different hash",
+			args: args{
+				current: map[string]Hasher[string]{
+					"k": HasherString("hash-v1"),
+				},
+				new: map[string]Hasher[string]{
+					"k": HasherString("hash-v2"),
+				},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
+					"k": HasherString("hash-v2"),
+				},
+				removals: map[string]Hasher[string]{
+					"k": HasherString("hash-v1"),
+				},
+			},
+		},
+		{
+			name: "complete swap of all entries",
+			args: args{
+				current: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+				new: map[string]Hasher[string]{
+					"c": HasherString("3"),
+					"d": HasherString("4"),
+				},
+			},
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
+					"c": HasherString("3"),
+					"d": HasherString("4"),
+				},
+				removals: map[string]Hasher[string]{
+					"a": HasherString("1"),
+					"b": HasherString("2"),
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Maps(tt.args.current, tt.args.new); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DiffMaps() = %v, want %v", got, tt.want)
-			}
+			got := Maps(tt.args.current, tt.args.new)
+			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestNewChanges(t *testing.T) {
+	additions := map[string]Hasher[string]{"a": HasherString("1")}
+	removals := map[string]Hasher[string]{"b": HasherString("2")}
+	c := NewChanges(additions, removals)
+	assert.Equal(t, additions, c.Additions())
+	assert.Equal(t, removals, c.Removals())
+}
+
+func TestNewChangesNil(t *testing.T) {
+	c := NewChanges[string, Hasher[string]](nil, nil)
+	assert.Nil(t, c.Additions())
+	assert.Nil(t, c.Removals())
+}
+
+// HasherInt tests that the generic diff works with a non-string key type.
+type HasherInt int
+
+func (h HasherInt) Hash() int {
+	return int(h)
+}
+
+func TestDiffMapsIntKey(t *testing.T) {
+	current := map[int]Hasher[int]{
+		1: HasherInt(10),
+		2: HasherInt(20),
+	}
+	updated := map[int]Hasher[int]{
+		2: HasherInt(20),
+		3: HasherInt(30),
+	}
+	got := Maps(current, updated)
+	assert.Equal(t, map[int]Hasher[int]{3: HasherInt(30)}, got.Additions())
+	assert.Equal(t, map[int]Hasher[int]{1: HasherInt(10)}, got.Removals())
 }
