@@ -10,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -21,16 +20,13 @@ func TestPrometheusParser(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
-		// Set up the test scenario
 		actualConfig, err := ReplaceConfig(param.OtelCol, param.TargetAllocator)
 		assert.NoError(t, err)
 
-		// Verify the expected changes in the config
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
 		prometheusConfig := promCfgMap["config"].(map[any]any)
-
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[any]any{
@@ -39,23 +35,19 @@ func TestPrometheusParser(t *testing.T) {
 			"collector_id": "${POD_NAME}",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
-		assert.NoError(t, err)
 	})
 
 	t.Run("should update config with targetAllocator block if block already present", func(t *testing.T) {
-		// Set up the test scenario
 		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml", nil)
 		require.NoError(t, err)
 
 		actualConfig, err := ReplaceConfig(paramTa.OtelCol, param.TargetAllocator)
 		assert.NoError(t, err)
 
-		// Verify the expected changes in the config
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
 		prometheusConfig := promCfgMap["config"].(map[any]any)
-
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[any]any{
@@ -64,39 +56,34 @@ func TestPrometheusParser(t *testing.T) {
 			"collector_id": "${POD_NAME}",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
-		assert.NoError(t, err)
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
 		actualConfig, err := ReplaceConfig(param.OtelCol, nil)
 		assert.NoError(t, err)
 
-		// prepare
-		var cfg Config
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(promCfgMap)
-		assert.NoError(t, err)
+		promConfig := promCfgMap["config"].(map[any]any)
+		scrapeConfigs := promConfig["scrape_configs"].([]any)
+		assert.Len(t, scrapeConfigs, 2)
 
-		err = yaml.UnmarshalStrict(promCfg, &cfg)
-		assert.NoError(t, err)
-
-		// test
-		expectedMap := map[string]bool{
+		expectedJobs := map[string]bool{
 			"prometheus": false,
 			"service-x":  false,
 		}
-		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
-			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 2)
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "file")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[1].Name(), "static")
-			expectedMap[scrapeConfig.JobName] = true
+		for _, sc := range scrapeConfigs {
+			scMap := sc.(map[any]any)
+			jobName := scMap["job_name"].(string)
+			expectedJobs[jobName] = true
+			assert.Contains(t, scMap, "file_sd_configs", "job %s should have file_sd_configs", jobName)
+			assert.Contains(t, scMap, "static_configs", "job %s should have static_configs", jobName)
 		}
-		for k := range expectedMap {
-			assert.True(t, expectedMap[k], k)
+		for k, found := range expectedJobs {
+			assert.True(t, found, "expected job %s not found", k)
 		}
-		assert.True(t, cfg.TargetAllocConfig == nil)
+		assert.NotContains(t, promCfgMap, "target_allocator")
 	})
 }
 
