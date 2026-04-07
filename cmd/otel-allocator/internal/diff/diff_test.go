@@ -4,8 +4,9 @@
 package diff
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type HasherString string
@@ -195,9 +196,8 @@ func TestDiffMaps(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Maps(tt.args.current, tt.args.new); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DiffMaps() = %v, want %v", got, tt.want)
-			}
+			got := Maps(tt.args.current, tt.args.new)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -206,22 +206,14 @@ func TestNewChanges(t *testing.T) {
 	additions := map[string]Hasher[string]{"a": HasherString("1")}
 	removals := map[string]Hasher[string]{"b": HasherString("2")}
 	c := NewChanges(additions, removals)
-	if !reflect.DeepEqual(c.Additions(), additions) {
-		t.Errorf("Additions() = %v, want %v", c.Additions(), additions)
-	}
-	if !reflect.DeepEqual(c.Removals(), removals) {
-		t.Errorf("Removals() = %v, want %v", c.Removals(), removals)
-	}
+	assert.Equal(t, additions, c.Additions())
+	assert.Equal(t, removals, c.Removals())
 }
 
 func TestNewChangesNil(t *testing.T) {
 	c := NewChanges[string, Hasher[string]](nil, nil)
-	if c.Additions() != nil {
-		t.Errorf("expected nil additions, got %v", c.Additions())
-	}
-	if c.Removals() != nil {
-		t.Errorf("expected nil removals, got %v", c.Removals())
-	}
+	assert.Nil(t, c.Additions())
+	assert.Nil(t, c.Removals())
 }
 
 // HasherInt tests that the generic diff works with a non-string key type.
@@ -241,12 +233,6 @@ func TestDiffMapsIntKey(t *testing.T) {
 		3: HasherInt(30),
 	}
 	got := Maps(current, updated)
-	wantAdditions := map[int]Hasher[int]{3: HasherInt(30)}
-	wantRemovals := map[int]Hasher[int]{1: HasherInt(10)}
-	if !reflect.DeepEqual(got.Additions(), wantAdditions) {
-		t.Errorf("Additions() = %v, want %v", got.Additions(), wantAdditions)
-	}
-	if !reflect.DeepEqual(got.Removals(), wantRemovals) {
-		t.Errorf("Removals() = %v, want %v", got.Removals(), wantRemovals)
-	}
+	assert.Equal(t, map[int]Hasher[int]{3: HasherInt(30)}, got.Additions())
+	assert.Equal(t, map[int]Hasher[int]{1: HasherInt(10)}, got.Removals())
 }
