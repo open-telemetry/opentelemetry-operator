@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add TLS security profile injection for health_check and jaeger_query extensions, and all receivers
+note: Add TLS security profile injection for health_check and jaeger_query extensions
 
 # One or more tracking issues related to the change
 issues: [4871]
@@ -15,5 +15,4 @@ issues: [4871]
 # Use pipe (|) for multiline entries.
 subtext: |
   When a TLS profile is configured on the cluster, the operator now injects min_version and cipher_suites
-  into health_check and jaeger_query extension configs, as well as receiver configs,
-  that have a tls block defined.
+  into health_check and jaeger_query extension configs
