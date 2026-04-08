@@ -1,3 +1,0 @@
-- https://github.com/open-telemetry/opentelemetry-java/issues/4381
-- https://github.com/open-telemetry/opentelemetry-java/issues/4510
-- https://github.com/open-telemetry/opentelemetry-java-instrumentation/issues/8553
