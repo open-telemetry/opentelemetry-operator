@@ -26,7 +26,6 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid v1.3.1
 	github.com/open-telemetry/opamp-go v0.15.0
-	github.com/open-telemetry/opentelemetry-operator/apihelpers v0.148.0-unpublished
 	github.com/open-telemetry/opentelemetry-operator/apis v0.148.0-unpublished
 	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
 	github.com/operator-framework/api v0.42.0
@@ -65,10 +64,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0
 )
 
-replace (
-	github.com/open-telemetry/opentelemetry-operator/apihelpers v0.148.0-unpublished => ./apihelpers
-	github.com/open-telemetry/opentelemetry-operator/apis v0.148.0-unpublished => ./apis
-)
+replace github.com/open-telemetry/opentelemetry-operator/apis v0.148.0-unpublished => ./apis
 
 require (
 	cel.dev/expr v0.25.1 // indirect
