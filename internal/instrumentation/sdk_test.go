@@ -1932,8 +1932,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/usr/local/apache2/conf/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
