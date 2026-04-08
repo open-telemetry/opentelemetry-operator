@@ -68,7 +68,6 @@ type Config struct {
 	PromConfig                   *promconfig.Config    `yaml:"config"`
 	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
 	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
-	LabeledMetrics               bool                  `yaml:"labeled_metrics,omitempty"`
 	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`

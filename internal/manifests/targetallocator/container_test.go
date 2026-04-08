@@ -517,6 +517,43 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	})
 }
 
+func TestContainerLabeledMetricsFeatureGate(t *testing.T) {
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.labeledmetrics"})
+	require.NoError(t, err)
+
+	t.Run("propagates feature gate to container args", func(t *testing.T) {
+		targetAllocator := v1alpha1.TargetAllocator{}
+		cfg := config.Config{
+			TargetAllocatorImage: "default-image",
+		}
+
+		c := Container(cfg, logger, targetAllocator)
+
+		assert.Contains(t, c.Args, "--feature-gates=target-allocator.labeled-metrics")
+	})
+
+	t.Run("does not override user-specified feature gates", func(t *testing.T) {
+		targetAllocator := v1alpha1.TargetAllocator{
+			Spec: v1alpha1.TargetAllocatorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					Args: map[string]string{
+						"feature-gates": "some-other-gate",
+					},
+				},
+			},
+		}
+		cfg := config.Config{
+			TargetAllocatorImage: "default-image",
+		}
+
+		c := Container(cfg, logger, targetAllocator)
+
+		assert.Contains(t, c.Args, "--feature-gates=some-other-gate")
+		assert.NotContains(t, c.Args, "--feature-gates=target-allocator.labeled-metrics")
+	})
+}
+
 func TestContainerCustomVolumes(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
