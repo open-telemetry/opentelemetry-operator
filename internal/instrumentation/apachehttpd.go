@@ -71,7 +71,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
 		// don't use filepath.Join here because we want to keep the dot at the end
-		apacheConfDirDestinationPath := strings.Join([]string{apacheConfDir, "."}, string(filepath.Separator))
+		apacheConfDirDestinationPath := apacheConfDir + string(filepath.Separator) + "."
 		cloneContainer := corev1.Container{
 			Name:    apacheAgentCloneContainerName,
 			Image:   container.Image,
