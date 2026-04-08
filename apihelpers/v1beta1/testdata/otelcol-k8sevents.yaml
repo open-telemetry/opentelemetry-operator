@@ -1,0 +1,18 @@
+# https://github.com/open-telemetry/opentelemetry-operator/issues/3133
+receivers:
+  otlp:
+    protocols:
+      http:
+  k8s_events:
+    namespaces: [chainsaw-k8seventsreceiver]
+exporters:
+  debug:
+    verbosity: detailed
+service:
+  pipelines:
+    logs:
+      receivers: [k8s_events]
+      exporters: [debug]
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
