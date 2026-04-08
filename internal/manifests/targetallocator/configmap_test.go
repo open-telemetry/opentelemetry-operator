@@ -519,22 +519,6 @@ https:
 		assert.Equal(t, expectedData, actual.Data)
 	})
 
-	t.Run("should return expected target allocator config map with labeled metrics enabled", func(t *testing.T) {
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.labeledmetrics"})
-		require.NoError(t, err)
-
-		testParams := Params{
-			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
-		}
-
-		actual, err := ConfigMap(testParams)
-		require.NoError(t, err)
-
-		assert.Equal(t, "my-instance-targetallocator", actual.Name)
-		assert.Contains(t, actual.Data[targetAllocatorFilename], "labeled_metrics: true")
-	})
 }
 
 func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
@@ -929,7 +913,6 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-labeled_metrics: true
 `,
 		}
 
