@@ -80,6 +80,17 @@ func TestDesiredClusterRoles(t *testing.T) {
 			},
 		},
 		{
+			desc:       "k8s_leader_elector extension",
+			configPath: "testdata/rbac_k8sleaderelector_extension.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"coordination.k8s.io"},
+					Resources: []string{"leases"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+				},
+			},
+		},
+		{
 			desc:       "k8sattributes processor - service.name metadata",
 			configPath: "testdata/rbac_k8sattributes_service_name.yaml",
 			expectedRules: []rbacv1.PolicyRule{
