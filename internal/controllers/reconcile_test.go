@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -1110,7 +1110,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 				Client:   k8sClient,
 				Log:      logger,
 				Scheme:   testScheme,
-				Recorder: record.NewFakeRecorder(20),
+				Recorder: events.NewFakeRecorder(20),
 				Config:   cfg,
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
@@ -1704,7 +1704,7 @@ func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg conf
 		Client:   cacheClient,
 		Log:      logger,
 		Scheme:   testScheme,
-		Recorder: record.NewFakeRecorder(20),
+		Recorder: events.NewFakeRecorder(20),
 		Config:   cfg,
 		Version:  v,
 	})

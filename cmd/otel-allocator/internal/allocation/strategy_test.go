@@ -5,8 +5,9 @@ package allocation
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 )
@@ -117,9 +118,8 @@ func TestCollectorDiff(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := diff.Maps(tt.args.current, tt.args.new); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DiffMaps() = %v, want %v", got, tt.want)
-			}
+			got := diff.Maps(tt.args.current, tt.args.new)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

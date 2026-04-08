@@ -4496,6 +4496,10 @@ spec:
                                     type: integer
                                   signerName:
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -6299,6 +6303,21 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              hostAliases:
+                items:
+                  properties:
+                    hostnames:
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    ip:
+                      type: string
+                  required:
+                  - ip
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               hostNetwork:
                 type: boolean
               hostPID:
@@ -7317,7 +7336,6 @@ spec:
                     x-kubernetes-list-type: atomic
                 type: object
               podManagementPolicy:
-                default: Parallel
                 enum:
                 - OrderedReady
                 - Parallel
@@ -9599,6 +9617,10 @@ spec:
                                     type: integer
                                   signerName:
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName

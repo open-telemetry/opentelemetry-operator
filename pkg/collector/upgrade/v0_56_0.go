@@ -66,7 +66,7 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	u.Log.Info("in upgrade0_56_0", "Otel Instance", otelcol.Name, "Upgrade version", u.Version.String())
-	u.Recorder.Event(otelcol, "Normal", "Upgrade", "upgraded to v0.56.0, added minReplicas. recreated HPA instance")
+	u.Recorder.Eventf(otelcol, nil, "Normal", "Upgrade", "Upgrade", "upgraded to v0.56.0, added minReplicas. recreated HPA instance")
 
 	return otelcol, nil
 }

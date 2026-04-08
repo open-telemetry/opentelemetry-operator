@@ -1333,6 +1333,21 @@ spec:
                 type: string
               global:
                 type: object
+              hostAliases:
+                items:
+                  properties:
+                    hostnames:
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    ip:
+                      type: string
+                  required:
+                  - ip
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               hostNetwork:
                 type: boolean
               hostPID:
@@ -3626,6 +3641,10 @@ spec:
                                     type: integer
                                   signerName:
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName

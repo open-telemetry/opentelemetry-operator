@@ -74,7 +74,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           args:
             - /bin/sh
             - -c
@@ -93,7 +93,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           args:
             - /bin/sh
             - -c
@@ -112,7 +112,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           args:
             - /bin/sh
             - -c
@@ -131,7 +131,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           args:
             - /bin/sh
             - -c
@@ -150,7 +150,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: docker.io/curlimages/curl:latest
+          image: mirror.gcr.io/curlimages/curl:latest
           args:
             - /bin/sh
             - -c
