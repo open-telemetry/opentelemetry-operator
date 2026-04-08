@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	apisv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/extensions"
@@ -27,15 +27,15 @@ import (
 )
 
 // GetConfigEnabledComponents constructs a list of enabled components by component type.
-func GetConfigEnabledComponents(c apis.Config) map[apis.ComponentKind]map[string]any {
-	toReturn := map[apis.ComponentKind]map[string]any{
-		apis.KindReceiver:  {},
-		apis.KindProcessor: {},
-		apis.KindExporter:  {},
-		apis.KindExtension: {},
+func GetConfigEnabledComponents(c apisv1beta1.Config) map[apisv1beta1.ComponentKind]map[string]any {
+	toReturn := map[apisv1beta1.ComponentKind]map[string]any{
+		apisv1beta1.KindReceiver:  {},
+		apisv1beta1.KindProcessor: {},
+		apisv1beta1.KindExporter:  {},
+		apisv1beta1.KindExtension: {},
 	}
 	for _, extension := range c.Service.Extensions {
-		toReturn[apis.KindExtension][extension] = struct{}{}
+		toReturn[apisv1beta1.KindExtension][extension] = struct{}{}
 	}
 
 	for _, pipeline := range c.Service.Pipelines {
@@ -43,46 +43,46 @@ func GetConfigEnabledComponents(c apis.Config) map[apis.ComponentKind]map[string
 			continue
 		}
 		for _, componentId := range pipeline.Receivers {
-			toReturn[apis.KindReceiver][componentId] = struct{}{}
+			toReturn[apisv1beta1.KindReceiver][componentId] = struct{}{}
 		}
 		for _, componentId := range pipeline.Exporters {
-			toReturn[apis.KindExporter][componentId] = struct{}{}
+			toReturn[apisv1beta1.KindExporter][componentId] = struct{}{}
 		}
 		for _, componentId := range pipeline.Processors {
-			toReturn[apis.KindProcessor][componentId] = struct{}{}
+			toReturn[apisv1beta1.KindProcessor][componentId] = struct{}{}
 		}
 	}
 	for _, componentId := range c.Service.Extensions {
-		toReturn[apis.KindExtension][componentId] = struct{}{}
+		toReturn[apisv1beta1.KindExtension][componentId] = struct{}{}
 	}
 	return toReturn
 }
 
 // getConfigRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
-func getConfigRbacRulesForComponentKinds(c apis.Config, logger logr.Logger, componentKinds ...apis.ComponentKind) ([]rbacv1.PolicyRule, error) {
+func getConfigRbacRulesForComponentKinds(c apisv1beta1.Config, logger logr.Logger, componentKinds ...apisv1beta1.ComponentKind) ([]rbacv1.PolicyRule, error) {
 	var rules []rbacv1.PolicyRule
 	enabledComponents := GetConfigEnabledComponents(c)
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
-		var cfg apis.AnyConfig
+		var cfg apisv1beta1.AnyConfig
 		switch componentKind {
-		case apis.KindReceiver:
+		case apisv1beta1.KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case apis.KindExporter:
+		case apisv1beta1.KindExporter:
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
-		case apis.KindProcessor:
+		case apisv1beta1.KindProcessor:
 			retriever = processors.ProcessorFor
 			if c.Processors == nil {
-				cfg = apis.AnyConfig{}
+				cfg = apisv1beta1.AnyConfig{}
 			} else {
 				cfg = *c.Processors
 			}
-		case apis.KindExtension:
+		case apisv1beta1.KindExtension:
 			retriever = extensions.ParserFor
 			if c.Extensions == nil {
-				cfg = apis.AnyConfig{}
+				cfg = apisv1beta1.AnyConfig{}
 			} else {
 				cfg = *c.Extensions
 			}
@@ -104,25 +104,25 @@ func getConfigRbacRulesForComponentKinds(c apis.Config, logger logr.Logger, comp
 }
 
 // getConfigPortsForComponentKinds gets the ports for the given ComponentKind(s).
-func getConfigPortsForComponentKinds(c apis.Config, logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.ServicePort, error) {
+func getConfigPortsForComponentKinds(c apisv1beta1.Config, logger logr.Logger, componentKinds ...apisv1beta1.ComponentKind) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	enabledComponents := GetConfigEnabledComponents(c)
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
-		var cfg apis.AnyConfig
+		var cfg apisv1beta1.AnyConfig
 		switch componentKind {
-		case apis.KindReceiver:
+		case apisv1beta1.KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case apis.KindExporter:
+		case apisv1beta1.KindExporter:
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
-		case apis.KindProcessor:
+		case apisv1beta1.KindProcessor:
 			continue
-		case apis.KindExtension:
+		case apisv1beta1.KindExtension:
 			retriever = extensions.ParserFor
 			if c.Extensions == nil {
-				cfg = apis.AnyConfig{}
+				cfg = apisv1beta1.AnyConfig{}
 			} else {
 				cfg = *c.Extensions
 			}
@@ -146,18 +146,18 @@ func getConfigPortsForComponentKinds(c apis.Config, logger logr.Logger, componen
 }
 
 // getConfigEnvironmentVariablesForComponentKinds gets the environment variables for the given ComponentKind(s).
-func getConfigEnvironmentVariablesForComponentKinds(c apis.Config, logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.EnvVar, error) {
+func getConfigEnvironmentVariablesForComponentKinds(c apisv1beta1.Config, logger logr.Logger, componentKinds ...apisv1beta1.ComponentKind) ([]corev1.EnvVar, error) {
 	envVars := []corev1.EnvVar{}
 	enabledComponents := GetConfigEnabledComponents(c)
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
-		var apis.cfg AnyConfig
+		var cfg apisv1beta1.AnyConfig
 
 		switch componentKind {
-		case apis.KindReceiver:
+		case apisv1beta1.KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case apis.KindExporter, apis.KindProcessor, apis.KindExtension:
+		case apisv1beta1.KindExporter, apisv1beta1.KindProcessor, apisv1beta1.KindExtension:
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
@@ -180,23 +180,23 @@ func getConfigEnvironmentVariablesForComponentKinds(c apis.Config, logger logr.L
 // applyConfigDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 // If defaultsCfg.TLSProfile is set, TLS defaults are also applied via the Parser.GetDefaultConfig method.
 // Returns a list of events that should be recorded by the caller.
-func applyConfigDefaultForComponentKinds(c apis.Config, logger logr.Logger, parserOpts []components.DefaultOption, componentKinds ...ComponentKind) ([]EventInfo, error) {
-	events, err := c.Service.ApplyDefaultConfig(logger)
+func applyConfigDefaultForComponentKinds(c apisv1beta1.Config, logger logr.Logger, parserOpts []components.DefaultOption, componentKinds ...apisv1beta1.ComponentKind) ([]apisv1beta1.EventInfo, error) {
+	events, err := ApplyDefaultService(c.Service, logger)
 	if err != nil {
 		return events, err
 	}
 	enabledComponents := GetConfigEnabledComponents(c)
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
-		var cfg apis.AnyConfig
+		var cfg apisv1beta1.AnyConfig
 		switch componentKind {
-		case apis.KindReceiver:
+		case apisv1beta1.KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case apis.KindExporter, apis.KindProcessor:
+		case apisv1beta1.KindExporter, apisv1beta1.KindProcessor:
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
-		case apis.KindExtension:
+		case apisv1beta1.KindExtension:
 			if c.Extensions == nil {
 				continue
 			}
@@ -234,52 +234,52 @@ func applyConfigDefaultForComponentKinds(c apis.Config, logger logr.Logger, pars
 	return events, nil
 }
 
-func GetConfigReceiverPorts(c apis.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
-	return getConfigPortsForComponentKinds(c, logger, apis.KindReceiver)
+func GetConfigReceiverPorts(c apisv1beta1.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
+	return getConfigPortsForComponentKinds(c, logger, apisv1beta1.KindReceiver)
 }
 
-func GetConfigExporterPorts(c apis.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
-	return getConfigPortsForComponentKinds(c, logger, apis.KindExporter)
+func GetConfigExporterPorts(c apisv1beta1.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
+	return getConfigPortsForComponentKinds(c, logger, apisv1beta1.KindExporter)
 }
 
-func GetConfigExtensionPorts(c apis.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
-	return getConfigPortsForComponentKinds(c, logger, apis.KindExtension)
+func GetConfigExtensionPorts(c apisv1beta1.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
+	return getConfigPortsForComponentKinds(c, logger, apisv1beta1.KindExtension)
 }
 
-func GetConfigReceiverAndExporterPorts(c apis.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
-	return getConfigPortsForComponentKinds(c, logger, apis.KindReceiver, apis.KindExporter)
+func GetConfigReceiverAndExporterPorts(c apisv1beta1.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
+	return getConfigPortsForComponentKinds(c, logger, apisv1beta1.KindReceiver, apisv1beta1.KindExporter)
 }
 
-func GetConfigAllPorts(c apis.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
-	return getConfigPortsForComponentKinds(c, logger, apis.KindReceiver, apis.KindExporter, apis.KindExtension)
+func GetConfigAllPorts(c apisv1beta1.Config, logger logr.Logger) ([]corev1.ServicePort, error) {
+	return getConfigPortsForComponentKinds(c, logger, apisv1beta1.KindReceiver, apisv1beta1.KindExporter, apisv1beta1.KindExtension)
 }
 
-func GetConfigEnvironmentVariables(c apis.Config, logger logr.Logger) ([]corev1.EnvVar, error) {
-	return getConfigEnvironmentVariablesForComponentKinds(c, logger, apis.KindReceiver)
+func GetConfigEnvironmentVariables(c apisv1beta1.Config, logger logr.Logger) ([]corev1.EnvVar, error) {
+	return getConfigEnvironmentVariablesForComponentKinds(c, logger, apisv1beta1.KindReceiver)
 }
 
-func GetConfigAllRbacRules(c apis.Config, logger logr.Logger) ([]rbacv1.PolicyRule, error) {
-	return getConfigRbacRulesForComponentKinds(c, logger, apis.KindReceiver, apis.KindExporter, apis.KindProcessor, apis.KindExtension)
+func GetConfigAllRbacRules(c apisv1beta1.Config, logger logr.Logger) ([]rbacv1.PolicyRule, error) {
+	return getConfigRbacRulesForComponentKinds(c, logger, apisv1beta1.KindReceiver, apisv1beta1.KindExporter, apisv1beta1.KindProcessor, apisv1beta1.KindExtension)
 }
 
 // ApplyDefaultConfig applies default configuration values to the collector config.
 // Optional DefaultsOption arguments can be provided to customize behavior.
-func ApplyDefaultConfig(c apis.Config, logger logr.Logger, opts ...components.DefaultOption) ([]apis.EventInfo, error) {
-	return applyConfigDefaultForComponentKinds(c, logger, opts, apis.KindReceiver, apis.KindExporter, apis.KindExtension)
+func ApplyDefaultConfig(c apisv1beta1.Config, logger logr.Logger, opts ...components.DefaultOption) ([]apisv1beta1.EventInfo, error) {
+	return applyConfigDefaultForComponentKinds(c, logger, opts, apisv1beta1.KindReceiver, apisv1beta1.KindExporter, apisv1beta1.KindExtension)
 }
 
 // GetConfigLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
 // that provides the hinting for the liveness probe.
-func GetConfigLivenessProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, error) {
+func GetConfigLivenessProbe(c apisv1beta1.Config, logger logr.Logger) (*corev1.Probe, error) {
 	if c.Extensions == nil {
 		return nil, nil
 	}
 
-	enabledComponents := c.GetConfigEnabledComponents()
-	for componentName := range enabledComponents[KindExtension] {
+	enabledComponents := GetConfigEnabledComponents(c)
+	for componentName := range enabledComponents[apisv1beta1.KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
 		parser := extensions.ParserFor(componentName)
-		if probe, err := parser.GetConfigLivenessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+		if probe, err := parser.GetLivenessProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {
 			return probe, nil
@@ -290,16 +290,16 @@ func GetConfigLivenessProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, e
 
 // GetConfigReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
-func GetConfigReadinessProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, error) {
+func GetConfigReadinessProbe(c apisv1beta1.Config, logger logr.Logger) (*corev1.Probe, error) {
 	if c.Extensions == nil {
 		return nil, nil
 	}
 
-	enabledComponents := c.GetConfigEnabledComponents()
-	for componentName := range enabledComponents[KindExtension] {
+	enabledComponents := GetConfigEnabledComponents(c)
+	for componentName := range enabledComponents[apisv1beta1.KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
 		parser := extensions.ParserFor(componentName)
-		if probe, err := parser.GetConfigReadinessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+		if probe, err := parser.GetReadinessProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {
 			return probe, nil
@@ -310,16 +310,16 @@ func GetConfigReadinessProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, 
 
 // GetConfigStartupProbe gets the first enabled startup probe. There should only ever be one extension enabled
 // that provides the hinting for the startup probe.
-func GetConfigStartupProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, error) {
+func GetConfigStartupProbe(c apisv1beta1.Config, logger logr.Logger) (*corev1.Probe, error) {
 	if c.Extensions == nil {
 		return nil, nil
 	}
 
 	enabledComponents := GetConfigEnabledComponents(c)
-	for componentName := range enabledComponents[apis.KindExtension] {
+	for componentName := range enabledComponents[apisv1beta1.KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
 		parser := extensions.ParserFor(componentName)
-		if probe, err := parser.GetConfigStartupProbe(logger, c.Extensions.Object[componentName]); err != nil {
+		if probe, err := parser.GetStartupProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {
 			return probe, nil
@@ -329,7 +329,7 @@ func GetConfigStartupProbe(c apis.Config, logger logr.Logger) (*corev1.Probe, er
 }
 
 // Yaml encodes the current object and returns it as a string.
-func Yaml(c apis.Config) (string, error) {
+func Yaml(c apisv1beta1.Config) (string, error) {
 	var buf bytes.Buffer
 	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if err := yamlEncoder.Encode(c); err != nil {
@@ -338,8 +338,8 @@ func Yaml(c apis.Config) (string, error) {
 	return buf.String(), nil
 }
 
-// NullObjects returns null objects in the config.
-func NullObjects(c apis.Config) []string {
+// NullConfigObjects returns null objects in the config.
+func NullConfigObjects(c apisv1beta1.Config) []string {
 	var nullKeys []string
 	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
@@ -372,13 +372,13 @@ const (
 	defaultServiceHost       = "0.0.0.0"
 )
 
-// MetricsEndpoint attempts gets the host and port number from the host address without doing any validation regarding the
+// MetricsServiceEndpoint attempts gets the host and port number from the host address without doing any validation regarding the
 // address itself.
 // It works even before env var expansion happens, when a simple `net.SplitHostPort` would fail because of the extra colon
 // from the env var, i.e. the address looks like "${env:POD_IP}:4317", "${env:POD_IP}", or "${POD_IP}".
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
-func MetricsEndpoint(s apis.Service, logger logr.Logger) (host string, port int32, err error) {
+func MetricsServiceEndpoint(s apisv1beta1.Service, logger logr.Logger) (host string, port int32, err error) {
 	telemetry := GetServiceTelemetry(s, logger)
 	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
@@ -420,14 +420,14 @@ func MetricsEndpoint(s apis.Service, logger logr.Logger) (host string, port int3
 
 // ApplyDefaultService inserts configuration defaults if it has not been set.
 // Returns a list of events that should be recorded by the caller.
-func ApplyDefaultService(s apis.Service, logger logr.Logger) ([]apis.EventInfo, error) {
-	var events []apis.EventInfo
+func ApplyDefaultService(s apisv1beta1.Service, logger logr.Logger) ([]apisv1beta1.EventInfo, error) {
+	var events []apisv1beta1.EventInfo
 	tel := GetServiceTelemetry(s, logger)
 
 	if tel == nil {
 		logger.V(2).Info("no telemetry configuration parsed, creating default")
-		tel = &apis.Telemetry{}
-		s.Telemetry = &apis.AnyConfig{
+		tel = &apisv1beta1.Telemetry{}
+		s.Telemetry = &apisv1beta1.AnyConfig{
 			Object: map[string]any{},
 		}
 	}
@@ -442,7 +442,7 @@ func ApplyDefaultService(s apis.Service, logger logr.Logger) ([]apis.EventInfo, 
 
 	logger.V(2).Info("no telemetry readers configuration found, applying default Prometheus endpoint")
 
-	host, port, err := s.MetricsEndpoint(logger)
+	host, port, err := MetricsServiceEndpoint(s, logger)
 	if err != nil {
 		logger.Error(err, "failed to determine metrics endpoint for default configuration")
 		return events, err
@@ -451,7 +451,7 @@ func ApplyDefaultService(s apis.Service, logger logr.Logger) ([]apis.EventInfo, 
 	reader := AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
 
-	events = append(events, apis.EventInfo{
+	events = append(events, apisv1beta1.EventInfo{
 		Type:    corev1.EventTypeNormal,
 		Reason:  "Spec.Service.Telemetry.DefaultsApplied",
 		Message: fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port),
@@ -469,7 +469,7 @@ func ApplyDefaultService(s apis.Service, logger logr.Logger) ([]apis.EventInfo, 
 }
 
 // TelemetryToAnyConfig converts the Telemetry struct to an AnyConfig struct.
-func TelemetryToAnyConfig(t apis.Telemetry) (apis.AnyConfig, error) {
+func TelemetryToAnyConfig(t *apisv1beta1.Telemetry) (*apisv1beta1.AnyConfig, error) {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return nil, err
@@ -481,7 +481,7 @@ func TelemetryToAnyConfig(t apis.Telemetry) (apis.AnyConfig, error) {
 
 	normalizeConfig(result)
 
-	return &apis.AnyConfig{
+	return &apisv1beta1.AnyConfig{
 		Object: result,
 	}, nil
 }
@@ -502,7 +502,7 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 
 // GetServiceTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func GetServiceTelemetry(s apis.Service, logger logr.Logger) *apis.Telemetry {
+func GetServiceTelemetry(s apisv1beta1.Service, logger logr.Logger) *apisv1beta1.Telemetry {
 	if s.Telemetry == nil {
 		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil
@@ -517,7 +517,7 @@ func GetServiceTelemetry(s apis.Service, logger logr.Logger) *apis.Telemetry {
 
 	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
 
-	t := &apis.Telemetry{}
+	t := &apisv1beta1.Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
 		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)

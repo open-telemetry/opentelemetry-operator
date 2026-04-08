@@ -1,6 +1,0 @@
-receivers:
-  zipkin:
-service:
-  pipelines:
-    traces:
-      receivers: [zipkin]
