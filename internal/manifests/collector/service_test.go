@@ -397,7 +397,7 @@ func TestExtensionService(t *testing.T) {
 					},
 				},
 				{
-					Name: "port-16685",
+					Name: "jaeger-query-2",
 					Port: 16685,
 					TargetPort: intstr.IntOrString{
 						IntVal: 16685,

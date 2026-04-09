@@ -24,8 +24,8 @@ const (
 var _ components.Parser = &components.GenericParser[*JaegerQueryExtensionConfig]{}
 
 type JaegerQueryExtensionConfig struct {
-	HTTP jaegerHTTPAddress `mapstructure:"http,omitempty" yaml:"http,omitempty"`
-	GRPC jaegerGRPCAddress `mapstructure:"grpc,omitempty" yaml:"grpc,omitempty"`
+	HTTP jaegerHTTPAddress  `mapstructure:"http,omitempty" yaml:"http,omitempty"`
+	GRPC *jaegerGRPCAddress `mapstructure:"grpc,omitempty" yaml:"grpc,omitempty"`
 }
 
 type jaegerHTTPAddress struct {
@@ -69,7 +69,7 @@ func ParseJaegerQueryExtensionConfig(logger logr.Logger, name string, defaultPor
 	ports := []corev1.ServicePort{components.ConstructServicePort(svcPort, httpPort)}
 
 	// Add gRPC port if explicitly configured
-	if cfg.GRPC.Endpoint != "" {
+	if cfg.GRPC != nil && cfg.GRPC.Endpoint != "" {
 		grpcPortNum, err := components.PortFromEndpoint(cfg.GRPC.Endpoint)
 		if err != nil {
 			logger.WithValues("extension", name).Error(err, "couldn't parse the gRPC endpoint's port")
@@ -78,7 +78,7 @@ func ParseJaegerQueryExtensionConfig(logger logr.Logger, name string, defaultPor
 			grpcSvcPort := &corev1.ServicePort{
 				TargetPort: intstr.FromInt32(grpcPortNum),
 			}
-			grpcSvcPort.Name = naming.PortName(fmt.Sprintf("%s-grpc", name), grpcPortNum)
+			grpcSvcPort.Name = naming.PortName(fmt.Sprintf("%s-2", name), grpcPortNum)
 			ports = append(ports, components.ConstructServicePort(grpcSvcPort, grpcPortNum))
 		}
 	}
@@ -105,7 +105,7 @@ func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defa
 	}
 
 	// Apply default host for gRPC endpoint if configured but missing host
-	if config.GRPC.Endpoint != "" {
+	if config.GRPC != nil && config.GRPC.Endpoint != "" {
 		v := strings.Split(config.GRPC.Endpoint, ":")
 		if len(v) < 2 || v[0] == "" {
 			config.GRPC.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
@@ -116,9 +116,5 @@ func endpointDefaulter(_ logr.Logger, defaultCfg *components.DefaultConfig, defa
 
 	res := make(map[string]any)
 	err := mapstructure.Decode(config, &res)
-	// Remove empty gRPC config to avoid injecting unwanted configuration
-	if config.GRPC.Endpoint == "" {
-		delete(res, "grpc")
-	}
 	return res, err
 }

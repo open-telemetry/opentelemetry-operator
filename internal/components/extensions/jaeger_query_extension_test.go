@@ -59,7 +59,7 @@ func TestJaegerQueryExtensionParser_httpAndGrpc(t *testing.T) {
 		TargetPort: intstr.FromInt32(16686),
 	}, ports[0])
 	assert.Equal(t, corev1.ServicePort{
-		Name:       "port-16685",
+		Name:       "jaeger-query-2",
 		Port:       16685,
 		TargetPort: intstr.FromInt32(16685),
 	}, ports[1])
@@ -86,7 +86,7 @@ func TestJaegerQueryExtensionParser_grpcOnly(t *testing.T) {
 		TargetPort: intstr.FromInt32(16686),
 	}, ports[0])
 	assert.Equal(t, corev1.ServicePort{
-		Name:       "port-16685",
+		Name:       "jaeger-query-2",
 		Port:       16685,
 		TargetPort: intstr.FromInt32(16685),
 	}, ports[1])
