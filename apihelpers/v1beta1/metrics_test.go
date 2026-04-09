@@ -123,7 +123,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		},
 	}
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
-		s.AddKnownTypes(apisv1beta1.GroupVersion, &apisv1beta1.OpenTelemetryCollectorList{}, &apisv1beta1.OpenTelemetryCollectorList{})
+		s.AddKnownTypes(apisv1beta1.GroupVersion, &apisv1beta1.OpenTelemetryCollector{}, &apisv1beta1.OpenTelemetryCollectorList{})
 		metav1.AddToGroupVersion(s, apisv1beta1.GroupVersion)
 		return nil
 	})
