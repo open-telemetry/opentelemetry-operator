@@ -1,21 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ta-standalone
+  name: target-allocator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ta-standalone
+      app.kubernetes.io/name: target-allocator
   template:
     metadata:
       labels:
-        app: ta-standalone
+        app.kubernetes.io/name: target-allocator
     spec:
-      serviceAccountName: ta-standalone
+      serviceAccountName: target-allocator
       containers:
-        - name: ta
-          image: ($TARGETALLOCATOR_IMG)
+        - name: target-allocator
+          image: target-allocator
+          args: ["--config-file=/conf/targetallocator.yaml"]
           ports:
             - containerPort: 8080
               name: http
@@ -28,29 +29,18 @@ spec:
           volumeMounts:
             - name: ta-config
               mountPath: /conf
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /livez
-              port: 8080
+              port: http
             initialDelaySeconds: 5
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8080
+              port: http
             initialDelaySeconds: 5
       volumes:
         - name: ta-config
           configMap:
-            name: ta-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ta-standalone
-spec:
-  selector:
-    app: ta-standalone
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
+            name: target-allocator

@@ -460,14 +460,14 @@ e2e-ta-collector-mtls: chainsaw
 
 # Standalone Target Allocator integration tests (no operator needed)
 .PHONY: prepare-e2e-ta-standalone
-prepare-e2e-ta-standalone: chainsaw start-kind load-image-all
+prepare-e2e-ta-standalone: start-kind load-image-all
 	@mkdir -p ./.testresults/e2e
 
 .PHONY: e2e-ta-standalone
-e2e-ta-standalone: chainsaw
+e2e-ta-standalone: gotestsum
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) \
 	COLLECTOR_IMG=$${COLLECTOR_IMG:-"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:$$(awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"} \
-	$(CHAINSAW) test --test-dir ./tests/e2e-ta-standalone --report-name e2e-ta-standalone
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
 # end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters
