@@ -84,13 +84,14 @@ type Config struct {
 	instanceId         uuid.UUID    `yaml:"-"`
 
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
-	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
-	Endpoint          string              `yaml:"endpoint"`
-	Headers           Headers             `yaml:"headers,omitempty"`
-	Capabilities      map[Capability]bool `yaml:"capabilities"`
-	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
-	Name              string              `yaml:"name,omitempty"`
-	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
+	ComponentsAllowed map[string][]string            `yaml:"componentsAllowed,omitempty"`
+	Endpoint          string                         `yaml:"endpoint"`
+	TLS               *v1alpha1.OpAMPBridgeTLSConfig `yaml:"tls,omitempty"`
+	Headers           Headers                        `yaml:"headers,omitempty"`
+	Capabilities      map[Capability]bool            `yaml:"capabilities"`
+	HeartbeatInterval time.Duration                  `yaml:"heartbeatInterval,omitempty"`
+	Name              string                         `yaml:"name,omitempty"`
+	AgentDescription  AgentDescription               `yaml:"description,omitempty"`
 }
 
 // AgentDescription is copied from the OpAMP Extension in the collector.

@@ -13,6 +13,9 @@ type OpAMPBridgeSpec struct {
 	// OpAMP backend Server endpoint
 	// +required
 	Endpoint string `json:"endpoint"`
+	// TLS configuration for the connection to the OpAMP backend server.
+	// +optional
+	TLS *OpAMPBridgeTLSConfig `json:"tls,omitempty"`
 	// Headers is an optional map of headers to use when connecting to the OpAMP Server,
 	// typically used to set access tokens or other authorization headers.
 	// +optional
@@ -118,6 +121,16 @@ type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
 	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes"`
+}
+
+type OpAMPBridgeTLSConfig struct {
+	// Insecure indicates whether the endpoint should use TLS or not.
+	// When true, TLS is completely disabled.
+	// +optional
+	Insecure bool `json:"insecure,omitempty" yaml:"insecure,omitempty"`
+	// InsecureSkipVerify indicates to keep TLS but skip certificate validation.
+	// +optional
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty" yaml:"insecure_skip_verify,omitempty"`
 }
 
 // +kubebuilder:object:root=true
