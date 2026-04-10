@@ -1480,3 +1480,69 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
 }
+
+func TestAnyConfigDeepCopyInto_NestedMapIndependence(t *testing.T) {
+	src := AnyConfig{Object: map[string]any{
+		"prometheus": map[string]any{
+			"config": map[string]any{
+				"scrape_configs": []any{
+					map[string]any{
+						"job_name": "kubelet",
+						"tls_config": map[string]any{
+							"ca_file":              "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+							"insecure_skip_verify": true,
+						},
+					},
+				},
+			},
+		},
+	}}
+
+	dst := src.DeepCopy()
+
+	// Mutate a nested map in the copy (simulates TLS profile injection).
+	scrapeConfigs := dst.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)
+	tlsConfig := scrapeConfigs[0].(map[string]any)["tls_config"].(map[string]any)
+	tlsConfig["min_version"] = "TLS12"
+
+	// Source nested map must be unaffected.
+	srcTLS := src.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)[0].(map[string]any)["tls_config"].(map[string]any)
+	assert.NotContains(t, srcTLS, "min_version", "DeepCopy must produce independent nested maps; source was mutated through the copy")
+}
+
+func TestAnyConfigDeepCopyInto_NilObject(t *testing.T) {
+	src := AnyConfig{Object: nil}
+	dst := src.DeepCopy()
+	assert.Nil(t, dst.Object)
+}
+
+func TestAnyConfigDeepCopyInto_EmptyObject(t *testing.T) {
+	src := AnyConfig{Object: map[string]any{}}
+	dst := src.DeepCopy()
+	assert.NotNil(t, dst.Object)
+	assert.Empty(t, dst.Object)
+	// Mutating dst should not affect src.
+	dst.Object["key"] = "value"
+	assert.Empty(t, src.Object)
+}
+
+func TestAnyConfigDeepCopyInto_PreservesValues(t *testing.T) {
+	src := AnyConfig{Object: map[string]any{
+		"string_val": "hello",
+		"number_val": float64(42),
+		"bool_val":   true,
+		"nested": map[string]any{
+			"inner": "value",
+			"list":  []any{"a", "b"},
+		},
+	}}
+
+	dst := src.DeepCopy()
+
+	assert.Equal(t, "hello", dst.Object["string_val"])
+	assert.Equal(t, float64(42), dst.Object["number_val"])
+	assert.Equal(t, true, dst.Object["bool_val"])
+	nested := dst.Object["nested"].(map[string]any)
+	assert.Equal(t, "value", nested["inner"])
+	assert.Equal(t, []any{"a", "b"}, nested["list"])
+}
