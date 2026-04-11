@@ -57,7 +57,7 @@ Instrumentation is the spec for OpenTelemetry instrumentation.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>status</b></td>
+        <td><b><a href="#instrumentationstatus">status</a></b></td>
         <td>object</td>
         <td>
           InstrumentationStatus defines status of the instrumentation.<br/>
@@ -8155,6 +8155,36 @@ The value will be set in the OTEL_TRACES_SAMPLER env var.
 The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...<br/>
           <br/>
             <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.status
+<sup><sup>[↩ Parent](#instrumentation)</sup></sup>
+
+
+
+InstrumentationStatus defines status of the instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>upgradeBlockedVersions</b></td>
+        <td>map[string]string</td>
+        <td>
+          UpgradeBlockedVersions contains instrumentation language images whose
+versions could not be automatically upgraded, mapped to a message
+explaining why. The operator will not auto-upgrade these images until
+the user manually changes them to a supported version.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

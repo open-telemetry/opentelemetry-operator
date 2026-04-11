@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -117,4 +118,103 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "apache-httpd:2", updated.Spec.ApacheHttpd.Image)
 	assert.Equal(t, "nginx:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx])
 	assert.Equal(t, "nginx:2", updated.Spec.Nginx.Image)
+}
+
+func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
+	// Set up unupgradable version for testing
+	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{
+		constants.InstrumentationLanguageJava: {
+			"1": "Breaking changes in Java agent require manual migration.",
+		},
+	})
+	defer cleanup()
+
+	nsName := strings.ToLower(t.Name())
+	err := k8sClient.Create(t.Context(), &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: nsName,
+		},
+	})
+	require.NoError(t, err)
+
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-inst-blocked",
+			Namespace: nsName,
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			Sampler: v1alpha1.Sampler{
+				Type: v1alpha1.ParentBasedAlwaysOff,
+			},
+		},
+	}
+
+	cfg := config.Config{
+		AutoInstrumentationJavaImage:        "java:1",
+		AutoInstrumentationNodeJSImage:      "nodejs:1",
+		AutoInstrumentationPythonImage:      "python:1",
+		AutoInstrumentationDotNetImage:      "dotnet:1",
+		AutoInstrumentationGoImage:          "go:1",
+		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
+		AutoInstrumentationNginxImage:       "nginx:1",
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetAutoInstrumentation:     true,
+		EnableGoAutoInstrumentation:         true,
+		EnableNginxAutoInstrumentation:      true,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+	}
+	err = webhook.NewInstrumentationWebhook(
+		logr.Discard(),
+		testScheme,
+		cfg,
+	).Default(t.Context(), inst)
+	assert.Nil(t, err)
+	err = k8sClient.Create(t.Context(), inst)
+	require.NoError(t, err)
+
+	// Upgrade with new versions - Java should be blocked, others should upgrade
+	cfg2 := config.Config{
+		AutoInstrumentationJavaImage:        "java:2",
+		AutoInstrumentationNodeJSImage:      "nodejs:2",
+		AutoInstrumentationPythonImage:      "python:2",
+		AutoInstrumentationDotNetImage:      "dotnet:2",
+		AutoInstrumentationGoImage:          "go:2",
+		AutoInstrumentationApacheHttpdImage: "apache-httpd:2",
+		AutoInstrumentationNginxImage:       "nginx:2",
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetAutoInstrumentation:     true,
+		EnableGoAutoInstrumentation:         true,
+		EnableNginxAutoInstrumentation:      true,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+	}
+	recorder := events.NewFakeRecorder(10)
+	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), recorder, cfg2)
+
+	err = up.ManagedInstances(t.Context())
+	require.NoError(t, err)
+
+	updated := v1alpha1.Instrumentation{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{
+		Namespace: nsName,
+		Name:      "my-inst-blocked",
+	}, &updated)
+	require.NoError(t, err)
+
+	// Java should NOT be upgraded (blocked)
+	assert.Equal(t, "java:1", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
+	assert.Equal(t, "java:1", updated.Spec.Java.Image)
+
+	// Other languages should be upgraded
+	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])
+	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
+	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
+	assert.Equal(t, "python:2", updated.Spec.Python.Image)
+
+	// Verify status was set for blocked upgrade
+	assert.NotNil(t, updated.Status.UpgradeBlockedVersions)
+	assert.Contains(t, updated.Status.UpgradeBlockedVersions, "java")
 }
