@@ -1,0 +1,21 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: "Fix AnyConfig.DeepCopyInto performing shallow copy, causing TargetAllocator Deployment infinite reconciliation loop"
+
+# One or more tracking issues related to the change
+issues: [4950]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  AnyConfig.DeepCopyInto used maps.Copy which only copied top-level map entries, leaving nested
+  maps as shared references. When ApplyDefaults injected TLS profile settings (min_version) into
+  the collector's scrape config, it mutated the informer cache through the shared reference. This
+  caused the TargetAllocator config hash to alternate between two values on every reconciliation,
+  triggering an infinite Deployment update loop. The fix uses JSON round-tripping for a true deep copy.
