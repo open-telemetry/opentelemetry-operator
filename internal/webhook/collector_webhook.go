@@ -23,6 +23,7 @@ import (
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -165,6 +166,17 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *v1beta1.O
 
 func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
+
+	// Check if collector is at an unupgradable version
+	if r.Status.Version != "" {
+		if isUnupgradable, warningMsg := version.IsCollectorVersionUnupgradable(r.Status.Version); isUnupgradable {
+			msg := fmt.Sprintf("This collector is at version %s which cannot be automatically upgraded. Manual upgrade is required.", r.Status.Version)
+			if warningMsg != "" {
+				msg = fmt.Sprintf("This collector is at version %s which cannot be automatically upgraded. %s", r.Status.Version, warningMsg)
+			}
+			warnings = append(warnings, msg)
+		}
+	}
 
 	nullObjects := r.Spec.Config.NullObjects()
 	if len(nullObjects) > 0 {

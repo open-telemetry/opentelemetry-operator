@@ -6,9 +6,10 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/events"
@@ -89,6 +90,20 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {
 		return otelcol, nil
+	}
+
+	// Check if current version is unupgradable
+	if isUnupgradable, warningMsg := version.IsCollectorVersionUnupgradable(otelcol.Status.Version); isUnupgradable {
+		msg := fmt.Sprintf("Automated upgrade blocked: version %s is marked as unupgradable. Manual upgrade required.", otelcol.Status.Version)
+		if warningMsg != "" {
+			msg = fmt.Sprintf("Automated upgrade blocked: %s", warningMsg)
+		}
+		u.Recorder.Eventf(&otelcol, nil, corev1.EventTypeWarning, "UpgradeBlocked", "Upgrade", msg)
+		u.Log.Info("upgrade blocked for unupgradable version",
+			"name", otelcol.Name,
+			"namespace", otelcol.Namespace,
+			"version", otelcol.Status.Version)
+		return otelcol, nil // Return unchanged, don't block reconciliation
 	}
 
 	instanceV, err := semver.NewVersion(otelcol.Status.Version)

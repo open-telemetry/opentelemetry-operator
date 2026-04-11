@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-blocked-upgrade
+spec:
+  steps:
+  - name: Create instrumentation with blocked java version and verify webhook warning
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          kubectl apply -n $NAMESPACE -f 00-install-instrumentation-blocked.yaml 2>&1
+        check:
+          # The webhook should emit a warning about the unupgradable version
+          (contains($stdout, 'cannot be automatically upgraded')): true
+    - assert:
+        file: 00-assert.yaml
+  - name: Create instrumentation with normal java version and verify no unupgradable warning
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          kubectl apply -n $NAMESPACE -f 01-install-instrumentation-normal.yaml 2>&1
+        check:
+          # No unupgradable warning should appear for a normal version
+          (contains($stdout, 'cannot be automatically upgraded')): false
+    - assert:
+        file: 01-assert.yaml

@@ -9,17 +9,20 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 type autoInstConfig struct {
-	id      string
-	enabled bool
+	id       string
+	enabled  bool
+	language constants.InstrumentationLanguage
 }
 
 type InstrumentationUpgrade struct {
@@ -38,13 +41,13 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder events.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {"enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {"enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationGo:          {"enable-go-instrumentation", cfg.EnableGoAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNginx:       {"enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationPython:      {"enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {"enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationJava:        {"enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {id: "enable-apache-httpd-instrumentation", enabled: cfg.EnableApacheHttpdInstrumentation, language: constants.InstrumentationLanguageApacheHttpd},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {id: "enable-dotnet-instrumentation", enabled: cfg.EnableDotNetAutoInstrumentation, language: constants.InstrumentationLanguageDotNet},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {id: "enable-go-instrumentation", enabled: cfg.EnableGoAutoInstrumentation, language: constants.InstrumentationLanguageGo},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {id: "enable-nginx-instrumentation", enabled: cfg.EnableNginxAutoInstrumentation, language: constants.InstrumentationLanguageNginx},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {id: "enable-python-instrumentation", enabled: cfg.EnablePythonAutoInstrumentation, language: constants.InstrumentationLanguagePython},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {id: "enable-nodejs-instrumentation", enabled: cfg.EnableNodeJSAutoInstrumentation, language: constants.InstrumentationLanguageNodeJS},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {id: "enable-java-instrumentation", enabled: cfg.EnableJavaAutoInstrumentation, language: constants.InstrumentationLanguageJava},
 	}
 
 	return &InstrumentationUpgrade{
@@ -96,6 +99,21 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
 			if instCfg.enabled {
+				// Check if the current version is unupgradable
+				if isUnupgradable, warningMsg := version.IsInstrumentationVersionUnupgradable(instCfg.language, autoInst); isUnupgradable {
+					msg := fmt.Sprintf("Automated upgrade blocked for %s: version is marked as unupgradable. Manual upgrade required.", instCfg.language)
+					if warningMsg != "" {
+						msg = fmt.Sprintf("Automated upgrade blocked for %s: %s", instCfg.language, warningMsg)
+					}
+					u.Recorder.Eventf(upgraded, nil, corev1.EventTypeWarning, "UpgradeBlocked", "Upgrade", msg)
+					u.Logger.Info("upgrade blocked for unupgradable instrumentation version",
+						"name", inst.Name,
+						"namespace", inst.Namespace,
+						"language", instCfg.language,
+						"image", autoInst)
+					continue // Skip upgrade for this language
+				}
+
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {

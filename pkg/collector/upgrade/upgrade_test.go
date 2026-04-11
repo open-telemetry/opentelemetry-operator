@@ -341,3 +341,107 @@ func convertTov1alpha1(t *testing.T, collector v1beta1.OpenTelemetryCollector) v
 	require.NoError(t, err)
 	return alphacollector
 }
+
+func TestUnupgradableVersionBlocked(t *testing.T) {
+	// Set up unupgradable version for testing
+	cleanup := version.SetUnupgradableCollectorVersionsForTests(map[string]string{
+		"0.50.0": "Breaking changes require manual migration. See docs.",
+	})
+	defer cleanup()
+
+	for _, tt := range []struct {
+		name             string
+		version          string
+		expectedVersion  string
+		expectBlocked    bool
+		expectedEventMsg string
+	}{
+		{
+			name:             "unupgradable version is blocked",
+			version:          "0.50.0",
+			expectedVersion:  "0.50.0", // Version should remain unchanged
+			expectBlocked:    true,
+			expectedEventMsg: "Automated upgrade blocked: Breaking changes require manual migration. See docs.",
+		},
+		{
+			name:            "normal version proceeds with upgrade",
+			version:         "0.49.0",
+			expectedVersion: upgrade.Latest.String(), // Should upgrade to latest
+			expectBlocked:   false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			nsn := types.NamespacedName{Name: "test-instance", Namespace: "default"}
+			existing := makeOtelcol(nsn, v1alpha1.ManagementStateManaged)
+			existing.Status.Version = tt.version
+
+			currentV := version.Get()
+			currentV.OpenTelemetryCollector = upgrade.Latest.String()
+
+			recorder := events.NewFakeRecorder(upgrade.RecordBufferSize)
+			up := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  currentV,
+				Client:   k8sClient,
+				Recorder: recorder,
+			}
+
+			// test
+			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+			assert.NoError(t, err)
+
+			// verify version
+			assert.Equal(t, tt.expectedVersion, res.Status.Version)
+
+			// verify event was recorded for blocked version
+			if tt.expectBlocked {
+				select {
+				case event := <-recorder.Events:
+					assert.Contains(t, event, "UpgradeBlocked")
+					assert.Contains(t, event, tt.expectedEventMsg)
+				default:
+					t.Error("expected an event to be recorded for blocked upgrade")
+				}
+			}
+		})
+	}
+}
+
+func TestUnupgradableVersionWithEmptyMessage(t *testing.T) {
+	// Set up unupgradable version with empty message for testing
+	cleanup := version.SetUnupgradableCollectorVersionsForTests(map[string]string{
+		"0.51.0": "", // Empty message
+	})
+	defer cleanup()
+
+	nsn := types.NamespacedName{Name: "test-instance", Namespace: "default"}
+	existing := makeOtelcol(nsn, v1alpha1.ManagementStateManaged)
+	existing.Status.Version = "0.51.0"
+
+	currentV := version.Get()
+	currentV.OpenTelemetryCollector = upgrade.Latest.String()
+
+	recorder := events.NewFakeRecorder(upgrade.RecordBufferSize)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  currentV,
+		Client:   k8sClient,
+		Recorder: recorder,
+	}
+
+	// test
+	res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	assert.NoError(t, err)
+
+	// verify version remains unchanged
+	assert.Equal(t, "0.51.0", res.Status.Version)
+
+	// verify event was recorded with default message
+	select {
+	case event := <-recorder.Events:
+		assert.Contains(t, event, "UpgradeBlocked")
+		assert.Contains(t, event, "version 0.51.0 is marked as unupgradable")
+	default:
+		t.Error("expected an event to be recorded for blocked upgrade")
+	}
+}

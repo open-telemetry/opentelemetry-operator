@@ -6,6 +6,7 @@ package webhook
 import (
 	"context"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var defaultVolumeSize = resource.MustParse("200Mi")
@@ -770,5 +773,92 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestInstrumentationValidatingWebhook_UnupgradableVersionWarnings(t *testing.T) {
+	// Set up unupgradable versions for testing
+	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{
+		constants.InstrumentationLanguageJava: {
+			"v1.0.0": "Breaking changes in Java agent require manual migration.",
+		},
+		constants.InstrumentationLanguagePython: {
+			"v2.0.0": "", // Empty message to test default warning
+		},
+	})
+	defer cleanup()
+
+	tests := []struct {
+		name            string
+		inst            v1alpha1.Instrumentation
+		expectedWarning string
+		hasWarning      bool
+	}{
+		{
+			name: "java unupgradable version with message",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{Type: v1alpha1.AlwaysOn},
+					Java:    v1alpha1.Java{Image: "ghcr.io/org/java:v1.0.0"},
+				},
+			},
+			expectedWarning: "Breaking changes in Java agent require manual migration.",
+			hasWarning:      true,
+		},
+		{
+			name: "python unupgradable version with default message",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{Type: v1alpha1.AlwaysOn},
+					Python:  v1alpha1.Python{Image: "ghcr.io/org/python:v2.0.0"},
+				},
+			},
+			expectedWarning: "Manual upgrade is required",
+			hasWarning:      true,
+		},
+		{
+			name: "java normal version no warning",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{Type: v1alpha1.AlwaysOn},
+					Java:    v1alpha1.Java{Image: "ghcr.io/org/java:v2.0.0"},
+				},
+			},
+			hasWarning: false,
+		},
+		{
+			name: "empty images no warning",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{Type: v1alpha1.AlwaysOn},
+				},
+			},
+			hasWarning: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &tt.inst)
+			assert.Nil(t, err)
+
+			if tt.hasWarning {
+				found := false
+				for _, w := range warnings {
+					if strings.Contains(w, tt.expectedWarning) {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found, "expected warnings to contain %q, got %v", tt.expectedWarning, warnings)
+			} else {
+				// Should only have "sampler type not set" or no warnings
+				for _, w := range warnings {
+					assert.NotContains(t, w, "unupgradable")
+					assert.NotContains(t, w, "cannot be automatically upgraded")
+				}
+			}
+		})
 	}
 }
