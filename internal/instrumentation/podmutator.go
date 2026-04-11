@@ -366,6 +366,9 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
+		if !pm.config.EnableInstrumentationCRDs {
+			return &pm.config.Instrumentation, nil
+		}
 		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
 	}
 
