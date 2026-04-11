@@ -77,6 +77,7 @@ func ComponentType(name string) string {
 	return name
 }
 
+// PortFromEndpoint extracts the port number from a host:port endpoint string (e.g. "0.0.0.0:9090" → 9090).
 func PortFromEndpoint(endpoint string) (int32, error) {
 	var err error
 	var port int64
