@@ -233,10 +233,12 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			groupSlice = append(groupSlice, l)
 		})
 
+		// Pointer alias: reuse groupBuilder for per-target merged labels.
+		targetBuilder := &groupBuilder
+
 		for _, t := range tg.Targets {
 			count++
-			// Reuse groupBuilder for each target — Reset() clears entries but keeps capacity.
-			groupBuilder.Reset()
+			targetBuilder.Reset()
 
 			// Sort target label names (typically very few: __address__, __metrics_path__).
 			targetLabelNames = targetLabelNames[:0]
@@ -257,25 +259,25 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 				tn := targetLabelNames[ti]
 				switch {
 				case gn < tn:
-					groupBuilder.Add(gn, groupSlice[gi].Value)
+					targetBuilder.Add(gn, groupSlice[gi].Value)
 					gi++
 				case gn > tn:
-					groupBuilder.Add(tn, string(t[model.LabelName(tn)]))
+					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
 					ti++
 				default: // target label overrides group label
-					groupBuilder.Add(tn, string(t[model.LabelName(tn)]))
+					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
 					gi++
 					ti++
 				}
 			}
 			for ; gi < len(groupSlice); gi++ {
-				groupBuilder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
+				targetBuilder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
 			}
 			for ; ti < len(targetLabelNames); ti++ {
-				groupBuilder.Add(targetLabelNames[ti], string(t[model.LabelName(targetLabelNames[ti])]))
+				targetBuilder.Add(targetLabelNames[ti], string(t[model.LabelName(targetLabelNames[ti])]))
 			}
 
-			item := NewItem(jobName, string(t[model.AddressLabel]), groupBuilder.Labels(), "")
+			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
 			index++
 		}
