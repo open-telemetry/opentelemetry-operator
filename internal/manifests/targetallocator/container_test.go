@@ -644,6 +644,33 @@ func TestContainerEnvFrom(t *testing.T) {
 	assert.Contains(t, c.EnvFrom, envFrom2)
 }
 
+// Regression test: when Spec.Env has spare backing-array capacity,
+// the container's Env must not share the underlying array with the spec.
+func TestContainerEnvAliasing(t *testing.T) {
+	env := make([]corev1.EnvVar, 0, 10)
+	env = append(env, corev1.EnvVar{Name: "USER_VAR", Value: "val"})
+
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Env: env,
+			},
+		},
+	}
+	cfg := config.New()
+
+	c := Container(cfg, logger, targetAllocator)
+
+	// Mutate the original spec — container must not be affected.
+	targetAllocator.Spec.Env = append(targetAllocator.Spec.Env,
+		corev1.EnvVar{Name: "intruder", Value: "bad"})
+
+	for _, e := range c.Env {
+		assert.NotEqual(t, "intruder", e.Name,
+			"container Env shares backing array with spec")
+	}
+}
+
 func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
