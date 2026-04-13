@@ -542,6 +542,29 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 	}
 }
 
+// Regression test: when the container's VolumeMounts slice has spare capacity
+// (e.g. after Istio injection), append aliasing corrupts the clone init
+// container's mounts.
+func TestInjectApacheHttpdagentVolumemountAliasing(t *testing.T) {
+	// Spare capacity is the trigger — simulates a prior webhook leaving room.
+	mounts := make([]corev1.VolumeMount, 0, 4)
+	mounts = append(mounts,
+		corev1.VolumeMount{Name: "a", MountPath: "/a"},
+		corev1.VolumeMount{Name: "b", MountPath: "/b"},
+	)
+
+	pod := corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{VolumeMounts: mounts}}}}
+	result := injectApacheHttpdagent(logr.Discard(), v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+		pod, false, &pod.Spec.Containers[0], "http://otlp:4317",
+		map[string]string{string(semconv.K8SDeploymentNameKey): "svc"}, v1alpha1.InstrumentationSpec{})
+
+	clone := result.Spec.InitContainers[0]
+	lastMount := clone.VolumeMounts[len(clone.VolumeMounts)-1]
+	assert.Equal(t, apacheAgentConfigVolume, lastMount.Name,
+		"clone's config mount was corrupted by slice aliasing: %v", clone.VolumeMounts)
+	assert.Equal(t, apacheAgentConfDirFull, lastMount.MountPath)
+}
+
 func TestApacheInitContainerMissing(t *testing.T) {
 	tests := []struct {
 		name     string
