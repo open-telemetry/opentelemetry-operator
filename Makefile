@@ -347,6 +347,28 @@ deploy-no-crds: set-image-controller
 undeploy-no-crds: set-image-controller
 	$(KUSTOMIZE) build config/no-crds | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Standalone OpAMP Bridge (no operator / CRDs required)
+
+STANDALONE_BRIDGE_MANIFESTS ?= cmd/operator-opamp-bridge/manifests/standalone
+
+# Deploy the standalone OpAMP bridge into the current Kubernetes context.
+# Does not require the operator, CRDs, or cert-manager.
+.PHONY: deploy-standalone-bridge
+deploy-standalone-bridge: kustomize
+	cd $(STANDALONE_BRIDGE_MANIFESTS) && $(KUSTOMIZE) edit set image operator-opamp-bridge=${OPERATOROPAMPBRIDGE_IMG}
+	$(KUSTOMIZE) build $(STANDALONE_BRIDGE_MANIFESTS) | kubectl apply -f -
+	kubectl rollout status deployment/otel-opamp-bridge-standalone -n opentelemetry-opamp-bridge --timeout=120s
+
+# Undeploy the standalone OpAMP bridge from the current Kubernetes context.
+.PHONY: undeploy-standalone-bridge
+undeploy-standalone-bridge: kustomize
+	$(KUSTOMIZE) build $(STANDALONE_BRIDGE_MANIFESTS) | kubectl delete --ignore-not-found=true -f -
+
+# Build, load, and deploy the standalone bridge to a kind cluster.
+# Assumes a kind cluster is already running (use start-kind first).
+.PHONY: deploy-standalone-bridge-kind
+deploy-standalone-bridge-kind: load-image-operator-opamp-bridge deploy-standalone-bridge
+
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
@@ -463,7 +485,7 @@ e2e-multi-instrumentation: chainsaw
 # OpAMPBridge CR end-to-tests
 .PHONY: e2e-opampbridge
 e2e-opampbridge: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-opampbridge --report-name e2e-opampbridge
+	OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) $(CHAINSAW) test --test-dir ./tests/e2e-opampbridge --report-name e2e-opampbridge
 
 # end-to-end-test for testing pdb support
 .PHONY: e2e-pdb
