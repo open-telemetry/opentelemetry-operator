@@ -530,7 +530,7 @@ func TestContainerLabeledMetricsFeatureGate(t *testing.T) {
 
 		c := Container(cfg, logger, targetAllocator)
 
-		assert.Contains(t, c.Args, "--feature-gates=target-allocator.labeled-metrics")
+		assert.Contains(t, c.Args, "--feature-gates=targetallocator.labeledmetrics")
 	})
 
 	t.Run("does not override user-specified feature gates", func(t *testing.T) {
@@ -550,7 +550,7 @@ func TestContainerLabeledMetricsFeatureGate(t *testing.T) {
 		c := Container(cfg, logger, targetAllocator)
 
 		assert.Contains(t, c.Args, "--feature-gates=some-other-gate")
-		assert.NotContains(t, c.Args, "--feature-gates=target-allocator.labeled-metrics")
+		assert.NotContains(t, c.Args, "--feature-gates=targetallocator.labeledmetrics")
 	})
 }
 

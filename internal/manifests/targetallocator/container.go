@@ -100,7 +100,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	}
 	if featuregate.EnableTargetAllocatorLabeledMetrics.IsEnabled() {
 		if _, exists := argsMap[featuregate.FeatureGatesFlag]; !exists {
-			args = append(args, fmt.Sprintf("--%s=%s", featuregate.FeatureGatesFlag, "target-allocator.labeled-metrics"))
+			args = append(args, fmt.Sprintf("--%s=%s", featuregate.FeatureGatesFlag, "targetallocator.labeledmetrics"))
 		}
 	}
 	for k, v := range argsMap {

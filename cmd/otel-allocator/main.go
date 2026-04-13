@@ -28,11 +28,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
+	tafeaturegate "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
-	tafeaturegate "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 )
 
 var setupLog = ctrl.Log.WithName("setup")
