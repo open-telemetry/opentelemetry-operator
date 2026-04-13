@@ -54,6 +54,10 @@ data:
     healthListenAddr: ":8081"
     heartbeatInterval: 1s
     name: opamp-bridge-standalone
+    description:
+      non_identifying_attributes:
+        deployment.environment: staging
+        service.namespace: platform
     capabilities:
       AcceptsRemoteConfig: true
       ReportsEffectiveConfig: true
@@ -63,6 +67,11 @@ data:
       agents:
         - namespace: ${NAMESPACE}
           type: otel-collector
+          description:
+            non_identifying_attributes:
+              deployment.environment: production
+              standalone.agent: collector
+              k8s.workload.name: user-supplied-workload-name
           workloadRef:
             apiVersion: apps/v1
             kind: Deployment

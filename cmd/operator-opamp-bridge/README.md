@@ -38,6 +38,10 @@ standalone:
   agents:
     - namespace: default
       type: otel-collector
+      description:
+        non_identifying_attributes:
+          deployment.environment: production
+          service.namespace: payments
       workloadRef:
         apiVersion: apps/v1
         kind: Deployment
@@ -49,7 +53,7 @@ standalone:
           key: collector.yaml
 ```
 
-In this mode, the bridge creates one OpAMP client connection for each entry under `standalone.agents`. Each key under an agent's `config` section is the OpAMP config file name reported to the server. The value describes the local Kubernetes resource that backs that file. Config resources are resolved in the workload namespace. In the example above, the OpAMP server sees a config file named `collector`, and the bridge maps it locally to `ConfigMap/default/collector-config`, key `collector.yaml`.
+In this mode, the bridge creates one OpAMP client connection for each entry under `standalone.agents`. Each agent can set `description.non_identifying_attributes` to report custom attributes to the OpAMP server. Bridge-level `description.non_identifying_attributes` are used as defaults for every standalone agent, and per-agent attributes override those defaults. Each key under an agent's `config` section is the OpAMP config file name reported to the server. The value describes the local Kubernetes resource that backs that file. Config resources are resolved in the workload namespace. In the example above, the OpAMP server sees a config file named `collector`, and the bridge maps it locally to `ConfigMap/default/collector-config`, key `collector.yaml`.
 
 After applying a config update, the bridge restarts the configured workload by updating the workload pod template's `kubectl.kubernetes.io/restartedAt` annotation. Supported workload refs are `apps/v1` `Deployment`, `DaemonSet`, and `StatefulSet`.
 

@@ -359,6 +359,42 @@ standalone:
 	assert.ErrorContains(t, err, `mapping key "collector" already defined`)
 }
 
+func TestLoadFromFileStandaloneAgentDescription(t *testing.T) {
+	cfg := []byte(`
+mode: standalone
+endpoint: ws://127.0.0.1:4320/v1/opamp
+standalone:
+  agents:
+    - namespace: default
+      type: otel-collector
+      description:
+        non_identifying_attributes:
+          cluster: production
+          region: us-east
+      workloadRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: collector
+      config:
+        collector:
+          kind: configmap
+          name: collector-config
+          key: collector.yaml
+`)
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	require.NoError(t, os.WriteFile(configPath, cfg, 0o600))
+
+	got := NewConfig(logr.Discard())
+	err := LoadFromFile(got, configPath)
+
+	require.NoError(t, err)
+	require.Len(t, got.Standalone.Agents, 1)
+	assert.Equal(t, map[string]string{
+		"cluster": "production",
+		"region":  "us-east",
+	}, got.Standalone.Agents[0].Description.NonIdentifyingAttributes)
+}
+
 func TestGetDescription(t *testing.T) {
 	got := NewConfig(logr.Discard())
 	instanceId := uuid.New()
@@ -474,4 +510,47 @@ func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
 	assert.True(t, cfg.Capabilities[AcceptsRemoteConfig])
 	assert.Equal(t, []string{"otlp"}, cfg.ComponentsAllowed["receivers"])
 	assert.Equal(t, "test", cfg.AgentDescription.NonIdentifyingAttributes["environment"])
+}
+
+func TestNewStandaloneAgentConfigMergesAgentDescription(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	cfg.Mode = standaloneMode
+	cfg.AgentDescription.NonIdentifyingAttributes = map[string]string{
+		"deployment.environment": "staging",
+		"global":                 "default",
+	}
+
+	agentCfg := NewStandaloneAgentConfig(cfg, StandaloneAgentConfig{
+		Namespace: "default",
+		Type:      "otel-collector",
+		Description: AgentDescription{
+			NonIdentifyingAttributes: map[string]string{
+				"deployment.environment": "production",
+				"agent":                  "collector-a",
+				"k8s.workload.name":      "user-supplied-workload-name",
+			},
+		},
+		WorkloadRef: StandaloneWorkloadRef{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "collector-workload",
+		},
+	})
+
+	desc := agentCfg.GetDescription()
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "deployment.environment", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "production"},
+	}})
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "global", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "default"},
+	}})
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "agent", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "collector-a"},
+	}})
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "k8s.workload.name", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "collector-workload"},
+	}})
+	assert.NotContains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "k8s.workload.name", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "user-supplied-workload-name"},
+	}})
 }

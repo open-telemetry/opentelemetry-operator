@@ -42,12 +42,25 @@ spec:
               #!/bin/bash
               set -eu
 
+              attr_count() {
+                printf '%s' "$last" | grep -Fo "\"key\":\"$1\",\"value\":\"$2\"" | wc -l | tr -d ' '
+              }
+
+              has_attr_count() {
+                test "$(attr_count "$1" "$2")" -eq "$3"
+              }
+
               last=""
               for _ in $(seq 1 60); do
                 if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
                   if printf '%s' "$last" | grep -q '"effective_config":{"collector":' &&
                     printf '%s' "$last" | grep -q '"health":' &&
-                    printf '%s' "$last" | grep -q '"status":"0/0"'; then
+                    printf '%s' "$last" | grep -q '"status":"0/0"' &&
+                    has_attr_count "deployment.environment" "production" 1 &&
+                    has_attr_count "service.namespace" "platform" 1 &&
+                    has_attr_count "standalone.agent" "collector" 1 &&
+                    has_attr_count "k8s.workload.name" "standalone-collector" 1 &&
+                    has_attr_count "k8s.workload.name" "user-supplied-workload-name" 0; then
                     printf '%s' "$last"
                     exit 0
                   fi
@@ -301,11 +314,26 @@ spec:
               #!/bin/bash
               set -eu
 
+              attr_count() {
+                printf '%s' "$last" | grep -Fo "\"key\":\"$1\",\"value\":\"$2\"" | wc -l | tr -d ' '
+              }
+
+              has_attr_count() {
+                test "$(attr_count "$1" "$2")" -eq "$3"
+              }
+
               last=""
               for _ in $(seq 1 60); do
                 if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
                   if printf '%s' "$last" | grep -q '"effective_config":{"collector":' &&
-                    printf '%s' "$last" | grep -q '"effective_config":{"agent":'; then
+                    printf '%s' "$last" | grep -q '"effective_config":{"agent":' &&
+                    has_attr_count "deployment.environment" "production" 1 &&
+                    has_attr_count "deployment.environment" "staging" 1 &&
+                    has_attr_count "service.namespace" "platform" 2 &&
+                    has_attr_count "standalone.agent" "collector" 1 &&
+                    has_attr_count "standalone.agent" "agent" 1 &&
+                    has_attr_count "k8s.workload.name" "standalone-collector" 1 &&
+                    has_attr_count "k8s.workload.name" "standalone-agent" 1; then
                     printf '%s' "$last"
                     exit 0
                   fi

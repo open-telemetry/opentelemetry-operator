@@ -21,6 +21,11 @@ var _ json.Marshaler = &Agent{}
 
 type InstanceId uuid.UUID
 
+type attribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // Agent represents a connected Agent.
 type Agent struct {
 	// Some fields in this struct are exported so that we can render them in the UI.
@@ -57,14 +62,35 @@ type Agent struct {
 
 func (agent *Agent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Status          *protobufs.AgentToServer `json:"status"`
-		StartedAt       time.Time                `json:"started_at"`
-		EffectiveConfig map[string]string        `json:"effective_config"`
+		Status                   *protobufs.AgentToServer `json:"status"`
+		StartedAt                time.Time                `json:"started_at"`
+		EffectiveConfig          map[string]string        `json:"effective_config"`
+		NonIdentifyingAttributes []attribute              `json:"non_identifying_attributes"`
 	}{
-		Status:          agent.Status,
-		StartedAt:       agent.StartedAt,
-		EffectiveConfig: agent.EffectiveConfig,
+		Status:                   agent.Status,
+		StartedAt:                agent.StartedAt,
+		EffectiveConfig:          agent.EffectiveConfig,
+		NonIdentifyingAttributes: nonIdentifyingAttributes(agent.Status),
 	})
+}
+
+func nonIdentifyingAttributes(status *protobufs.AgentToServer) []attribute {
+	if status == nil || status.AgentDescription == nil {
+		return nil
+	}
+
+	attrs := status.AgentDescription.GetNonIdentifyingAttributes()
+	out := make([]attribute, 0, len(attrs))
+	for _, attr := range attrs {
+		if attr == nil {
+			continue
+		}
+		out = append(out, attribute{
+			Key:   attr.GetKey(),
+			Value: attr.GetValue().GetStringValue(),
+		})
+	}
+	return out
 }
 
 func NewAgent(
