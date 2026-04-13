@@ -29,31 +29,6 @@ type OpAMPBridgeSpec struct {
 	// Description allows the customization of the non identifying attributes for the OpAMP Bridge.
 	// +optional
 	Description *AgentDescription `json:"description,omitempty"`
-	// HeartbeatInterval is the interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +kubebuilder:validation:Format:=duration
-	// +optional
-	HeartbeatInterval *metav1.Duration `json:"heartbeatInterval,omitempty"`
-	// HealthListenAddr is the address where this service serves health checks.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +optional
-	HealthListenAddr string `json:"healthListenAddr,omitempty"`
-	// ListenAddr is the address where this service serves OpAMP proxy traffic.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +optional
-	ListenAddr string `json:"listenAddr,omitempty"`
-	// Mode selects the operating mode for the bridge process.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +optional
-	Mode OpAMPBridgeMode `json:"mode,omitempty"`
-	// Name is the name of the bridge to use for querying managed collectors.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +optional
-	Name string `json:"name,omitempty"`
-	// Standalone configures bridge agents that manage Kubernetes ConfigMap-backed Collector configuration.
-	// This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
-	// +optional
-	Standalone *OpAMPBridgeStandaloneConfig `json:"standalone,omitempty"`
 	// Resources to set on the OpAMPBridge pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -146,77 +121,6 @@ type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
 	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes" yaml:"non_identifying_attributes"`
-}
-
-// OpAMPBridgeMode selects how the OpAMP Bridge discovers and manages target workloads.
-// +kubebuilder:validation:Enum=operator;standalone
-type OpAMPBridgeMode string
-
-const (
-	// OpAMPBridgeModeOperator uses OpenTelemetryCollector CRDs.
-	OpAMPBridgeModeOperator OpAMPBridgeMode = "operator"
-	// OpAMPBridgeModeStandalone manages static Kubernetes config sources from the bridge process config.
-	OpAMPBridgeModeStandalone OpAMPBridgeMode = "standalone"
-)
-
-// OpAMPBridgeStandaloneConfig configures standalone bridge agents.
-type OpAMPBridgeStandaloneConfig struct {
-	// Agents is the list of standalone workloads the bridge should manage.
-	// +optional
-	Agents []OpAMPBridgeStandaloneAgentConfig `json:"agents,omitempty"`
-}
-
-// OpAMPBridgeStandaloneAgentConfig configures one standalone OpAMP agent connection.
-type OpAMPBridgeStandaloneAgentConfig struct {
-	// Namespace is the namespace of the workload and config resources.
-	// +required
-	Namespace string `json:"namespace"`
-	// Type is the agent type reported to the OpAMP server.
-	// +required
-	Type string `json:"type"`
-	// WorkloadRef identifies the Kubernetes workload restarted after remote config updates.
-	// +required
-	WorkloadRef OpAMPBridgeStandaloneWorkloadRef `json:"workloadRef"`
-	// Config maps OpAMP remote config file names to local Kubernetes resources.
-	// +required
-	Config map[string]OpAMPBridgeStandaloneConfigEntry `json:"config"`
-}
-
-// OpAMPBridgeStandaloneWorkloadRef identifies a standalone workload.
-type OpAMPBridgeStandaloneWorkloadRef struct {
-	// APIVersion is the Kubernetes API version of the workload.
-	// +kubebuilder:validation:Enum=apps/v1
-	// +required
-	APIVersion string `json:"apiVersion"`
-	// Kind is the Kubernetes workload kind.
-	// +kubebuilder:validation:Enum=Deployment;DaemonSet;StatefulSet
-	// +required
-	Kind string `json:"kind"`
-	// Name is the Kubernetes workload name.
-	// +required
-	Name string `json:"name"`
-}
-
-// OpAMPBridgeStandaloneConfigEntryKind is the supported local resource kind for a standalone config entry.
-// +kubebuilder:validation:Enum=configmap
-type OpAMPBridgeStandaloneConfigEntryKind string
-
-const (
-	// OpAMPBridgeStandaloneConfigEntryKindConfigMap uses a Kubernetes ConfigMap as the local config source.
-	OpAMPBridgeStandaloneConfigEntryKindConfigMap OpAMPBridgeStandaloneConfigEntryKind = "configmap"
-)
-
-// OpAMPBridgeStandaloneConfigEntry maps a remote OpAMP config file to a local Kubernetes resource key.
-type OpAMPBridgeStandaloneConfigEntry struct {
-	// Kind is the local Kubernetes resource kind.
-	// +required
-	Kind OpAMPBridgeStandaloneConfigEntryKind `json:"kind"`
-	// Name is the local Kubernetes resource name.
-	// +required
-	Name string `json:"name"`
-	// Key is the key in the local Kubernetes resource.
-	// +required
-	Key string `json:"key"`
 }
 
 type OpAMPBridgeTLSConfig struct {
