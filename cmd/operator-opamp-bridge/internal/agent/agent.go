@@ -17,19 +17,18 @@ import (
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"k8s.io/utils/clock"
-	"sigs.k8s.io/yaml"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 type Agent struct {
 	logger logr.Logger
 
-	appliedKeys map[kubeResourceKey]bool
+	appliedKeys map[resourcekey.Key]bool
 	clock       clock.Clock
 	startTime   uint64
 	lastHash    []byte
@@ -59,7 +58,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 		applier:             applier,
 		proxy:               p,
 		logger:              logger,
-		appliedKeys:         map[kubeResourceKey]bool{},
+		appliedKeys:         map[resourcekey.Key]bool{},
 		instanceId:          cfg.GetInstanceId(),
 		agentDescription:    cfg.GetDescription(),
 		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
@@ -117,8 +116,8 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	healthMap := map[string]*protobufs.ComponentHealth{}
 	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
 	for _, col := range cols {
-		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
-		podMap, err := agent.generateCollectorHealth(agent.getCollectorSelector(col), col.GetNamespace())
+		key := resourcekey.New(col.GetNamespace(), col.GetName(), "")
+		podMap, err := agent.generateCollectorHealth(col.GetSelectorLabels(), col.GetNamespace())
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +131,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 				proxiesUsed[uid] = struct{}{}
 			}
 		}
-		podStartTime, err := timeToUnixNanoUnsigned(col.ObjectMeta.GetCreationTimestamp().Time)
+		podStartTime, err := timeToUnixNanoUnsigned(col.GetCreationTimestamp())
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +142,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		healthMap[key.String()] = &protobufs.ComponentHealth{
 			StartTimeUnixNano:  podStartTime,
 			StatusTimeUnixNano: statusTime,
-			Status:             col.Status.Scale.StatusReplicas,
+			Status:             col.GetStatusReplicas(),
 			ComponentHealthMap: podMap,
 			Healthy:            isPoolHealthy,
 		}
@@ -157,28 +156,6 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	return healthMap, nil
 }
 
-// getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
-func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
-	if col.Status.Scale.Selector != "" {
-		selMap := map[string]string{}
-		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
-			kv := strings.Split(kvPair, "=")
-			// skip malformed pairs
-			if len(kv) != 2 {
-				continue
-			}
-			selMap[kv[0]] = kv[1]
-		}
-		return selMap
-	}
-	return map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", col.GetNamespace(), col.GetName()),
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
-}
-
 func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]*protobufs.ComponentHealth, error) {
 	statusTime, err := agent.getCurrentTimeUnixNano()
 	if err != nil {
@@ -190,7 +167,7 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 	}
 	healthMap := map[string]*protobufs.ComponentHealth{}
 	for _, item := range pods.Items {
-		key := newKubeResourceKey(item.GetNamespace(), item.GetName())
+		key := resourcekey.New(item.GetNamespace(), item.GetName(), "")
 		healthy := true
 		if item.Status.Phase != "Running" {
 			healthy = false
@@ -348,15 +325,14 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
-		col := instance
-		marshaled, err := yaml.Marshal(&col)
-		if err != nil {
-			agent.logger.Error(err, "failed to marhsal config")
-			return nil, err
+		body := instance.GetEffectiveConfig()
+		if body == nil {
+			agent.logger.Error(errors.New("nil effective config"), "failed to get effective config",
+				"name", instance.GetName(), "namespace", instance.GetNamespace())
+			continue
 		}
-		mapKey := newKubeResourceKey(instance.GetNamespace(), instance.GetName())
-		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
-			Body:        marshaled,
+		instanceMap[instance.GetConfigMapKey().String()] = &protobufs.AgentConfigFile{
+			Body:        body,
 			ContentType: "yaml",
 		}
 	}
@@ -390,11 +366,11 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
 //
-//	map[name/namespace] -> collector CRD spec
+//	map[resource key] -> AgentConfigFile body
 //
-// For every key in the received remote configuration, the agent attempts to apply it to the connected
-// Kubernetes cluster. If an agent fails to apply a collector CRD, it will continue to the next entry. The agent will
-// store the received configuration hash regardless of application status as per the OpAMP spec.
+// For every key in the received remote configuration, the agent attempts to apply it via the configured
+// applier. If an entry fails to apply, the agent continues to the next entry. The agent stores the
+// received configuration hash regardless of application status, as per the OpAMP spec.
 //
 // INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
 func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
@@ -404,12 +380,16 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		if key == "" || len(file.Body) == 0 {
 			continue
 		}
-		colKey, err := kubeResourceFromKey(key)
+		colKey, err := resourcekey.Parse(key)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		err = agent.applier.Apply(colKey.name, colKey.namespace, file)
+		if err = agent.validateConfigMapKey(colKey); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		err = agent.applier.Apply(colKey.Name(), colKey.Namespace(), file)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -417,9 +397,9 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		agent.appliedKeys[colKey] = true
 	}
 	// Check if anything was deleted
-	for collectorKey := range agent.appliedKeys {
-		if _, ok := config.Config.GetConfigMap()[collectorKey.String()]; !ok {
-			err := agent.applier.Delete(collectorKey.name, collectorKey.namespace)
+	for key := range agent.appliedKeys {
+		if _, ok := config.Config.GetConfigMap()[key.String()]; !ok {
+			err := agent.applier.Delete(key.Name(), key.Namespace())
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -438,6 +418,19 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		LastRemoteConfigHash: agent.lastHash,
 		Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 	}, nil
+}
+
+func (agent *Agent) validateConfigMapKey(key resourcekey.Key) error {
+	if agent.config.IsStandaloneMode() {
+		if key.Kind() != resourcekey.KindConfigMap {
+			return errors.New("standalone config key must use configmap kind")
+		}
+		return nil
+	}
+	if key.Kind() != resourcekey.KindOtelCol {
+		return errors.New("operator config key must use otelcol kind")
+	}
+	return nil
 }
 
 // Shutdown will stop the OpAMP client gracefully.

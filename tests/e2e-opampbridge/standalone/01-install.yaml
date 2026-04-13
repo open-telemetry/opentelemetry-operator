@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: otel-opamp-bridge-standalone
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-opamp-bridge-standalone
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+    verbs:
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-opamp-bridge-standalone
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-opamp-bridge-standalone
+subjects:
+  - kind: ServiceAccount
+    name: otel-opamp-bridge-standalone
+    namespace: ($namespace)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-opamp-bridge-standalone-config
+data:
+  config.yaml: |
+    mode: standalone
+    endpoint: ws://e2e-test-app-bridge-server:4320/v1/opamp
+    listenAddr: ":8080"
+    heartbeatInterval: 1s
+    name: opamp-bridge-standalone
+    capabilities:
+      AcceptsRemoteConfig: true
+      ReportsEffectiveConfig: true
+      ReportsRemoteConfig: true
+      ReportsHealth: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-opamp-bridge-standalone
+  labels:
+    app.kubernetes.io/name: otel-opamp-bridge-standalone
+    app.kubernetes.io/component: opamp-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-opamp-bridge-standalone
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-opamp-bridge-standalone
+        app.kubernetes.io/component: opamp-bridge
+    spec:
+      serviceAccountName: otel-opamp-bridge-standalone
+      containers:
+        - name: bridge
+          image: ($operatorOpampBridgeImage)
+          args:
+            - --config-file=/conf/config.yaml
+            - --mode=standalone
+          ports:
+            - name: opamp
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+              readOnly: true
+          livenessProbe:
+            tcpSocket:
+              port: opamp
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: otel-opamp-bridge-standalone-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: standalone-collector
+  labels:
+    opentelemetry.io/managed-by: opamp-bridge-standalone
+data:
+  collector.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

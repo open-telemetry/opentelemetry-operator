@@ -293,6 +293,13 @@ func (agent *Agent) SetCustomConfig(
 ) {
 	agent.mux.Lock()
 
+	if agent.CustomInstanceConfig == nil {
+		agent.CustomInstanceConfig = map[string]string{}
+	}
+	if agent.EffectiveConfig == nil {
+		agent.EffectiveConfig = map[string]string{}
+	}
+
 	for key, file := range config.GetConfigMap() {
 		agent.CustomInstanceConfig[key] = string(file.Body)
 		agent.EffectiveConfig[key] = string(file.Body)

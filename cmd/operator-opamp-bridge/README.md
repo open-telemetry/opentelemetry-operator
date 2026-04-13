@@ -20,6 +20,55 @@ There are two main ways to install the OpAMP Bridge:
 
 ## Usage
 
+### Standalone mode
+
+Standalone mode lets the bridge manage Collector configuration stored in Kubernetes `ConfigMap` resources, without creating `OpenTelemetryCollector` CRDs. This is useful when the Collector workload is managed outside the operator, but the config still needs to be reported to and updated from an OpAMP server.
+
+Start the bridge with `mode: standalone` in its config file, or pass `--mode=standalone`:
+
+```yaml
+endpoint: "<OPAMP_SERVER_ENDPOINT>"
+mode: standalone
+capabilities:
+  AcceptsRemoteConfig: true
+  ReportsEffectiveConfig: true
+  ReportsRemoteConfig: true
+```
+
+In this mode, the bridge watches ConfigMaps labeled with `opentelemetry.io/managed-by: opamp-bridge-standalone`. Each managed ConfigMap is reported to the OpAMP server as `kind/namespace/name`, for example `configmap/default/collector-config`.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-config
+  namespace: default
+  labels:
+    opentelemetry.io/managed-by: opamp-bridge-standalone
+  annotations:
+    opentelemetry.io/opamp-rollout-target: Deployment/my-collector
+data:
+  collector.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      otlphttp:
+        endpoint: http://example-collector:4318
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlphttp]
+```
+
+
+The bridge will create a missing ConfigMap, but it will only update an existing ConfigMap if that managed-by label is present. Remote deletion is not supported in standalone mode.
+
+Standalone mode needs RBAC for ConfigMaps and for any workload kinds used as rollout targets. The repository includes a starter manifest at [`config/standalone-bridge/rbac.yaml`](../../config/standalone-bridge/rbac.yaml).
+
 ### OpAMPBridge CRD
 
 The [OpAMPBridge](../../docs/api/opampbridges.md) CRD is used to create an OpAMP Bridge instance.

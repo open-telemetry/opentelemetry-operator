@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-opamp-bridge-standalone
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: standalone-collector
+  labels:
+    opentelemetry.io/managed-by: opamp-bridge-standalone
+data:
+  collector.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

@@ -24,7 +24,9 @@ const (
 	kubeConfigPathFlagName    = "kubeconfig-path"
 	heartbeatIntervalFlagName = "heartbeat-interval"
 	nameFlagName              = "name"
+	modeFlagName              = "mode"
 	defaultHeartbeatInterval  = 30 * time.Second
+	defaultMode               = operatorMode
 )
 
 var defaultKubeConfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -39,6 +41,7 @@ func GetFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(kubeConfigPathFlagName, defaultKubeConfigPath, "absolute path to the KubeconfigPath file.")
 	flagSet.Duration(heartbeatIntervalFlagName, defaultHeartbeatInterval, "The interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.")
 	flagSet.String(nameFlagName, opampBridgeName, "The name of the bridge to use for querying managed collectors.")
+	flagSet.String(modeFlagName, defaultMode, `Operating mode: "operator" (default, uses CRDs) or "standalone" (manages ConfigMaps for Deployments/DaemonSets).`)
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -63,6 +66,10 @@ func getKubeConfigFilePath(flagSet *pflag.FlagSet) (value string, changed bool, 
 
 func getListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
 	return getFlagValueAndChanged[string](flagSet, listenAddrFlagName)
+}
+
+func getMode(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChanged[string](flagSet, modeFlagName)
 }
 
 func getFlagValueAndChanged[T any](flagSet *pflag.FlagSet, flagName string) (value T, changed bool, err error) {
