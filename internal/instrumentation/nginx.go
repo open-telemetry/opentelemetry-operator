@@ -92,10 +92,10 @@ export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 			Args:    []string{nginxAgentCommands},
 			Env:     container.Env,
 			EnvFrom: container.EnvFrom,
-			VolumeMounts: append(container.VolumeMounts, corev1.VolumeMount{
+			VolumeMounts: slices.Concat(container.VolumeMounts, []corev1.VolumeMount{{
 				Name:      nginxAgentConfigVolume,
 				MountPath: nginxAgentConfDirFull,
-			}),
+			}}),
 			Resources:       nginxSpec.Resources,
 			SecurityContext: container.SecurityContext,
 			ImagePullPolicy: container.ImagePullPolicy,
