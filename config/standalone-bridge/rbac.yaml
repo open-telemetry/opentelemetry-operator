@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-opamp-bridge-standalone
+rules:
+  # ConfigMaps: the bridge watches, creates, updates, and deletes these to push collector config
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+  # Deployments + DaemonSets: the bridge updates pod template annotations to trigger rollouts
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets"]
+    verbs: ["get", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-opamp-bridge-standalone
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-opamp-bridge-standalone
+subjects:
+  - kind: ServiceAccount
+    name: otel-opamp-bridge-standalone
+    namespace: opentelemetry-opamp-bridge

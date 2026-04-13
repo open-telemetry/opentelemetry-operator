@@ -17,9 +17,7 @@ import (
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"k8s.io/utils/clock"
-	"sigs.k8s.io/yaml"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
@@ -118,13 +116,12 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
 	for _, col := range cols {
 		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
-		podMap, err := agent.generateCollectorHealth(agent.getCollectorSelector(col), col.GetNamespace())
+		podMap, err := agent.generateCollectorHealth(col.GetSelectorLabels(), col.GetNamespace())
 		if err != nil {
 			return nil, err
 		}
 		isPoolHealthy := true
 		for podName, pod := range podMap {
-			// we need to remove the prefix here as we don't have the namespace from the hostname.
 			podNameWithoutNamespace := strings.TrimPrefix(podName, col.GetNamespace()+"/")
 			isPoolHealthy = isPoolHealthy && pod.Healthy
 			if uid, ok := agentsByHostName[podNameWithoutNamespace]; ok {
@@ -132,7 +129,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 				proxiesUsed[uid] = struct{}{}
 			}
 		}
-		podStartTime, err := timeToUnixNanoUnsigned(col.ObjectMeta.GetCreationTimestamp().Time)
+		podStartTime, err := timeToUnixNanoUnsigned(col.GetCreationTimestamp())
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +140,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		healthMap[key.String()] = &protobufs.ComponentHealth{
 			StartTimeUnixNano:  podStartTime,
 			StatusTimeUnixNano: statusTime,
-			Status:             col.Status.Scale.StatusReplicas,
+			Status:             col.GetStatusReplicas(),
 			ComponentHealthMap: podMap,
 			Healthy:            isPoolHealthy,
 		}
@@ -155,28 +152,6 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		healthMap[instance.String()] = health
 	}
 	return healthMap, nil
-}
-
-// getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
-func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
-	if col.Status.Scale.Selector != "" {
-		selMap := map[string]string{}
-		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
-			kv := strings.Split(kvPair, "=")
-			// skip malformed pairs
-			if len(kv) != 2 {
-				continue
-			}
-			selMap[kv[0]] = kv[1]
-		}
-		return selMap
-	}
-	return map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", col.GetNamespace(), col.GetName()),
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
 }
 
 func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]*protobufs.ComponentHealth, error) {
@@ -348,15 +323,15 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
-		col := instance
-		marshaled, err := yaml.Marshal(&col)
-		if err != nil {
-			agent.logger.Error(err, "failed to marhsal config")
-			return nil, err
+		body := instance.GetEffectiveConfig()
+		if body == nil {
+			agent.logger.Error(errors.New("nil effective config"), "failed to get effective config",
+				"name", instance.GetName(), "namespace", instance.GetNamespace())
+			continue
 		}
 		mapKey := newKubeResourceKey(instance.GetNamespace(), instance.GetName())
 		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
-			Body:        marshaled,
+			Body:        body,
 			ContentType: "yaml",
 		}
 	}
@@ -390,11 +365,11 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
 //
-//	map[name/namespace] -> collector CRD spec
+//	map[name/namespace] -> AgentConfigFile body
 //
-// For every key in the received remote configuration, the agent attempts to apply it to the connected
-// Kubernetes cluster. If an agent fails to apply a collector CRD, it will continue to the next entry. The agent will
-// store the received configuration hash regardless of application status as per the OpAMP spec.
+// For every key in the received remote configuration, the agent attempts to apply it via the configured
+// applier. If an entry fails to apply, the agent continues to the next entry. The agent stores the
+// received configuration hash regardless of application status, as per the OpAMP spec.
 //
 // INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
 func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {

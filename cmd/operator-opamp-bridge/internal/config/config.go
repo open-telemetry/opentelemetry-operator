@@ -91,6 +91,10 @@ type Config struct {
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
 	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
+
+	// Mode selects the operating mode: "operator" (default) uses OpenTelemetryCollector CRDs,
+	// "standalone" discovers Deployments/DaemonSets by label and manages their ConfigMaps.
+	Mode string `yaml:"mode,omitempty"`
 }
 
 // AgentDescription is copied from the OpAMP Extension in the collector.
@@ -225,13 +229,23 @@ func (c *Config) RemoteConfigEnabled() bool {
 }
 
 func (c *Config) GetKubernetesClient() (client.Client, error) {
-	err := schemeBuilder.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
+	if c.Mode != "standalone" {
+		err := schemeBuilder.AddToScheme(scheme.Scheme)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return client.New(c.ClusterConfig, client.Options{
 		Scheme: scheme.Scheme,
 	})
+}
+
+func (c *Config) IsStandaloneMode() bool {
+	return c.Mode == "standalone"
+}
+
+func (c *Config) GetRestConfig() *rest.Config {
+	return c.ClusterConfig
 }
 
 func Load(logger logr.Logger, args []string) (*Config, error) {
@@ -299,6 +313,11 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	} else if changed {
 		target.Name = name
+	}
+	if mode, changed, err := getMode(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.Mode = mode
 	}
 	return nil
 }

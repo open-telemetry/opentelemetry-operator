@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-opamp-bridge-standalone-config
+  namespace: opentelemetry-opamp-bridge
+data:
+  config.yaml: |
+    mode: standalone
+    #endpoint: ws://opamp-server:4320/v1/opamp
+    endpoint: http://host.docker.internal:8080/v1/opamp
+    listenAddr: ":8080"
+    heartbeatInterval: 30s
+    name: opamp-bridge-standalone
+    capabilities:
+      AcceptsRemoteConfig: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnMetrics: true
+      ReportsRemoteConfig: true

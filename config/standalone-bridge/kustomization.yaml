@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: opentelemetry-opamp-bridge
+
+resources:
+- namespace.yaml
+- serviceaccount.yaml
+- rbac.yaml
+- configmap.yaml
+- deployment.yaml
+
+images:
+- name: operator-opamp-bridge
+  newName: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge
+  newTag: v0.150.0-2-g8034987f
