@@ -83,6 +83,7 @@
       "matchDatasources": ["golang-version"],
       "matchManagers": ["regex"],
       "matchFileNames": [".github/workflows/*.yaml", ".github/workflows/*.yml"],
+      "separateMinorPatch": true,
       "commitMessageTopic": "go version in CI"
     },
     {
