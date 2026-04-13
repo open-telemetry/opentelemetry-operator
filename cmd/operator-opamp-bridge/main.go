@@ -8,10 +8,10 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
+	bridgemanager "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/manager"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operatorbridge"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/standalone"
 )
 
 func main() {
@@ -22,34 +22,28 @@ func main() {
 		l.Error(configLoadErr, "Unable to load configuration")
 		os.Exit(1)
 	}
-	l.Info("Starting the Remote Configuration service")
+	l.Info("Starting the Remote Configuration service", "mode", cfg.Mode)
 
 	kubeClient, kubeErr := cfg.GetKubernetesClient()
 	if kubeErr != nil {
 		l.Error(kubeErr, "Couldn't create kubernetes client")
 		os.Exit(1)
 	}
-	operatorClient := operator.NewClient(cfg.Name, l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
-	opampClient := cfg.CreateClient()
-	opampProxy := proxy.NewOpAMPProxy(l.WithName("server"), cfg.ListenAddr)
-	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient, opampProxy)
+	// signalCtx is cancelled on interrupt, which stops the informer goroutine.
+	signalCtx, cancelSignal := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancelSignal()
 
-	if err := opampAgent.Start(); err != nil {
-		l.Error(err, "Cannot start OpAMP client")
+	newManagerOpts := operatorbridge.NewManagerOpts
+	if cfg.IsStandaloneMode() {
+		newManagerOpts = standalone.NewManagerOpts
+	}
+	opts := newManagerOpts(l, cfg, kubeClient, cfg.GetRestConfig())
+	manager := bridgemanager.New(opts)
+	if err := manager.Start(signalCtx); err != nil {
+		l.Error(err, "Cannot start OpAMP bridge")
 		os.Exit(1)
 	}
-	if err := opampProxy.Start(); err != nil {
-		l.Error(err, "failed to start OpAMP Server")
-		os.Exit(1)
-	}
-
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
-	<-interrupt
-	opampAgent.Shutdown()
-	proxyStopErr := opampProxy.Stop(context.Background())
-	if proxyStopErr != nil {
-		l.Error(proxyStopErr, "failed to shutdown proxy server")
-	}
+	<-signalCtx.Done()
+	manager.Shutdown()
 }

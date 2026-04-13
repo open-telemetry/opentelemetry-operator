@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-opamp-bridge-standalone
+rules:
+  # ConfigMaps: the bridge watches and updates the configured key; it never creates or deletes them
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "update"]
+  # Deployments + DaemonSets + StatefulSets: the bridge watches rollout status and updates pod template annotations to trigger rollouts
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets", "statefulsets"]
+    verbs: ["get", "list", "watch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-opamp-bridge-standalone
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-opamp-bridge-standalone
+subjects:
+  - kind: ServiceAccount
+    name: otel-opamp-bridge-standalone
+    namespace: opentelemetry-opamp-bridge

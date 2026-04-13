@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -18,6 +20,7 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	yamlv3 "gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -34,7 +37,9 @@ import (
 )
 
 const (
-	agentType = "io.opentelemetry.operator-opamp-bridge"
+	agentType      = "io.opentelemetry.operator-opamp-bridge"
+	operatorMode   = "operator"
+	standaloneMode = "standalone"
 )
 
 var (
@@ -79,6 +84,7 @@ type Config struct {
 	// kubernetes configuration file.
 	KubeConfigFilePath string       `yaml:"kubeConfigFilePath,omitempty"`
 	ListenAddr         string       `yaml:"listenAddr,omitempty"`
+	HealthListenAddr   string       `yaml:"healthListenAddr,omitempty"`
 	ClusterConfig      *rest.Config `yaml:"-"`
 	RootLogger         logr.Logger  `yaml:"-"`
 	instanceId         uuid.UUID    `yaml:"-"`
@@ -91,6 +97,11 @@ type Config struct {
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
 	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
+	Standalone        StandaloneConfig    `yaml:"standalone,omitempty"`
+
+	// Mode selects the operating mode: "operator" (default) uses OpenTelemetryCollector CRDs,
+	// "standalone" manages static Kubernetes config sources from this config.
+	Mode string `yaml:"mode,omitempty"`
 }
 
 // AgentDescription is copied from the OpAMP Extension in the collector.
@@ -101,13 +112,38 @@ type AgentDescription struct {
 	NonIdentifyingAttributes map[string]string `yaml:"non_identifying_attributes"`
 }
 
+type StandaloneConfig struct {
+	Agents []StandaloneAgentConfig `yaml:"agents,omitempty"`
+}
+
+type StandaloneAgentConfig struct {
+	Namespace   string                           `yaml:"namespace"`
+	Type        string                           `yaml:"type"`
+	WorkloadRef StandaloneWorkloadRef            `yaml:"workloadRef"`
+	Config      map[string]StandaloneConfigEntry `yaml:"config"`
+}
+
+type StandaloneWorkloadRef struct {
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Name       string `yaml:"name"`
+}
+
+type StandaloneConfigEntry struct {
+	Kind string `yaml:"kind"`
+	Name string `yaml:"name"`
+	Key  string `yaml:"key"`
+}
+
 func NewConfig(logger logr.Logger) *Config {
 	return &Config{
 		instanceId:         mustGetInstanceId(),
 		Name:               opampBridgeName,
 		ListenAddr:         defaultServerListenAddr,
+		HealthListenAddr:   defaultHealthListenAddr,
 		HeartbeatInterval:  defaultHeartbeatInterval,
 		KubeConfigFilePath: defaultKubeConfigPath,
+		Mode:               defaultMode,
 		RootLogger:         logger,
 	}
 }
@@ -157,7 +193,10 @@ func (c *Config) GetAgentScheme() string {
 	return uri.Scheme
 }
 
-func (*Config) GetAgentType() string {
+func (c *Config) GetAgentType() string {
+	if c.Name != opampBridgeName && c.Mode == standaloneMode {
+		return c.Name
+	}
 	return agentType
 }
 
@@ -176,18 +215,124 @@ func (c *Config) GetDescription() *protobufs.AgentDescription {
 			keyValuePair("service.instance.id", c.GetInstanceId().String()),
 			keyValuePair("service.version", c.GetAgentVersion()),
 		},
-		NonIdentifyingAttributes: append(
-			c.AgentDescription.nonIdentifyingAttributes(),
-			keyValuePair("os.family", runtime.GOOS),
-			keyValuePair("host.name", hostname),
-		),
+		NonIdentifyingAttributes: c.AgentDescription.nonIdentifyingAttributes(map[string]string{
+			"os.family": runtime.GOOS,
+			"host.name": hostname,
+		}),
 	}
 }
 
-func (ad *AgentDescription) nonIdentifyingAttributes() []*protobufs.KeyValue {
-	toReturn := make([]*protobufs.KeyValue, len(ad.NonIdentifyingAttributes))
+func (c *Config) ForStandaloneAgent(agent StandaloneAgentConfig) *Config {
+	agentConfig := *c
+	agentConfig.Name = agent.WorkloadRef.Name
+	agentConfig.instanceId = uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/%s/%s/%s", agent.Namespace, agent.WorkloadRef.Kind, agent.WorkloadRef.Name, agent.Type))
+	agentConfig.AgentDescription.NonIdentifyingAttributes = cloneStringMap(c.AgentDescription.NonIdentifyingAttributes)
+	if agentConfig.AgentDescription.NonIdentifyingAttributes == nil {
+		agentConfig.AgentDescription.NonIdentifyingAttributes = map[string]string{}
+	}
+	agentConfig.AgentDescription.NonIdentifyingAttributes["k8s.namespace.name"] = agent.Namespace
+	agentConfig.AgentDescription.NonIdentifyingAttributes["k8s.workload.name"] = agent.WorkloadRef.Name
+	agentConfig.AgentDescription.NonIdentifyingAttributes["k8s.workload.type"] = agent.WorkloadRef.Kind
+	agentConfig.AgentDescription.NonIdentifyingAttributes["opentelemetry.io/agent.type"] = agent.Type
+	agentConfig.AgentDescription.NonIdentifyingAttributes["host.name"] = agent.WorkloadRef.Name
+	return &agentConfig
+}
+
+func cloneStringMap(in map[string]string) map[string]string {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	maps.Copy(out, in)
+	return out
+}
+
+func (c *Config) Validate() error {
+	// Normalize empty mode (e.g. when Config is constructed directly without
+	// NewConfig, or when mode is set to an explicit empty string) to the
+	// documented default. This keeps logs/state consistent with the flag default.
+	if c.Mode == "" {
+		c.Mode = defaultMode
+	}
+	switch c.Mode {
+	case operatorMode, standaloneMode:
+	default:
+		return fmt.Errorf("invalid mode %q: must be %q or %q", c.Mode, operatorMode, standaloneMode)
+	}
+	if !c.IsStandaloneMode() {
+		return nil
+	}
+	if len(c.Standalone.Agents) == 0 {
+		return errors.New("standalone mode requires at least one configured agent")
+	}
+	agents := map[string]struct{}{}
+	for _, agent := range c.Standalone.Agents {
+		if strings.TrimSpace(agent.WorkloadRef.APIVersion) == "" {
+			return errors.New("standalone agent workloadRef.apiVersion is required")
+		}
+		if !strings.EqualFold(agent.WorkloadRef.APIVersion, "apps/v1") {
+			return fmt.Errorf("standalone agent workloadRef.apiVersion %q is unsupported", agent.WorkloadRef.APIVersion)
+		}
+		if strings.TrimSpace(agent.WorkloadRef.Kind) == "" {
+			return errors.New("standalone agent workloadRef.kind is required")
+		}
+		if strings.TrimSpace(agent.WorkloadRef.Name) == "" {
+			return errors.New("standalone agent workloadRef.name is required")
+		}
+		if strings.TrimSpace(agent.Namespace) == "" {
+			return fmt.Errorf("standalone agent %q namespace is required", agent.WorkloadRef.Name)
+		}
+		if strings.TrimSpace(agent.Type) == "" {
+			return fmt.Errorf("standalone agent %q type is required", agent.WorkloadRef.Name)
+		}
+		if !supportedStandaloneWorkloadKind(agent.WorkloadRef.Kind) {
+			return fmt.Errorf("standalone agent %q has unsupported workloadRef.kind %q", agent.WorkloadRef.Name, agent.WorkloadRef.Kind)
+		}
+		agentKey := fmt.Sprintf("%s/%s/%s", agent.Namespace, strings.ToLower(agent.WorkloadRef.Kind), agent.WorkloadRef.Name)
+		if _, ok := agents[agentKey]; ok {
+			return fmt.Errorf("duplicate standalone agent workload %q", agentKey)
+		}
+		agents[agentKey] = struct{}{}
+		if len(agent.Config) == 0 {
+			return fmt.Errorf("standalone agent %q requires at least one config entry", agent.WorkloadRef.Name)
+		}
+		for remoteName, entry := range agent.Config {
+			if strings.TrimSpace(remoteName) == "" {
+				return fmt.Errorf("standalone agent %q config remote name is required", agent.WorkloadRef.Name)
+			}
+			if !strings.EqualFold(entry.Kind, "configmap") {
+				return fmt.Errorf("standalone agent %q config %q has unsupported kind %q", agent.WorkloadRef.Name, remoteName, entry.Kind)
+			}
+			if strings.TrimSpace(entry.Name) == "" {
+				return fmt.Errorf("standalone agent %q config %q name is required", agent.WorkloadRef.Name, remoteName)
+			}
+			if strings.TrimSpace(entry.Key) == "" {
+				return fmt.Errorf("standalone agent %q config %q key is required", agent.WorkloadRef.Name, remoteName)
+			}
+		}
+	}
+	return nil
+}
+
+func supportedStandaloneWorkloadKind(workloadKind string) bool {
+	switch strings.ToLower(workloadKind) {
+	case "deployment", "daemonset", "statefulset":
+		return true
+	default:
+		return false
+	}
+}
+
+func (ad *AgentDescription) nonIdentifyingAttributes(defaults map[string]string) []*protobufs.KeyValue {
+	attrs := cloneStringMap(defaults)
+	if attrs == nil {
+		attrs = map[string]string{}
+	}
+	maps.Copy(attrs, ad.NonIdentifyingAttributes)
+
+	toReturn := make([]*protobufs.KeyValue, len(attrs))
 	i := 0
-	for k, v := range ad.NonIdentifyingAttributes {
+	for k, v := range attrs {
 		toReturn[i] = keyValuePair(k, v)
 		i++
 	}
@@ -225,13 +370,23 @@ func (c *Config) RemoteConfigEnabled() bool {
 }
 
 func (c *Config) GetKubernetesClient() (client.Client, error) {
-	err := schemeBuilder.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
+	if c.Mode != standaloneMode {
+		err := schemeBuilder.AddToScheme(scheme.Scheme)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return client.New(c.ClusterConfig, client.Options{
 		Scheme: scheme.Scheme,
 	})
+}
+
+func (c *Config) IsStandaloneMode() bool {
+	return c.Mode == standaloneMode
+}
+
+func (c *Config) GetRestConfig() *rest.Config {
+	return c.ClusterConfig
 }
 
 func Load(logger logr.Logger, args []string) (*Config, error) {
@@ -257,6 +412,9 @@ func Load(logger logr.Logger, args []string) (*Config, error) {
 
 	err = LoadFromCLI(cfg, flagSet)
 	if err != nil {
+		return nil, err
+	}
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -290,6 +448,11 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	} else if changed {
 		target.ListenAddr = listenAddr
 	}
+	if healthListenAddr, changed, err := getHealthListenAddr(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.HealthListenAddr = healthListenAddr
+	}
 	if heartbeatInterval, changed, err := getHeartbeatInterval(flagSet); err != nil {
 		return err
 	} else if changed {
@@ -300,17 +463,80 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	} else if changed {
 		target.Name = name
 	}
+	if mode, changed, err := getMode(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.Mode = mode
+	}
 	return nil
 }
 
 func LoadFromFile(cfg *Config, configFile string) error {
-	yamlFile, err := os.ReadFile(configFile)
-	if err != nil {
-		return err
+	yamlFile, readErr := os.ReadFile(configFile)
+	if readErr != nil {
+		return readErr
 	}
 	envExpandedYaml := []byte(os.ExpandEnv(string(yamlFile)))
-	if err = yaml.Unmarshal(envExpandedYaml, cfg); err != nil {
+	if err := validateNoDuplicateStandaloneConfigKeys(envExpandedYaml); err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(envExpandedYaml, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
+	}
+	return nil
+}
+
+func validateNoDuplicateStandaloneConfigKeys(data []byte) error {
+	var root yamlv3.Node
+	if err := yamlv3.Unmarshal(data, &root); err != nil {
+		return fmt.Errorf("error parsing YAML: %w", err)
+	}
+	if len(root.Content) == 0 {
+		return nil
+	}
+	standalone := mappingValue(root.Content[0], "standalone")
+	if standalone == nil {
+		return nil
+	}
+	agents := mappingValue(standalone, "agents")
+	if agents == nil || agents.Kind != yamlv3.SequenceNode {
+		return nil
+	}
+	for i, agent := range agents.Content {
+		configs := mappingValue(agent, "config")
+		if configs == nil || configs.Kind != yamlv3.MappingNode {
+			continue
+		}
+		agentName := fmt.Sprintf("%d", i)
+		if workloadRef := mappingValue(agent, "workloadRef"); workloadRef != nil {
+			name := mappingValue(workloadRef, "name")
+			if name != nil && name.Kind == yamlv3.ScalarNode && name.Value != "" {
+				agentName = name.Value
+			}
+		}
+		seen := map[string]int{}
+		for j := 0; j < len(configs.Content); j += 2 {
+			key := configs.Content[j]
+			if key.Kind != yamlv3.ScalarNode {
+				continue
+			}
+			if firstLine, ok := seen[key.Value]; ok {
+				return fmt.Errorf("standalone agent %q config key %q is duplicated at line %d; first defined at line %d", agentName, key.Value, key.Line, firstLine)
+			}
+			seen[key.Value] = key.Line
+		}
+	}
+	return nil
+}
+
+func mappingValue(node *yamlv3.Node, key string) *yamlv3.Node {
+	if node == nil || node.Kind != yamlv3.MappingNode {
+		return nil
+	}
+	for i := 0; i < len(node.Content); i += 2 {
+		if node.Content[i].Kind == yamlv3.ScalarNode && node.Content[i].Value == key {
+			return node.Content[i+1]
+		}
 	}
 	return nil
 }
