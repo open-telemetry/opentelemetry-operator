@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: target-allocator
+  labels:
+    app.kubernetes.io/name: target-allocator
+    app.kubernetes.io/part-of: opentelemetry-target-allocator
+    app.kubernetes.io/component: target-allocator
+data:
+  targetallocator.yaml: |
+    allocation_strategy: consistent-hashing
+    filter_strategy: relabel-config
+    prometheus_cr:
+      enabled: true
+      scrape_interval: 30s
+      service_monitor_selector: {}
+      pod_monitor_selector: {}
+    config:
+      scrape_configs: []
