@@ -22,6 +22,7 @@ type Config struct {
 	OperatorNamespace   string
 	KubernetesClient    client.Client
 	KubernetesClientSet *kubernetes.Clientset
+	Scheme              *runtime.Scheme
 }
 
 func NewConfig(scheme *runtime.Scheme) (Config, error) {
@@ -60,5 +61,6 @@ func NewConfig(scheme *runtime.Scheme) (Config, error) {
 		KubernetesClientSet: clientset,
 		OperatorName:        operatorName,
 		OperatorNamespace:   operatorNamespace,
+		Scheme:              scheme,
 	}, nil
 }

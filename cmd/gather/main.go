@@ -17,6 +17,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
@@ -42,6 +43,7 @@ func init() {
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(operatorsv1.AddToScheme(scheme))
 	utilruntime.Must(operatorsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 }
 
 func main() {
@@ -64,11 +66,19 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	err = cluster.GetCRDs()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	err = cluster.GetOpenTelemetryCollectors()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	err = cluster.GetTargetAllocators()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cluster.GetOpAMPBridges()
 	if err != nil {
 		log.Fatalln(err)
 	}

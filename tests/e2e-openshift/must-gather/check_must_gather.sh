@@ -9,38 +9,42 @@ oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/op
 # Define required files and directories
 REQUIRED_ITEMS=(
   event-filter.html
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-headless.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/targetallocator-stateful.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/deployment-stateful-targetallocator.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-monitoring.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-targetallocator.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-targetallocator.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-collector-*.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-targetallocator.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/statefulset-stateful-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/opentelemetrycollector-stateful.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/serviceaccount-stateful-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/opentelemetrycollector-gather.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector-monitoring.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/configmap-gather-collector-*.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/serviceaccount-gather-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector-headless.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/deployment-gather-collector.yaml
-  *-must-gather-sha256-*/chainsaw-must-gather/instrumentation-nodejs.yaml
-  *-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
-  *-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
+  # stateful collector and its owned resources
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/opentelemetry.io/opentelemetrycollectors/stateful.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/opentelemetry.io/targetallocators/stateful.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/apps/statefulsets/stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/apps/deployments/stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/stateful-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/stateful-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/configmaps/stateful-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/configmaps/stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/serviceaccounts/stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/policy/poddisruptionbudgets/stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/policy/poddisruptionbudgets/stateful-collector.yaml
+  # gather collector and its owned resources
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/opentelemetry.io/opentelemetrycollectors/gather.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/apps/deployments/gather-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/gather-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/gather-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/services/gather-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/configmaps/gather-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/serviceaccounts/gather-collector.yaml
+  # Instrumentation
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/opentelemetry.io/instrumentations/nodejs.yaml
+  # Operator deployment and logs
+  *-must-gather-sha256-*/namespaces/$otelnamespace/apps/deployments/opentelemetry-operator-controller-manager.yaml
+  *-must-gather-sha256-*/namespaces/$otelnamespace/pods/opentelemetry-operator-controller-manager-*/manager/logs/current.log
   timestamp
 )
 
 # Define optional OLM-related items (only present when operator is deployed via OLM)
 OPTIONAL_ITEMS=(
-  *-must-gather-sha256-*/olm/*opentelemetry-operator*.yaml
-  *-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-v*.yaml
-  *-must-gather-sha256-*/olm/installplan-install-*.yaml
-  *-must-gather-sha256-*/olm/subscription-opentelemetry-*.yaml
+  *-must-gather-sha256-*/cluster-scoped-resources/operators.coreos.com/operators/*opentelemetry-operator*.yaml
+  *-must-gather-sha256-*/namespaces/$otelnamespace/operators.coreos.com/clusterserviceversions/opentelemetry-operator-v*.yaml
+  *-must-gather-sha256-*/namespaces/$otelnamespace/operators.coreos.com/installplans/install-*.yaml
+  *-must-gather-sha256-*/namespaces/$otelnamespace/operators.coreos.com/subscriptions/opentelemetry-*.yaml
 )
 
 # Verify each required item
