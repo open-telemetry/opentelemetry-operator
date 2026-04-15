@@ -379,7 +379,11 @@ func (c *Cluster) processPodsByInstance(owner any) error {
 	}
 
 	for i := range pods.Items {
-		writeToFile(c.config.CollectionDir, &pods.Items[i], c.config.Scheme)
+		pod := &pods.Items[i]
+		writeToFile(c.config.CollectionDir, pod, c.config.Scheme)
+		for _, container := range pod.Spec.Containers {
+			c.getPodLogs(pod.Name, pod.Namespace, container.Name)
+		}
 	}
 	return nil
 }
