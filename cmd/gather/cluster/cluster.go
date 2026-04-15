@@ -87,7 +87,6 @@ func (c *Cluster) GetOperatorLogs() error {
 	labelSelector := labels.Set(deployment.Spec.Selector.MatchLabels).AsSelectorPreValidated()
 	operatorPods := corev1.PodList{}
 	err = c.config.KubernetesClient.List(context.TODO(), &operatorPods, &client.ListOptions{
-		Limit:         1,
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -98,9 +97,11 @@ func (c *Cluster) GetOperatorLogs() error {
 		return errors.New("no operator pods found")
 	}
 
-	pod := operatorPods.Items[0]
-	writeToFile(c.config.CollectionDir, &pod, c.config.Scheme)
-	c.getPodLogs(pod.Name, pod.Namespace, "manager")
+	for i := range operatorPods.Items {
+		pod := &operatorPods.Items[i]
+		writeToFile(c.config.CollectionDir, pod, c.config.Scheme)
+		c.getPodLogs(pod.Name, pod.Namespace, "manager")
+	}
 	return nil
 }
 
