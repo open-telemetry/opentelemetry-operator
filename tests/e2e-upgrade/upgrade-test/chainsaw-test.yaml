@@ -12,12 +12,60 @@ spec:
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
+  - name: step-01-pre-deploy-state
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          echo "=== PRE-DEPLOY STATE $(date) ==="
+          kubectl get pods -n opentelemetry-operator-system -o wide
+          kubectl get endpointslices -n opentelemetry-operator-system -o wide
+
+          docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443 || echo "no DNAT rules for 9443"
+
+          echo "caBundle length (CRD):"
+          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}' | wc -c
+          echo "caBundle length (MutatingWebhookConfig):"
+          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o jsonpath='{.webhooks[0].clientConfig.caBundle}' | wc -c
   - name: step-01
     try:
     - script:
         timeout: 5m
         content: |
           make -C ../../../ deploy
+          # Wait until kube-proxy rewrites iptables DNAT to the new pod.
+          # kubectl rollout status returns before this happens, causing the conversion
+          # webhook call from the API server to route to the terminating old pod.
+          NEW_POD_IP=$(kubectl get pods -n opentelemetry-operator-system --field-selector=status.phase=Running --no-headers -o wide | grep -v Terminating | awk '{print $6}' | head -1)
+          echo "waiting for iptables DNAT to point to new pod ($NEW_POD_IP)..."
+          DEADLINE=$(($(date +%s) + 60))
+          ATTEMPTS=0
+          until docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443 | grep -q "$NEW_POD_IP"; do
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "iptables not updated after 60s ($ATTEMPTS retries)"
+              exit 1
+            fi
+            ATTEMPTS=$((ATTEMPTS + 1))
+            echo "attempt $ATTEMPTS: iptables DNAT for 9443:"
+            docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443
+            sleep 1
+          done
+          echo "iptables updated to new pod (retries: $ATTEMPTS)"
+  - name: step-01-post-deploy-state
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          echo "=== POST-DEPLOY STATE $(date) ==="
+          kubectl get pods -n opentelemetry-operator-system -o wide
+          kubectl get endpointslices -n opentelemetry-operator-system -o wide
+
+          docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443 || echo "no DNAT rules for 9443"
+          
+          echo "caBundle length (CRD):"
+          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}' | wc -c
+          echo "caBundle length (MutatingWebhookConfig):"
+          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o jsonpath='{.webhooks[0].clientConfig.caBundle}' | wc -c
   - name: step-02
     try:
     - apply:
