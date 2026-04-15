@@ -33,6 +33,9 @@ REQUIRED_ITEMS=(
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/core/serviceaccounts/gather-collector.yaml
   # Instrumentation
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/opentelemetry.io/instrumentations/nodejs.yaml
+  # Collector pod logs
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/pods/gather-collector-*/otc-container/logs/current.log
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/pods/stateful-collector-*/otc-container/logs/current.log
   # Operator deployment and logs
   *-must-gather-sha256-*/namespaces/$otelnamespace/apps/deployments/opentelemetry-operator-controller-manager.yaml
   *-must-gather-sha256-*/namespaces/$otelnamespace/pods/opentelemetry-operator-controller-manager-*/manager/logs/current.log
