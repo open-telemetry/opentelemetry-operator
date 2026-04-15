@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -43,15 +42,65 @@ func logOutputPath(collectionDir, namespace, podName, container string) string {
 	return filepath.Join(collectionDir, "namespaces", namespace, "pods", podName, container, container, "logs", "current.log")
 }
 
-// pluralFor returns the lowercase plural resource name for a given Kind.
-// It appends "es" when the kind already ends in "s" (e.g. Ingress → ingresses)
-// and "s" otherwise (e.g. Deployment → deployments).
+// kindToPlural maps each Kind collected by the gather tool to its correct
+// Kubernetes REST plural. Kubernetes pluralization is irregular (e.g. Ingress →
+// ingresses, NetworkPolicy → networkpolicies), so a lookup table is safer than
+// a naive string-suffix heuristic. log.Fatalf on unknown kinds makes omissions
+// visible immediately during development rather than silently writing to a wrong
+// path that omc cannot find.
+var kindToPlural = map[string]string{
+	// core (v1)
+	"ConfigMap":             "configmaps",
+	"PersistentVolume":      "persistentvolumes",
+	"PersistentVolumeClaim": "persistentvolumeclaims",
+	"Pod":                   "pods",
+	"Service":               "services",
+	"ServiceAccount":        "serviceaccounts",
+	// apps
+	"DaemonSet":   "daemonsets",
+	"Deployment":  "deployments",
+	"StatefulSet": "statefulsets",
+	// autoscaling
+	"HorizontalPodAutoscaler": "horizontalpodautoscalers",
+	// networking.k8s.io
+	"Ingress":       "ingresses",
+	"NetworkPolicy": "networkpolicies",
+	// policy
+	"PodDisruptionBudget": "poddisruptionbudgets",
+	// rbac.authorization.k8s.io
+	"ClusterRole":        "clusterroles",
+	"ClusterRoleBinding": "clusterrolebindings",
+	"Role":               "roles",
+	"RoleBinding":        "rolebindings",
+	// apiextensions.k8s.io
+	"CustomResourceDefinition": "customresourcedefinitions",
+	// operators.coreos.com / OLM
+	"ClusterServiceVersion": "clusterserviceversions",
+	"InstallPlan":           "installplans",
+	"Operator":              "operators",
+	"OperatorGroup":         "operatorgroups",
+	"Subscription":          "subscriptions",
+	// monitoring.coreos.com
+	"PodMonitor":     "podmonitors",
+	"ServiceMonitor": "servicemonitors",
+	// route.openshift.io
+	"Route": "routes",
+	// opentelemetry.io
+	"Instrumentation":        "instrumentations",
+	"OpAMPBridge":            "opampbridges",
+	"OpenTelemetryCollector": "opentelemetrycollectors",
+	"TargetAllocator":        "targetallocators",
+}
+
+// pluralFor returns the lowercase plural resource name for the given Kind.
+// It panics for unknown kinds so that omissions are caught immediately during
+// development rather than silently producing paths that omc cannot parse.
 func pluralFor(kind string) string {
-	lower := strings.ToLower(kind)
-	if strings.HasSuffix(lower, "s") {
-		return lower + "es"
+	if plural, ok := kindToPlural[kind]; ok {
+		return plural
 	}
-	return lower + "s"
+	log.Fatalf("pluralFor: unknown Kind %q — add it to kindToPlural in write.go", kind)
+	return ""
 }
 
 // writeToFile serializes obj to a YAML file at the omc-compatible path under collectionDir.

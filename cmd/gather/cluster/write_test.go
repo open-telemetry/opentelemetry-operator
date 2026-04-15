@@ -15,6 +15,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestPluralFor(t *testing.T) {
+	tests := []struct {
+		kind string
+		want string
+	}{
+		// regular plurals
+		{"Deployment", "deployments"},
+		{"Pod", "pods"},
+		{"Service", "services"},
+		{"ConfigMap", "configmaps"},
+		// irregular — naive "+es" heuristic gets these wrong
+		{"Ingress", "ingresses"},
+		{"NetworkPolicy", "networkpolicies"},
+		// opentelemetry.io kinds
+		{"OpenTelemetryCollector", "opentelemetrycollectors"},
+		{"OpAMPBridge", "opampbridges"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.kind, func(t *testing.T) {
+			assert.Equal(t, tt.want, pluralFor(tt.kind))
+		})
+	}
+}
+
 func TestResourceDirNamespaced(t *testing.T) {
 	collectionDir := t.TempDir()
 	got := resourceDir(collectionDir, "test-ns", "opentelemetry.io", "opentelemetrycollectors")
