@@ -7,7 +7,6 @@ import (
 	"context"
 	"hash"
 	"hash/fnv"
-
 	"slices"
 	"sync"
 	"time"
@@ -233,11 +232,10 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			groupSlice = append(groupSlice, l)
 		})
 
-		// Pointer alias: reuse groupBuilder for per-target merged labels.
-		targetBuilder := &groupBuilder
-
 		for _, t := range tg.Targets {
 			count++
+			// Pointer alias: reuse groupBuilder for per-target merged labels.
+			targetBuilder := &groupBuilder
 			targetBuilder.Reset()
 
 			// Sort target label names (typically very few: __address__, __metrics_path__).
