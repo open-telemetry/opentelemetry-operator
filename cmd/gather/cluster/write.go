@@ -37,9 +37,10 @@ func resourceDir(collectionDir, namespace, group, plural string) string {
 }
 
 // logOutputPath returns the omc-compatible path for a container log file.
-// The format is: <collectionDir>/namespaces/<namespace>/pods/<podName>/<container>/logs/current.log.
+// omc expects the container directory repeated twice:
+// <collectionDir>/namespaces/<namespace>/pods/<podName>/<container>/<container>/logs/current.log.
 func logOutputPath(collectionDir, namespace, podName, container string) string {
-	return filepath.Join(collectionDir, "namespaces", namespace, "pods", podName, container, "logs", "current.log")
+	return filepath.Join(collectionDir, "namespaces", namespace, "pods", podName, container, container, "logs", "current.log")
 }
 
 // pluralFor returns the lowercase plural resource name for a given Kind.
@@ -89,8 +90,43 @@ func writeToFile(collectionDir string, obj client.Object, scheme *runtime.Scheme
 	}
 }
 
+// writePodYAMLToLogDir writes the pod YAML into the log directory at
+// pods/<podName>/<podName>.yaml. omc's "logs" command discovers pods from
+// this path when the aggregated core/pods.yaml is absent.
+func writePodYAMLToLogDir(collectionDir string, pod *corev1.Pod, scheme *runtime.Scheme) {
+	outDir := filepath.Join(collectionDir, "namespaces", pod.Namespace, "pods", pod.Name)
+	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+		log.Fatalf("Failed to create directory %s: %v", outDir, err)
+	}
+
+	path := filepath.Join(outDir, fmt.Sprintf("%s.yaml", pod.Name))
+	outputFile, err := os.Create(path)
+	if err != nil {
+		log.Fatalf("Failed to create file %s: %v", path, err)
+	}
+	defer outputFile.Close()
+
+	gvks, _, err := scheme.ObjectKinds(pod)
+	if err != nil {
+		log.Fatalf("Failed to get GVK for pod %s: %v", pod.Name, err)
+	}
+
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(pod)
+	if err != nil {
+		log.Fatalf("Error converting pod to unstructured: %v", err)
+	}
+
+	unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
+	unstructuredObj.SetGroupVersionKind(gvks[0])
+
+	serializer := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
+	if err = serializer.Encode(unstructuredObj, outputFile); err != nil {
+		log.Fatalf("Error encoding pod to YAML: %v", err)
+	}
+}
+
 // writeLogToFile streams pod container logs to the omc-compatible path under collectionDir.
-// The format is: namespaces/<namespace>/pods/<podName>/<container>/logs/current.log.
+// The format is: namespaces/<namespace>/pods/<podName>/<container>/<container>/logs/current.log.
 func writeLogToFile(collectionDir, namespace, podName, container string, p cgocorev1.PodInterface) {
 	req := p.GetLogs(podName, &corev1.PodLogOptions{Container: container})
 	podLogs, err := req.Stream(context.Background())
