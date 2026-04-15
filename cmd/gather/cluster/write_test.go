@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,6 +83,29 @@ func TestWriteToFileGVK(t *testing.T) {
 
 func TestLogOutputPath(t *testing.T) {
 	got := logOutputPath("/collection", "my-ns", "my-pod", "manager")
-	want := "/collection/namespaces/my-ns/pods/my-pod/manager/logs/current.log"
+	want := "/collection/namespaces/my-ns/pods/my-pod/manager/manager/logs/current.log"
 	assert.Equal(t, want, got)
+}
+
+func TestWritePodYAMLToLogDir(t *testing.T) {
+	collectionDir := t.TempDir()
+	scheme := buildTestScheme()
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-pod",
+			Namespace: "test-ns",
+		},
+	}
+
+	writePodYAMLToLogDir(collectionDir, pod, scheme)
+
+	// omc logs looks for pod YAML at pods/<podName>/<podName>.yaml
+	expectedPath := filepath.Join(collectionDir, "namespaces", "test-ns", "pods", "my-pod", "my-pod.yaml")
+	assert.FileExists(t, expectedPath)
+
+	content, err := os.ReadFile(expectedPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "apiVersion: v1")
+	assert.Contains(t, string(content), "kind: Pod")
 }

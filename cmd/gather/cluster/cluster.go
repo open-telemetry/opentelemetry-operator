@@ -100,6 +100,7 @@ func (c *Cluster) GetOperatorLogs() error {
 	for i := range operatorPods.Items {
 		pod := &operatorPods.Items[i]
 		writeToFile(c.config.CollectionDir, pod, c.config.Scheme)
+		writePodYAMLToLogDir(c.config.CollectionDir, pod, c.config.Scheme)
 		c.getPodLogs(pod.Name, pod.Namespace, "manager")
 	}
 	return nil
@@ -381,6 +382,7 @@ func (c *Cluster) processPodsByInstance(owner any) error {
 	for i := range pods.Items {
 		pod := &pods.Items[i]
 		writeToFile(c.config.CollectionDir, pod, c.config.Scheme)
+		writePodYAMLToLogDir(c.config.CollectionDir, pod, c.config.Scheme)
 		for _, container := range pod.Spec.Containers {
 			c.getPodLogs(pod.Name, pod.Namespace, container.Name)
 		}
