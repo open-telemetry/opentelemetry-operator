@@ -4,7 +4,7 @@
 MUST_GATHER_DIR=$(mktemp -d)
 
 # Run the must-gather script
-oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather:latest -- /usr/bin/must-gather --operator-namespace $otelnamespace
+oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather:latest -- /usr/bin/gather --operator-namespace $otelnamespace
 
 # Define required files and directories
 REQUIRED_ITEMS=(
