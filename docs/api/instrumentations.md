@@ -91,6 +91,15 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>autoUpdate</b></td>
+        <td>boolean</td>
+        <td>
+          AutoUpdate determines whether the operator should automatically update
+the instrumentation images when the operator is upgraded.
+Disabled by default.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecdefaults">defaults</a></b></td>
         <td>object</td>
         <td>

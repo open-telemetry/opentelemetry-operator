@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-a
+spec:
+  selector:
+    matchLabels:
+      app: app-a
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: app-a
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "java-inst-a"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-b
+spec:
+  selector:
+    matchLabels:
+      app: app-b
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: app-b
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "java-inst-b"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
