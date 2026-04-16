@@ -7,14 +7,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	colfg "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestServicePorts(t *testing.T) {
@@ -38,13 +36,10 @@ func TestServicePorts(t *testing.T) {
 
 func TestServicePortsWithTargetAllocatorMTLS(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
+	targetAllocator.Spec.Mtls = &v1alpha1.TargetAllocatorMTLS{Enabled: true}
 	cfg := config.Config{
 		CertManagerAvailability: certmanager.Available,
 	}
-
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-	require.NoError(t, err)
 
 	params := Params{
 		TargetAllocator: targetAllocator,
