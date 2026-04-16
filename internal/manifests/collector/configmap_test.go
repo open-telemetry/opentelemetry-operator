@@ -8,15 +8,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfg "go.opentelemetry.io/collector/featuregate"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -150,9 +149,6 @@ service:
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err = flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-		require.NoError(t, err)
 
 		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
 		expectedName := naming.ConfigMap("test", hash)
@@ -162,6 +158,7 @@ service:
 		expectedLables["app.kubernetes.io/version"] = "latest"
 
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		param.OtelCol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)
@@ -210,10 +207,7 @@ service:
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err = flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 		param.TargetAllocator = nil
-		require.NoError(t, err)
 
 		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
 		expectedName := naming.ConfigMap("test", hash)
