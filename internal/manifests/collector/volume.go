@@ -15,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
@@ -39,7 +38,10 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 		},
 	}}
 
-	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if otelcol.Spec.TargetAllocator.Enabled &&
+		otelcol.Spec.TargetAllocator.Mtls != nil &&
+		otelcol.Spec.TargetAllocator.Mtls.Enabled &&
+		cfg.CertManagerAvailability == certmanager.Available {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{

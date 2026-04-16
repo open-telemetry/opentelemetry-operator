@@ -179,6 +179,9 @@ func TestTargetAllocator(t *testing.T) {
 								IntVal: 1,
 							},
 						},
+						Mtls: &v1beta1.TargetAllocatorMTLS{
+							Enabled: true,
+						},
 					},
 				},
 			},
@@ -279,6 +282,9 @@ func TestTargetAllocator(t *testing.T) {
 						Metrics: v1beta1.MetricsConfigSpec{
 							EnableMetrics: true,
 						},
+					},
+					Mtls: &v1alpha1.TargetAllocatorMTLS{
+						Enabled: true,
 					},
 				},
 			},

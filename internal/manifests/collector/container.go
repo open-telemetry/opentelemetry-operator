@@ -62,7 +62,10 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			})
 	}
 
-	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if otelcol.Spec.TargetAllocator.Enabled &&
+		otelcol.Spec.TargetAllocator.Mtls != nil &&
+		otelcol.Spec.TargetAllocator.Mtls.Enabled &&
+		cfg.CertManagerAvailability == certmanager.Available {
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.TAClientCertificate(otelcol.Name),

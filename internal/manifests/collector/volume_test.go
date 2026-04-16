@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	colfg "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -17,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
@@ -85,7 +82,7 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 }
 
 func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
-	t.Run("CertManager available and EnableTargetAllocatorMTLS enabled", func(t *testing.T) {
+	t.Run("CertManager available and TargetAllocator mtls enabled", func(t *testing.T) {
 		otelcol := v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-collector",
@@ -95,10 +92,8 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 		otelcol.Spec.TargetAllocator.Enabled = true
-		require.NoError(t, err)
+		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		volumes := Volumes(cfg, otelcol)
 
@@ -116,37 +111,32 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 	t.Run("CertManager not available", func(t *testing.T) {
 		otelcol := v1beta1.OpenTelemetryCollector{}
 		cfg := config.Config{
-			CertManagerAvailability: certmanager.Available,
+			CertManagerAvailability: certmanager.NotAvailable,
 		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-		require.NoError(t, err)
+		otelcol.Spec.TargetAllocator.Enabled = true
+		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		volumes := Volumes(cfg, otelcol)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
 	})
 
-	t.Run("EnableTargetAllocatorMTLS disabled", func(t *testing.T) {
+	t.Run("TargetAllocator mtls disabled", func(t *testing.T) {
 		otelcol := v1beta1.OpenTelemetryCollector{}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
+		otelcol.Spec.TargetAllocator.Enabled = true
 
 		volumes := Volumes(cfg, otelcol)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
 	})
 
-	t.Run("Feature gate enabled but TargetAllocator disabled", func(t *testing.T) {
+	t.Run("TargetAllocator mtls enabled but TargetAllocator disabled", func(t *testing.T) {
 		otelcol := v1beta1.OpenTelemetryCollector{}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-
-		require.NoError(t, err)
+		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		volumes := Volumes(cfg, otelcol)
 		unexpectedVolume := corev1.Volume{

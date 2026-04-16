@@ -888,11 +888,8 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 		CertManagerAvailability: certmanager.Available,
 	}
 
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 	otelcol.Spec.TargetAllocator.Enabled = true
-
-	require.NoError(t, err)
+	otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
@@ -904,17 +901,13 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	})
 }
 
-func TestContainerWithFeaturegateEnabledButTADisabled(t *testing.T) {
+func TestContainerWithMTLSEnabledButTADisabled(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
 	cfg := config.Config{
 		CertManagerAvailability: certmanager.Available,
 	}
-
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-
-	require.NoError(t, err)
+	otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
