@@ -11,20 +11,13 @@ in terms of RBAC rules, labels, probe configuration, and resource structure.
 
 ## Quick Start
 
-1. Apply directly with default configuration (Prometheus CR discovery enabled):
-
-```bash
-kubectl apply -k github.com/open-telemetry/opentelemetry-operator/config/target-allocator
-```
-
-2. Or create a kustomize overlay to customise:
+Create a kustomize overlay that sets the image and namespace:
 
 ```yaml
 # my-overlay/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: my-namespace
-namePrefix: my-
+namespace: monitoring
 
 resources:
   - github.com/open-telemetry/opentelemetry-operator/config/target-allocator
@@ -32,7 +25,7 @@ resources:
 images:
   - name: target-allocator
     newName: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-    newTag: v0.120.0
+    newTag: v0.148.0   # set to desired version
 
 patches:
   - target:
@@ -41,30 +34,10 @@ patches:
     patch: |
       - op: replace
         path: /subjects/0/namespace
-        value: my-namespace
-  - target:
-      kind: ConfigMap
-      name: target-allocator
-    patch: |
-      - op: replace
-        path: /data/targetallocator.yaml
-        value: |
-          allocation_strategy: consistent-hashing
-          filter_strategy: relabel-config
-          collector_selector:
-            matchLabels:
-              app: my-collectors
-          prometheus_cr:
-            enabled: true
-            scrape_interval: 30s
-          config:
-            scrape_configs:
-            - job_name: my-app
-              static_configs:
-              - targets: ["my-app:8080"]
+        value: monitoring
 ```
 
-3. Apply:
+Apply:
 ```bash
 kubectl apply -k my-overlay/
 ```
@@ -77,7 +50,7 @@ kubectl apply -k my-overlay/
 | ClusterRole | `target-allocator` | Prometheus Operator CRDs, core resource discovery |
 | ClusterRoleBinding | `target-allocator` | Binds the ClusterRole to the ServiceAccount |
 | ConfigMap | `target-allocator` | Default TA configuration (Prometheus CR discovery) |
-| Deployment | `target-allocator` | Runs the TA (1 replica, latest image) |
+| Deployment | `target-allocator` | Runs the TA (1 replica, image set via overlay) |
 | Service | `target-allocator` | Exposes port 80 → 8080 for collectors |
 
 ## Default Configuration
