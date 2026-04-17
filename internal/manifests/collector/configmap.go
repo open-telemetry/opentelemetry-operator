@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/internal/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -27,7 +28,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	// This ensures collectors get updated TLS settings when the operator restarts
 	// after a cluster TLS profile change, without requiring CR updates.
 	if params.Config.Internal.OperandTLSProfile != nil {
-		_, err := otelCol.Spec.Config.ApplyDefaults(params.Log, components.WithTLSProfile(params.Config.Internal.OperandTLSProfile))
+		_, err := apihelpers.ApplyDefaults(&otelCol.Spec.Config, params.Log, components.WithTLSProfile(params.Config.Internal.OperandTLSProfile))
 		if err != nil {
 			params.Log.Error(err, "failed to apply TLS defaults to collector config")
 			return nil, err

@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/internal/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -124,7 +125,7 @@ func createSubdomainIngressRules(otelcol, hostname string, ports []corev1.Servic
 }
 
 func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
-	ports, err := otelcol.Spec.Config.GetReceiverPorts(logger)
+	ports, err := apihelpers.GetReceiverPorts(&otelcol.Spec.Config, logger)
 	if err != nil {
 		logger.Error(err, "couldn't build the ingress for this instance")
 		return nil, err
