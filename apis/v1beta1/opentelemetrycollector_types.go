@@ -237,6 +237,16 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorTargetReloadInterval *metav1.Duration `json:"collectorTargetReloadInterval,omitempty"`
+
+	// Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
+	// +optional
+	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
+}
+
+type TargetAllocatorMTLS struct {
+	// Enabled indicates whether to enable mTLS between the target allocator and the collector.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
