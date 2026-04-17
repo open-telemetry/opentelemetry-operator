@@ -4,246 +4,132 @@
 package cluster
 
 import (
-	"context"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-type MockObject struct {
-	mock.Mock
+func TestPluralFor(t *testing.T) {
+	tests := []struct {
+		kind string
+		want string
+	}{
+		// regular plurals
+		{"Deployment", "deployments"},
+		{"Pod", "pods"},
+		{"Service", "services"},
+		{"ConfigMap", "configmaps"},
+		// irregular — naive "+es" heuristic gets these wrong
+		{"Ingress", "ingresses"},
+		{"NetworkPolicy", "networkpolicies"},
+		// opentelemetry.io kinds
+		{"OpenTelemetryCollector", "opentelemetrycollectors"},
+		{"OpAMPBridge", "opampbridges"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.kind, func(t *testing.T) {
+			assert.Equal(t, tt.want, pluralFor(tt.kind))
+		})
+	}
 }
 
-// Implement all methods required by client.Object and runtime.Object
-
-// GetObjectKind mocks the GetObjectKind method.
-func (m *MockObject) GetObjectKind() schema.ObjectKind {
-	args := m.Called()
-	return args.Get(0).(schema.ObjectKind)
+func TestResourceDirNamespaced(t *testing.T) {
+	collectionDir := t.TempDir()
+	got := resourceDir(collectionDir, "test-ns", "opentelemetry.io", "opentelemetrycollectors")
+	want := filepath.Join(collectionDir, "namespaces", "test-ns", "opentelemetry.io", "opentelemetrycollectors")
+	assert.Equal(t, want, got)
 }
 
-// GetName mocks the GetName method.
-func (m *MockObject) GetName() string {
-	args := m.Called()
-	return args.String(0)
+func TestResourceDirCoreGroup(t *testing.T) {
+	collectionDir := t.TempDir()
+	// Empty API group (core resources like Service, ConfigMap) must map to "core" in the path.
+	got := resourceDir(collectionDir, "test-ns", "", "services")
+	want := filepath.Join(collectionDir, "namespaces", "test-ns", "core", "services")
+	assert.Equal(t, want, got)
 }
 
-// SetName mocks the SetName method.
-func (m *MockObject) SetName(name string) {
-	m.Called(name)
+func TestResourceDirClusterScoped(t *testing.T) {
+	collectionDir := t.TempDir()
+	got := resourceDir(collectionDir, "", "apiextensions.k8s.io", "customresourcedefinitions")
+	want := filepath.Join(collectionDir, "cluster-scoped-resources", "apiextensions.k8s.io", "customresourcedefinitions")
+	assert.Equal(t, want, got)
 }
 
-// GetNamespace mocks the GetNamespace method.
-func (m *MockObject) GetNamespace() string {
-	args := m.Called()
-	return args.String(0)
-}
+func TestWriteToFileNaming(t *testing.T) {
+	collectionDir := t.TempDir()
+	scheme := buildTestScheme()
 
-// SetNamespace mocks the SetNamespace method.
-func (m *MockObject) SetNamespace(namespace string) {
-	m.Called(namespace)
-}
-
-// GetAnnotations mocks the GetAnnotations method.
-func (m *MockObject) GetAnnotations() map[string]string {
-	args := m.Called()
-	return args.Get(0).(map[string]string)
-}
-
-// SetAnnotations mocks the SetAnnotations method.
-func (m *MockObject) SetAnnotations(annotations map[string]string) {
-	m.Called(annotations)
-}
-
-// GetCreationTimestamp mocks the GetCreationTimestamp method.
-func (m *MockObject) GetCreationTimestamp() metav1.Time {
-	args := m.Called()
-	return args.Get(0).(metav1.Time)
-}
-
-// SetCreationTimestamp mocks the SetCreationTimestamp method.
-func (m *MockObject) SetCreationTimestamp(timestamp metav1.Time) {
-	m.Called(timestamp)
-}
-
-// GetDeletionGracePeriodSeconds mocks the GetDeletionGracePeriodSeconds method.
-func (m *MockObject) GetDeletionGracePeriodSeconds() *int64 {
-	args := m.Called()
-	return args.Get(0).(*int64)
-}
-
-// GetDeletionTimestamp mocks the GetDeletionTimestamp method.
-func (m *MockObject) GetDeletionTimestamp() *metav1.Time {
-	args := m.Called()
-	return args.Get(0).(*metav1.Time)
-}
-
-// GetLabels mocks the GetLabels method.
-func (m *MockObject) GetLabels() map[string]string {
-	args := m.Called()
-	return args.Get(0).(map[string]string)
-}
-
-// SetLabels mocks the SetLabels method.
-func (m *MockObject) SetLabels(labels map[string]string) {
-	m.Called(labels)
-}
-
-// GetFinalizers mocks the GetFinalizers method.
-func (m *MockObject) GetFinalizers() []string {
-	args := m.Called()
-	return args.Get(0).([]string)
-}
-
-// SetFinalizers mocks the SetFinalizers method.
-func (m *MockObject) SetFinalizers(finalizers []string) {
-	m.Called(finalizers)
-}
-
-// GetGenerateName mocks the GetGenerateName method.
-func (m *MockObject) GetGenerateName() string {
-	args := m.Called()
-	return args.String(0)
-}
-
-// SetGenerateName mocks the SetGenerateName method.
-func (m *MockObject) SetGenerateName(name string) {
-	m.Called(name)
-}
-
-// DeepCopyObject mocks the DeepCopyObject method.
-func (m *MockObject) DeepCopyObject() runtime.Object {
-	args := m.Called()
-	return args.Get(0).(runtime.Object)
-}
-
-func (m *MockObject) GetManagedFields() []metav1.ManagedFieldsEntry {
-	args := m.Called()
-	return args.Get(0).([]metav1.ManagedFieldsEntry)
-}
-
-func (m *MockObject) GetOwnerReferences() []metav1.OwnerReference {
-	args := m.Called()
-	return args.Get(0).([]metav1.OwnerReference)
-}
-
-func (m *MockObject) GetGeneration() int64 {
-	args := m.Called()
-	return args.Get(0).(int64)
-}
-
-func (m *MockObject) GetResourceVersion() string {
-	args := m.Called()
-	return args.String(0)
-}
-
-func (m *MockObject) GetSelfLink() string {
-	args := m.Called()
-	return args.String(0)
-}
-
-type MockPodInterface struct {
-	mock.Mock
-}
-
-func (m *MockPodInterface) GetLogs(podName string, options *corev1.PodLogOptions) *rest.Request {
-	args := m.Called(podName, options)
-	return args.Get(0).(*rest.Request)
-}
-
-type MockRequest struct {
-	mock.Mock
-}
-
-func (m *MockRequest) Stream(ctx context.Context) (io.ReadCloser, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(io.ReadCloser), args.Error(1)
-}
-
-func TestCreateOTELFolder(t *testing.T) {
-	collectionDir := "/tmp/test-dir"
-	otelCol := &v1beta1.OpenTelemetryCollector{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test-namespace",
-			Name:      "test-otel",
+			Name:      "my-deployment",
+			Namespace: "test-ns",
 		},
 	}
 
-	outputDir, err := createOTELFolder(collectionDir, otelCol.ObjectMeta)
+	writeToFile(collectionDir, deployment, scheme)
 
-	expectedDir := filepath.Join(collectionDir, "namespaces", otelCol.Namespace, otelCol.Name)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedDir, outputDir)
+	// New naming: <name>.yaml, not <kind>-<name>.yaml
+	expectedPath := filepath.Join(collectionDir, "namespaces", "test-ns", "apps", "deployments", "my-deployment.yaml")
+	assert.FileExists(t, expectedPath)
 
-	// Clean up after the test
-	os.RemoveAll(collectionDir)
+	wrongPath := filepath.Join(collectionDir, "namespaces", "test-ns", "apps", "deployments", "deployment-my-deployment.yaml")
+	assert.NoFileExists(t, wrongPath)
 }
 
-func TestCreateFile(t *testing.T) {
-	outputDir := "/tmp/test-dir"
-	err := os.MkdirAll(outputDir, os.ModePerm)
-	assert.NoError(t, err)
-	defer os.RemoveAll(outputDir)
+func TestWriteToFileGVK(t *testing.T) {
+	collectionDir := t.TempDir()
+	scheme := buildTestScheme()
 
-	mockObj := &MockObject{}
-	mockObj.On("GetObjectKind").Return(schema.EmptyObjectKind)
-	mockObj.On("GetName").Return("test-deployment")
-	mockObj.On("DeepCopyObject").Return(mockObj)
+	// Simulate controller-runtime List behavior: TypeMeta is not set on items.
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-deployment",
+			Namespace: "test-ns",
+		},
+	}
 
-	file, err := createFile(outputDir, mockObj)
-	assert.NoError(t, err)
-	defer file.Close()
+	writeToFile(collectionDir, deployment, scheme)
 
-	expectedPath := filepath.Join(outputDir, "mockobject-test-deployment.yaml")
-	_, err = os.Stat(expectedPath)
-	assert.NoError(t, err)
+	yamlPath := filepath.Join(collectionDir, "namespaces", "test-ns", "apps", "deployments", "my-deployment.yaml")
+	content, err := os.ReadFile(yamlPath)
+	require.NoError(t, err)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "apiVersion: apps/v1")
+	assert.Contains(t, contentStr, "kind: Deployment")
 }
 
-func (m *MockObject) SetUID(uid types.UID) {
-	m.Called(uid)
+func TestLogOutputPath(t *testing.T) {
+	got := logOutputPath("/collection", "my-ns", "my-pod", "manager")
+	want := "/collection/namespaces/my-ns/pods/my-pod/manager/manager/logs/current.log"
+	assert.Equal(t, want, got)
 }
 
-func (m *MockObject) GetUID() types.UID {
-	args := m.Called()
-	return args.Get(0).(types.UID)
-}
+func TestWritePodYAMLToLogDir(t *testing.T) {
+	collectionDir := t.TempDir()
+	scheme := buildTestScheme()
 
-func (m *MockObject) SetDeletionGracePeriodSeconds(seconds *int64) {
-	m.Called(seconds)
-}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-pod",
+			Namespace: "test-ns",
+		},
+	}
 
-func (m *MockObject) SetDeletionTimestamp(timestamp *metav1.Time) {
-	m.Called(timestamp)
-}
+	writePodYAMLToLogDir(collectionDir, pod, scheme)
 
-func (m *MockObject) SetGeneration(generation int64) {
-	m.Called(generation)
-}
+	// omc logs looks for pod YAML at pods/<podName>/<podName>.yaml
+	expectedPath := filepath.Join(collectionDir, "namespaces", "test-ns", "pods", "my-pod", "my-pod.yaml")
+	assert.FileExists(t, expectedPath)
 
-func (m *MockObject) SetManagedFields(fields []metav1.ManagedFieldsEntry) {
-	m.Called(fields)
-}
-
-func (m *MockObject) SetOwnerReferences(references []metav1.OwnerReference) {
-	m.Called(references)
-}
-
-func (m *MockObject) SetResourceVersion(version string) {
-	m.Called(version)
-}
-
-func (m *MockObject) SetSelfLink(selfLink string) {
-	m.Called(selfLink)
+	content, err := os.ReadFile(expectedPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "apiVersion: v1")
+	assert.Contains(t, string(content), "kind: Pod")
 }

@@ -24,7 +24,7 @@ This is the recommended way to do it if you are not using OpenShift.
 If you want to use the image in a running cluster, you need to run the following command:
 
 ```sh
-oc adm must-gather --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather -- /usr/bin/must-gather --operator-namespace opentelemetry-operator-system
+oc adm must-gather --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather -- /usr/bin/gather --operator-namespace opentelemetry-operator-system
 ```
 
 ### Using it as a CLI
