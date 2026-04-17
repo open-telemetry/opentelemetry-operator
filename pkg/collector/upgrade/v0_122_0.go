@@ -5,16 +5,17 @@ package upgrade
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apihelpers"
 )
 
 func upgrade0_122_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
-	tel := otelcol.Spec.Config.Service.GetTelemetry(u.Log)
+	tel := apihelpers.GetServiceTelemetry(&otelcol.Spec.Config.Service, u.Log)
 
 	if tel == nil || tel.Metrics.Address == "" {
 		return otelcol, nil
 	}
 
-	host, port, err := otelcol.Spec.Config.Service.MetricsEndpoint(u.Log)
+	host, port, err := apihelpers.ServiceMetricsEndpoint(&otelcol.Spec.Config.Service, u.Log)
 	if err != nil {
 		return otelcol, err
 	}
@@ -26,7 +27,7 @@ func upgrade0_122_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (
 	// differently from explicitly empty ones. By assigning "", we ensure the configuration
 	// is updated correctly when the resource is persisted.
 	tel.Metrics.Address = ""
-	reader := v1beta1.AddPrometheusMetricsEndpoint(host, port)
+	reader := apihelpers.AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
 
 	otelcol.Spec.Config.Service.Telemetry, err = tel.ToAnyConfig()

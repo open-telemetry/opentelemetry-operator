@@ -8,6 +8,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apihelpers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -16,7 +17,7 @@ import (
 func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1alpha1.TargetAllocator, options ...ta.TAOption) (string, error) {
 	collectorSpec := otelcol.Spec
 	taEnabled := targetAllocator != nil
-	cfgStr, err := collectorSpec.Config.Yaml()
+	cfgStr, err := apihelpers.ConfigYAML(&collectorSpec.Config)
 	if err != nil {
 		return "", err
 	}

@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package apihelpers
 
 import (
 	"context"
@@ -14,6 +14,8 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 const (
@@ -42,7 +44,6 @@ type componentDefinitions struct {
 }
 
 // Metrics hold all gauges for the different metrics related to the CRs
-// +kubebuilder:object:generate=false
 type Metrics struct {
 	modeCounter       metric.Int64UpDownCounter
 	receiversCounter  metric.Int64UpDownCounter
@@ -110,7 +111,7 @@ func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader)
 
 // Init metrics from the first time the operator starts.
 func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
-	list := &OpenTelemetryCollectorList{}
+	list := &v1beta1.OpenTelemetryCollectorList{}
 	if err := cl.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -121,22 +122,22 @@ func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
 	return nil
 }
 
-func (m *Metrics) Create(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Create(ctx context.Context, collector *v1beta1.OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, true)
 	m.updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
-func (m *Metrics) Delete(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Delete(ctx context.Context, collector *v1beta1.OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, false)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
+func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *v1beta1.OpenTelemetryCollector) {
 	m.Delete(ctx, oldCollector)
 	m.Create(ctx, newCollector)
 }
 
-func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *v1beta1.OpenTelemetryCollector, up bool) {
 	inc := 1
 	if !up {
 		inc = -1
@@ -148,7 +149,7 @@ func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collecto
 	))
 }
 
-func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+func (m *Metrics) updateComponentCounters(ctx context.Context, collector *v1beta1.OpenTelemetryCollector, up bool) {
 	components := getComponentsFromConfig(collector.Spec.Config)
 	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
 	moveCounter(ctx, collector, components.exporters, m.exporterCounter, up)
@@ -176,7 +177,7 @@ func extractElements(elements map[string]any) []string {
 	return items
 }
 
-func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
+func getComponentsFromConfig(yamlContent v1beta1.Config) *componentDefinitions {
 	info := &componentDefinitions{
 		receivers: extractElements(yamlContent.Receivers.Object),
 		exporters: extractElements(yamlContent.Exporters.Object),
@@ -198,7 +199,7 @@ func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 }
 
 func moveCounter(
-	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
+	ctx context.Context, collector *v1beta1.OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
 ) {
 	for _, exporter := range types {
 		inc := 1
