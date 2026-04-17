@@ -2297,6 +2297,11 @@ spec:
                 - managed
                 - unmanaged
                 type: string
+              mtls:
+                properties:
+                  enabled:
+                    type: boolean
+                type: object
               networkPolicy:
                 properties:
                   enabled:
