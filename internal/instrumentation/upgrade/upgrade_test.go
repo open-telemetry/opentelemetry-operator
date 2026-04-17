@@ -218,3 +218,77 @@ func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 	assert.NotNil(t, updated.Status.UpgradeBlockedVersions)
 	assert.Contains(t, updated.Status.UpgradeBlockedVersions, "java")
 }
+
+// TestUpgradeClearsStaleBlockedStatus verifies that a previously-blocked instrumentation has its
+// status.upgradeBlockedVersions cleared once the blocking condition no longer applies.
+func TestUpgradeClearsStaleBlockedStatus(t *testing.T) {
+	// Initially block "java:1" so the first reconcile populates status.
+	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{
+		constants.InstrumentationLanguageJava: {
+			"1": "Breaking changes in Java agent require manual migration.",
+		},
+	})
+
+	nsName := strings.ToLower(t.Name())
+	err := k8sClient.Create(t.Context(), &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: nsName,
+		},
+	})
+	require.NoError(t, err)
+
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-inst-stale-blocked",
+			Namespace: nsName,
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			Sampler: v1alpha1.Sampler{
+				Type: v1alpha1.ParentBasedAlwaysOff,
+			},
+		},
+	}
+
+	cfg := config.Config{
+		AutoInstrumentationJavaImage:        "java:1",
+		AutoInstrumentationNodeJSImage:      "nodejs:1",
+		AutoInstrumentationPythonImage:      "python:1",
+		AutoInstrumentationDotNetImage:      "dotnet:1",
+		AutoInstrumentationGoImage:          "go:1",
+		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
+		AutoInstrumentationNginxImage:       "nginx:1",
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetAutoInstrumentation:     true,
+		EnableGoAutoInstrumentation:         true,
+		EnableNginxAutoInstrumentation:      true,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+	}
+	err = webhook.NewInstrumentationWebhook(logr.Discard(), testScheme, cfg).Default(t.Context(), inst)
+	require.NoError(t, err)
+	err = k8sClient.Create(t.Context(), inst)
+	require.NoError(t, err)
+
+	// First reconcile: Java upgrade is blocked, so status should be populated.
+	cfg2 := cfg
+	cfg2.AutoInstrumentationJavaImage = "java:2"
+	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), events.NewFakeRecorder(10), cfg2)
+	require.NoError(t, up.ManagedInstances(t.Context()))
+
+	updated := v1alpha1.Instrumentation{}
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: nsName, Name: "my-inst-stale-blocked"}, &updated)
+	require.NoError(t, err)
+	require.Contains(t, updated.Status.UpgradeBlockedVersions, "java", "status should initially record the Java block")
+
+	// Now remove the block entirely and reconcile again.
+	cleanup()
+	cleanup = version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{})
+	defer cleanup()
+
+	require.NoError(t, up.ManagedInstances(t.Context()))
+
+	err = k8sClient.Get(t.Context(), types.NamespacedName{Namespace: nsName, Name: "my-inst-stale-blocked"}, &updated)
+	require.NoError(t, err)
+	assert.Empty(t, updated.Status.UpgradeBlockedVersions, "status should be cleared when no versions are blocked anymore")
+}

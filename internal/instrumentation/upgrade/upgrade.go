@@ -6,6 +6,7 @@ package upgrade
 import (
 	"context"
 	"fmt"
+	"maps"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -87,7 +88,8 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 				continue
 			}
 		}
-		if len(blockedVersions) > 0 {
+		// Update status if the blocked versions set has changed (including clearing it when no longer blocked).
+		if !maps.Equal(upgraded.Status.UpgradeBlockedVersions, blockedVersions) {
 			upgraded.Status.UpgradeBlockedVersions = blockedVersions
 			if err := u.Client.Status().Update(ctx, upgraded); err != nil {
 				u.Logger.Error(err, "failed to update status for blocked upgrade", "name", upgraded.Name, "namespace", upgraded.Namespace)
