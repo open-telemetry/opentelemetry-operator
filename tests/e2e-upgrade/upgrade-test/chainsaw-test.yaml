@@ -12,21 +12,6 @@ spec:
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
-  - name: step-01-pre-deploy-state
-    try:
-    - script:
-        timeout: 30s
-        content: |
-          echo "=== PRE-DEPLOY STATE $(date) ==="
-          kubectl get pods -n opentelemetry-operator-system -o wide
-          kubectl get endpointslices -n opentelemetry-operator-system -o wide
-
-          docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443 || echo "no DNAT rules for 9443"
-
-          echo "caBundle length (CRD):"
-          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}' | wc -c
-          echo "caBundle length (MutatingWebhookConfig):"
-          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o jsonpath='{.webhooks[0].clientConfig.caBundle}' | wc -c
   - name: step-01
     try:
     - script:
@@ -87,21 +72,6 @@ spec:
             sleep 1
           done
           echo "EndpointSlice settled to new pods only (retries: $ATTEMPTS)"
-  - name: step-01-post-deploy-state
-    try:
-    - script:
-        timeout: 30s
-        content: |
-          echo "=== POST-DEPLOY STATE $(date) ==="
-          kubectl get pods -n opentelemetry-operator-system -o wide
-          kubectl get endpointslices -n opentelemetry-operator-system -o wide
-
-          docker exec otel-operator-control-plane iptables -t nat -S | grep DNAT | grep 9443 || echo "no DNAT rules for 9443"
-          
-          echo "caBundle length (CRD):"
-          kubectl get crd opentelemetrycollectors.opentelemetry.io -o jsonpath='{.spec.conversion.webhook.clientConfig.caBundle}' | wc -c
-          echo "caBundle length (MutatingWebhookConfig):"
-          kubectl get mutatingwebhookconfiguration opentelemetry-operator-mutating-webhook-configuration -o jsonpath='{.webhooks[0].clientConfig.caBundle}' | wc -c
   - name: step-02
     try:
     - apply:
