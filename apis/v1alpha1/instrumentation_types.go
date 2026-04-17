@@ -378,7 +378,14 @@ type Nginx struct {
 }
 
 // InstrumentationStatus defines status of the instrumentation.
-type InstrumentationStatus struct{}
+type InstrumentationStatus struct {
+	// UpgradeBlockedVersions contains instrumentation language images whose
+	// versions could not be automatically upgraded, mapped to a message
+	// explaining why. The operator will not auto-upgrade these images until
+	// the user manually changes them to a supported version.
+	// +optional
+	UpgradeBlockedVersions map[string]string `json:"upgradeBlockedVersions,omitempty"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelinst;otelinsts
