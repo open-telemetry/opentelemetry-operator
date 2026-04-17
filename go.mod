@@ -26,6 +26,7 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid v1.3.1
 	github.com/open-telemetry/opamp-go v0.15.0
+	github.com/open-telemetry/opentelemetry-operator/apis v0.148.0-unpublished
 	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
 	github.com/operator-framework/api v0.42.0
 	github.com/operator-framework/operator-lib v0.19.0
@@ -40,7 +41,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/featuregate v1.55.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0
-	go.opentelemetry.io/contrib/otelconf v0.23.0
+	go.opentelemetry.io/contrib/otelconf v0.23.0 // indirect
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.43.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.65.0
@@ -62,6 +63,8 @@ require (
 	sigs.k8s.io/gateway-api v1.4.0
 	sigs.k8s.io/yaml v1.6.0
 )
+
+replace github.com/open-telemetry/opentelemetry-operator/apis v0.148.0-unpublished => ./apis
 
 require (
 	cel.dev/expr v0.25.1 // indirect
