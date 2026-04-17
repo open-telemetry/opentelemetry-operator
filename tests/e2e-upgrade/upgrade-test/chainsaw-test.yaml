@@ -18,9 +18,60 @@ spec:
         timeout: 5m
         content: |
           make -C ../../../ deploy
+          # Wait for the v1beta1 API to become functional. During the upgrade,
+          # the CRD update triggers the API server's internal cacher to
+          # reinitialize via the conversion webhook. If the webhook pod isn't
+          # ready yet, the cacher gets stuck in an error loop. This poll covers
+          # webhook TLS setup (caBundle injection) and cacher recovery.
+          echo "Waiting for v1beta1 API to become available..."
+          for i in $(seq 1 60); do
+            if kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces > /dev/null 2>&1; then
+              echo "v1beta1 API is available"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "ERROR: v1beta1 API did not become available after 60s"
+              exit 1
+            fi
+            sleep 1
+          done
+          # Restart the operator so it establishes fresh informer watches
+          # against the now-healthy API server cacher. The operator pod that
+          # came up during `make deploy` may have opened watches while the
+          # cacher was still recovering, resulting in broken watch streams
+          # that silently stop delivering events.
+          kubectl rollout restart deployment/opentelemetry-operator-controller-manager \
+            -n opentelemetry-operator-system
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n opentelemetry-operator-system --timeout=120s
+          # Wait for the new operator to acquire the leader election lease.
+          # v0.86.0 does not set LeaderElectionReleaseOnCancel, so the old
+          # lease is held until it expires (137s). Delete it so the new
+          # operator can acquire leadership immediately.
+          kubectl delete lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io --ignore-not-found
+          echo "Waiting for leader election..."
+          while [ -z "$(kubectl get lease -n opentelemetry-operator-system 9f7554c3.opentelemetry.io -o jsonpath='{.spec.holderIdentity}' 2>/dev/null)" ]; do
+            sleep 1
+          done
+          echo "Leader elected"
   - name: step-02
     try:
     - apply:
         file: 02-upgrade-collector.yaml
     - assert:
         file: 02-assert.yaml
+    catch:
+    - podLogs:
+        namespace: opentelemetry-operator-system
+        selector: control-plane=controller-manager
+    - script:
+        timeout: 30s
+        content: |
+          echo "=== Operator pods ==="
+          kubectl get pods -n opentelemetry-operator-system -o wide 2>/dev/null || true
+          echo ""
+          echo "=== OpenTelemetryCollector CR status ==="
+          kubectl get opentelemetrycollectors.opentelemetry.io --all-namespaces -o yaml 2>/dev/null || true
+          echo ""
+          echo "=== API server logs (last 30 lines) ==="
+          kubectl logs -n kube-system -l component=kube-apiserver --tail=30 2>/dev/null || true
