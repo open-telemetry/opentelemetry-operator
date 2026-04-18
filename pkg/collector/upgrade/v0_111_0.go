@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/internal/apihelpers/v1beta1"
 )
 
 func upgrade0_111_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
@@ -17,7 +18,7 @@ func upgrade0_111_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (
 }
 
 func applyDefaults(otelcol *v1beta1.OpenTelemetryCollector, logger logr.Logger) error {
-	telemetryAddr, telemetryPort, err := otelcol.Spec.Config.Service.MetricsEndpoint(logger)
+	telemetryAddr, telemetryPort, err := apihelpers.MetricsEndpoint(&otelcol.Spec.Config.Service, logger)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package apihelpers
 
 import (
 	"fmt"
@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+const defaultServicePort int32 = 8888
 
 // parseAddressEndpoint parses the address and returns the host and port.
 // If the address is an environment variable, it returns the default port.
