@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package apihelpers
 
 import (
 	"slices"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseAddressEndpoint(t *testing.T) {
+func TestParseAddr(t *testing.T) {
 	tests := []struct {
 		name          string
 		address       string
@@ -71,7 +71,7 @@ func TestParseAddressEndpoint(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			host, port, err := parseAddressEndpoint(tt.address)
+			host, port, err := parseAddr(tt.address)
 
 			if tt.expectedError {
 				require.Error(t, err)

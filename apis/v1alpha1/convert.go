@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	"bytes"
 	"fmt"
 
 	go_yaml "github.com/goccy/go-yaml"
@@ -301,10 +302,12 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 
 func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
 	c := in.DeepCopy()
-	configYaml, err := c.Spec.Config.Yaml()
-	if err != nil {
+	var buf bytes.Buffer
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
+	if err := yamlEncoder.Encode(&c.Spec.Config); err != nil {
 		return nil, err
 	}
+	configYaml := buf.String()
 
 	return &OpenTelemetryCollector{
 		ObjectMeta: c.ObjectMeta,
