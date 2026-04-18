@@ -667,6 +667,58 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "valid spec with command override",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeDeployment,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
+					UpgradeStrategy: "adhoc",
+					Command: &v1beta1.CollectorCommand{
+						Name:      "/usr/share/agent",
+						ExtraArgs: []string{"otel"},
+					},
+					Config: cfg,
+				},
+			},
+		},
+		{
+			name: "valid spec with command including empty extraArgs element",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeDeployment,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
+					UpgradeStrategy: "adhoc",
+					Command: &v1beta1.CollectorCommand{
+						Name:      "/bin/foo",
+						ExtraArgs: []string{"otel", ""},
+					},
+					Config: cfg,
+				},
+			},
+		},
+		{
+			name: "invalid command missing name",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeDeployment,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
+					UpgradeStrategy: "adhoc",
+					Command: &v1beta1.CollectorCommand{
+						Name:      "   ",
+						ExtraArgs: []string{"otel"},
+					},
+					Config: cfg,
+				},
+			},
+			expectedErr: "spec.command.name must be set when spec.command is provided",
+		},
+		{
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
 			otelcol: v1beta1.OpenTelemetryCollector{

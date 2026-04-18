@@ -143,6 +143,24 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+	// Command overrides the container entrypoint (Pod.spec.containers[].command), for example when the collector
+	// runs as a subcommand of another binary. Name is argv[0]; ExtraArgs are appended after Name. Operator-generated
+	// args (--config=..., spec.args) are still passed as container args. When unset, the image ENTRYPOINT is used.
+	// +optional
+	Command *CollectorCommand `json:"command,omitempty"`
+}
+
+// CollectorCommand sets the container command (argv prefix) for the collector workload.
+type CollectorCommand struct {
+	// Name is the executable path (argv[0]).
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// ExtraArgs are argv tokens after Name (e.g. a subcommand).
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=49
+	ExtraArgs []string `json:"extraArgs,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
