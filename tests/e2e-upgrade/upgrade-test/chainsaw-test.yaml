@@ -17,7 +17,61 @@ spec:
     - script:
         timeout: 5m
         content: |
+          kubectl get pods -n opentelemetry-operator-system --field-selector=status.phase=Running -o wide
+          OLD_POD_IPS=$(kubectl get pods -n opentelemetry-operator-system --field-selector=status.phase=Running -o jsonpath='{.items[*].status.podIP}')
+          echo "old pod IPs: [$OLD_POD_IPS]"
+
           make -C ../../../ deploy
+
+          # make deploy already calls kubectl rollout status, so new pods are Running here.
+          # Exclude Terminating pods (phase=Running but deletionTimestamp set) to get only live pod IPs.
+          kubectl get pods -n opentelemetry-operator-system --field-selector=status.phase=Running -o wide
+          NEW_POD_IPS=$(kubectl get pods -n opentelemetry-operator-system --field-selector=status.phase=Running -o json \
+            | jq -r '[.items[] | select(.metadata.deletionTimestamp == null) | .status.podIP] | join(" ")')
+          echo "new pod IPs: [$NEW_POD_IPS]"
+
+          # Wait until the webhook EndpointSlice reflects the new pods exclusively:
+          # all NEW_POD_IPS present and no OLD_POD_IPS remaining. When old IPs leave the
+          # EndpointSlice, kube-proxy atomically rewrites the service NAT rules, so
+          # the service is guaranteed to route only to the new pods at that point.
+          DEADLINE=$(($(date +%s) + 60))
+          ATTEMPTS=0
+          until
+            ENDPOINT_IPS=$(kubectl get endpointslices -n opentelemetry-operator-system \
+              -l kubernetes.io/service-name=opentelemetry-operator-webhook-service \
+              -o jsonpath='{.items[*].endpoints[*].addresses[*]}')
+            echo "attempt $ATTEMPTS: endpoint IPs: [$ENDPOINT_IPS]"
+
+            all_new_present=true
+            for ip in $NEW_POD_IPS; do
+              if echo "$ENDPOINT_IPS" | grep -qw "$ip"; then
+                echo "  new $ip: present"
+              else
+                echo "  new $ip: MISSING"
+                all_new_present=false
+              fi
+            done
+
+            no_old_present=true
+            for ip in $OLD_POD_IPS; do
+              if echo "$ENDPOINT_IPS" | grep -qw "$ip"; then
+                echo "  old $ip: STILL PRESENT"
+                no_old_present=false
+              else
+                echo "  old $ip: gone"
+              fi
+            done
+
+            $all_new_present && $no_old_present
+          do
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "EndpointSlice did not settle after 60s ($ATTEMPTS retries)"
+              exit 1
+            fi
+            ATTEMPTS=$((ATTEMPTS + 1))
+            sleep 1
+          done
+          echo "EndpointSlice settled to new pods only (retries: $ATTEMPTS)"
   - name: step-02
     try:
     - apply:
