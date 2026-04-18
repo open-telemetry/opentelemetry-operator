@@ -7,7 +7,6 @@ import (
 	"context"
 	"hash"
 	"hash/fnv"
-	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -215,32 +214,67 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	}()
 	var count float64
 	index := 0
+	// Reusable sorted group labels for indexed merge access.
+	groupSlice := make([]labels.Label, 0, labelBuilderPreallocSize)
+	// Overwrite target for group labels — reuses internal buffer across groups.
+	var groupLabels labels.Labels
+
 	for _, tg := range groups {
 		groupBuilder.Reset()
 		for ln, lv := range tg.Labels {
 			groupBuilder.Add(string(ln), string(lv))
 		}
 		groupBuilder.Sort()
+		// Overwrite reuses the builder's internal buffer (no allocation after first group).
+		groupBuilder.Overwrite(&groupLabels)
+		groupSlice = groupSlice[:0]
+		groupLabels.Range(func(l labels.Label) {
+			groupSlice = append(groupSlice, l)
+		})
+
 		for _, t := range tg.Targets {
 			count++
-			// ScratchBuilder is a struct containing a slice of labels. By assigning to a new variable, we get a copy
-			// of the struct, with a new slice pointing to the same underlying array. As long as we don't mutate the
-			// original slice and only append to it, we can avoid copying the group labels.
-			targetBuilder := groupBuilder
-			targetLabelNames = targetLabelNames[:0]
+			// Pointer alias: reuse groupBuilder for per-target merged labels.
+			targetBuilder := &groupBuilder
+			targetBuilder.Reset()
 
-			// We can't sort the whole builder slice, because that would modify the underlying groupBuilder. Instead,
-			// we sort the labels in a separate slice. As a result, the group labels and the target labels are sorted
-			// subslices of the builder slice, which is in itself not sorted. This is fine, as we don't care what the
-			// order of labels is - just that it's consistent, so the hash is always the same.
-			for ln := range maps.Keys(t) {
+			// Sort target label names (typically very few: __address__, __metrics_path__).
+			targetLabelNames = targetLabelNames[:0]
+			for ln := range t {
 				targetLabelNames = append(targetLabelNames, string(ln))
 			}
 			slices.Sort(targetLabelNames)
-			for _, ln := range targetLabelNames {
-				lv := t[model.LabelName(ln)]
-				targetBuilder.Add(ln, string(lv))
+
+			// Merge two sorted sequences (group labels + target labels) to produce
+			// globally sorted output without a final Sort() call. This preserves the
+			// performance spirit of PR #4587's struct-copy optimization while ensuring
+			// labels.Labels.Get() (binary search) works correctly. The previous
+			// struct-copy approach produced two independently sorted sublists that
+			// broke Get("__address__") when group labels sorted after it alphabetically.
+			gi, ti := 0, 0
+			for gi < len(groupSlice) && ti < len(targetLabelNames) {
+				gn := groupSlice[gi].Name
+				tn := targetLabelNames[ti]
+				switch {
+				case gn < tn:
+					targetBuilder.Add(gn, groupSlice[gi].Value)
+					gi++
+				case gn > tn:
+					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
+					ti++
+				default: // target label overrides group label
+					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
+					gi++
+					ti++
+				}
 			}
+			for ; gi < len(groupSlice); gi++ {
+				targetBuilder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
+			}
+			for ; ti < len(targetLabelNames); ti++ {
+				targetBuilder.Add(targetLabelNames[ti], string(t[model.LabelName(targetLabelNames[ti])]))
+			}
+
 			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
 			index++
