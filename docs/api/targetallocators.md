@@ -275,13 +275,6 @@ Default is managed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#targetallocatorspecmtls">mtls</a></b></td>
-        <td>object</td>
-        <td>
-          Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#targetallocatorspecnetworkpolicy">networkPolicy</a></b></td>
         <td>object</td>
         <td>
@@ -9587,33 +9580,6 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Optional: Host name to connect to, defaults to the pod IP.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### TargetAllocator.spec.mtls
-<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
-
-
-
-Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether to enable mTLS between the target allocator and the collector.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

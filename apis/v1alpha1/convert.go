@@ -175,13 +175,6 @@ func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
 }
 
 func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
-	var mtls *v1beta1.TargetAllocatorMTLS
-	if in.Mtls != nil {
-		mtls = &v1beta1.TargetAllocatorMTLS{
-			Enabled: in.Mtls.Enabled,
-		}
-	}
-
 	return v1beta1.TargetAllocatorEmbedded{
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
@@ -216,7 +209,6 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 			},
 		},
 		PodDisruptionBudget: tov1beta1PodDisruptionBudget(in.PodDisruptionBudget),
-		Mtls:                mtls,
 	}
 }
 
@@ -454,12 +446,6 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 	if in.PrometheusCR.ServiceMonitorSelector != nil {
 		serviceMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
 	}
-	var mtls *TargetAllocatorMTLS
-	if in.Mtls != nil {
-		mtls = &TargetAllocatorMTLS{
-			Enabled: in.Mtls.Enabled,
-		}
-	}
 
 	return OpenTelemetryTargetAllocator{
 		Replicas:           in.Replicas,
@@ -490,7 +476,6 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 			},
 		},
 		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
-		Mtls:                mtls,
 	}
 }
 

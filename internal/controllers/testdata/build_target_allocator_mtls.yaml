@@ -45,6 +45,8 @@ data:
       service_monitor_selector: null
 kind: ConfigMap
 metadata:
+  annotations:
+    opentelemetry.io/ta-mtls-enabled: "true"
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
     app.kubernetes.io/instance: test.test
@@ -80,6 +82,7 @@ spec:
     metadata:
       annotations:
         opentelemetry-targetallocator-config/hash: 02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37
+        opentelemetry.io/ta-mtls-enabled: "true"
       labels:
         app.kubernetes.io/component: opentelemetry-targetallocator
         app.kubernetes.io/instance: test.test
@@ -147,6 +150,8 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  annotations:
+    opentelemetry.io/ta-mtls-enabled: "true"
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
     app.kubernetes.io/instance: test.test
@@ -189,6 +194,7 @@ kind: PodDisruptionBudget
 metadata:
   annotations:
     opentelemetry-targetallocator-config/hash: 02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37
+    opentelemetry.io/ta-mtls-enabled: "true"
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
     app.kubernetes.io/instance: test.test

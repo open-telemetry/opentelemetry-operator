@@ -247,6 +247,11 @@ type TargetAllocatorMTLS struct {
 	// Enabled indicates whether to enable mTLS between the target allocator and the collector.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// UseCertManager defines whether cert-manager should be used to provision certificates for mTLS.
+	// Defaults to true.
+	// +optional
+	// +kubebuilder:default:=true
+	UseCertManager *bool `json:"useCertManager,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

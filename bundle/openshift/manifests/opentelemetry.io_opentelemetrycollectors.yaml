@@ -3254,11 +3254,6 @@ spec:
                     type: string
                   image:
                     type: string
-                  mtls:
-                    properties:
-                      enabled:
-                        type: boolean
-                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -8195,6 +8190,9 @@ spec:
                   mtls:
                     properties:
                       enabled:
+                        type: boolean
+                      useCertManager:
+                        default: true
                         type: boolean
                     type: object
                   nodeSelector:

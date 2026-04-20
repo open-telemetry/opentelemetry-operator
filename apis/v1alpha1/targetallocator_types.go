@@ -93,9 +93,6 @@ type TargetAllocatorSpec struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
-	// Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
-	// +optional
-	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
 	// LivenessProbe defines the liveness probe configuration for the Target Allocator container.
 	// +optional
 	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
