@@ -28,7 +28,7 @@ jobs:
         go-version: "~1.26.2"
 
     - name: Cache tools
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
@@ -55,7 +55,7 @@ jobs:
         go-version: "~1.26.2"
 
     - name: Cache tools
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
@@ -63,7 +63,7 @@ jobs:
     - name: Install tools
       run: make install-tools
 
-    - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+    - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           /home/runner/.cache/golangci-lint
