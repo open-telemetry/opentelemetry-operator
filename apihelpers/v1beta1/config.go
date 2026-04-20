@@ -29,7 +29,7 @@ import (
 type ComponentKind int
 
 const (
-	KindReceiver  ComponentKind = iota
+	KindReceiver ComponentKind = iota
 	KindExporter
 	KindProcessor
 	KindExtension
@@ -539,4 +539,3 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 		},
 	}
 }
-

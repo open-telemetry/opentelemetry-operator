@@ -23,7 +23,7 @@ import (
 )
 
 // testdataPath returns the path to the testdata directory, which is shared from apis/v1beta1.
-const testdataPath = "../../../apis/v1beta1/testdata"
+const testdataPath = "../../apis/v1beta1/testdata"
 
 func TestConfigFiles(t *testing.T) {
 	files, err := os.ReadDir(testdataPath)

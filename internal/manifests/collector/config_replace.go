@@ -6,9 +6,9 @@ package collector
 import (
 	go_yaml "github.com/goccy/go-yaml"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	apihelpers "github.com/open-telemetry/opentelemetry-operator/internal/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"

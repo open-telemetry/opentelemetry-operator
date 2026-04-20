@@ -17,13 +17,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	apihelpers "github.com/open-telemetry/opentelemetry-operator/internal/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
