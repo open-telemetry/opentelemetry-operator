@@ -20,13 +20,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 		return nil, nil
 	}
 
-	var mtls *v1alpha1.TargetAllocatorMTLS
-	if taSpec.Mtls != nil {
-		mtls = &v1alpha1.TargetAllocatorMTLS{
-			Enabled: taSpec.Mtls.Enabled,
-		}
-	}
-
 	// setting all the labels normally here leads to some undesirable results, like the name label being wrong
 	// instead, only set managed-by and leave everything else as-is
 	labels := maps.Clone(params.OtelCol.Labels)
@@ -66,7 +59,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			PrometheusCR:                 taSpec.PrometheusCR,
 			Observability:                taSpec.Observability,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
-			Mtls:                         mtls,
 		},
 	}, nil
 }

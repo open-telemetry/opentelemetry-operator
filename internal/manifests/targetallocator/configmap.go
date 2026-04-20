@@ -126,7 +126,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if isMTLSEnabled(params.Config, params.TargetAllocator) {
+	if isMTLSEnabled(params.Config, params.Collector) {
 		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",

@@ -2852,9 +2852,6 @@ prometheus_cr:
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy: v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
-						Mtls: &v1alpha1.TargetAllocatorMTLS{
-							Enabled: true,
-						},
 						PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 							Enabled: true,
 						},
@@ -2866,6 +2863,12 @@ prometheus_cr:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+							Enabled: true,
+							Mtls: &v1beta1.TargetAllocatorMTLS{
+								Enabled: true,
+							},
+						},
 						Config: v1beta1.Config{
 							Receivers: v1beta1.AnyConfig{
 								Object: map[string]any{

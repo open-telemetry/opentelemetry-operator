@@ -491,8 +491,14 @@ func TestArgs(t *testing.T) {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
-		Spec: v1alpha1.TargetAllocatorSpec{
-			Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+		Spec: v1alpha1.TargetAllocatorSpec{},
+	}
+	collector := &v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				Enabled: true,
+				Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true},
+			},
 		},
 	}
 
@@ -501,7 +507,7 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, collector)
 
 	// verify
 	assert.Equal(t, "http", c.Ports[0].Name)

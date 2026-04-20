@@ -67,15 +67,20 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
 			},
-			Spec: v1alpha1.TargetAllocatorSpec{
-				Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+		}
+		collector := &v1beta1.OpenTelemetryCollector{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+					Enabled: true,
+					Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true},
+				},
 			},
 		}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, collector)
 
 		expectedVolume := corev1.Volume{
 			Name: naming.TAServerCertificate(ta.Name),
@@ -93,15 +98,20 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
 			},
-			Spec: v1alpha1.TargetAllocatorSpec{
-				Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+		}
+		collector := &v1beta1.OpenTelemetryCollector{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+					Enabled: true,
+					Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true},
+				},
 			},
 		}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.NotAvailable,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, collector)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 
@@ -115,7 +125,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, nil)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 }

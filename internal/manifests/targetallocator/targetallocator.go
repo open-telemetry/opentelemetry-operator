@@ -35,7 +35,7 @@ func Build(params Params) ([]client.Object, error) {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if isMTLSEnabled(params.Config, params.TargetAllocator) {
+	if isMTLSEnabled(params.Config, params.Collector) {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),

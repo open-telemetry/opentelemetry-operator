@@ -104,7 +104,7 @@ func getContainerPorts(instance v1alpha1.TargetAllocator, params Params) []corev
 		})
 	}
 
-	if isMTLSEnabled(params.Config, params.TargetAllocator) {
+	if isMTLSEnabled(params.Config, params.Collector) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: defaultHTTPSPort,

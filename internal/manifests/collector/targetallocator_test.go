@@ -283,9 +283,6 @@ func TestTargetAllocator(t *testing.T) {
 							EnableMetrics: true,
 						},
 					},
-					Mtls: &v1alpha1.TargetAllocatorMTLS{
-						Enabled: true,
-					},
 				},
 			},
 		},
