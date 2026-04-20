@@ -78,7 +78,7 @@ jobs:
         - e2e-targetallocator
         - e2e-targetallocator-cr
         # https://github.com/open-telemetry/opentelemetry-operator/issues/4887
-        # - e2e-upgrade
+        - e2e-upgrade
         - e2e-multi-instrumentation-default
         - e2e-multi-instrumentation
         - e2e-metadata-filters
