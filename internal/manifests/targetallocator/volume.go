@@ -7,12 +7,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volume {
+func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator, _ ...*v1beta1.OpenTelemetryCollector) []corev1.Volume {
 	volumes := []corev1.Volume{{
 		Name: naming.TAConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{

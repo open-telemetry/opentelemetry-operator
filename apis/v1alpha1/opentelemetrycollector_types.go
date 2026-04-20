@@ -381,9 +381,6 @@ type OpenTelemetryTargetAllocator struct {
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
-
-	// Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
-	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
@@ -615,10 +612,4 @@ type ConfigMapsSpec struct {
 	// Configmap defines name and path where the configMaps should be mounted.
 	Name      string `json:"name"`
 	MountPath string `json:"mountpath"`
-}
-
-type TargetAllocatorMTLS struct {
-	// Enabled indicates whether to enable mTLS between the target allocator and the collector.
-	// +optional
-	Enabled bool `json:"enabled,omitempty"`
 }

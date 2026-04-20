@@ -179,9 +179,6 @@ func TestTargetAllocator(t *testing.T) {
 								IntVal: 1,
 							},
 						},
-						Mtls: &v1beta1.TargetAllocatorMTLS{
-							Enabled: true,
-						},
 					},
 				},
 			},
@@ -283,9 +280,6 @@ func TestTargetAllocator(t *testing.T) {
 							EnableMetrics: true,
 						},
 					},
-					Mtls: &v1alpha1.TargetAllocatorMTLS{
-						Enabled: true,
-					},
 				},
 			},
 		},
@@ -300,5 +294,57 @@ func TestTargetAllocator(t *testing.T) {
 			assert.Equal(t, testCase.wantErr, err)
 			assert.Equal(t, testCase.want, actual)
 		})
+	}
+}
+
+func TestTargetAllocatorNoMtlsAnnotationWhenMtlsNil(t *testing.T) {
+	params := manifests.Params{
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+					Enabled: true,
+					Mtls:    nil,
+				},
+			},
+		},
+	}
+
+	ta, err := TargetAllocator(params)
+	assert.NoError(t, err)
+	assert.NotNil(t, ta)
+
+	if ta.Annotations != nil {
+		assert.NotContains(t, ta.Annotations, "opentelemetry.io/ta-mtls-enabled",
+			"TA CR should not have mTLS annotation when taSpec.Mtls is nil")
+	}
+}
+
+func TestTargetAllocatorNoMtlsAnnotationWhenMtlsDisabled(t *testing.T) {
+	params := manifests.Params{
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+					Enabled: true,
+					Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: false},
+				},
+			},
+		},
+	}
+
+	ta, err := TargetAllocator(params)
+	assert.NoError(t, err)
+	assert.NotNil(t, ta)
+
+	if ta.Annotations != nil {
+		assert.NotContains(t, ta.Annotations, "opentelemetry.io/ta-mtls-enabled",
+			"TA CR should not have mTLS annotation when taSpec.Mtls.Enabled is false")
 	}
 }

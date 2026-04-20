@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -37,10 +36,7 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 		},
 	}}
 
-	if otelcol.Spec.TargetAllocator.Enabled &&
-		otelcol.Spec.TargetAllocator.Mtls != nil &&
-		otelcol.Spec.TargetAllocator.Mtls.Enabled &&
-		cfg.CertManagerAvailability == certmanager.Available {
+	if isTAMTLSEnabledWithCertManager(cfg, otelcol) {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{

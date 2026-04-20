@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
@@ -20,7 +21,7 @@ import (
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
+func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocator, _ ...*v1beta1.OpenTelemetryCollector) corev1.Container {
 	image := instance.Spec.Image
 	if image == "" {
 		image = cfg.TargetAllocatorImage

@@ -9,8 +9,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func isMTLSEnabled(cfg config.Config, targetAllocator v1alpha1.TargetAllocator) bool {
-	return cfg.CertManagerAvailability == certmanager.Available &&
-		targetAllocator.Spec.Mtls != nil &&
-		targetAllocator.Spec.Mtls.Enabled
+func isMTLSEnabled(cfg config.Config, ta v1alpha1.TargetAllocator) bool {
+	annotations := ta.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+	if annotations["opentelemetry.io/ta-mtls-enabled"] != "true" {
+		return false
+	}
+	useCertManager := annotations["opentelemetry.io/ta-mtls-use-cert-manager"] != "false"
+	return cfg.CertManagerAvailability == certmanager.Available && useCertManager
 }

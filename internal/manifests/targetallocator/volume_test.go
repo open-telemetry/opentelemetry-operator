@@ -23,7 +23,7 @@ func TestVolumeNewDefault(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, nil)
 
 	// verify
 	assert.Len(t, volumes, 1)
@@ -55,7 +55,7 @@ func TestUserDefinedVolume(t *testing.T) {
 	}
 	cfg := config.New()
 
-	volumes := Volumes(cfg, ta)
+	volumes := Volumes(cfg, ta, nil)
 
 	assert.Len(t, volumes, 2)
 	assert.Contains(t, volumes, ta.Spec.Volumes[0])
@@ -66,16 +66,16 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
-			},
-			Spec: v1alpha1.TargetAllocatorSpec{
-				Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+				Annotations: map[string]string{
+					"opentelemetry.io/ta-mtls-enabled": "true",
+				},
 			},
 		}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, nil)
 
 		expectedVolume := corev1.Volume{
 			Name: naming.TAServerCertificate(ta.Name),
@@ -92,16 +92,16 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
-			},
-			Spec: v1alpha1.TargetAllocatorSpec{
-				Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+				Annotations: map[string]string{
+					"opentelemetry.io/ta-mtls-enabled": "true",
+				},
 			},
 		}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.NotAvailable,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, nil)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 
@@ -115,7 +115,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta)
+		volumes := Volumes(cfg, ta, nil)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 }

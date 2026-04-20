@@ -15,7 +15,6 @@ import (
 	colfg "go.opentelemetry.io/collector/featuregate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -421,12 +420,14 @@ prometheus_cr:
 			CertManagerAvailability: certmanager.Available,
 		}
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Mtls = &v1alpha1.TargetAllocatorMTLS{Enabled: true}
 
 		testParams := Params{
 			Collector:       collectorInstance(),
 			TargetAllocator: targetAllocator,
 			Config:          cfg,
+		}
+		testParams.TargetAllocator.Annotations = map[string]string{
+			"opentelemetry.io/ta-mtls-enabled": "true",
 		}
 
 		expectedData := map[string]string{
@@ -476,12 +477,14 @@ https:
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
 		require.NoError(t, err)
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Mtls = &v1alpha1.TargetAllocatorMTLS{Enabled: true}
 
 		testParams := Params{
 			Collector:       collectorInstance(),
 			TargetAllocator: targetAllocator,
 			Config:          cfg,
+		}
+		testParams.TargetAllocator.Annotations = map[string]string{
+			"opentelemetry.io/ta-mtls-enabled": "true",
 		}
 
 		expectedData := map[string]string{

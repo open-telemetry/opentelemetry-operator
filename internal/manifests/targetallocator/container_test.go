@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -31,7 +32,7 @@ func TestContainerNewDefault(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -51,7 +52,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -63,7 +64,7 @@ func TestContainerDefaultPorts(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Len(t, c.Ports, 1)
@@ -77,7 +78,7 @@ func TestContainerDefaultVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 1)
@@ -114,7 +115,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 		},
 	}
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 	resourcesValues := c.Resources
 
 	// verify
@@ -223,7 +224,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -250,7 +251,7 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	require.Len(t, c.Env, 6)
@@ -347,7 +348,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -366,7 +367,7 @@ func TestReadinessProbe(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
@@ -491,8 +492,10 @@ func TestArgs(t *testing.T) {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
-		Spec: v1alpha1.TargetAllocatorSpec{
-			Mtls: &v1alpha1.TargetAllocatorMTLS{Enabled: true},
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"opentelemetry.io/ta-mtls-enabled": "true",
+			},
 		},
 	}
 
@@ -501,7 +504,7 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator)
+	c := Container(cfg, logger, targetAllocator, nil)
 
 	// verify
 	assert.Equal(t, "http", c.Ports[0].Name)

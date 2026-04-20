@@ -83,6 +83,8 @@ func init() {
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(gatewayv1.Install(scheme))
+	// Always register cert-manager types in the scheme as cermanager is now default for MTLS
+	utilruntime.Must(cmv1.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
