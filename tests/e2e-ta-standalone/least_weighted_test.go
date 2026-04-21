@@ -25,11 +25,16 @@ import (
 
 // TestLeastWeightedTargetAllocator validates the least-weighted allocation strategy.
 //
-// Least-weighted assigns new targets to the collector with the fewest targets.
-// Existing targets are NOT moved when a new collector joins (the strategy only
-// applies at assignment time, not as a continuous rebalancer). Because tie-breaking
-// uses Go map iteration order (non-deterministic), we only assert that the initial
-// distribution is balanced (within ±1 per collector) rather than exact mapping.
+// The balanced-distribution property (targets split evenly across collectors) is
+// inherently timing-dependent in e2e: whether both collectors are registered with
+// the TA before the initial target assignment is a race between pod startup and TA
+// reconciliation. That property is covered by unit tests in
+// internal/allocation/least_weighted_test.go.
+//
+// This e2e test focuses on what IS reliably observable end-to-end:
+//   - All targets are assigned when the strategy is least-weighted
+//   - Existing assignments are preserved (not disrupted) when a new collector joins
+//   - The new collector receives 0 targets on join (no rebalancing of sticky assignments)
 func TestLeastWeightedTargetAllocator(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
@@ -44,61 +49,35 @@ func TestLeastWeightedTargetAllocator(t *testing.T) {
 	deployCollectors(t, ctx, ns, 2)
 	waitForStatefulSetReady(t, ctx, ns, "collector", 2)
 
-	// Wait for the TA to discover both collectors and produce a balanced assignment.
-	// Least-weighted may initially assign all targets to collector-0 before collector-1
-	// registers; waitForBalancedDistribution retries until every collector has ≥1 target.
-	initialAssignment := waitForBalancedDistribution(t, ctx, ns, "test-targets", 2)
+	initialAssignment := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
 
-	t.Run("balanced initial distribution across 2 collectors", func(t *testing.T) {
-		assertBalancedDistribution(t, initialAssignment, len(testTargets), 2)
+	t.Run("all targets assigned", func(t *testing.T) {
+		assert.Len(t, allAssignedTargets(initialAssignment), len(testTargets),
+			"all targets should be assigned with least-weighted strategy")
+		t.Logf("initial distribution: %v", countPerCollector(initialAssignment))
 	})
 
 	t.Run("existing assignments preserved on scale-up to 3", func(t *testing.T) {
 		// Least-weighted does NOT rebalance existing targets when a new collector joins
-		// (GetCollectorForTarget returns the current collector if it is still valid).
-		// After scale-up: existing targets stay, collector-2 starts at 0.
+		// (GetCollectorForTarget returns the current collector when it is still valid).
+		// After scale-up: existing targets stay on their collectors, collector-2 starts at 0.
 		scaleStatefulSet(t, ctx, ns, "collector", 3)
 		waitForStatefulSetReady(t, ctx, ns, "collector", 3)
 
 		afterScaleUp := waitForTargetDistribution(t, ctx, ns, "test-targets", 3)
 
-		// Total must be preserved.
 		assert.Len(t, allAssignedTargets(afterScaleUp), len(testTargets),
 			"all targets should remain assigned after scale-up")
 
-		// No target should move (stability property of least-weighted on scale-up).
 		stayed := countStayedTargets(initialAssignment, afterScaleUp)
 		assert.Equal(t, len(testTargets), stayed,
 			"least-weighted should not move existing targets when a new collector joins")
 
-		// New collector-2 has 0 targets; no rebalancing of already-assigned targets.
 		assert.Empty(t, afterScaleUp["collector-2"],
-			"collector-2 should start with 0 targets (least-weighted assigns only new targets to it)")
+			"collector-2 should start with 0 targets (least-weighted only routes new targets there)")
 
 		t.Logf("scale-up distribution: %v", countPerCollector(afterScaleUp))
 	})
-}
-
-// assertBalancedDistribution checks that:
-//   - total assigned targets == expectedTotal
-//   - each collector's count is within ±1 of the ideal even split
-func assertBalancedDistribution(t *testing.T, assignment map[string][]string, expectedTotal, numCollectors int) {
-	t.Helper()
-
-	all := allAssignedTargets(assignment)
-	assert.Len(t, all, expectedTotal, "total assigned targets should equal %d", expectedTotal)
-
-	ideal := expectedTotal / numCollectors
-	for collectorID, targets := range assignment {
-		count := len(targets)
-		assert.GreaterOrEqual(t, count, ideal-1,
-			"collector %s has %d targets, expected at least %d (ideal %d ±1)",
-			collectorID, count, ideal-1, ideal)
-		assert.LessOrEqual(t, count, ideal+1,
-			"collector %s has %d targets, expected at most %d (ideal %d ±1)",
-			collectorID, count, ideal+1, ideal)
-	}
-	t.Logf("distribution: %v (ideal %d per collector)", countPerCollector(assignment), ideal)
 }
 
 func countPerCollector(assignment map[string][]string) map[string]int {
