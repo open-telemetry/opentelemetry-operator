@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package metrics
 
 import (
 	"context"
@@ -18,6 +18,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 var wantInstrumentationScope = instrumentation.Scope{
@@ -25,21 +27,21 @@ var wantInstrumentationScope = instrumentation.Scope{
 }
 
 func TestOTELCollectorCRDMetrics(t *testing.T) {
-	otelcollector1 := &OpenTelemetryCollector{
+	otelcollector1 := &otelv1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "collector1",
 			Namespace: "test1",
 		},
-		Spec: OpenTelemetryCollectorSpec{
-			Mode: ModeDeployment,
-			Config: Config{
-				Processors: &AnyConfig{
+		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
+			Mode: otelv1beta1.ModeDeployment,
+			Config: otelv1beta1.Config{
+				Processors: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
-				Extensions: &AnyConfig{
+				Extensions: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"extfoo": nil,
 					},
@@ -48,26 +50,26 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		},
 	}
 
-	otelcollector2 := &OpenTelemetryCollector{
+	otelcollector2 := &otelv1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "collector2",
 			Namespace: "test2",
 		},
-		Spec: OpenTelemetryCollectorSpec{
-			Mode: ModeSidecar,
-			Config: Config{
-				Processors: &AnyConfig{
+		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
+			Mode: otelv1beta1.ModeSidecar,
+			Config: otelv1beta1.Config{
+				Processors: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
-				Extensions: &AnyConfig{
+				Extensions: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
-				Exporters: AnyConfig{
+				Exporters: otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"w": nil,
 					},
@@ -76,26 +78,26 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		},
 	}
 
-	updatedCollector1 := &OpenTelemetryCollector{
+	updatedCollector1 := &otelv1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "collector1",
 			Namespace: "test1",
 		},
-		Spec: OpenTelemetryCollectorSpec{
-			Mode: ModeSidecar,
-			Config: Config{
-				Processors: &AnyConfig{
+		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
+			Mode: otelv1beta1.ModeSidecar,
+			Config: otelv1beta1.Config{
+				Processors: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"foo": nil,
 						"y":   nil,
 					},
 				},
-				Extensions: &AnyConfig{
+				Extensions: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
-				Exporters: AnyConfig{
+				Exporters: otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"w": nil,
 					},
@@ -106,7 +108,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		testFunction func(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader)
+		testFunction func(t *testing.T, m *Metrics, collectors []*otelv1beta1.OpenTelemetryCollector, reader metric.Reader)
 	}{
 		{
 			name:         "Create",
@@ -122,8 +124,8 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		},
 	}
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
-		s.AddKnownTypes(GroupVersion, &OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
-		metav1.AddToGroupVersion(s, GroupVersion)
+		s.AddKnownTypes(otelv1beta1.GroupVersion, &otelv1beta1.OpenTelemetryCollector{}, &otelv1beta1.OpenTelemetryCollectorList{})
+		metav1.AddToGroupVersion(s, otelv1beta1.GroupVersion)
 		return nil
 	})
 	scheme := runtime.NewScheme()
@@ -132,33 +134,33 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
-	crdMetrics, err := NewMetrics(provider, context.Background(), cl)
+	crdMetrics, err := New(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.testFunction(t, crdMetrics, []*OpenTelemetryCollector{otelcollector1, otelcollector2, updatedCollector1}, reader)
+			tt.testFunction(t, crdMetrics, []*otelv1beta1.OpenTelemetryCollector{otelcollector1, otelcollector2, updatedCollector1}, reader)
 		})
 	}
 }
 
 func TestOTELCollectorInitMetrics(t *testing.T) {
-	otelcollector1 := OpenTelemetryCollector{
+	otelcollector1 := otelv1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "collector1",
 			Namespace: "test1",
 			Labels:    map[string]string{"app.kubernetes.io/managed-by": "opentelemetry-operator"},
 		},
-		Spec: OpenTelemetryCollectorSpec{
-			Mode: ModeDeployment,
-			Config: Config{
-				Processors: &AnyConfig{
+		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
+			Mode: otelv1beta1.ModeDeployment,
+			Config: otelv1beta1.Config{
+				Processors: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
-				Extensions: &AnyConfig{
+				Extensions: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"extfoo": nil,
 					},
@@ -167,27 +169,27 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 		},
 	}
 
-	otelcollector2 := OpenTelemetryCollector{
+	otelcollector2 := otelv1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "collector2",
 			Namespace: "test2",
 			Labels:    map[string]string{"app.kubernetes.io/managed-by": "opentelemetry-operator"},
 		},
-		Spec: OpenTelemetryCollectorSpec{
-			Mode: ModeSidecar,
-			Config: Config{
-				Processors: &AnyConfig{
+		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
+			Mode: otelv1beta1.ModeSidecar,
+			Config: otelv1beta1.Config{
+				Processors: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
-				Extensions: &AnyConfig{
+				Extensions: &otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
-				Exporters: AnyConfig{
+				Exporters: otelv1beta1.AnyConfig{
 					Object: map[string]any{
 						"w": nil,
 					},
@@ -197,21 +199,21 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	}
 
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
-		s.AddKnownTypes(GroupVersion, &OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
-		metav1.AddToGroupVersion(s, GroupVersion)
+		s.AddKnownTypes(otelv1beta1.GroupVersion, &otelv1beta1.OpenTelemetryCollector{}, &otelv1beta1.OpenTelemetryCollectorList{})
+		metav1.AddToGroupVersion(s, otelv1beta1.GroupVersion)
 		return nil
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
 	require.NoError(t, err)
-	list := &OpenTelemetryCollectorList{
-		Items: []OpenTelemetryCollector{otelcollector1, otelcollector2},
+	list := &otelv1beta1.OpenTelemetryCollectorList{
+		Items: []otelv1beta1.OpenTelemetryCollector{otelcollector1, otelcollector2},
 	}
 	require.NoError(t, err, "Should be able to add custom types")
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
-	_, err = NewMetrics(provider, context.Background(), cl)
+	_, err = New(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
 	rm := metricdata.ResourceMetrics{}
@@ -238,7 +240,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector2"),
 								attribute.Key("namespace").String("test2"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 1,
 						},
@@ -332,7 +334,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	metricdatatest.AssertEqual(t, want, rm.ScopeMetrics[0], metricdatatest.IgnoreTimestamp())
 }
 
-func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
+func checkCreate(t *testing.T, m *Metrics, collectors []*otelv1beta1.OpenTelemetryCollector, reader metric.Reader) {
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	otel.SetMeterProvider(provider)
 
@@ -431,7 +433,7 @@ func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector2"),
 								attribute.Key("namespace").String("test2"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 1,
 						},
@@ -525,7 +527,7 @@ func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 	metricdatatest.AssertEqual(t, want, rm.ScopeMetrics[0], metricdatatest.IgnoreTimestamp())
 }
 
-func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
+func checkUpdate(t *testing.T, m *Metrics, collectors []*otelv1beta1.OpenTelemetryCollector, reader metric.Reader) {
 	m.Update(context.Background(), collectors[0], collectors[2])
 
 	rm := metricdata.ResourceMetrics{}
@@ -544,7 +546,7 @@ func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector1"),
 								attribute.Key("namespace").String("test1"),
-								attribute.Key("type").String(string(ModeDeployment)),
+								attribute.Key("type").String(string(otelv1beta1.ModeDeployment)),
 							),
 							Value: 0,
 						},
@@ -552,7 +554,7 @@ func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector1"),
 								attribute.Key("namespace").String("test1"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 1,
 						},
@@ -560,7 +562,7 @@ func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector2"),
 								attribute.Key("namespace").String("test2"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 1,
 						},
@@ -677,7 +679,7 @@ func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 	metricdatatest.AssertEqual(t, want, rm.ScopeMetrics[0], metricdatatest.IgnoreTimestamp())
 }
 
-func checkDelete(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
+func checkDelete(t *testing.T, m *Metrics, collectors []*otelv1beta1.OpenTelemetryCollector, reader metric.Reader) {
 	m.Delete(context.Background(), collectors[1])
 	rm := metricdata.ResourceMetrics{}
 	err := reader.Collect(context.Background(), &rm)
@@ -694,7 +696,7 @@ func checkDelete(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector1"),
 								attribute.Key("namespace").String("test1"),
-								attribute.Key("type").String(string(ModeDeployment)),
+								attribute.Key("type").String(string(otelv1beta1.ModeDeployment)),
 							),
 							Value: 0,
 						},
@@ -702,7 +704,7 @@ func checkDelete(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector1"),
 								attribute.Key("namespace").String("test1"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 1,
 						},
@@ -710,7 +712,7 @@ func checkDelete(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 							Attributes: attribute.NewSet(
 								attribute.Key("collector_name").String("collector2"),
 								attribute.Key("namespace").String("test2"),
-								attribute.Key("type").String(string(ModeSidecar)),
+								attribute.Key("type").String(string(otelv1beta1.ModeSidecar)),
 							),
 							Value: 0,
 						},
