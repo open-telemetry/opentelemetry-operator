@@ -119,10 +119,9 @@ func newTestEnv(t *testing.T) testEnv {
 // TAConfigBuilder constructs TA YAML configuration for different test scenarios
 // using a fluent API. Call build() to get the final YAML string.
 type TAConfigBuilder struct {
-	strategy       string
-	staticTargets  []string
-	k8sSDNamespace string
-	enablePromCR   bool
+	strategy      string
+	staticTargets []string
+	enablePromCR  bool
 }
 
 func newTAConfig(strategy string) *TAConfigBuilder {
@@ -131,11 +130,6 @@ func newTAConfig(strategy string) *TAConfigBuilder {
 
 func (b *TAConfigBuilder) withStaticTargets(targets []string) *TAConfigBuilder {
 	b.staticTargets = targets
-	return b
-}
-
-func (b *TAConfigBuilder) withKubernetesSD(namespace string) *TAConfigBuilder {
-	b.k8sSDNamespace = namespace
 	return b
 }
 
@@ -172,23 +166,6 @@ func (b *TAConfigBuilder) build() string {
       static_configs:
         - targets: [%s]
 `, strings.Join(quoted, ", "))
-	case b.k8sSDNamespace != "":
-		fmt.Fprintf(&sb, `config:
-  scrape_configs:
-    - job_name: per-node-targets
-      scrape_interval: 30s
-      kubernetes_sd_configs:
-        - role: pod
-          namespaces:
-            names: [%s]
-          selectors:
-            - role: pod
-              label: "app=scrape-target"
-      relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-          action: keep
-          regex: "true"
-`, b.k8sSDNamespace)
 	case b.enablePromCR:
 		sb.WriteString("config:\n  scrape_configs: []\n")
 	}
@@ -281,18 +258,7 @@ patches:
 	require.NoError(t, err, "update TA ConfigMap with test config")
 }
 
-// collectorOpts customises StatefulSet scheduling for collector pods.
-type collectorOpts struct {
-	affinity                  *corev1.Affinity
-	topologySpreadConstraints []corev1.TopologySpreadConstraint
-}
-
 func deployCollectors(t *testing.T, ctx context.Context, ns string, replicas int32) {
-	t.Helper()
-	deployCollectorsWithOpts(t, ctx, ns, replicas, nil)
-}
-
-func deployCollectorsWithOpts(t *testing.T, ctx context.Context, ns string, replicas int32, opts *collectorOpts) {
 	t.Helper()
 
 	collectorConfig := `receivers:
@@ -324,13 +290,6 @@ service:
 	}, metav1.CreateOptions{})
 	require.NoError(t, err)
 
-	var affinity *corev1.Affinity
-	var spreadConstraints []corev1.TopologySpreadConstraint
-	if opts != nil {
-		affinity = opts.affinity
-		spreadConstraints = opts.topologySpreadConstraints
-	}
-
 	_, err = clientset.AppsV1().StatefulSets(ns).Create(ctx, &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "collector"},
 		Spec: appsv1.StatefulSetSpec{
@@ -340,8 +299,6 @@ service:
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: collectorLabel},
 				Spec: corev1.PodSpec{
-					Affinity:                  affinity,
-					TopologySpreadConstraints: spreadConstraints,
 					Containers: []corev1.Container{{
 						Name:  "collector",
 						Image: collectorImg,
@@ -434,27 +391,6 @@ func taProxyBase(ns string) string {
 	return fmt.Sprintf("/api/v1/namespaces/%s/services/target-allocator:80/proxy", ns)
 }
 
-// fetchCollectorTargets is the raw HTTP primitive used by both getCollectorTargets
-// and getTargetAssignment. Returns (body, true) on success, (nil, false) on error.
-func fetchCollectorTargets(ctx context.Context, proxyBase, jobName, collectorID string) ([]byte, bool) {
-	body, err := clientset.CoreV1().RESTClient().Get().
-		AbsPath(fmt.Sprintf("%s/jobs/%s/targets", proxyBase, jobName)).
-		Param("collector_id", collectorID).
-		DoRaw(ctx)
-	return body, err == nil
-}
-
-// getCollectorTargets returns the targets assigned to collectorID for jobName.
-// Returns nil if the API call fails or the response contains no addresses.
-func getCollectorTargets(t *testing.T, ctx context.Context, proxyBase, jobName, collectorID string) []string {
-	t.Helper()
-	body, ok := fetchCollectorTargets(ctx, proxyBase, jobName, collectorID)
-	if !ok {
-		return nil
-	}
-	return parseTargetAddresses(body)
-}
-
 // getTargetAssignment queries all expectedCollectors and returns a map of
 // collectorID → assigned target addresses. Returns nil if any API call fails,
 // signalling that the caller should retry.
@@ -463,8 +399,11 @@ func getTargetAssignment(t *testing.T, ctx context.Context, proxyBase, jobName s
 	result := make(map[string][]string)
 	for i := 0; i < expectedCollectors; i++ {
 		collectorID := fmt.Sprintf("collector-%d", i)
-		body, ok := fetchCollectorTargets(ctx, proxyBase, jobName, collectorID)
-		if !ok {
+		body, err := clientset.CoreV1().RESTClient().Get().
+			AbsPath(fmt.Sprintf("%s/jobs/%s/targets", proxyBase, jobName)).
+			Param("collector_id", collectorID).
+			DoRaw(ctx)
+		if err != nil {
 			return nil
 		}
 		result[collectorID] = parseTargetAddresses(body)

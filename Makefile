@@ -481,13 +481,9 @@ e2e-crd-validations: chainsaw
 
 # Standalone Target Allocator end-to-end tests
 # Uses a multi-node kind cluster to support per-node strategy testing.
-# In CI, kind-$(KUBE_VERSION)-multinode.yaml pins the K8s node image.
-# For local runs without KUBE_VERSION set, kind-multinode.yaml is used (no pinned image).
-KIND_MULTINODE_CONFIG ?= kind-$(KUBE_VERSION)-multinode.yaml
 .PHONY: prepare-e2e-ta-standalone
 prepare-e2e-ta-standalone: kind gotestsum
-	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME) 2>/dev/null || true
-	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_MULTINODE_CONFIG)
+	$(MAKE) start-kind KUBE_VERSION=$(KUBE_VERSION)
 	$(MAKE) load-image-all install-targetallocator-prometheus-crds
 	@mkdir -p ./.testresults/e2e
 
