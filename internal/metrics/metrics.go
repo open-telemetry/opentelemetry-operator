@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package metrics
 
 import (
 	"context"
@@ -14,6 +14,8 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 const (
@@ -52,8 +54,8 @@ type Metrics struct {
 	connectorsCounter metric.Int64UpDownCounter
 }
 
-// BootstrapMetrics configures the OpenTelemetry meter provider with the Prometheus exporter.
-func BootstrapMetrics() (metric.MeterProvider, error) {
+// Bootstrap configures the OpenTelemetry meter provider with the Prometheus exporter.
+func Bootstrap() (metric.MeterProvider, error) {
 	exporter, err := prometheus.New(prometheus.WithRegisterer(metrics.Registry))
 	if err != nil {
 		return nil, err
@@ -61,7 +63,7 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) { //nolint:revive //context-as-argument
+func New(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) {
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
@@ -110,7 +112,7 @@ func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader)
 
 // Init metrics from the first time the operator starts.
 func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
-	list := &OpenTelemetryCollectorList{}
+	list := &otelv1beta1.OpenTelemetryCollectorList{}
 	if err := cl.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -121,22 +123,22 @@ func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
 	return nil
 }
 
-func (m *Metrics) Create(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Create(ctx context.Context, collector *otelv1beta1.OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, true)
 	m.updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
-func (m *Metrics) Delete(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Delete(ctx context.Context, collector *otelv1beta1.OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, false)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
+func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *otelv1beta1.OpenTelemetryCollector) {
 	m.Delete(ctx, oldCollector)
 	m.Create(ctx, newCollector)
 }
 
-func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *otelv1beta1.OpenTelemetryCollector, up bool) {
 	inc := 1
 	if !up {
 		inc = -1
@@ -148,7 +150,7 @@ func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collecto
 	))
 }
 
-func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+func (m *Metrics) updateComponentCounters(ctx context.Context, collector *otelv1beta1.OpenTelemetryCollector, up bool) {
 	components := getComponentsFromConfig(collector.Spec.Config)
 	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
 	moveCounter(ctx, collector, components.exporters, m.exporterCounter, up)
@@ -176,7 +178,7 @@ func extractElements(elements map[string]any) []string {
 	return items
 }
 
-func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
+func getComponentsFromConfig(yamlContent otelv1beta1.Config) *componentDefinitions {
 	info := &componentDefinitions{
 		receivers: extractElements(yamlContent.Receivers.Object),
 		exporters: extractElements(yamlContent.Exporters.Object),
@@ -198,7 +200,7 @@ func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 }
 
 func moveCounter(
-	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
+	ctx context.Context, collector *otelv1beta1.OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
 ) {
 	for _, exporter := range types {
 		inc := 1

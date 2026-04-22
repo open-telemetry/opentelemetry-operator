@@ -60,6 +60,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/upgrade"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
@@ -448,15 +449,15 @@ func main() {
 	}
 
 	if cfg.EnableWebhooks {
-		var crdMetrics *otelv1beta1.Metrics
+		var crdMetrics *metrics.Metrics
 
 		if cfg.EnableCRMetrics {
-			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+			meterProvider, metricsErr := metrics.Bootstrap()
 			if metricsErr != nil {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
 
-			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
+			crdMetrics, err = metrics.New(meterProvider, ctx, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}
