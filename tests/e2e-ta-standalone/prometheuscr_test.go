@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +63,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 	deployMetricsWorkload(t, ctx, ns)
 	smName := deployServiceMonitor(t, ctx, mclient, ns)
 	pmName := deployPodMonitor(t, ctx, mclient, ns)
+	scName := deployScrapeConfig(t, ctx, mclient, ns)
 
 	taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
 	deployTA(t, ctx, ns, taConfig)
@@ -70,15 +72,17 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 	deployCollectors(t, ctx, ns, 1)
 	waitForStatefulSetReady(t, ctx, ns, "collector", 1)
 
-	// TA informer resync is 30s; allow up to 90s for both CRs to appear.
+	// TA informer resync is 30s; allow up to 90s for all CRs to appear.
 	smJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", ns, smName)
 	pmJobName := fmt.Sprintf("podMonitor/%s/%s/0", ns, pmName)
+	scJobName := fmt.Sprintf("scrapeConfig/%s/%s", ns, scName)
 
-	t.Run("ServiceMonitor and PodMonitor targets discovered", func(t *testing.T) {
+	t.Run("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(t *testing.T) {
 		proxyBase := taProxyBase(ns)
 		waitForJobInScrapeConfigs(t, ctx, proxyBase, smJobName)
 		waitForJobInScrapeConfigs(t, ctx, proxyBase, pmJobName)
-		t.Logf("both SM and PM jobs found in /scrape_configs")
+		waitForJobInScrapeConfigs(t, ctx, proxyBase, scJobName)
+		t.Logf("SM, PM and ScrapeConfig jobs found in /scrape_configs")
 	})
 
 	t.Run("ServiceMonitor targets disappear after deletion", func(t *testing.T) {
@@ -100,10 +104,12 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 		require.NoError(t, err, "ServiceMonitor job %s should disappear from /scrape_configs after deletion", smJobName)
 		t.Logf("ServiceMonitor job %s removed from /scrape_configs", smJobName)
 
-		// PodMonitor job must still be present.
+		// PodMonitor and ScrapeConfig jobs must still be present.
 		body := kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
 		assert.Contains(t, string(body), pmJobName,
 			"PodMonitor job %s should still be present in /scrape_configs", pmJobName)
+		assert.Contains(t, string(body), scJobName,
+			"ScrapeConfig job %s should still be present in /scrape_configs", scJobName)
 	})
 }
 
@@ -203,6 +209,25 @@ func deployPodMonitor(t *testing.T, ctx context.Context, mclient *monitoringclie
 	created, err := mclient.MonitoringV1().PodMonitors(ns).Create(ctx, pm, metav1.CreateOptions{})
 	require.NoError(t, err, "create PodMonitor")
 	t.Logf("created PodMonitor %s/%s", ns, created.Name)
+	return created.Name
+}
+
+func deployScrapeConfig(t *testing.T, ctx context.Context, mclient *monitoringclient.Clientset, ns string) string {
+	t.Helper()
+	sc := &monitoringv1alpha1.ScrapeConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-app-sc",
+			Namespace: ns,
+		},
+		Spec: monitoringv1alpha1.ScrapeConfigSpec{
+			StaticConfigs: []monitoringv1alpha1.StaticConfig{{
+				Targets: []monitoringv1alpha1.Target{"metrics-app:9123"},
+			}},
+		},
+	}
+	created, err := mclient.MonitoringV1alpha1().ScrapeConfigs(ns).Create(ctx, sc, metav1.CreateOptions{})
+	require.NoError(t, err, "create ScrapeConfig")
+	t.Logf("created ScrapeConfig %s/%s", ns, created.Name)
 	return created.Name
 }
 

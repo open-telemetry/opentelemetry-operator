@@ -150,6 +150,7 @@ func (b *TAConfigBuilder) build() string {
   scrape_interval: 30s
   service_monitor_selector: {}
   pod_monitor_selector: {}
+  scrape_config_selector: {}
 `)
 	}
 
