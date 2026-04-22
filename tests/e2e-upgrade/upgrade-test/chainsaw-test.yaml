@@ -72,6 +72,7 @@ spec:
             sleep 1
           done
           echo "EndpointSlice settled to new pods only (retries: $ATTEMPTS)"
+          sleep 30 # give some extra time for kube-proxy to update the service NAT rules
   - name: step-02
     try:
     - apply:
