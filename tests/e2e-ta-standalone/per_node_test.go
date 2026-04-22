@@ -25,7 +25,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -46,8 +45,8 @@ import (
 //
 // Assertion: each target pod's node matches its assigned collector pod's node.
 func TestPerNodeTargetAllocator(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	env := newTestEnv(t)
+	ctx, ns := env.ctx, env.ns
 
 	// Verify multi-node cluster (need at least 2 worker nodes).
 	workers := getWorkerNodes(t, ctx)
@@ -57,10 +56,7 @@ func TestPerNodeTargetAllocator(t *testing.T) {
 	worker1 := workers[0]
 	worker2 := workers[1]
 
-	ns := createTestNamespace(t, ctx)
-	defer cleanupNamespace(t, ns)
-
-	taConfig := buildPerNodeConfig(ns)
+	taConfig := newTAConfig("per-node").withKubernetesSD(ns).build()
 	deployTA(t, ctx, ns, taConfig)
 	waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
 
@@ -94,18 +90,10 @@ func TestPerNodeTargetAllocator(t *testing.T) {
 			collectorNode := collectorNodeMap[collectorID]
 			require.NotEmpty(t, collectorNode, "could not determine node for %s", collectorID)
 
-			path := fmt.Sprintf("%s/jobs/per-node-targets/targets", proxyBase)
-			body, err := clientset.CoreV1().RESTClient().Get().
-				AbsPath(path).
-				Param("collector_id", collectorID).
-				DoRaw(ctx)
-			require.NoError(t, err)
-
-			addresses := parseTargetAddresses(body)
+			addresses := getCollectorTargets(t, ctx, proxyBase, "per-node-targets", collectorID)
 			allCount += len(addresses)
 
 			for _, addr := range addresses {
-				// addr is the pod IP; look up which target pod has that IP.
 				podName, podNode := findPodByIP(t, ctx, ns, addr)
 				require.NotEmpty(t, podNode, "could not find pod node for IP %s (pod %s)", addr, podName)
 				assert.Equal(t, collectorNode, podNode,
@@ -126,43 +114,13 @@ func TestPerNodeTargetAllocator(t *testing.T) {
 				t.Logf("no collector on node %s (pod %s) - skipping co-location check", targetNode, targetPod)
 				continue
 			}
-			collectorTargets := getCollectorTargets(t, ctx, proxyBase, assignedCollector)
+			collectorTargets := getCollectorTargets(t, ctx, proxyBase, "per-node-targets", assignedCollector)
 			podIP := getPodIP(t, ctx, ns, targetPod)
-			// targets are "ip:port"; match on IP prefix since the port depends on
-			// which container port kubernetes_sd selects.
 			assert.True(t, targetAddressMatchesIP(collectorTargets, podIP),
 				"target pod %s (IP %s, node %s) should be assigned to %s (node %s); got targets %v",
 				targetPod, podIP, targetNode, assignedCollector, targetNode, collectorTargets)
 		}
 	})
-}
-
-// ---------------------------------------------------------------------------
-// Per-node config builder
-// ---------------------------------------------------------------------------
-
-func buildPerNodeConfig(ns string) string {
-	return fmt.Sprintf(`allocation_strategy: per-node
-filter_strategy: relabel-config
-collector_selector:
-  matchLabels:
-    app: otel-collector
-config:
-  scrape_configs:
-    - job_name: per-node-targets
-      scrape_interval: 30s
-      kubernetes_sd_configs:
-        - role: pod
-          namespaces:
-            names: [%s]
-          selectors:
-            - role: pod
-              label: "app=scrape-target"
-      relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-          action: keep
-          regex: "true"
-`, ns)
 }
 
 // ---------------------------------------------------------------------------
@@ -173,91 +131,27 @@ config:
 // forcing the two collector pods onto different worker nodes.
 func deployPerNodeCollectors(t *testing.T, ctx context.Context, ns string) {
 	t.Helper()
-
 	maxSkew := int32(1)
-	affinity := &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
-					MatchExpressions: []corev1.NodeSelectorRequirement{{
-						Key:      "node-role.kubernetes.io/control-plane",
-						Operator: corev1.NodeSelectorOpDoesNotExist,
-					}},
-				}},
-			},
-		},
-	}
-
-	collectorConfig := `receivers:
-  prometheus:
-    config: {}
-    target_allocator:
-      collector_id: ${POD_NAME}
-      endpoint: http://target-allocator:80
-      interval: 30s
-exporters:
-  debug: {}
-service:
-  pipelines:
-    metrics:
-      receivers: [prometheus]
-      exporters: [debug]
-  telemetry:
-    metrics:
-      readers:
-        - pull:
-            exporter:
-              prometheus:
-                host: 0.0.0.0
-                port: 8888
-`
-	_, err := clientset.CoreV1().ConfigMaps(ns).Create(ctx, &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: "collector-config"},
-		Data:       map[string]string{"collector.yaml": collectorConfig},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err)
-
-	replicas := int32(2)
-	_, err = clientset.AppsV1().StatefulSets(ns).Create(ctx, &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "collector"},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas:    &replicas,
-			ServiceName: "collector",
-			Selector:    &metav1.LabelSelector{MatchLabels: collectorLabel},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: collectorLabel},
-				Spec: corev1.PodSpec{
-					Affinity: affinity,
-					TopologySpreadConstraints: []corev1.TopologySpreadConstraint{{
-						MaxSkew:           maxSkew,
-						TopologyKey:       "kubernetes.io/hostname",
-						WhenUnsatisfiable: corev1.DoNotSchedule,
-						LabelSelector:     &metav1.LabelSelector{MatchLabels: collectorLabel},
-					}},
-					Containers: []corev1.Container{{
-						Name:  "collector",
-						Image: collectorImg,
-						Args:  []string{"--config=/conf/collector.yaml"},
-						Env: []corev1.EnvVar{{
-							Name:      "POD_NAME",
-							ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+	deployCollectorsWithOpts(t, ctx, ns, 2, &collectorOpts{
+		affinity: &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+						MatchExpressions: []corev1.NodeSelectorRequirement{{
+							Key:      "node-role.kubernetes.io/control-plane",
+							Operator: corev1.NodeSelectorOpDoesNotExist,
 						}},
-						Ports:        []corev1.ContainerPort{{ContainerPort: 8888, Name: "metrics"}},
-						VolumeMounts: []corev1.VolumeMount{{Name: "config", MountPath: "/conf"}},
-					}},
-					Volumes: []corev1.Volume{{
-						Name: "config",
-						VolumeSource: corev1.VolumeSource{
-							ConfigMap: &corev1.ConfigMapVolumeSource{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "collector-config"},
-							},
-						},
 					}},
 				},
 			},
 		},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err)
+		topologySpreadConstraints: []corev1.TopologySpreadConstraint{{
+			MaxSkew:           maxSkew,
+			TopologyKey:       "kubernetes.io/hostname",
+			WhenUnsatisfiable: corev1.DoNotSchedule,
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: collectorLabel},
+		}},
+	})
 }
 
 // deployScrapeTarget deploys a pod annotated for Prometheus scraping, pinned to nodeName.
@@ -371,19 +265,6 @@ func findCollectorForNode(collectorNodeMap map[string]string, node string) strin
 		}
 	}
 	return ""
-}
-
-func getCollectorTargets(t *testing.T, ctx context.Context, proxyBase, collectorID string) []string {
-	t.Helper()
-	path := fmt.Sprintf("%s/jobs/per-node-targets/targets", proxyBase)
-	body, err := clientset.CoreV1().RESTClient().Get().
-		AbsPath(path).
-		Param("collector_id", collectorID).
-		DoRaw(ctx)
-	if err != nil {
-		return nil
-	}
-	return parseTargetAddresses(body)
 }
 
 func getPodIP(t *testing.T, ctx context.Context, ns, podName string) string {

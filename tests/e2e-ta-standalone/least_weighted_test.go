@@ -17,7 +17,6 @@
 package e2e_ta_standalone
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,13 +35,10 @@ import (
 //   - Existing assignments are preserved (not disrupted) when a new collector joins
 //   - The new collector receives 0 targets on join (no rebalancing of sticky assignments)
 func TestLeastWeightedTargetAllocator(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	env := newTestEnv(t)
+	ctx, ns := env.ctx, env.ns
 
-	ns := createTestNamespace(t, ctx)
-	defer cleanupNamespace(t, ns)
-
-	taConfig := buildStaticConfig("least-weighted", testTargets)
+	taConfig := newTAConfig("least-weighted").withStaticTargets(testTargets).build()
 	deployTA(t, ctx, ns, taConfig)
 	waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
 

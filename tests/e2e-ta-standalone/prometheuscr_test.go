@@ -32,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // TestPrometheusCRTargetAllocator validates ServiceMonitor and PodMonitor
@@ -53,13 +52,10 @@ import (
 // Prerequisites: ServiceMonitor/PodMonitor CRDs must be installed
 // (hack/install-targetallocator-prometheus-crds.sh, run by prepare-e2e-ta-standalone).
 func TestPrometheusCRTargetAllocator(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	env := newTestEnv(t)
+	ctx, ns := env.ctx, env.ns
 
 	mclient := newMonitoringClient(t)
-
-	ns := createTestNamespace(t, ctx)
-	defer cleanupNamespace(t, ns)
 
 	// Deploy workload and monitoring CRs BEFORE starting the TA so the informer
 	// picks them up during its first sync.
@@ -67,8 +63,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 	smName := deployServiceMonitor(t, ctx, mclient, ns)
 	pmName := deployPodMonitor(t, ctx, mclient, ns)
 
-	// TA config with prometheus_cr enabled and empty static scrape_configs.
-	taConfig := buildPromCRConfig()
+	taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
 	deployTA(t, ctx, ns, taConfig)
 	waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
 
@@ -110,26 +105,6 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 		assert.Contains(t, string(body), pmJobName,
 			"PodMonitor job %s should still be present in /scrape_configs", pmJobName)
 	})
-}
-
-// ---------------------------------------------------------------------------
-// Config builder
-// ---------------------------------------------------------------------------
-
-func buildPromCRConfig() string {
-	return `allocation_strategy: consistent-hashing
-filter_strategy: relabel-config
-collector_selector:
-  matchLabels:
-    app: otel-collector
-prometheus_cr:
-  enabled: true
-  scrape_interval: 30s
-  service_monitor_selector: {}
-  pod_monitor_selector: {}
-config:
-  scrape_configs: []
-`
 }
 
 // ---------------------------------------------------------------------------
@@ -259,10 +234,7 @@ func waitForJobInScrapeConfigs(t *testing.T, ctx context.Context, proxyBase, job
 
 func newMonitoringClient(t *testing.T) *monitoringclient.Clientset {
 	t.Helper()
-	kubeconfig := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
-	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	require.NoError(t, err, "build kubeconfig for monitoring client")
-	mclient, err := monitoringclient.NewForConfig(cfg)
+	mclient, err := monitoringclient.NewForConfig(restCfg)
 	require.NoError(t, err, "create monitoring client")
 	return mclient
 }
