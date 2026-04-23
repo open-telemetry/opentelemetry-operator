@@ -49,7 +49,8 @@ spec:
             - -c
             - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon"
 ---
-# Check scrapeClass TLS caFile is applied to the ServiceMonitor's scrape config
+# Check scrapeClass TLS caFile is applied specifically to the ServiceMonitor's scrape config,
+# not just to the Probe which also uses the same scrapeClass.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -67,4 +68,4 @@ spec:
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "/scrapeclass-ca.pem"
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon.*scrapeclass-ca.pem"
