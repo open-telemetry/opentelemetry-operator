@@ -30,6 +30,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
+	sigsyaml "sigs.k8s.io/yaml"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -150,6 +152,42 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 			return nil, err
 		}
 		return pConfig, nil
+	}
+}
+
+const monitoringV1PkgPath = "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
+// MapToMonitoringV1 handles prom-operator types that use json:",inline" for embedded structs.
+// mapstructure with TagName:"yaml" can't squash these, so we round-trip through sigs.k8s.io/yaml
+// which converts YAML → JSON → json.Unmarshal, correctly handling json:",inline".
+func MapToMonitoringV1() mapstructure.DecodeHookFuncType {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data any,
+	) (any, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+		target := t
+		if t.Kind() == reflect.Pointer {
+			target = t.Elem()
+		}
+		if target.PkgPath() != monitoringV1PkgPath {
+			return data, nil
+		}
+		yamlBytes, err := yaml.Marshal(data)
+		if err != nil {
+			return data, err
+		}
+		result := reflect.New(target)
+		if err := sigsyaml.Unmarshal(yamlBytes, result.Interface()); err != nil {
+			return data, err
+		}
+		if t.Kind() == reflect.Pointer {
+			return result.Interface(), nil
+		}
+		return result.Elem().Interface(), nil
 	}
 }
 
@@ -302,6 +340,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			StringToModelOrTimeDurationHookFunc(),
 			MapToPromConfig(),
+			MapToMonitoringV1(),
 			MapToLabelSelector(),
 		),
 	}
