@@ -2,6 +2,65 @@
 
 <!-- next version -->
 
+## 0.149.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Add support for Gateway API HTTPRoute creation via OpenTelemetryCollector CR (#4361)
+- `operator`: Added hostAliases support for OpenTelemetryCollector and TargetAllocator pods (#896)
+- `collector`: Support RBAC generation for `k8s_leader_elector` extension (#4802)
+  Automatically generates a ClusterRole with permissions to manage `leases` in the `coordination.k8s.io` API group for leader election among multiple collector replicas.
+  
+- `collector`: Add TLS security profile injection for health_check and jaeger_query extensions (#4871)
+  When a TLS profile is configured on the cluster, the operator now injects min_version and cipher_suites
+  into health_check and jaeger_query extension configs
+  
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fix instrumentation init container security context (#4848)
+- `auto-instrumentation`: Fix duplicated container names validation to allow the same container name across different language instrumentations. (#4357)
+- `operator`: Fix AnyConfig.DeepCopyInto performing shallow copy, causing TargetAllocator Deployment infinite reconciliation loop (#4950)
+  AnyConfig.DeepCopyInto used maps.Copy which only copied top-level map entries, leaving nested
+  maps as shared references. When ApplyDefaults injected TLS profile settings (min_version) into
+  the collector's scrape config, it mutated the informer cache through the shared reference. This
+  caused the TargetAllocator config hash to alternate between two values on every reconciliation,
+  triggering an infinite Deployment update loop. The fix uses JSON round-tripping for a true deep copy.
+  
+- `opamp`: Fix nil pointer dereference in OpAMP Bridge when validating a remote collector config that omits the `processors` section (#4970)
+  `v1beta1.Config.Processors` is an optional `*AnyConfig`, but `validateComponents` dereferenced it unconditionally.
+  When a remote config without a `processors` section is applied through a bridge that had `componentsAllowed`
+  configured, it panicked and pod restarted. The nil case is now skipped during validation.
+  
+- `operator`: Add missing RBAC permission for events.k8s.io API group (#4950)
+  The operator uses k8s.io/client-go/tools/events which targets the events.k8s.io API group,
+  but the ClusterRole only granted permission for the core API group. This caused "Server rejected
+  event" errors when recording events on managed resources in other namespaces.
+  
+- `collector`: Register the `k8s_attributes` spelling alongside `k8sattributes` when generating RBAC from a Collector CR so either processor name produces the pods/replicasets/etc. permissions the processor needs. (#4922)
+  The underlying processor was renamed to snake_case in
+  open-telemetry/opentelemetry-collector-contrib#45901 while keeping the
+  original spelling accepted, but the operator only parsed the camel form
+  and emitted no RBAC for configs using the new name.
+  
+- `collector`: Generate RBAC for the k8s_attributes processor under its snake_case spelling, matching the camelCase k8sattributes it was renamed from. (#4922)
+- `collector`: Expose prometheus receiver api_server port on collector Service and NetworkPolicy (#4949)
+- `auto-instrumentation, opamp, target allocator`: Fix Env slice aliasing in Apache HTTPD, Nginx, OpAMP Bridge, and Target Allocator container builders when the spec slice has spare backing-array capacity (#4954)
+- `collector`: Remove the kubebuilder default from the sts pod management policy field so it can be properly `omitempty` (#4875)
+  This field should not be set on deployment or daemonset collectors.
+
+### Components
+
+* [OpenTelemetry Collector - v0.149.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.149.0)
+* [OpenTelemetry Contrib - v0.149.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.149.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.73.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.73.0)
+* [Python - v0.61b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.61b0)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.148.0
 
 ### 💡 Enhancements 💡
