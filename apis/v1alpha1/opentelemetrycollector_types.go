@@ -81,6 +81,19 @@ type OpenShiftRoute struct {
 	Termination TLSRouteTerminationType `json:"termination,omitempty"`
 }
 
+// CollectorCommand sets the container command (argv prefix) for the collector workload.
+type CollectorCommand struct {
+	// Name is the executable path (argv[0]).
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// ExtraArgs are argv tokens after Name (e.g. a subcommand).
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=49
+	ExtraArgs []string `json:"extraArgs,omitempty"`
+}
+
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
@@ -161,6 +174,10 @@ type OpenTelemetryCollectorSpec struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// Command overrides the container entrypoint (Pod.spec.containers[].command). Name is argv[0]; ExtraArgs
+	// are appended after Name. When unset, the image ENTRYPOINT is used.
+	// +optional
+	Command *CollectorCommand `json:"command,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`

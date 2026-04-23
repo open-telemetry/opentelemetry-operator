@@ -119,6 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
+		Command:         containerCommandArgv(otelcol.Spec.Command),
 		Env:             getContainerEnvVars(otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
@@ -128,6 +129,16 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		StartupProbe:    startupProbe,
 		Lifecycle:       otelcol.Spec.Lifecycle,
 	}
+}
+
+func containerCommandArgv(cmd *v1beta1.CollectorCommand) []string {
+	if cmd == nil || cmd.Name == "" {
+		return nil
+	}
+	argv := make([]string, 0, 1+len(cmd.ExtraArgs))
+	argv = append(argv, cmd.Name)
+	argv = append(argv, slices.Clone(cmd.ExtraArgs)...)
+	return argv
 }
 
 func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.ContainerPort, error) {

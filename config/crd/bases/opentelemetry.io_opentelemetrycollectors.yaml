@@ -1371,6 +1371,20 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              command:
+                properties:
+                  extraArgs:
+                    items:
+                      type: string
+                    maxItems: 49
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
               config:
                 type: string
               configmaps:
@@ -6070,6 +6084,20 @@ spec:
                     format: int32
                     minimum: 1
                     type: integer
+                type: object
+              command:
+                properties:
+                  extraArgs:
+                    items:
+                      type: string
+                    maxItems: 49
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
                 type: object
               config:
                 properties:
