@@ -46,6 +46,19 @@ func getFakeClient(t *testing.T, lists ...client.ObjectList) client.WithWatch {
 }
 
 func TestClient_Apply(t *testing.T) {
+	componentsAllowed := map[string]map[string]bool{
+		"receivers": {
+			"otlp": true,
+		},
+		"processors": {
+			"memory_limiter": true,
+			"batch":          true,
+		},
+		"exporters": {
+			"debug": true,
+		},
+	}
+
 	type args struct {
 		name      string
 		namespace string
@@ -64,6 +77,15 @@ func TestClient_Apply(t *testing.T) {
 				name:      "test",
 				namespace: "opentelemetry",
 				file:      "testdata/collector.yaml",
+			},
+			wantErr: false,
+		},
+		{
+			name: "no processors case",
+			args: args{
+				name:      "test",
+				namespace: "opentelemetry",
+				file:      "testdata/no-processors-collector.yaml",
 			},
 			wantErr: false,
 		},
@@ -121,7 +143,7 @@ func TestClient_Apply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := getFakeClient(t)
-			c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+			c := NewClient(bridgeName, clientLogger, fakeClient, componentsAllowed)
 			var colConfig []byte
 			var err error
 			if tt.args.file != "" {
