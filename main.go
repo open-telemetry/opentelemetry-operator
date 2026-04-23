@@ -144,15 +144,26 @@ func main() {
 	restConfig := ctrl.GetConfigOrDie()
 
 	var namespaces map[string]cache.Config
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+	// Watch scope resolution order (highest precedence first):
+	//   1. `--watch-namespace` flag (cfg.WatchNamespace, also sourced from the config file)
+	//   2. WATCH_NAMESPACE environment variable (kept for backwards compatibility)
+	//   3. Unset -> watch all namespaces
+	watchNamespace := cfg.WatchNamespace
+	source := "--watch-namespace"
+	if watchNamespace == "" {
+		if envNs, found := os.LookupEnv("WATCH_NAMESPACE"); found {
+			watchNamespace = envNs
+			source = "WATCH_NAMESPACE env var"
+		}
+	}
+	if watchNamespace != "" {
+		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace, "source", source)
 		namespaces = map[string]cache.Config{}
 		for ns := range strings.SplitSeq(watchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+		setupLog.Info("no watch namespace configured via --watch-namespace flag, config file, or WATCH_NAMESPACE env var, watching all namespaces")
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
