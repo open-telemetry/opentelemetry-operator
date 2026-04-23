@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/smithy-go/ptr"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -465,6 +466,103 @@ func TestLoadFromFile(t *testing.T) {
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					ListenAddr: ":8443",
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:             model.Duration(60 * time.Second),
+						ScrapeTimeout:              model.Duration(10 * time.Second),
+						ScrapeNativeHistograms:     ptr.Bool(false),
+						ExtraScrapeMetrics:         ptr.Bool(false),
+						EvaluationInterval:         model.Duration(60 * time.Second),
+						MetricNameValidationScheme: model.UTF8Validation,
+						MetricNameEscapingScheme:   model.AllowUTF8,
+					},
+					Runtime:    promconfig.DefaultRuntimeConfig,
+					OTLPConfig: promconfig.DefaultOTLPConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:                        "prometheus",
+							EnableCompression:              true,
+							HonorTimestamps:                true,
+							ScrapeInterval:                 model.Duration(60 * time.Second),
+							ScrapeProtocols:                promconfig.DefaultScrapeProtocols,
+							ScrapeTimeout:                  model.Duration(10 * time.Second),
+							MetricNameValidationScheme:     model.UTF8Validation,
+							MetricNameEscapingScheme:       model.AllowUTF8,
+							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
+							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
+							ExtraScrapeMetrics:             ptr.Bool(false),
+							MetricsPath:                    "/metrics",
+							Scheme:                         "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+				CollectorNotReadyGracePeriod: 30 * time.Second,
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "scrape class with camelCase tlsConfig fields",
+			args: args{
+				file: filepath.Join("testdata", "scrape_class_test.yaml"),
+			},
+			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					Enabled:        true,
+					ScrapeInterval: model.Duration(time.Second * 30),
+					ScrapeClasses: []monitoringv1.ScrapeClass{
+						{
+							Name:    "test-scrape-class",
+							Default: ptr.Bool(false),
+							TLSConfig: &monitoringv1.TLSConfig{
+								TLSFilesConfig: monitoringv1.TLSFilesConfig{
+									CAFile: "/etc/ca-bundle.pem",
+								},
+								SafeTLSConfig: monitoringv1.SafeTLSConfig{
+									InsecureSkipVerify: ptr.Bool(true),
+								},
+							},
+						},
+					},
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 				},
 				HTTPS: HTTPSServerConfig{
 					ListenAddr: ":8443",
