@@ -456,7 +456,7 @@ func main() {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
 
-			crdMetrics, err = metrics.New(meterProvider, ctx, mgr.GetAPIReader())
+			crdMetrics, err = metrics.New(ctx, meterProvider, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}

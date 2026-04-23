@@ -63,7 +63,7 @@ func Bootstrap() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func New(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) {
+func New(ctx context.Context, prv metric.MeterProvider, cl client.Reader) (*Metrics, error) {
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
