@@ -27,6 +27,7 @@ spec:
       evaluationInterval: 2m
       scrapeProtocols:
         - PrometheusText1.0.0
+      serviceMonitorSelector: {}
       scrapeConfigSelector: {}
       probeSelector: {}
       scrapeClasses:
