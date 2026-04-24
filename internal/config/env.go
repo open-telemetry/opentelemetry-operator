@@ -140,4 +140,7 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("ENABLE_MULTI_INSTRUMENTATION"); ok {
 		cfg.EnableMultiInstrumentation, _ = strconv.ParseBool(v)
 	}
+	if v, ok := os.LookupEnv("WATCH_NAMESPACE"); ok {
+		cfg.WatchNamespace = v
+	}
 }

@@ -61,7 +61,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	f.String("zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
-	f.String("watch-namespace", cfg.WatchNamespace, "Comma-separated list of namespaces the operator should watch for CustomResources. Empty means watch all namespaces. Takes precedence over the WATCH_NAMESPACE environment variable.")
+	f.String("watch-namespace", cfg.WatchNamespace, "Comma-separated list of namespaces the operator should watch for CustomResources. Empty means watch all namespaces.")
 
 	return f
 }

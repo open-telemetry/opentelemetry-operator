@@ -126,8 +126,7 @@ type Config struct {
 	// FipsDisabledComponents are disabled collector components when operator runs on FIPS enabled platform
 	FipsDisabledComponents string `yaml:"fips-disabled-components"`
 	// WatchNamespace is a comma-separated list of namespaces the operator should watch for
-	// CustomResources. Empty string (the default) means watch all namespaces. Takes
-	// precedence over the WATCH_NAMESPACE environment variable when set.
+	// CustomResources. Empty string (the default) means watch all namespaces.
 	WatchNamespace string `yaml:"watch-namespace"`
 	// TLS holds the TLS configuration of the controllers.
 	TLS TLSConfig `yaml:"tls"`

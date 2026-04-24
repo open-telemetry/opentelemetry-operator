@@ -2,6 +2,6 @@ change_type: enhancement
 
 component: operator
 
-note: Expose watch-namespace scope via the `--watch-namespace` CLI flag and the `watch-namespace` config file field. The `WATCH_NAMESPACE` environment variable is still honoured as a fallback for backwards compatibility.
+note: Expose watch-namespace scope via the `--watch-namespace` CLI flag and the `watch-namespace` config file field. The `WATCH_NAMESPACE` environment variable continues to work.
 
 issues: [4379]
