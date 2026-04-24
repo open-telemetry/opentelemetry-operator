@@ -93,7 +93,7 @@ func (i *sdkInjector) injectJava(ctx context.Context, inst instrumentationWithCo
 			}
 		}
 		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.Java.SecurityContext, containers[0].SecurityContext), javaInitContainerName)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), javaInitContainerName)
 	}
 
 	return pod
@@ -117,7 +117,7 @@ func (i *sdkInjector) injectNodeJS(ctx context.Context, inst instrumentationWith
 		}
 
 		pod = injectNodeJSSDKToPod(otelinst.Spec.NodeJS, pod, containers[0].Name, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.NodeJS.SecurityContext, containers[0].SecurityContext), nodejsInitContainerName)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), nodejsInitContainerName)
 	}
 
 	return pod
@@ -142,7 +142,7 @@ func (i *sdkInjector) injectPython(ctx context.Context, inst instrumentationWith
 		}
 
 		pod = injectPythonSDKToPod(otelinst.Spec.Python, pod, containers[0].Name, platform, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.Python.SecurityContext, containers[0].SecurityContext), pythonInitContainerName)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), pythonInitContainerName)
 	}
 
 	return pod
@@ -167,7 +167,7 @@ func (i *sdkInjector) injectDotNet(ctx context.Context, inst instrumentationWith
 		}
 
 		pod = injectDotNetSDKToPod(otelinst.Spec.DotNet, pod, containers[0].Name, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.DotNet.SecurityContext, containers[0].SecurityContext), dotnetInitContainerName)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), dotnetInitContainerName)
 	}
 
 	return pod
@@ -222,7 +222,7 @@ func (i *sdkInjector) injectApacheHttpd(ctx context.Context, inst instrumentatio
 		pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, container, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, container), otelinst.Spec)
 		i.injectCommonEnvVar(otelinst, container)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-		apacheSC := resolveInitContainerSecurityContext(otelinst.Spec.ApacheHttpd.SecurityContext, container.SecurityContext)
+		apacheSC := resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, container.SecurityContext)
 		pod = i.setInitContainerSecurityContext(pod, apacheSC, apacheAgentInitContainerName)
 		pod = i.setInitContainerSecurityContext(pod, apacheSC, apacheAgentCloneContainerName)
 	}

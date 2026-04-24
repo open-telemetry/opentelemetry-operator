@@ -74,6 +74,16 @@ type InstrumentationSpec struct {
 	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// InitContainerSecurityContext applied to the auto-instrumentation init
+	// containers created for Java, NodeJS, Python, DotNet, Apache HTTPD and
+	// Nginx. When unset, init containers inherit the security context of the
+	// first application container being instrumented (existing behavior). The
+	// Go auto-instrumentation sidecar is intentionally excluded — its security
+	// requirements (eBPF) differ from the init-container languages and are
+	// configured via `spec.go.securityContext`.
+	// +optional
+	InitContainerSecurityContext *corev1.SecurityContext `json:"initContainerSecurityContext,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -181,12 +191,6 @@ type Java struct {
 	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
 	// +optional
 	Extensions []Extensions `json:"extensions,omitempty"`
-
-	// SecurityContext applied to the Java auto-instrumentation init container.
-	// If unset, the init container inherits the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 type Extensions struct {
@@ -222,12 +226,6 @@ type NodeJS struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
-
-	// SecurityContext applied to the NodeJS auto-instrumentation init container.
-	// If unset, the init container inherits the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -255,12 +253,6 @@ type Python struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
-
-	// SecurityContext applied to the Python auto-instrumentation init container.
-	// If unset, the init container inherits the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // DotNet defines DotNet SDK and instrumentation configuration.
@@ -287,12 +279,6 @@ type DotNet struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
-
-	// SecurityContext applied to the DotNet auto-instrumentation init container.
-	// If unset, the init container inherits the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 type Go struct {
@@ -368,12 +354,6 @@ type ApacheHttpd struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
-
-	// SecurityContext applied to the Apache HTTPD auto-instrumentation init and
-	// clone containers. If unset, they inherit the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // Nginx defines Nginx SDK and instrumentation configuration.
@@ -412,12 +392,6 @@ type Nginx struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
-
-	// SecurityContext applied to the Nginx auto-instrumentation init container.
-	// If unset, the init container inherits the security context of the first
-	// application container being instrumented (existing behavior).
-	// +optional
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.
