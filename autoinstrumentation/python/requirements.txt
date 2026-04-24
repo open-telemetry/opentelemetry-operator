@@ -23,7 +23,7 @@ opentelemetry-instrumentation-asgi==0.62b0
 opentelemetry-instrumentation-asyncio==0.62b0
 opentelemetry-instrumentation-asyncpg==0.62b0
 opentelemetry-instrumentation-aws-lambda==0.62b0
-opentelemetry-instrumentation-boto==0.61b0
+opentelemetry-instrumentation-boto==0.62b0
 opentelemetry-instrumentation-boto3sqs==0.62b0
 opentelemetry-instrumentation-botocore==0.62b0
 opentelemetry-instrumentation-cassandra==0.62b0
