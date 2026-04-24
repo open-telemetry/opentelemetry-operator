@@ -1,0 +1,20 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: env-config
+  labels:
+    env-config-test-label: should-be-filtered
+    env-config-keep-label: should-be-kept
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
