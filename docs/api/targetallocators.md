@@ -10372,6 +10372,13 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>secretsAccessNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          SecretsAccessNamespaces Namespaces to scope the watching of secrets for the Target Allocator. If not configured, no namespaces are watched for secrets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
