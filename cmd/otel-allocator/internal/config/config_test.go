@@ -768,6 +768,42 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 }
 
+func TestGetSecretsAllowList(t *testing.T) {
+	testCases := []struct {
+		name                     string
+		promCRConfig             PrometheusCRConfig
+		expectedSecretsAllowList map[string]struct{}
+	}{
+		{
+			name:                     "no secrets access namespaces",
+			promCRConfig:             PrometheusCRConfig{Enabled: true},
+			expectedSecretsAllowList: map[string]struct{}{},
+		},
+		{
+			name:                     "single namespace",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{"ns1"}},
+			expectedSecretsAllowList: map[string]struct{}{"ns1": {}},
+		},
+		{
+			name:                     "multiple namespaces",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{"ns1", "ns2", "ns3"}},
+			expectedSecretsAllowList: map[string]struct{}{"ns1": {}, "ns2": {}, "ns3": {}},
+		},
+		{
+			name:                     "empty slice",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{}},
+			expectedSecretsAllowList: map[string]struct{}{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			secretsAllowList := tc.promCRConfig.GetSecretsAllowList()
+			assert.Equal(t, tc.expectedSecretsAllowList, secretsAllowList)
+		})
+	}
+}
+
 func TestConfigLoadPriority(t *testing.T) {
 	// Helper function to create a dummy kube config for tests
 	createDummyKubeConfig := func(t *testing.T, dir string) string {

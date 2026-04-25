@@ -78,6 +78,7 @@ type PrometheusCRConfig struct {
 	Enabled                         bool                          `yaml:"enabled,omitempty"`
 	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`
 	DenyNamespaces                  []string                      `yaml:"deny_namespaces,omitempty"`
+	SecretsAccessNamespaces         []string                      `yaml:"secrets_access_namespaces,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector         `yaml:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector         `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector         `yaml:"service_monitor_selector,omitempty"`
@@ -443,6 +444,14 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 
 // GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
 // If the deny list is empty, it defaults to an empty map.
+func (c PrometheusCRConfig) GetSecretsAllowList() map[string]struct{} {
+	secretsAllowList := make(map[string]struct{})
+	for _, ns := range c.SecretsAccessNamespaces {
+		secretsAllowList[ns] = struct{}{}
+	}
+	return secretsAllowList
+}
+
 func (c PrometheusCRConfig) GetAllowDenyLists() (allowList, denyList map[string]struct{}) {
 	allowList = map[string]struct{}{}
 	if len(c.AllowNamespaces) != 0 {
