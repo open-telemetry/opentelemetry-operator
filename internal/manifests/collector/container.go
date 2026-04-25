@@ -131,14 +131,11 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 }
 
-func containerCommandArgv(cmd *v1beta1.CollectorCommand) []string {
-	if cmd == nil || cmd.Name == "" {
+func containerCommandArgv(cmd []string) []string {
+	if len(cmd) == 0 {
 		return nil
 	}
-	argv := make([]string, 0, 1+len(cmd.ExtraArgs))
-	argv = append(argv, cmd.Name)
-	argv = append(argv, slices.Clone(cmd.ExtraArgs)...)
-	return argv
+	return slices.Clone(cmd)
 }
 
 func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.ContainerPort, error) {

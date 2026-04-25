@@ -7,4 +7,4 @@ note: Add optional `spec.command` to OpenTelemetryCollector to override the coll
 issues: [3188]
 
 subtext: |
-  Renders as `Pod.spec.containers[].command` with argv `[name, ...extraArgs]`. Also available on the v1alpha1 OpenTelemetryCollector API for conversion.
+  `spec.command` is a `[]string` matching `Pod.spec.containers[].command`. Also available on the v1alpha1 OpenTelemetryCollector API for conversion.

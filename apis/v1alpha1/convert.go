@@ -125,7 +125,7 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 			TargetAllocator: tov1beta1TA(c.Spec.TargetAllocator),
 			Mode:            v1beta1.Mode(c.Spec.Mode),
 			UpgradeStrategy: v1beta1.UpgradeStrategy(c.Spec.UpgradeStrategy),
-			Command:         tov1beta1CollectorCommand(c.Spec.Command),
+			Command:         slices.Clone(c.Spec.Command),
 			Config:          *cfg,
 			Ingress: v1beta1.Ingress{
 				Type:             v1beta1.IngressType(c.Spec.Ingress.Type),
@@ -336,7 +336,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ServiceAccount:       c.Spec.ServiceAccount,
 			Image:                c.Spec.Image,
 			UpgradeStrategy:      UpgradeStrategy(c.Spec.UpgradeStrategy),
-			Command:              tov1alpha1CollectorCommand(c.Spec.Command),
+			Command:              slices.Clone(c.Spec.Command),
 			ImagePullPolicy:      c.Spec.ImagePullPolicy,
 			Config:               configYaml,
 			VolumeMounts:         c.Spec.VolumeMounts,
@@ -519,22 +519,3 @@ func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocati
 	return ""
 }
 
-func tov1beta1CollectorCommand(c *CollectorCommand) *v1beta1.CollectorCommand {
-	if c == nil {
-		return nil
-	}
-	return &v1beta1.CollectorCommand{
-		Name:      c.Name,
-		ExtraArgs: slices.Clone(c.ExtraArgs),
-	}
-}
-
-func tov1alpha1CollectorCommand(c *v1beta1.CollectorCommand) *CollectorCommand {
-	if c == nil {
-		return nil
-	}
-	return &CollectorCommand{
-		Name:      c.Name,
-		ExtraArgs: slices.Clone(c.ExtraArgs),
-	}
-}

@@ -1372,19 +1372,12 @@ spec:
                     type: integer
                 type: object
               command:
-                properties:
-                  extraArgs:
-                    items:
-                      type: string
-                    maxItems: 49
-                    type: array
-                    x-kubernetes-list-type: atomic
-                  name:
-                    minLength: 1
-                    type: string
-                required:
-                - name
-                type: object
+                items:
+                  type: string
+                maxItems: 50
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: atomic
               config:
                 type: string
               configmaps:
@@ -6086,19 +6079,12 @@ spec:
                     type: integer
                 type: object
               command:
-                properties:
-                  extraArgs:
-                    items:
-                      type: string
-                    maxItems: 49
-                    type: array
-                    x-kubernetes-list-type: atomic
-                  name:
-                    minLength: 1
-                    type: string
-                required:
-                - name
-                type: object
+                items:
+                  type: string
+                maxItems: 50
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: atomic
               config:
                 properties:
                   connectors:

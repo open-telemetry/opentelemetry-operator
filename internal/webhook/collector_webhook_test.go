@@ -675,16 +675,13 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Replicas: &one,
 					},
 					UpgradeStrategy: "adhoc",
-					Command: &v1beta1.CollectorCommand{
-						Name:      "/usr/share/agent",
-						ExtraArgs: []string{"otel"},
-					},
-					Config: cfg,
+					Command:         []string{"/usr/share/agent", "otel"},
+					Config:          cfg,
 				},
 			},
 		},
 		{
-			name: "valid spec with command including empty extraArgs element",
+			name: "invalid spec with empty command element",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -692,16 +689,14 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Replicas: &one,
 					},
 					UpgradeStrategy: "adhoc",
-					Command: &v1beta1.CollectorCommand{
-						Name:      "/bin/foo",
-						ExtraArgs: []string{"otel", ""},
-					},
-					Config: cfg,
+					Command:         []string{"/bin/foo", "otel", ""},
+					Config:          cfg,
 				},
 			},
+			expectedErr: "spec.command[2] must be non-empty",
 		},
 		{
-			name: "invalid command missing name",
+			name: "invalid command with whitespace-only element",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -709,14 +704,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Replicas: &one,
 					},
 					UpgradeStrategy: "adhoc",
-					Command: &v1beta1.CollectorCommand{
-						Name:      "   ",
-						ExtraArgs: []string{"otel"},
-					},
-					Config: cfg,
+					Command:         []string{"   ", "otel"},
+					Config:          cfg,
 				},
 			},
-			expectedErr: "spec.command.name must be set when spec.command is provided",
+			expectedErr: "spec.command[0] must be non-empty",
 		},
 		{
 			name:          "prom CR admissions warning",

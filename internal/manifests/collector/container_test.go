@@ -91,10 +91,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 func TestContainerCommandPassthrough(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Command: &v1beta1.CollectorCommand{
-				Name:      "/usr/share/agent",
-				ExtraArgs: []string{"otel"},
-			},
+			Command: []string{"/usr/share/agent", "otel"},
 		},
 	}
 	cfg := config.Config{CollectorImage: "default-image"}
@@ -113,7 +110,7 @@ func TestContainerCommandOmittedWhenUnset(t *testing.T) {
 func TestContainerCommandNameOnly(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Command: &v1beta1.CollectorCommand{Name: "/otelcol"},
+			Command: []string{"/otelcol"},
 		},
 	}
 	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true)

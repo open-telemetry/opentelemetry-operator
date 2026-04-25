@@ -166,8 +166,12 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *v1beta1.O
 func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
-	if r.Spec.Command != nil && strings.TrimSpace(r.Spec.Command.Name) == "" {
-		return warnings, fmt.Errorf("spec.command.name must be set when spec.command is provided")
+	if len(r.Spec.Command) > 0 {
+		for i, a := range r.Spec.Command {
+			if strings.TrimSpace(a) == "" {
+				return warnings, fmt.Errorf("spec.command[%d] must be non-empty", i)
+			}
+		}
 	}
 
 	nullObjects := r.Spec.Config.NullObjects()

@@ -143,10 +143,11 @@ for the OpenTelemetryCollector workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspeccommand">command</a></b></td>
-        <td>object</td>
+        <td><b>command</b></td>
+        <td>[]string</td>
         <td>
-          Command overrides the container entrypoint
+          Command overrides the container entrypoint (Pod.spec.containers[].command), for example
+["/path/to/binary", "subcommand"]. When omitted, the image ENTRYPOINT is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5757,41 +5758,6 @@ metric across all relevant pods (as a quantity)<br/>
         <td>int or string</td>
         <td>
           value is the target value of the metric (as a quantity).<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.command
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-Command overrides the container entrypoint (Pod.spec.containers[].command). Name is argv[0]; ExtraArgs
-are appended after Name. When unset, the image ENTRYPOINT is used.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is the executable path (argv[0]).<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>extraArgs</b></td>
-        <td>[]string</td>
-        <td>
-          ExtraArgs are argv tokens after Name (e.g. a subcommand).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20227,12 +20193,12 @@ for the workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspeccommand-1">command</a></b></td>
-        <td>object</td>
+        <td><b>command</b></td>
+        <td>[]string</td>
         <td>
-          Command overrides the container entrypoint (Pod.spec.containers[].command), for example when the collector
-runs as a subcommand of another binary. Name is argv[0]; ExtraArgs are appended after Name. Operator-generated
-args (--config=..., spec.args) are still passed as container args. When unset, the image ENTRYPOINT is used.<br/>
+          Command overrides the container entrypoint (Pod.spec.containers[].command), for example
+["/path/to/binary", "subcommand"] when the collector runs as a subcommand of another binary. Operator-generated
+args (--config=..., spec.args) are still passed as container args. When omitted, the image ENTRYPOINT is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26096,42 +26062,6 @@ metric across all relevant pods (as a quantity)<br/>
         <td>int or string</td>
         <td>
           value is the target value of the metric (as a quantity).<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.command
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
-
-
-
-Command overrides the container entrypoint (Pod.spec.containers[].command), for example when the collector
-runs as a subcommand of another binary. Name is argv[0]; ExtraArgs are appended after Name. Operator-generated
-args (--config=..., spec.args) are still passed as container args. When unset, the image ENTRYPOINT is used.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is the executable path (argv[0]).<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>extraArgs</b></td>
-        <td>[]string</td>
-        <td>
-          ExtraArgs are argv tokens after Name (e.g. a subcommand).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
