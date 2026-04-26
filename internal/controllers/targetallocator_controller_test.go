@@ -41,6 +41,7 @@ func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
+		nil,
 	)
 	created := &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,6 +113,7 @@ func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
 		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
+		nil,
 	)
 
 	// test
@@ -150,6 +152,7 @@ func TestUnmanaged_TargetAllocator(t *testing.T) {
 		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
+		nil,
 	)
 	unmanaged := &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -206,6 +209,7 @@ func TestBuildError_TargetAllocator(t *testing.T) {
 		events.NewFakeRecorder(10),
 		cfg,
 		testLogger,
+		nil,
 	)
 	unmanaged := &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{

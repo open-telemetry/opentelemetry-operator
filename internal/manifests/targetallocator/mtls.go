@@ -10,9 +10,17 @@ import (
 )
 
 func isMTLSEnabled(cfg config.Config, collector *v1beta1.OpenTelemetryCollector) bool {
+	if collector == nil || collector.Spec.TargetAllocator.Mtls == nil {
+		return false
+	}
+
+	useCertManager := true
+	if collector.Spec.TargetAllocator.Mtls.UseCertManager != nil {
+		useCertManager = *collector.Spec.TargetAllocator.Mtls.UseCertManager
+	}
+
 	return cfg.CertManagerAvailability == certmanager.Available &&
-		collector != nil &&
 		collector.Spec.TargetAllocator.Enabled &&
-		collector.Spec.TargetAllocator.Mtls != nil &&
-		collector.Spec.TargetAllocator.Mtls.Enabled
+		collector.Spec.TargetAllocator.Mtls.Enabled &&
+		useCertManager
 }

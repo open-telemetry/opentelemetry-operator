@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -48,10 +47,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	replaceCfgOpts := []ta.TAOption{}
 
-	if otelCol.Spec.TargetAllocator.Enabled &&
-		otelCol.Spec.TargetAllocator.Mtls != nil &&
-		otelCol.Spec.TargetAllocator.Mtls.Enabled &&
-		params.Config.CertManagerAvailability == certmanager.Available {
+	if isTAMTLSEnabledWithCertManager(params.Config, *otelCol) {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
 			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
 			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),

@@ -8189,6 +8189,9 @@ spec:
                     properties:
                       enabled:
                         type: boolean
+                      useCertManager:
+                        default: true
+                        type: boolean
                     type: object
                   nodeSelector:
                     additionalProperties:

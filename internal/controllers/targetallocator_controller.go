@@ -33,6 +33,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -44,6 +45,7 @@ type TargetAllocatorReconciler struct {
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
+	reviewer *rbac.Reviewer
 }
 
 // TargetAllocatorReconcilerParams is the set of options to build a new TargetAllocatorReconciler.
@@ -60,8 +62,18 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 	if err != nil {
 		return targetallocator.Params{}, err
 	}
+
+	// Recheck cert-manager RBAC on each reconciliation to handle late-added permissions.
+	// Only attempt to upgrade from NotAvailable → Available
+	if r.reviewer != nil && r.config.CertManagerAvailability != certmanager.Available {
+		if warnings, err := certmanager.CheckCertManagerPermissions(ctx, r.reviewer); err == nil && warnings == nil {
+			r.log.V(2).Info("cert-manager permissions detected during reconciliation, upgrading availability")
+			r.config.CertManagerAvailability = certmanager.Available
+		}
+	}
+	cfg := r.config
 	p := targetallocator.Params{
-		Config:          r.config,
+		Config:          cfg,
 		Client:          r.Client,
 		Log:             r.log,
 		Scheme:          r.scheme,
@@ -124,6 +136,7 @@ func NewTargetAllocatorReconciler(
 	recorder events.EventRecorder,
 	config config.Config,
 	logger logr.Logger,
+	reviewer *rbac.Reviewer,
 ) *TargetAllocatorReconciler {
 	return &TargetAllocatorReconciler{
 		Client:   client,
@@ -131,6 +144,7 @@ func NewTargetAllocatorReconciler(
 		scheme:   scheme,
 		config:   config,
 		recorder: recorder,
+		reviewer: reviewer,
 	}
 }
 

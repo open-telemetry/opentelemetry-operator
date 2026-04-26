@@ -34336,6 +34336,16 @@ Mtls defines the mTLS configuration for the target allocator. If enabled, the ta
           Enabled indicates whether to enable mTLS between the target allocator and the collector.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>useCertManager</b></td>
+        <td>boolean</td>
+        <td>
+          UseCertManager defines whether cert-manager should be used to provision certificates for mTLS.
+Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
