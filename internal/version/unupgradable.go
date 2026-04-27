@@ -13,7 +13,13 @@ import (
 
 // unupgradableInstrumentationVersions contains instrumentation versions that cannot be automatically upgraded from.
 // Outer key is the language, inner key is the version tag, value is the warning message.
-var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]map[string]string{}
+var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]map[string]string{
+	constants.InstrumentationLanguageDotNet: {
+		"1.2.0": "Version 1.2.0 cannot be automatically upgraded due to breaking changes in HTTP semantic conventions. " +
+			"See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for details. " +
+			"Please update the Instrumentation CR image manually after reviewing the migration guide.",
+	},
+}
 
 // IsInstrumentationVersionUnupgradable checks if an instrumentation image upgrade should be blocked.
 // It first verifies the image is from the same repository as defaultImage — images from other repositories are never blocked.
