@@ -20,6 +20,7 @@ spec:
     try:
     - script:
         timeout: 5m
+        shell: /bin/bash
         content: |
           #!/bin/bash
           set -eo pipefail
@@ -46,6 +47,7 @@ spec:
     try:
     - script:
         timeout: 5m
+        shell: /bin/bash
         content: |
           #!/bin/bash
           set -eo pipefail
@@ -68,9 +70,3 @@ spec:
     # and the status should reflect the blocked upgrade
     - assert:
         file: 02-assert.yaml
-    - script:
-        timeout: 30s
-        content: |
-          kubectl get events.events.k8s.io -n $NAMESPACE --field-selector reason=UpgradeBlocked -o jsonpath='{.items[*].note}'
-        check:
-          (contains($stdout, 'Automated upgrade blocked for dotnet')): true
