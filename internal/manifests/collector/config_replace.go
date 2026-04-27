@@ -6,6 +6,7 @@ package collector
 import (
 	go_yaml "github.com/goccy/go-yaml"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
@@ -16,7 +17,7 @@ import (
 func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1alpha1.TargetAllocator, options ...ta.TAOption) (string, error) {
 	collectorSpec := otelcol.Spec
 	taEnabled := targetAllocator != nil
-	cfgStr, err := collectorSpec.Config.Yaml()
+	cfgStr, err := apihelpers.Yaml(&collectorSpec.Config)
 	if err != nil {
 		return "", err
 	}

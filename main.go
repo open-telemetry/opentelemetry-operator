@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
@@ -447,15 +448,15 @@ func main() {
 	}
 
 	if cfg.EnableWebhooks {
-		var crdMetrics *otelv1beta1.Metrics
+		var crdMetrics *apihelpers.Metrics
 
 		if cfg.EnableCRMetrics {
-			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+			meterProvider, metricsErr := apihelpers.BootstrapMetrics()
 			if metricsErr != nil {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
 
-			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
+			crdMetrics, err = apihelpers.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}

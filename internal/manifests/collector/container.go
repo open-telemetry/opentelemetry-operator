@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -93,19 +94,19 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		}
 	}
 
-	livenessProbe, livenessProbeErr := otelcol.Spec.Config.GetLivenessProbe(logger)
+	livenessProbe, livenessProbeErr := apihelpers.GetLivenessProbe(&otelcol.Spec.Config, logger)
 	if livenessProbeErr != nil {
 		logger.Error(livenessProbeErr, "cannot create liveness probe.")
 	} else {
 		defaultProbeSettings(livenessProbe, otelcol.Spec.LivenessProbe)
 	}
-	readinessProbe, readinessProbeErr := otelcol.Spec.Config.GetReadinessProbe(logger)
+	readinessProbe, readinessProbeErr := apihelpers.GetReadinessProbe(&otelcol.Spec.Config, logger)
 	if readinessProbeErr != nil {
 		logger.Error(readinessProbeErr, "cannot create readiness probe.")
 	} else {
 		defaultProbeSettings(readinessProbe, otelcol.Spec.ReadinessProbe)
 	}
-	startupProbe, startupProbeErr := otelcol.Spec.Config.GetStartupProbe(logger)
+	startupProbe, startupProbeErr := apihelpers.GetStartupProbe(&otelcol.Spec.Config, logger)
 	if startupProbeErr != nil {
 		logger.Error(startupProbeErr, "cannot create startup probe.")
 	} else {
@@ -132,7 +133,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 
 func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.ContainerPort, error) {
 	ports := []corev1.ContainerPort{}
-	ps, err := conf.GetAllPorts(logger)
+	ps, err := apihelpers.GetAllPorts(&conf, logger)
 	if err != nil {
 		return ports, err
 	}
@@ -158,7 +159,7 @@ func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.
 		}
 	}
 
-	_, metricsPort, err := conf.Service.MetricsEndpoint(logger)
+	_, metricsPort, err := apihelpers.MetricsEndpoint(&conf.Service, logger)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
@@ -357,7 +358,7 @@ func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger 
 		)
 	}
 
-	if configEnvVars, err := otelcol.Spec.Config.GetEnvironmentVariables(logger); err != nil {
+	if configEnvVars, err := apihelpers.GetEnvironmentVariables(&otelcol.Spec.Config, logger); err != nil {
 		logger.Error(err, "could not get the environment variables from the config")
 	} else {
 		envVars = append(envVars, configEnvVars...)

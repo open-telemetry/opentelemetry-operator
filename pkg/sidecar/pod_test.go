@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -59,7 +60,7 @@ func TestAddNativeSidecar(t *testing.T) {
 		},
 	}
 
-	otelcolYaml, err := otelcol.Spec.Config.Yaml()
+	otelcolYaml, err := apihelpers.Yaml(&otelcol.Spec.Config)
 	require.NoError(t, err)
 	cfg := config.Config{
 		CollectorImage: "some-default-image",
@@ -188,7 +189,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 		},
 	}
 
-	otelcolYaml, err := otelcol.Spec.Config.Yaml()
+	otelcolYaml, err := apihelpers.Yaml(&otelcol.Spec.Config)
 	require.NoError(t, err)
 	cfg := config.Config{
 		CollectorImage: "some-default-image",

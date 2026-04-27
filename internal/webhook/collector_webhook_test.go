@@ -30,6 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -551,7 +552,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				_, applyErr := test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard())
+				_, applyErr := apihelpers.ServiceApplyDefaults(&test.expected.Spec.Config.Service, logr.Discard())
 				assert.NoError(t, applyErr, "could not apply defaults")
 			}
 			assert.NoError(t, err)
