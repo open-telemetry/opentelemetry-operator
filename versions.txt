@@ -26,8 +26,7 @@ autoinstrumentation-nodejs=0.73.0
 autoinstrumentation-python=0.61b0
 
 # Represents the current release of DotNet instrumentation.
-# This version should remain pinned to 1.2.0.
-autoinstrumentation-dotnet=1.2.0
+autoinstrumentation-dotnet=1.15.0
 
 # Represents the current release of Go instrumentation.
 autoinstrumentation-go=v0.23.0

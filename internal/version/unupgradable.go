@@ -11,9 +11,21 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
+// Kubernetes admission warnings are transmitted in HTTP headers and MUST NOT contain control
+// characters like newlines, so these messages are kept on a single line.
+const (
+	dotNet130WarningMessage = ".NET instrumentation 1.3.0 contains breaking HTTP semantic convention changes. " +
+		"See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. " +
+		"To upgrade, manually set the image on this Instrumentation resource to 1.3.0 or higher."
+)
+
 // unupgradableInstrumentationVersions contains instrumentation versions that cannot be automatically upgraded from.
 // Outer key is the language, inner key is the version tag, value is the warning message.
-var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]map[string]string{}
+var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]map[string]string{
+	constants.InstrumentationLanguageDotNet: {
+		"1.3.0": dotNet130WarningMessage,
+	},
+}
 
 // IsInstrumentationVersionUnupgradable checks if an instrumentation image upgrade should be blocked.
 // It first verifies the image is from the same repository as defaultImage — images from other repositories are never blocked.
@@ -59,8 +71,8 @@ func IsInstrumentationVersionUnupgradable(language constants.InstrumentationLang
 			}
 			continue
 		}
-		// Block if the blocked version is in range [current, target)
-		if !blockedVer.LessThan(currentVer) && blockedVer.LessThan(targetVer) {
+		// Block if the blocked version is in range (current, target]
+		if blockedVer.GreaterThan(currentVer) && blockedVer.LessThanEqual(targetVer) {
 			return true, msg
 		}
 	}

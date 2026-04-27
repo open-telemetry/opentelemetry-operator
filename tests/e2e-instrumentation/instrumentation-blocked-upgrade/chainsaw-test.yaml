@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-blocked-upgrade
+spec:
+  # This test modifies the operator deployment to verify upgrade blocking behavior.
+  steps:
+  - name: Create instrumentation with blocked dotnet version and verify webhook warning
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          kubectl apply -n $NAMESPACE -f 00-install-instrumentation-blocked.yaml 2>&1
+        check:
+          (contains($stdout, 'cannot be automatically upgraded')): true
+    - assert:
+        file: 00-assert.yaml
+  - name: Patch operator to use old dotnet version as default
+    try:
+    - script:
+        timeout: 5m
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+          OLD_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
+
+          # Add the dotnet image arg to override the compiled-in default
+          ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
+          NEW_ARGS=$(echo "$ARGS" | jq -c --arg img "$OLD_IMG" \
+            '[.[] | select(startswith("--auto-instrumentation-dotnet-image=") | not)] + ["--auto-instrumentation-dotnet-image=" + $img]')
+
+          kubectl patch deploy -n $NS $DEPLOY --type='json' \
+            -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+          kubectl rollout status deploy/$DEPLOY -n $NS --timeout=120s
+  - name: Create instrumentation that will be subject to upgrade
+    try:
+    - apply:
+        file: 01-install-instrumentation-upgrade-test.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: Restore operator to default dotnet version and trigger upgrade
+    try:
+    - script:
+        timeout: 5m
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+
+          # Remove the override arg so the operator uses its compiled-in default (1.15.0)
+          ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
+          NEW_ARGS=$(echo "$ARGS" | jq -c '[.[] | select(startswith("--auto-instrumentation-dotnet-image=") | not)]')
+
+          kubectl patch deploy -n $NS $DEPLOY --type='json' \
+            -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+          kubectl rollout status deploy/$DEPLOY -n $NS --timeout=120s
+          # Give the upgrade mechanism time to process existing Instrumentation CRs
+          sleep 5
+  - name: Assert upgrade was blocked with status and event
+    try:
+    # DotNet image should still be 1.2.0 (not upgraded to 1.15.0)
+    # and the status should reflect the blocked upgrade
+    - assert:
+        file: 02-assert.yaml
