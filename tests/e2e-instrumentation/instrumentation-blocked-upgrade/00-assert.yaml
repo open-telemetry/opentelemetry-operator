@@ -1,0 +1,7 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: blocked-upgrade-test
+spec:
+  dotnet:
+    image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
