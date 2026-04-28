@@ -9,8 +9,8 @@ package v1beta1
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2"
-	"k8s.io/api/core/v1"
+	v2 "k8s.io/api/autoscaling/v2"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -854,6 +854,11 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 	}
 	if in.DenyNamespaces != nil {
 		in, out := &in.DenyNamespaces, &out.DenyNamespaces
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.SecretsAccessNamespaces != nil {
+		in, out := &in.SecretsAccessNamespaces, &out.SecretsAccessNamespaces
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
