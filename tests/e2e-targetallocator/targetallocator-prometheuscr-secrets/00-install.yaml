@@ -78,4 +78,6 @@ spec:
       scrapeInterval: 1s
       secretsAccessNamespaces:
       - ($namespace)
+      serviceMonitorSelector: {}
+      podMonitorSelector: {}
     serviceAccount: ta
