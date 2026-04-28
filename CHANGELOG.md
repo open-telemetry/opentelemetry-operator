@@ -2,6 +2,46 @@
 
 <!-- next version -->
 
+## 0.150.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update default .NET auto-instrumentation version from 1.2.0 to 1.15.0 (#4996)
+  This update addresses security vulnerabilities in versions older than 1.15.0 (CVE-2026-40894, GHSA-g94r-2vxg-569j).
+  This is a breaking change due to HTTP semantic convention changes between versions.
+  Existing Instrumentation CRs using version 1.2.0 will NOT be automatically upgraded.
+  To upgrade, manually update the image in your Instrumentation CR after reviewing the migration guide.
+  See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for details.
+  
+
+### 💡 Enhancements 💡
+
+- `operator`: Expose watch-namespace scope via the `--watch-namespace` CLI flag and the `watch-namespace` config file field. The `WATCH_NAMESPACE` environment variable continues to work. (#4379)
+- `auto-instrumentation`: Add `spec.initContainerSecurityContext` to the Instrumentation CRD so users can explicitly set the security context of the auto-instrumentation init containers (Java, NodeJS, Python, DotNet, Apache HTTPD, Nginx). Add `spec.go.securityContext` for overriding the Go sidecar's defaults. (#4894)
+  When unset, existing behavior is preserved — init containers inherit the security context
+  of the first application container being instrumented, and the Go sidecar keeps the hardcoded
+  defaults required for eBPF (Privileged, RunAsUser: 0). Setting either field explicitly lets
+  restricted PSA environments declare the exact capabilities they want.
+  
+- `auto-instrumentation`: Allow instrumentation upgrades to be blocked for versions containing major breaking changes. (#4646, #2542)
+  Some instrumentation upgrades involve major breaking changes. The operator can't help with those, but it can
+  alert the user about them. This change makes this possible. It will also allow us to set the latest version
+  for new Instrumentation resources by default.
+  See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for the primary example.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.150.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.150.0)
+* [OpenTelemetry Contrib - v0.150.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.150.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.15.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0)
+* [Node.JS - v0.73.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.73.0)
+* [Python - v0.61b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.61b0)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.149.0
 
 ### 💡 Enhancements 💡

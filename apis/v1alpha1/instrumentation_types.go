@@ -74,6 +74,16 @@ type InstrumentationSpec struct {
 	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// InitContainerSecurityContext applied to the auto-instrumentation init
+	// containers created for Java, NodeJS, Python, DotNet, Apache HTTPD and
+	// Nginx. When unset, init containers inherit the security context of the
+	// first application container being instrumented (existing behavior). The
+	// Go auto-instrumentation sidecar is intentionally excluded — its security
+	// requirements (eBPF) differ from the init-container languages and are
+	// configured via `spec.go.securityContext`.
+	// +optional
+	InitContainerSecurityContext *corev1.SecurityContext `json:"initContainerSecurityContext,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -295,6 +305,13 @@ type Go struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// SecurityContext applied to the Go auto-instrumentation sidecar. If unset,
+	// the sidecar runs with the hardcoded defaults required for eBPF tracing
+	// (Privileged: true, RunAsUser: 0). Override with care — the sidecar needs
+	// access to /sys/kernel/debug to attach uprobes.
+	// +optional
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // ApacheHttpd defines Apache SDK and instrumentation configuration.

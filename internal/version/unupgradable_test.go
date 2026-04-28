@@ -60,11 +60,24 @@ func TestIsInstrumentationVersionUnupgradable(t *testing.T) {
 			defaultImage: "ghcr.io/org/java:v2.0.0",
 			unupgradableMap: map[constants.InstrumentationLanguage]map[string]string{
 				constants.InstrumentationLanguageJava: {
-					"v1.0.0": "Breaking changes in Java agent.",
+					"v2.0.0": "Breaking changes in Java agent.",
 				},
 			},
 			wantBlocked: true,
 			wantMessage: "Breaking changes in Java agent.",
+		},
+		{
+			name:         "unupgradable version without v prefix returns true with message",
+			language:     constants.InstrumentationLanguageDotNet,
+			image:        "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0",
+			defaultImage: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0",
+			unupgradableMap: map[constants.InstrumentationLanguage]map[string]string{
+				constants.InstrumentationLanguageDotNet: {
+					"1.3.0": "Breaking changes in dotNet agent.",
+				},
+			},
+			wantBlocked: true,
+			wantMessage: "Breaking changes in dotNet agent.",
 		},
 		{
 			name:         "different repo skips check",

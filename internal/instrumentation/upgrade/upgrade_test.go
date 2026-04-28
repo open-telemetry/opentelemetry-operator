@@ -25,6 +25,9 @@ import (
 )
 
 func TestUpgrade(t *testing.T) {
+	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{})
+	defer cleanup()
+
 	nsName := strings.ToLower(t.Name())
 	err := k8sClient.Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -121,10 +124,11 @@ func TestUpgrade(t *testing.T) {
 }
 
 func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
-	// Set up unupgradable version for testing
+	// Set up unupgradable version for testing. The blocked version "2" sits in
+	// (current, target] when going from "1" to "2", so the upgrade should be blocked.
 	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{
 		constants.InstrumentationLanguageJava: {
-			"1": "Breaking changes in Java agent require manual migration.",
+			"2": "Breaking changes in Java agent require manual migration.",
 		},
 	})
 	defer cleanup()
@@ -222,10 +226,10 @@ func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 // TestUpgradeClearsStaleBlockedStatus verifies that a previously-blocked instrumentation has its
 // status.upgradeBlockedVersions cleared once the blocking condition no longer applies.
 func TestUpgradeClearsStaleBlockedStatus(t *testing.T) {
-	// Initially block "java:1" so the first reconcile populates status.
+	// Block "2" so the first reconcile (java:1 -> java:2) hits the blocking range and populates status.
 	cleanup := version.SetUnupgradableInstrumentationVersionsForTests(map[constants.InstrumentationLanguage]map[string]string{
 		constants.InstrumentationLanguageJava: {
-			"1": "Breaking changes in Java agent require manual migration.",
+			"2": "Breaking changes in Java agent require manual migration.",
 		},
 	})
 
