@@ -35,3 +35,15 @@ func TestFilterFlags(t *testing.T) {
 	require.Equal(t, []string{".*filter.out"}, c.LabelsFilter)
 	require.Equal(t, []string{"another.*.filter"}, c.AnnotationsFilter)
 }
+
+func TestWatchNamespaceFlag(t *testing.T) {
+	oldArgs := args
+	args = []string{"--watch-namespace=foo,bar"}
+	t.Cleanup(func() {
+		args = oldArgs
+	})
+	c := New()
+	require.Empty(t, c.WatchNamespace)
+	require.NoError(t, ApplyCLI(&c))
+	require.Equal(t, "foo,bar", c.WatchNamespace)
+}

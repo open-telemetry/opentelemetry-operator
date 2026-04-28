@@ -144,15 +144,14 @@ func main() {
 	restConfig := ctrl.GetConfigOrDie()
 
 	var namespaces map[string]cache.Config
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+	if cfg.WatchNamespace != "" {
+		setupLog.Info("watching namespace(s)", "namespaces", cfg.WatchNamespace)
 		namespaces = map[string]cache.Config{}
-		for ns := range strings.SplitSeq(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(cfg.WatchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+		setupLog.Info("watching all namespaces")
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
