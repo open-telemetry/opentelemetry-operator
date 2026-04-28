@@ -10372,13 +10372,6 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>secretsAccessNamespaces</b></td>
-        <td>[]string</td>
-        <td>
-          SecretsAccessNamespaces Namespaces to scope the watching of secrets for the Target Allocator. If not configured, no namespaces are watched for secrets.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
@@ -10489,6 +10482,14 @@ Default: "30s"<br/>
         <td>
           ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
 protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretsAccessNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          SecretsAccessNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
+If not configured, no namespaces are watched for secrets.<br/>
         </td>
         <td>false</td>
       </tr><tr>
