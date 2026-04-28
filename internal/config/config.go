@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -84,6 +85,8 @@ type Config struct {
 	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard"`
 	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
+	// GatewayAPIsAvailability represents the availability of the Gateway APIs.
+	GatewayAPIsAvailability gatewayapi.ApiAvailability `yaml:"gateway-apis-availability"`
 	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
 	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability"`
 	// CertManagerAvailability represents the availability of the Cert-Manager.
@@ -122,6 +125,9 @@ type Config struct {
 	WebhookPort int `yaml:"webhook-port"`
 	// FipsDisabledComponents are disabled collector components when operator runs on FIPS enabled platform
 	FipsDisabledComponents string `yaml:"fips-disabled-components"`
+	// WatchNamespace is a comma-separated list of namespaces the operator should watch for
+	// CustomResources. Empty string (the default) means watch all namespaces.
+	WatchNamespace string `yaml:"watch-namespace"`
 	// TLS holds the TLS configuration of the controllers.
 	TLS TLSConfig `yaml:"tls"`
 	// ZapConfig holds the advanced Zap logging config

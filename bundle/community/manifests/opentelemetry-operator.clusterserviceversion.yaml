@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-03-27T16:38:21Z"
+    createdAt: "2026-04-27T14:53:29Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.148.0
+  name: opentelemetry-operator.v0.150.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -318,19 +318,20 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - events
-          verbs:
-          - create
-          - patch
-        - apiGroups:
-          - ""
-          resources:
           - namespaces
           - secrets
           verbs:
           - get
           - list
           - watch
+        - apiGroups:
+          - ""
+          - events.k8s.io
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
         - apiGroups:
           - apps
           resources:
@@ -409,6 +410,18 @@ spec:
           - get
           - list
         - apiGroups:
+          - gateway.networking.k8s.io
+          resources:
+          - httproutes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - monitoring.coreos.com
           resources:
           - podmonitors
@@ -462,6 +475,7 @@ spec:
           - opentelemetry.io
           resources:
           - clusterobservabilities/status
+          - instrumentations/status
           - opampbridges/status
           - opentelemetrycollectors/finalizers
           - opentelemetrycollectors/status
@@ -559,7 +573,7 @@ spec:
                   value: "true"
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.148.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.150.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -644,7 +658,7 @@ spec:
   minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.148.0
+  version: 0.150.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

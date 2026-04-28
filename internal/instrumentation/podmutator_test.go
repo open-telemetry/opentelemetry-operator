@@ -5055,8 +5055,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app", "app1", "java"}},
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app1", "app", "nodejs"}},
 			},
-			expectedStatus: false,
-			expectedMsg:    errors.New("duplicated container names detected: [app app1]"),
+			expectedStatus: true,
+			expectedMsg:    nil,
 		},
 		{
 			name: "Multiple instrumentations enabled with duplicated containers for single instrumentation",
@@ -5127,6 +5127,95 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 			assert.Equal(t, test.expectedInstrumentations, test.instrumentations)
 		})
 	}
+}
+
+func TestGoContainerAnnotationsDuplicateDetection(t *testing.T) {
+	tests := []struct {
+		name               string
+		annotations        map[string]string
+		expectedContainers []string
+		expectedErr        string
+	}{
+		{
+			name: "go with common container-names only",
+			annotations: map[string]string{
+				annotationInjectGo:            "true",
+				annotationInjectContainerName: "initContainer",
+			},
+			expectedContainers: []string{"initContainer"},
+		},
+		{
+			name: "go with both common container names",
+			annotations: map[string]string{
+				annotationInjectGo:               "true",
+				annotationInjectContainerName:    "initContainer",
+				annotationInjectGoContainersName: "initContainer",
+			},
+			expectedContainers: []string{"initContainer", "initContainer"},
+			expectedErr:        "duplicated container names detected: [initContainer]",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			insts := languageInstrumentations{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+			}
+
+			ns := corev1.Namespace{}
+			pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: test.annotations}}
+
+			err := insts.setCommonInstrumentedContainers(ns, pod)
+			require.NoError(t, err)
+
+			err = insts.setLanguageSpecificContainers(ns.ObjectMeta, pod.ObjectMeta)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.expectedContainers, insts.Go.Containers)
+
+			ok, validateErr := insts.areInstrumentedContainersCorrect()
+			if test.expectedErr == "" {
+				assert.True(t, ok)
+				assert.NoError(t, validateErr)
+				return
+			}
+
+			assert.False(t, ok)
+			require.Error(t, validateErr)
+			assert.Equal(t, test.expectedErr, validateErr.Error())
+		})
+	}
+}
+
+func TestMultiLanguageCommonContainerNamesDuplicateDetection(t *testing.T) {
+	insts := languageInstrumentations{
+		Java: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+		Go:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+	}
+
+	ns := corev1.Namespace{}
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				annotationInjectJava:          "true",
+				annotationInjectGo:            "true",
+				annotationInjectContainerName: "initContainer",
+			},
+		},
+	}
+
+	err := insts.setCommonInstrumentedContainers(ns, pod)
+	require.NoError(t, err)
+
+	err = insts.setLanguageSpecificContainers(ns.ObjectMeta, pod.ObjectMeta)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"initContainer"}, insts.Java.Containers)
+	assert.Equal(t, []string{"initContainer"}, insts.Go.Containers)
+
+	ok, validateErr := insts.areInstrumentedContainersCorrect()
+	assert.True(t, ok)
+	assert.NoError(t, validateErr)
 }
 
 // TestInitContainerInstrumentation tests that init containers can be instrumented

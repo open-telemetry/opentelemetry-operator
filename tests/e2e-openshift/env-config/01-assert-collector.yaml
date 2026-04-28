@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: env-config-collector
+  labels:
+    env-config-keep-label: should-be-kept
+status:
+  readyReplicas: 1

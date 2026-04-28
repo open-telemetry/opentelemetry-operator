@@ -42,6 +42,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -81,6 +82,8 @@ func init() {
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
+
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -141,15 +144,14 @@ func main() {
 	restConfig := ctrl.GetConfigOrDie()
 
 	var namespaces map[string]cache.Config
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+	if cfg.WatchNamespace != "" {
+		setupLog.Info("watching namespace(s)", "namespaces", cfg.WatchNamespace)
 		namespaces = map[string]cache.Config{}
-		for ns := range strings.SplitSeq(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(cfg.WatchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+		setupLog.Info("watching all namespaces")
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104

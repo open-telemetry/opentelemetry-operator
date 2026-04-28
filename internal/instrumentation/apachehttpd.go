@@ -76,10 +76,10 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Args:    []string{"cp -r " + apacheConfDir + "/* " + apacheAgentConfDirFull},
 			Env:     container.Env,
 			EnvFrom: container.EnvFrom,
-			VolumeMounts: append(container.VolumeMounts, corev1.VolumeMount{
+			VolumeMounts: slices.Concat(container.VolumeMounts, []corev1.VolumeMount{{
 				Name:      apacheAgentConfigVolume,
 				MountPath: apacheAgentConfDirFull,
-			}),
+			}}),
 			Resources:       apacheSpec.Resources,
 			SecurityContext: container.SecurityContext,
 			ImagePullPolicy: container.ImagePullPolicy,

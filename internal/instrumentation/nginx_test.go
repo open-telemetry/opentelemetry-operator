@@ -604,6 +604,27 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 	}
 }
 
+// Regression test: append aliasing corrupts clone init container mounts when
+// the VolumeMounts slice has spare capacity.
+func TestInjectNginxSDKVolumemountAliasing(t *testing.T) {
+	mounts := make([]corev1.VolumeMount, 0, 4)
+	mounts = append(mounts,
+		corev1.VolumeMount{Name: "a", MountPath: "/a"},
+		corev1.VolumeMount{Name: "b", MountPath: "/b"},
+	)
+
+	pod := corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{VolumeMounts: mounts}}}}
+	result := injectNginxSDK(logr.Discard(), v1alpha1.Nginx{Image: "foo/bar:1"},
+		pod, false, &pod.Spec.Containers[0], "http://otlp:4317",
+		map[string]string{string(semconv.K8SDeploymentNameKey): "svc"}, v1alpha1.InstrumentationSpec{})
+
+	clone := result.Spec.InitContainers[0]
+	lastMount := clone.VolumeMounts[len(clone.VolumeMounts)-1]
+	assert.Equal(t, nginxAgentConfigVolume, lastMount.Name,
+		"clone's config mount was corrupted by slice aliasing: %v", clone.VolumeMounts)
+	assert.Equal(t, nginxAgentConfDirFull, lastMount.MountPath)
+}
+
 func TestNginxInitContainerMissing(t *testing.T) {
 	tests := []struct {
 		name     string

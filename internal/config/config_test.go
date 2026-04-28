@@ -61,8 +61,10 @@ func TestToStringMap(t *testing.T) {
 		"target-allocator-availability":           "0",
 		"target-allocator-configmap-entry":        "",
 		"targetallocator-image":                   "",
+		"watch-namespace":                         "",
 		"webhook-port":                            "0",
 		"enable-webhooks":                         "false",
+		"gateway-apis-availability":               "0",
 	}, cfg.ToStringMap())
 }
 
