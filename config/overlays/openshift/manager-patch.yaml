@@ -1,3 +1,25 @@
+- op: replace
+  path: "/spec/replicas"
+  value: 2
+- op: replace
+  path: "/spec/strategy"
+  value:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+- op: add
+  path: "/spec/template/spec/affinity"
+  value:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: opentelemetry-operator
+              control-plane: controller-manager
+          topologyKey: kubernetes.io/hostname
 - op: add
   path: "/spec/template/spec/containers/0/args"
   value:
