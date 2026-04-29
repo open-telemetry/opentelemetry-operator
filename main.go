@@ -489,13 +489,13 @@ func main() {
 			// via cfg.Internal.OperandTLSProfile, which was set earlier in this function.
 			// This ensures collectors automatically get updated TLS settings when the operator
 			// restarts after a cluster TLS profile change.
-			if err = wh.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+			if err = wh.SetupCollectorWebhook(mgr, cfg, reviewer, clientset.Discovery(), crdMetrics, bv, fipsCheck); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 				os.Exit(1)
 			}
 		}
 		if cfg.TargetAllocatorAvailability == targetallocator.Available {
-			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
+			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer, clientset.Discovery()); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
 			}

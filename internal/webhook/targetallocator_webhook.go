@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -36,6 +37,7 @@ type TargetAllocatorWebhook struct {
 	cfg      config.Config
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
+	dcl      discovery.DiscoveryInterface
 }
 
 func (w TargetAllocatorWebhook) Default(_ context.Context, targetallocator *v1alpha1.TargetAllocator) error {
@@ -102,7 +104,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 		if ta.Spec.ServiceAccount == "" {
 			saname = naming.TargetAllocatorServiceAccount(ta.Name)
 		}
-		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.GetNamespace(), saname)
+		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, w.dcl, ta.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
@@ -116,9 +118,10 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 	return warnings, nil
 }
 
-func SetupTargetAllocatorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
+func SetupTargetAllocatorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, dcl discovery.DiscoveryInterface) error {
 	cvw := &TargetAllocatorWebhook{
 		reviewer: reviewer,
+		dcl:      dcl,
 		logger:   mgr.GetLogger().WithValues("handler", "TargetAllocatorWebhook", "version", "v1beta1"),
 		scheme:   mgr.GetScheme(),
 		cfg:      cfg,

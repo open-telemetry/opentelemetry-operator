@@ -24,6 +24,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/discovery"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
@@ -104,6 +106,7 @@ func TestValidate(t *testing.T) {
 			testScheme,
 			cfg,
 			getReviewer(test.shouldFailSar),
+			nil,
 			nil,
 			nil,
 			bv,
@@ -545,6 +548,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				nil,
+				nil,
 				bv,
 				nil,
 			)
@@ -716,8 +720,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/servicemonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/podmonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/probes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/scrapeconfigs: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nodes/metrics: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - services: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - endpoints: [get,list,watch]",
@@ -1425,6 +1431,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				getDiscoveryClient(),
 				nil,
 				nil,
 				bv,
@@ -1494,6 +1501,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				nil,
 				bv,
@@ -1766,6 +1774,28 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func getDiscoveryClient() discovery.DiscoveryInterface {
+	c := fake.NewClientset()
+	fd := c.Discovery().(*fakediscovery.FakeDiscovery)
+	fd.Resources = []*metav1.APIResourceList{
+		{
+			GroupVersion: "monitoring.coreos.com/v1",
+			APIResources: []metav1.APIResource{
+				{Name: "servicemonitors"},
+				{Name: "podmonitors"},
+				{Name: "probes"},
+			},
+		},
+		{
+			GroupVersion: "monitoring.coreos.com/v1alpha1",
+			APIResources: []metav1.APIResource{
+				{Name: "scrapeconfigs"},
+			},
+		},
+	}
+	return fd
 }
 
 func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
