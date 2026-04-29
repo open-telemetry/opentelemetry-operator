@@ -76,7 +76,7 @@ spec:
     prometheusCR:
       enabled: true
       scrapeInterval: 1s
-      secretsAccessNamespaces:
+      secretNamespaces:
       - ($namespace)
       serviceMonitorSelector: {}
       podMonitorSelector: {}

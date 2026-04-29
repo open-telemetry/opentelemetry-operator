@@ -112,8 +112,8 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
 		}
 
-		if taSpec.PrometheusCR.SecretsAccessNamespaces != nil {
-			prometheusCRConfig["secrets_access_namespaces"] = taSpec.PrometheusCR.SecretsAccessNamespaces
+		if taSpec.PrometheusCR.SecretNamespaces != nil {
+			prometheusCRConfig["secret_namespaces"] = taSpec.PrometheusCR.SecretNamespaces
 		}
 
 		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector

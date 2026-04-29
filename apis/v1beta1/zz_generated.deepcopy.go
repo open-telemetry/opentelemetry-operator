@@ -857,8 +857,8 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.SecretsAccessNamespaces != nil {
-		in, out := &in.SecretsAccessNamespaces, &out.SecretsAccessNamespaces
+	if in.SecretNamespaces != nil {
+		in, out := &in.SecretNamespaces, &out.SecretNamespaces
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

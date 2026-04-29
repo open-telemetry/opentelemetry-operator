@@ -781,17 +781,17 @@ func TestGetSecretsAllowList(t *testing.T) {
 		},
 		{
 			name:                     "single namespace",
-			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{"ns1"}},
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{"ns1"}},
 			expectedSecretsAllowList: map[string]struct{}{"ns1": {}},
 		},
 		{
 			name:                     "multiple namespaces",
-			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{"ns1", "ns2", "ns3"}},
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{"ns1", "ns2", "ns3"}},
 			expectedSecretsAllowList: map[string]struct{}{"ns1": {}, "ns2": {}, "ns3": {}},
 		},
 		{
 			name:                     "empty slice",
-			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretsAccessNamespaces: []string{}},
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{}},
 			expectedSecretsAllowList: map[string]struct{}{},
 		},
 	}

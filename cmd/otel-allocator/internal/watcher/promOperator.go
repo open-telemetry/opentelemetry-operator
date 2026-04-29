@@ -66,7 +66,7 @@ func NewPrometheusCRWatcher(
 
 	// Scope the metadata informer factory to specific namespaces for secrets access.
 	// This avoids requiring cluster-wide secrets list/watch RBAC.
-	// If SecretsAccessNamespaces is not configured, no namespaces are watched for secrets.
+	// If SecretNamespaces is not configured, no namespaces are watched for secrets.
 	secretsAllowList := cfg.PrometheusCR.GetSecretsAllowList()
 	metaDataInformerFactory := informers.NewMetadataInformerFactory(secretsAllowList, denyList, mdClient, allocatorconfig.DefaultResyncTime, nil)
 
