@@ -8485,7 +8485,7 @@ spec:
                         items:
                           type: string
                         type: array
-                      secretsAccessNamespaces:
+                      secretNamespaces:
                         items:
                           type: string
                         type: array
