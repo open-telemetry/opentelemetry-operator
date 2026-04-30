@@ -3231,7 +3231,7 @@ prometheus_cr:
 						RenewBefore: &metav1.Duration{Duration: targetallocator.CACertRenewBefore},
 						IsCA:        true,
 						SecretName:  "test-ca-cert",
-						IssuerRef: cmmetav1.ObjectReference{
+						IssuerRef: cmmetav1.IssuerReference{
 							Name: "test-self-signed-issuer",
 							Kind: "Issuer",
 						},
@@ -3284,7 +3284,7 @@ prometheus_cr:
 							"test-targetallocator.test.svc.cluster.local",
 						},
 						SecretName: "test-ta-server-cert",
-						IssuerRef: cmmetav1.ObjectReference{
+						IssuerRef: cmmetav1.IssuerReference{
 							Name: "test-ca-issuer",
 							Kind: "Issuer",
 						},
@@ -3318,7 +3318,7 @@ prometheus_cr:
 							"test-targetallocator.test.svc.cluster.local",
 						},
 						SecretName: "test-ta-client-cert",
-						IssuerRef: cmmetav1.ObjectReference{
+						IssuerRef: cmmetav1.IssuerReference{
 							Name: "test-ca-issuer",
 							Kind: "Issuer",
 						},
