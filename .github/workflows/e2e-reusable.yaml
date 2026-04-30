@@ -71,6 +71,7 @@ jobs:
         - e2e-autoscale
         - e2e-instrumentation-default
         - e2e-instrumentation
+        - e2e-no-crds
         - e2e-opampbridge
         - e2e-pdb
         - e2e-prometheuscr
@@ -99,6 +100,8 @@ jobs:
           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
         - group: e2e-automatic-rbac
           setup: "add-rbac-permissions-to-operator prepare-e2e"
+        - group: e2e-no-crds
+          setup: "prepare-e2e-no-crds"
 
     steps:
     - name: Check out code into the Go module directory
