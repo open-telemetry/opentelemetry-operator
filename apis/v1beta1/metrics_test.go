@@ -132,7 +132,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
-	crdMetrics, err := NewMetrics(provider, context.Background(), cl)
+	crdMetrics, err := NewMetrics(context.Background(), provider, cl)
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -211,7 +211,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
-	_, err = NewMetrics(provider, context.Background(), cl)
+	_, err = NewMetrics(context.Background(), provider, cl)
 	assert.NoError(t, err)
 
 	rm := metricdata.ResourceMetrics{}

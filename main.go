@@ -455,7 +455,7 @@ func main() {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
 
-			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
+			crdMetrics, err = otelv1beta1.NewMetrics(ctx, meterProvider, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}
