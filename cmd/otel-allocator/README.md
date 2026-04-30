@@ -33,7 +33,7 @@ Additional configuration options are present under [./internal/config/config.go]
 
 ## Even Distribution of Prometheus Targets
 
-The Target Allocator’s first job is to discover targets to scrape and OTel Collectors to allocate targets to. Then it can distribute the targets it discovers among the Collectors. The Collectors in turn query the Target Allocator for Metrics endpoints to scrape, and then the Collectors’ [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) scrape  the Metrics targets. 
+The Target Allocator’s first job is to discover targets to scrape and OTel Collectors to allocate targets to. Then it can distribute the targets it discovers among the Collectors. The Collectors in turn query the Target Allocator for Metrics endpoints to scrape, and then the Collectors’ [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) scrape the Metrics targets.
 
 This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). 
 
@@ -73,7 +73,7 @@ in target assignment when collector count changes, but at the cost of less even 
 This strategy assigns each target to the collector running on the same Node the target is. As such, it only makes sense
 to use it with a collector running as a DaemonSet.
 
-> [!WARNING]  
+> [!WARNING]
 > The per-node strategy ignores targets not assigned to a Node, like for example control plane components.
 
 [consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
@@ -397,13 +397,13 @@ Prerequisites:
 
     - The target allocator needs the appropriate RBAC permissions to get the secrets referenced in the Service / Pod monitor.
 
-    -  The operator needs the appropriate RBAC permissions to manage cert-manager resources. The following clusterRole can be used to grant the necessary permissions:
+    - The operator needs the appropriate RBAC permissions to manage cert-manager resources. The following clusterRole can be used to grant the necessary permissions:
 
         ```yaml
         apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRole
         metadata:
-          name:  opentelemetry-operator-controller-manager-cert-manager-role
+          name: opentelemetry-operator-controller-manager-cert-manager-role
         rules:
         - apiGroups:
           - cert-manager.io
@@ -428,7 +428,7 @@ Prerequisites:
 # Design
 
 If the Allocator is activated, all Prometheus configurations will be transferred in a separate ConfigMap which get in
-turn mounted to the Allocator.    
+turn mounted to the Allocator.
 This configuration will be resolved to target configurations and then split across all OpenTelemetryCollector instances.
 
 TargetAllocators expose the results as [HTTP_SD endpoints](https://prometheus.io/docs/prometheus/latest/http_sd/)
