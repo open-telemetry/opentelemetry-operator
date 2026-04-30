@@ -1,5 +1,6 @@
 resources:
 - ../../default
+- pdb.yaml
 
 patches:
 - path: manager-patch.yaml
