@@ -48,3 +48,12 @@ spec:
           file: 03-install.yaml
       - assert:
           file: 03-assert.yaml
+  - name: step-04
+    try:
+      - apply:
+          file: 04-install.yaml
+      - assert:
+          file: 04-assert.yaml
+    catch:
+      - podLogs:
+          selector: checker=true
