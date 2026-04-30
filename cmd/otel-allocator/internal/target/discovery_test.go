@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/prometheus/prometheus/scrape"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -497,15 +498,102 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, nil, scu, nil)
 	require.NoError(t, err)
-	d.processTargetGroups("test", groups, results)
+	d.processTargetGroups("test", groups, results, &promconfig.ScrapeConfig{JobName: "test"})
 
-	i := 0
+	// Verify all labels are in sorted order (the core invariant this test validates).
+	// scrape.PopulateDiscoveredLabels adds scrape config defaults (__scheme__, etc.)
+	// which interleave with the alphabetic test labels.
+	var prevName string
 	results[0].Labels.Range(func(l labels.Label) {
-		expected := string(rune('a' + i))
-		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
-		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
-		i++
+		if prevName != "" {
+			assert.Less(t, prevName, l.Name, "labels should be sorted, but %q came after %q", l.Name, prevName)
+		}
+		prevName = l.Name
 	})
+
+	// Verify that all original group and target labels are present.
+	for i := 'a'; i <= 'z'; i++ {
+		name := string(rune(i))
+		assert.Equal(t, name, results[0].Labels.Get(name), "expected label %q to be present", name)
+	}
+}
+
+func TestPopulateDiscoveredLabels(t *testing.T) {
+	tests := []struct {
+		description string
+		cfg         *promconfig.ScrapeConfig
+		tLabels     model.LabelSet
+		tgLabels    model.LabelSet
+		wantLabels  map[string]string
+	}{
+		{
+			description: "scrape config defaults are applied",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:        "my-job",
+				ScrapeInterval: model.Duration(30 * time.Second),
+				ScrapeTimeout:  model.Duration(10 * time.Second),
+				MetricsPath:    "/metrics",
+				Scheme:         "http",
+			},
+			tLabels:  model.LabelSet{"__address__": "localhost:9090"},
+			tgLabels: model.LabelSet{},
+			wantLabels: map[string]string{
+				"__address__":         "localhost:9090",
+				"job":                 "my-job",
+				"__scrape_interval__": "30s",
+				"__scrape_timeout__":  "10s",
+				"__metrics_path__":    "/metrics",
+				"__scheme__":          "http",
+			},
+		},
+		{
+			description: "target labels override group labels",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:     "job1",
+				MetricsPath: "/metrics",
+				Scheme:      "http",
+			},
+			tLabels:  model.LabelSet{"__address__": "target-addr", "env": "target-env"},
+			tgLabels: model.LabelSet{"env": "group-env", "region": "us-west"},
+			wantLabels: map[string]string{
+				"__address__": "target-addr",
+				"env":         "target-env",
+				"region":      "us-west",
+				"job":         "job1",
+			},
+		},
+		{
+			description: "existing labels are not overridden by scrape config",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:     "default-job",
+				MetricsPath: "/default-metrics",
+				Scheme:      "https",
+			},
+			tLabels: model.LabelSet{
+				"__address__":      "addr",
+				"job":              "custom-job",
+				"__metrics_path__": "/custom-path",
+			},
+			tgLabels: model.LabelSet{},
+			wantLabels: map[string]string{
+				"__address__":      "addr",
+				"job":              "custom-job",
+				"__metrics_path__": "/custom-path",
+				"__scheme__":       "https",
+			},
+		},
+	}
+
+	lb := labels.NewBuilder(labels.EmptyLabels())
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			scrape.PopulateDiscoveredLabels(lb, tc.cfg, tc.tLabels, tc.tgLabels)
+			lset := lb.Labels()
+			for k, v := range tc.wantLabels {
+				assert.Equal(t, v, lset.Get(k), "label %q mismatch", k)
+			}
+		})
+	}
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {
