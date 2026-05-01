@@ -333,6 +333,26 @@ deploy: install-gateway-api-crds set-image-controller
 undeploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Standalone OpAMP Bridge (no operator / CRDs required)
+
+# Deploy the standalone OpAMP bridge into the current Kubernetes context.
+# Does not require the operator, CRDs, or cert-manager.
+.PHONY: deploy-standalone-bridge
+deploy-standalone-bridge: kustomize
+	cd config/standalone-bridge && $(KUSTOMIZE) edit set image operator-opamp-bridge=${OPERATOROPAMPBRIDGE_IMG}
+	$(KUSTOMIZE) build config/standalone-bridge | kubectl apply -f -
+	kubectl rollout status deployment/otel-opamp-bridge-standalone -n opentelemetry-opamp-bridge --timeout=120s
+
+# Undeploy the standalone OpAMP bridge from the current Kubernetes context.
+.PHONY: undeploy-standalone-bridge
+undeploy-standalone-bridge: kustomize
+	$(KUSTOMIZE) build config/standalone-bridge | kubectl delete --ignore-not-found=true -f -
+
+# Build, load, and deploy the standalone bridge to a kind cluster.
+# Assumes a kind cluster is already running (use start-kind first).
+.PHONY: deploy-standalone-bridge-kind
+deploy-standalone-bridge-kind: load-image-operator-opamp-bridge deploy-standalone-bridge
+
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller

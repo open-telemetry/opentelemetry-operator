@@ -246,8 +246,12 @@ func TestClient_ApplyUpdate(t *testing.T) {
 	allInstances, err = c.ListInstances()
 	require.NoError(t, err, "Should be able to list all collectors")
 	assert.Len(t, allInstances, 2)
-	assert.Contains(t, allInstances, reportingCol)
-	assert.Contains(t, allInstances, *updatedInstance)
+	instanceNames := make([]string, len(allInstances))
+	for i, inst := range allInstances {
+		instanceNames[i] = inst.GetNamespace() + "/" + inst.GetName()
+	}
+	assert.Contains(t, instanceNames, reportingCol.GetNamespace()+"/"+reportingCol.GetName())
+	assert.Contains(t, instanceNames, updatedInstance.GetNamespace()+"/"+updatedInstance.GetName())
 }
 
 func TestClient_Delete(t *testing.T) {
