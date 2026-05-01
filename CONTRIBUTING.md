@@ -55,6 +55,25 @@ git commit -sam "Add feature X"
 gh pr create
 ```
 
+#### Signing commits
+
+This repository enforces branch protection rules that require all commits to be signed. This protects against supply chain attacks by ensuring that the code pushed to the repository was authored by a verified contributor.
+
+To set up commit signing, you can use either SSH or GPG keys:
+
+**Using SSH (Recommended):**
+1. Ensure you have an SSH key added to your GitHub account.
+2. Tell Git to use SSH for signing: `git config --global gpg.format ssh`
+3. Set your signing key: `git config --global user.signingkey /path/to/your/ssh/key.pub`
+4. Enable automatic signing: `git config --global commit.gpgsign true`
+
+**Using GPG:**
+1. Generate a GPG key and add it to your GitHub account.
+2. Tell Git to use your GPG key: `git config --global user.signingkey <your-gpg-key-id>`
+3. Enable automatic signing: `git config --global commit.gpgsign true`
+
+For detailed instructions, refer to GitHub's official documentation on [commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
+
 #### Make changes to the project manifests
 
 The following command should be run to make sure the project manifests are up-to-date:
