@@ -32,7 +32,7 @@ jobs:
           name: 'Event File'
           run_id: ${{ github.event.workflow_run.id || inputs.e2e_workflow_id }}
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
           event_file: event.json
