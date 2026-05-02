@@ -58,6 +58,13 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
+	// EnableTargetAllocatorLabeledMetrics is the feature gate that enables labeled metrics for target allocator targets_remaining.
+	EnableTargetAllocatorLabeledMetrics = featuregate.GlobalRegistry().MustRegister(
+		"operator.targetallocator.labeledmetrics",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables labeled metrics (with job.name and k8s.namespace.name) for target allocator targets_remaining metric"),
+		featuregate.WithRegisterFromVersion("v0.145.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
