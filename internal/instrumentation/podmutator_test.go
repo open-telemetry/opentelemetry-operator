@@ -2955,9 +2955,7 @@ func TestMutatePod(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "otel/apache-httpd:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -3197,7 +3195,7 @@ func TestMutatePod(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxSdkCloneContainerTestCommand, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -3207,7 +3205,7 @@ func TestMutatePod(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "otel/nginx-inj:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommand},
+							Args:    nginxSdkInitContainerTestArgs,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,

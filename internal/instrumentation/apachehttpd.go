@@ -121,22 +121,22 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 	if isApacheInitContainerMissing(pod, apacheAgentInitContainerName) {
 		// Inject volume for agent
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		// The user-controlled apacheConfDir is passed as a positional arg ($1) instead of
+		// being interpolated into the shell string, so its value isn't parsed by the shell.
+		apacheAgentScript := "cp -r /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
+			// setup logging configuration from template
+			"export agentLogDir=$(echo \"" + apacheAgentDirFull + "/logs\" | sed 's,/,\\\\/,g') && " +
+			"cat " + apacheAgentDirFull + "/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > " + apacheAgentDirFull + "/conf/opentelemetry_sdk_log4cxx.xml &&" +
+			// Create agent configuration file by pasting content of env var to a file
+			"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
+			"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
+			// Include a link to include Apache agent configuration file into httpd.conf
+			"printf '\\nInclude %s/" + apacheAgentConfigFile + "\\n' \"$1\" >> " + apacheAgentConfDirFull + "/" + apacheConfigFile
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    apacheAgentInitContainerName,
 			Image:   apacheSpec.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args: []string{
-				// Copy agent binaries to shared volume
-				"cp -r /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
-					// setup logging configuration from template
-					"export agentLogDir=$(echo \"" + apacheAgentDirFull + "/logs\" | sed 's,/,\\\\/,g') && " +
-					"cat " + apacheAgentDirFull + "/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > " + apacheAgentDirFull + "/conf/opentelemetry_sdk_log4cxx.xml &&" +
-					// Create agent configuration file by pasting content of env var to a file
-					"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
-					"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
-					// Include a link to include Apache agent configuration file into httpd.conf
-					"echo -e '\nInclude " + getApacheConfDir(apacheSpec.ConfigPath) + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
-			},
+			Args:    []string{apacheAgentScript, "--", getApacheConfDir(apacheSpec.ConfigPath)},
 			Env: []corev1.EnvVar{
 				{
 					Name:  apacheAttributesEnvVar,

@@ -66,7 +66,6 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 			},
 		})
 
-		nginxConfFile := getNginxConfFile(nginxSpec.ConfigFile)
 		nginxConfDir := getNginxConfDir(nginxSpec.ConfigFile)
 
 		// from original Nginx container, we need
@@ -74,13 +73,13 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 		// 2) version of Nginx to select the proper version of OTel modules.
 		//    - run Nginx with -v to get the version
 		//    - store the version into a file where instrumentation initContainer can pick it up
+		// User-controlled values (nginxConfDir) are passed as positional args ($1) instead of
+		// being interpolated into the script, so they aren't parsed by the shell.
 		nginxCloneScriptTemplate := `
-cp -r %[2]s/* %[3]s &&
-export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
+cp -r "$1"/* %[1]s &&
+export %[2]s="$( { nginx -v ; } 2>&1 )" && echo ${%[2]s##*/} > %[1]s/version.txt
 `
 		nginxAgentCommands := prepareCommandFromTemplate(nginxCloneScriptTemplate,
-			nginxConfFile,
-			nginxConfDir,
 			nginxAgentConfDirFull,
 			nginxVersionEnvVar,
 		)
@@ -89,7 +88,7 @@ export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 			Name:    nginxAgentCloneContainerName,
 			Image:   container.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args:    []string{nginxAgentCommands},
+			Args:    []string{nginxAgentCommands, "--", nginxConfDir},
 			Env:     container.Env,
 			EnvFrom: container.EnvFrom,
 			VolumeMounts: slices.Concat(container.VolumeMounts, []corev1.VolumeMount{{
@@ -177,21 +176,26 @@ sed -i "1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${
 mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \n
 		`
 
+		// User-controlled values (e.g. ConfigFile) are forwarded to nginx_instrumentation.sh
+		// via "$@" expansion instead of being interpolated into the shell string with %s
+		// quoting, so they are never parsed by the shell.
 		nginxAgentI13nCommand := "echo -e $OTEL_NGINX_I13N_SCRIPT > " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
 			"chmod +x " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
 			"cat " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
-			fmt.Sprintf(nginxAgentDirFull+"/nginx_instrumentation.sh \"%s\" \"%s\" \"%s\" \"%s\"",
-				nginxAgentDirFull,
-				nginxAgentConfDirFull,
-				getNginxConfFile(nginxSpec.ConfigFile),
-				nginxServiceInstanceId,
-			)
+			nginxAgentDirFull + "/nginx_instrumentation.sh \"$@\""
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    nginxAgentInitContainerName,
 			Image:   nginxSpec.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args:    []string{nginxAgentI13nCommand},
+			Args: []string{
+				nginxAgentI13nCommand,
+				"--",
+				nginxAgentDirFull,
+				nginxAgentConfDirFull,
+				getNginxConfFile(nginxSpec.ConfigFile),
+				nginxServiceInstanceId,
+			},
 			Env: []corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
