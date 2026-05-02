@@ -1942,7 +1942,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "img:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -2111,7 +2111,7 @@ func TestInjectNginx(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkCloneContainerTestCommand, "--", "/etc/nginx"},
+							Args:    []string{nginxCloneScript, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -2126,10 +2126,6 @@ func TestInjectNginx(t *testing.T) {
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelMaxQueueSize 4096;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName my-nginx-6c44bcbdd;\nNginxModuleServiceNamespace ns;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,

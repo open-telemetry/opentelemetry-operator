@@ -15,8 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-var apacheSdkInitContainerTestCommand = "cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && printf '\\nInclude %s/opentemetry_agent.conf\\n' \"$1\" >> /opt/opentelemetry-webserver/source-conf/httpd.conf"
-
 func TestInjectApacheHttpdagent(t *testing.T) {
 	tests := []struct {
 		name string
@@ -68,7 +66,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -160,7 +158,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/opt/customPath"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/opt/customPath"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -258,7 +256,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -361,7 +359,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -471,7 +469,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{apacheSdkInitContainerTestCommand, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
