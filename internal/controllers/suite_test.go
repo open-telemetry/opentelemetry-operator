@@ -228,16 +228,16 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = wh.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, nil); err != nil {
+	if err = wh.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, nil, nil); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
-	if err = wh.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
+	if err = wh.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer, nil); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
 
-	if err = wh.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
+	if err = wh.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer, nil); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

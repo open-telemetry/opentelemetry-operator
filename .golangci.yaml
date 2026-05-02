@@ -67,6 +67,9 @@ linters:
       rules:
         - name: add-constant
           disabled: true
+        - name: argument-limit
+          arguments:
+            - 9
         - name: bare-return
         - name: blank-imports
           disabled: true
