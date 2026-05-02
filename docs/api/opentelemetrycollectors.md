@@ -34980,6 +34980,14 @@ protocols supported by Prometheus in order of preference (from most to least pre
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>secretNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
+If not configured, no namespaces are watched for secrets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrservicemonitornamespaceselector">serviceMonitorNamespaceSelector</a></b></td>
         <td>object</td>
         <td>
