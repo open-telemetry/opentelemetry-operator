@@ -37,7 +37,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.Factory(ConfigMap),
 		manifests.Factory(ServiceAccount),
-		manifests.Factory(TargetAllocator),
 	}...)
 
 	// Services, ingress, network policies, and autoscalers only make sense when
@@ -54,6 +53,8 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifests.Factory(NetworkPolicy),
 		}...)
 	}
+
+	manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
 
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
