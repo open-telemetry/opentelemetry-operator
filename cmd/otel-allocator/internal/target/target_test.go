@@ -73,11 +73,18 @@ func TestItemHashStability(t *testing.T) {
 }
 
 func TestItemHashDifferentJobs(t *testing.T) {
-	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	item1 := NewItem("job-a", "http://10.0.0.1:8080", ls, "")
-	item2 := NewItem("job-b", "http://10.0.0.1:8080", ls, "")
+	ls1 := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "job-a"},
+	)
+	ls2 := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "job-b"},
+	)
+	item1 := NewItem("job-a", "http://10.0.0.1:8080", ls1, "")
+	item2 := NewItem("job-b", "http://10.0.0.1:8080", ls2, "")
 
-	// Different job names should produce different hashes
+	// Different job names in labels should produce different hashes
 	assert.NotEqual(t, item1.Hash(), item2.Hash())
 }
 
@@ -201,48 +208,61 @@ func TestGetEndpointSliceName(t *testing.T) {
 	}
 }
 
-func TestLabelsHashWithJobName(t *testing.T) {
-	ls := labels.New(
+func TestItemHashDifferentJobLabels(t *testing.T) {
+	// When labels include the job name (as populated by populateDiscoveredLabels),
+	// items with different jobs produce different hashes via labels.Hash().
+	ls1 := labels.New(
 		labels.Label{Name: "app", Value: "test"},
-		labels.Label{Name: "env", Value: "prod"},
+		labels.Label{Name: "job", Value: "job-a"},
+	)
+	ls2 := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "job-b"},
 	)
 
-	hash1 := LabelsHashWithJobName(ls, "job-a")
-	hash2 := LabelsHashWithJobName(ls, "job-a")
-	hash3 := LabelsHashWithJobName(ls, "job-b")
+	item1 := NewItem("job-a", "http://10.0.0.1:8080", ls1, "")
+	item2 := NewItem("job-b", "http://10.0.0.1:8080", ls2, "")
 
-	// Same inputs produce the same hash
-	assert.Equal(t, hash1, hash2)
-	// Different job names produce different hashes
-	assert.NotEqual(t, hash1, hash3)
-	// Hash is non-zero
-	assert.NotZero(t, hash1)
+	// Same labels except job name => different hashes
+	assert.NotEqual(t, item1.Hash(), item2.Hash())
+	assert.NotZero(t, item1.Hash())
 }
 
 func TestHashFromBuilder(t *testing.T) {
 	ls := labels.New(
 		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "my-job"},
 		labels.Label{Name: "__meta_kubernetes_namespace", Value: "default"},
 	)
 	builder := labels.NewBuilder(ls)
-	hash := HashFromBuilder(builder, "my-job")
+	hash := HashFromBuilder(builder)
 
-	// Meta labels are skipped, so the hash should only consider "app=test"
-	lsNoMeta := labels.New(labels.Label{Name: "app", Value: "test"})
+	// Meta labels are skipped, so the hash should only consider "app=test" + "job=my-job"
+	lsNoMeta := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "my-job"},
+	)
 	builderNoMeta := labels.NewBuilder(lsNoMeta)
-	hashNoMeta := HashFromBuilder(builderNoMeta, "my-job")
+	hashNoMeta := HashFromBuilder(builderNoMeta)
 
 	assert.Equal(t, hash, hashNoMeta, "meta labels should be skipped in hash computation")
 	assert.NotZero(t, hash)
 }
 
 func TestHashFromBuilderDifferentJobs(t *testing.T) {
-	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	builder1 := labels.NewBuilder(ls)
-	builder2 := labels.NewBuilder(ls)
+	ls1 := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "job-1"},
+	)
+	ls2 := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "job", Value: "job-2"},
+	)
+	builder1 := labels.NewBuilder(ls1)
+	builder2 := labels.NewBuilder(ls2)
 
-	hash1 := HashFromBuilder(builder1, "job-1")
-	hash2 := HashFromBuilder(builder2, "job-2")
+	hash1 := HashFromBuilder(builder1)
+	hash2 := HashFromBuilder(builder2)
 
 	assert.NotEqual(t, hash1, hash2)
 }

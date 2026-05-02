@@ -48,7 +48,7 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		if keepTarget {
 			// Compute hash immediately while we have the builder, skipping meta labels.
 			// This avoids materializing the filtered labels.
-			hash := target.HashFromBuilder(builder, tItem.JobName)
+			hash := target.HashFromBuilder(builder)
 			targets[writeIndex] = target.NewItem(
 				tItem.JobName,
 				tItem.TargetURL,
