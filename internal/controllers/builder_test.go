@@ -30,7 +30,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -2864,6 +2863,12 @@ prometheus_cr:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+							Enabled: true,
+							Mtls: &v1beta1.TargetAllocatorMTLS{
+								Enabled: true,
+							},
+						},
 						Config: v1beta1.Config{
 							Receivers: v1beta1.AnyConfig{
 								Object: map[string]any{
@@ -3337,7 +3342,6 @@ prometheus_cr:
 				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
 			},
-			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {

@@ -56,6 +56,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 		events.NewFakeRecorder(10),
 		config.New(),
 		testLogger,
+		nil,
 	)
 
 	t.Run("not owned by a collector", func(t *testing.T) {
@@ -116,6 +117,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 			events.NewFakeRecorder(10),
 			config.New(),
 			testLogger,
+			nil,
 		)
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{

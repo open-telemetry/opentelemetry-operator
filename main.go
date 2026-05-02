@@ -83,6 +83,10 @@ func init() {
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(gatewayv1.Install(scheme))
+	// Always register cert-manager types in the scheme so that reconciliation
+	// can create Certificate/Issuer objects even if cert-manager RBAC is
+	// detected later (after the initial auto-detect).
+	utilruntime.Must(cmv1.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
@@ -330,14 +334,9 @@ func main() {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
 	if cfg.CertManagerAvailability == certmanager.Available {
-		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
-		utilruntime.Must(cmv1.AddToScheme(scheme))
-
-		if featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-			setupLog.Info("Securing the connection between the target allocator and the collector")
-		}
+		setupLog.Info("Cert-Manager is available to the operator.")
 	} else {
-		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
+		setupLog.Info("Cert-Manager is not available to the operator. It may become available later during reconciliation.")
 	}
 	if cfg.CollectorAvailability == collector.Available {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
@@ -400,6 +399,7 @@ func main() {
 			mgr.GetEventRecorder("targetallocator"),
 			cfg,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
+			reviewer,
 		).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
 			os.Exit(1)

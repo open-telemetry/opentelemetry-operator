@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -127,7 +126,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if isMTLSEnabled(params.Config, params.Collector) {
 		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",

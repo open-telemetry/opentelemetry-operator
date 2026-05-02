@@ -201,6 +201,9 @@ spec:
   serviceAccount: collector
   targetAllocator:
     enabled: true
+    mtls:
+      enabled: true
+      useCertManager: true
     prometheusCR:
       enabled: true
       scrapeInterval: 1s

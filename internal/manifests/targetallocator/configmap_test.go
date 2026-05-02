@@ -419,16 +419,15 @@ prometheus_cr:
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
+		testParams.Collector.Spec.TargetAllocator.Enabled = true
+		testParams.Collector.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
@@ -476,12 +475,15 @@ https:
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
 		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
+		testParams.Collector.Spec.TargetAllocator.Enabled = true
+		testParams.Collector.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing

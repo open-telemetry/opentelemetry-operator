@@ -33,6 +33,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	internalCertmanager "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -156,8 +157,18 @@ func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1
 }
 
 func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+	// Recheck cert-manager RBAC on each reconciliation to handle late-added permissions.
+	// Only attempt to upgrade from NotAvailable → Available
+	if r.reviewer != nil && r.config.CertManagerAvailability != internalCertmanager.Available {
+		if warnings, err := internalCertmanager.CheckCertManagerPermissions(ctx, r.reviewer); err == nil && warnings == nil {
+			r.log.V(2).Info("cert-manager permissions detected during reconciliation, upgrading availability")
+			r.config.CertManagerAvailability = internalCertmanager.Available
+		}
+	}
+	cfg := r.config
+
 	p := manifests.Params{
-		Config:   r.config,
+		Config:   cfg,
 		Client:   r.Client,
 		OtelCol:  instance,
 		Log:      r.log,
