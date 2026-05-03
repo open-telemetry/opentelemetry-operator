@@ -13,7 +13,6 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -46,7 +45,6 @@ type CollectorWebhook struct {
 	cfg      config.Config
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
-	dcl      discovery.DiscoveryInterface
 	metrics  *v1beta1.Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
@@ -342,7 +340,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 			saname = naming.TargetAllocatorServiceAccount(r.Name)
 		}
 		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(
-			ctx, c.reviewer, c.dcl, r.GetNamespace(), saname)
+			ctx, c.reviewer, c.cfg.PrometheusCRAvailability, r.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
@@ -408,7 +406,6 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
-	dcl discovery.DiscoveryInterface,
 	recorder events.EventRecorder,
 	metrics *v1beta1.Metrics,
 	bv BuildValidator,
@@ -419,7 +416,6 @@ func NewCollectorWebhook(
 		scheme:   scheme,
 		cfg:      cfg,
 		reviewer: reviewer,
-		dcl:      dcl,
 		recorder: recorder,
 		metrics:  metrics,
 		bv:       bv,
@@ -427,8 +423,8 @@ func NewCollectorWebhook(
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, dcl discovery.DiscoveryInterface, metrics *v1beta1.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, dcl, mgr.GetEventRecorder("opentelemetry-operator"), metrics, bv, fipsCheck)
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *v1beta1.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorder("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).

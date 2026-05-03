@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +52,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -317,7 +317,7 @@ func main() {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability == prometheus.Available {
+	if len(cfg.PrometheusCRAvailability) > 0 {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	} else {
@@ -435,7 +435,7 @@ func main() {
 		setupLog.Info("ClusterObservability feature is disabled")
 	}
 
-	if cfg.PrometheusCRAvailability == prometheus.Available && cfg.CreateServiceMonitorOperatorMetrics {
+	if slices.Contains(cfg.PrometheusCRAvailability, "servicemonitors") && cfg.CreateServiceMonitorOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
@@ -489,13 +489,13 @@ func main() {
 			// via cfg.Internal.OperandTLSProfile, which was set earlier in this function.
 			// This ensures collectors automatically get updated TLS settings when the operator
 			// restarts after a cluster TLS profile change.
-			if err = wh.SetupCollectorWebhook(mgr, cfg, reviewer, clientset.Discovery(), crdMetrics, bv, fipsCheck); err != nil {
+			if err = wh.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 				os.Exit(1)
 			}
 		}
 		if cfg.TargetAllocatorAvailability == targetallocator.Available {
-			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer, clientset.Discovery()); err != nil {
+			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
 			}

@@ -15,7 +15,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -239,7 +238,7 @@ func TestBuild(t *testing.T) {
 					},
 				},
 				Config: config.Config{
-					PrometheusCRAvailability: prometheus.Available,
+					PrometheusCRAvailability: []string{"servicemonitors", "podmonitors"},
 				},
 			},
 			expectedObjects: 6,
@@ -276,7 +275,7 @@ func TestBuild(t *testing.T) {
 					},
 				},
 				Config: config.Config{
-					PrometheusCRAvailability: prometheus.Available,
+					PrometheusCRAvailability: []string{"servicemonitors", "podmonitors"},
 				},
 			},
 			expectedObjects: 9,
@@ -315,7 +314,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: config.Config{PrometheusCRAvailability: prometheus.Available},
+				Config: config.Config{PrometheusCRAvailability: []string{"servicemonitors", "podmonitors"}},
 			},
 			expectedObjects: 9,
 			wantErr:         true,

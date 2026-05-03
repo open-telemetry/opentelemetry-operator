@@ -5,13 +5,9 @@ package v1beta1
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"slices"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/discovery"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
@@ -43,59 +39,19 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	},
 }
 
-var prometheusCRDNames = []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"}
-
-// checkPrometheusCRDExists reports whether resourceName is served under monitoring.coreos.com.
-func checkPrometheusCRDExists(dcl discovery.DiscoveryInterface, resourceName string) (bool, error) {
-	if dcl == nil {
-		return false, errors.New("discovery client is nil")
-	}
-	groups, err := dcl.ServerGroups()
-	if err != nil {
-		return false, err
-	}
-	for _, g := range groups.Groups {
-		if g.Name != "monitoring.coreos.com" {
-			continue
-		}
-		for _, v := range g.Versions {
-			resources, err := dcl.ServerResourcesForGroupVersion(v.GroupVersion)
-			if err != nil {
-				return false, err
-			}
-			if slices.ContainsFunc(resources.APIResources, func(r metav1.APIResource) bool {
-				return r.Name == resourceName
-			}) {
-				return true, nil
-			}
-		}
-	}
-	return false, nil
-}
-
 func CheckTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
-	dcl discovery.DiscoveryInterface,
+	availableCRDs []string,
 	namespace string,
 	serviceAccountName string,
 ) (warnings []string, err error) {
 	rules := targetAllocatorCRPolicyRules
 
-	var existingCRDs []string
-	for _, name := range prometheusCRDNames {
-		exists, checkErr := checkPrometheusCRDExists(dcl, name)
-		if checkErr != nil {
-			return []string{}, fmt.Errorf("unable to check CRD existence: %w", checkErr)
-		}
-		if exists {
-			existingCRDs = append(existingCRDs, name)
-		}
-	}
-	if len(existingCRDs) > 0 {
+	if len(availableCRDs) > 0 {
 		rules = append(rules, &rbacv1.PolicyRule{
 			APIGroups: []string{"monitoring.coreos.com"},
-			Resources: existingCRDs,
+			Resources: availableCRDs,
 			Verbs:     []string{"get", "list", "watch"},
 		})
 	}

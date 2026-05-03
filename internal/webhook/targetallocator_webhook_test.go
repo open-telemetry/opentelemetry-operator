@@ -17,8 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/discovery"
-	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	kubeTesting "k8s.io/client-go/testing"
 
@@ -331,13 +329,15 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "targetallocator:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
+				PrometheusCRAvailability: []string{
+					"servicemonitors", "podmonitors", "probes", "scrapeconfigs",
+				},
 			}
 			cvw := &TargetAllocatorWebhook{
 				logger:   logr.Discard(),
 				scheme:   testScheme,
 				cfg:      cfg,
 				reviewer: getReviewer(test.shouldFailSar),
-				dcl:      getDiscoveryClient(),
 			}
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.targetallocator)
@@ -370,26 +370,4 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 		return true, sar, nil
 	})
 	return rbac.NewReviewer(c)
-}
-
-func getDiscoveryClient() discovery.DiscoveryInterface {
-	c := fake.NewClientset()
-	fd := c.Discovery().(*fakediscovery.FakeDiscovery)
-	fd.Resources = []*metav1.APIResourceList{
-		{
-			GroupVersion: "monitoring.coreos.com/v1",
-			APIResources: []metav1.APIResource{
-				{Name: "servicemonitors"},
-				{Name: "podmonitors"},
-				{Name: "probes"},
-			},
-		},
-		{
-			GroupVersion: "monitoring.coreos.com/v1alpha1",
-			APIResources: []metav1.APIResource{
-				{Name: "scrapeconfigs"},
-			},
-		},
-	}
-	return fd
 }
