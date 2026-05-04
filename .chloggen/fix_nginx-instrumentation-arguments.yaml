@@ -5,7 +5,7 @@ change_type: bug_fix
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Stop interpolating user-controlled CRD fields into init container shell scripts when injecting Apache HTTPD and Nginx instrumentation
+note: Validate `spec.apacheHttpd.configPath` and `spec.nginx.configFile` more strictly for Instrumentations
 
 # One or more tracking issues related to the change
 issues: [4925]
@@ -16,4 +16,5 @@ issues: [4925]
 subtext: |
   Values from `Instrumentation.spec.apacheHttpd.configPath` and `Instrumentation.spec.nginx.configFile`
   are now passed to init container scripts as positional arguments instead of being concatenated into
-  the shell command string, so they are no longer parsed by the shell.
+  the shell command string, so they are no longer parsed by the shell. They're also restricted to usual Unix
+  path characters and limited to 256 characters.
