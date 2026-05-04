@@ -149,8 +149,11 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 endif
 MANIFEST_DIR ?= config/crd/bases
 
-# kubectl apply does not work on large CRDs.
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
+# Use a moderate description length to restore CRD field descriptions for operator-owned
+# types while keeping total CRD size within etcd limits. Use kubectl apply --server-side
+# when applying CRDs to accommodate the larger payload.
+# See: https://github.com/open-telemetry/opentelemetry-operator/issues/2737
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=128"
 
 # Choose which version to generate
 BUNDLE_VARIANT ?= community
@@ -242,9 +245,10 @@ run: generate fmt vet manifests
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags "${OPERATOR_LDFLAGS}" ./main.go --zap-devel
 
 # Install CRDs into a cluster
+# Use --server-side to support the larger CRDs that include field descriptions.
 .PHONY: install
 install: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply --server-side -f -
 
 # Uninstall CRDs from a cluster
 .PHONY: uninstall
