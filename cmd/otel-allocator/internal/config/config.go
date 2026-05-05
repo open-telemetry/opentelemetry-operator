@@ -71,6 +71,7 @@ type Config struct {
 	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
+	Telemetry                    TelemetryConfig       `yaml:"telemetry,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
@@ -99,6 +100,31 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+// TelemetryConfig mirrors the collector's service.telemetry structure for the Target Allocator.
+type TelemetryConfig struct {
+	Metrics MetricsConfig `yaml:"metrics,omitempty"`
+}
+
+// MetricsConfig holds metric-export settings for the Target Allocator's own telemetry.
+type MetricsConfig struct {
+	// OTLP configures an optional OTLP metric exporter. When set, metrics are
+	// exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+	OTLP *OTLPExporterConfig `yaml:"otlp,omitempty"`
+}
+
+// OTLPExporterConfig holds connection settings for the OTLP metric exporter.
+type OTLPExporterConfig struct {
+	// Endpoint is the OTLP receiver address (e.g. "localhost:4317" for gRPC,
+	// "http://localhost:4318" for HTTP).
+	Endpoint string `yaml:"endpoint"`
+	// Protocol selects the transport: "grpc" (default) or "http".
+	Protocol string `yaml:"protocol,omitempty"`
+	// Headers are additional key/value pairs sent with every export request.
+	Headers map[string]string `yaml:"headers,omitempty"`
+	// Insecure disables TLS — only suitable for local development.
+	Insecure bool `yaml:"insecure,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType

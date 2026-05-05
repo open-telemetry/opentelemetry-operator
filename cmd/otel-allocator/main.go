@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"k8s.io/client-go/kubernetes"
@@ -85,7 +87,18 @@ func main() {
 	if promErr != nil {
 		panic(promErr)
 	}
-	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
+	meterProviderOpts := []sdkmetric.Option{sdkmetric.WithReader(metricExporter)}
+
+	if cfg.Telemetry.Metrics.OTLP != nil {
+		otlpReader, otlpErr := newOTLPMetricReader(ctx, cfg.Telemetry.Metrics.OTLP)
+		if otlpErr != nil {
+			setupLog.Error(otlpErr, "Failed to create OTLP metric reader")
+			os.Exit(1)
+		}
+		meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader))
+	}
+
+	meterProvider := sdkmetric.NewMeterProvider(meterProviderOpts...)
 	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
@@ -297,4 +310,37 @@ func main() {
 		setupLog.Error(runErr, "run group exited")
 	}
 	setupLog.Info("Target allocator exited.")
+}
+
+// newOTLPMetricReader creates a PeriodicExportingMetricReader backed by either
+// an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
+func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
+	switch cfg.Protocol {
+	case "http":
+		opts := []otlpmetrichttp.Option{otlpmetrichttp.WithEndpoint(cfg.Endpoint)}
+		if cfg.Insecure {
+			opts = append(opts, otlpmetrichttp.WithInsecure())
+		}
+		if len(cfg.Headers) > 0 {
+			opts = append(opts, otlpmetrichttp.WithHeaders(cfg.Headers))
+		}
+		exp, err := otlpmetrichttp.New(ctx, opts...)
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exp), nil
+	default: // "grpc"
+		opts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithEndpoint(cfg.Endpoint)}
+		if cfg.Insecure {
+			opts = append(opts, otlpmetricgrpc.WithInsecure())
+		}
+		if len(cfg.Headers) > 0 {
+			opts = append(opts, otlpmetricgrpc.WithHeaders(cfg.Headers))
+		}
+		exp, err := otlpmetricgrpc.New(ctx, opts...)
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exp), nil
+	}
 }
