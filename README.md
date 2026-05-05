@@ -27,6 +27,17 @@ To install the operator in an existing cluster, make sure you have [`cert-manage
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
+Before deploying a release image directly, verify its signature:
+
+```bash
+IMAGE="ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator"
+DIGEST="<sha256 digest from the release notes>"
+
+cosign verify "${IMAGE}@${DIGEST}" \
+  --certificate-identity-regexp "^https://github.com/open-telemetry/opentelemetry-operator/.github/workflows/publish-images.yaml@refs/tags/v.+$" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+```
+
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
 
 ```yaml
