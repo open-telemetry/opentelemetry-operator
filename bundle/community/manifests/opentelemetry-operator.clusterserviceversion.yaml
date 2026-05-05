@@ -304,7 +304,6 @@ spec:
           - ""
           resources:
           - configmaps
-          - pods
           - serviceaccounts
           - services
           verbs:
@@ -319,6 +318,7 @@ spec:
           - ""
           resources:
           - namespaces
+          - pods
           - secrets
           verbs:
           - get
@@ -455,7 +455,6 @@ spec:
           - opampbridges
           - opentelemetrycollectors
           - targetallocators
-          - targetallocators/finalizers
           verbs:
           - create
           - delete
@@ -469,6 +468,7 @@ spec:
           resources:
           - clusterobservabilities/finalizers
           - opampbridges/finalizers
+          - targetallocators/finalizers
           verbs:
           - update
         - apiGroups:
