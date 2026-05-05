@@ -19,7 +19,7 @@ type TargetAllocatorPrometheusCR struct {
 	// +optional
 	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
 	// SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
-	// If not configured, no namespaces are watched for secrets.
+	// If not configured, defaults to the target allocator's own namespace.
 	// +optional
 	SecretNamespaces []string `json:"secretNamespaces,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.

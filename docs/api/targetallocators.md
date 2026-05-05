@@ -10489,7 +10489,7 @@ protocols supported by Prometheus in order of preference (from most to least pre
         <td>[]string</td>
         <td>
           SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
-If not configured, no namespaces are watched for secrets.<br/>
+If not configured, defaults to the target allocator's own namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>

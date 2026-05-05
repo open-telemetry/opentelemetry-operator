@@ -442,12 +442,17 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 	return tlsConfig, certWatcher, nil
 }
 
-// GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
-// If the deny list is empty, it defaults to an empty map.
-func (c PrometheusCRConfig) GetSecretsAllowList() map[string]struct{} {
+// GetSecretsAllowList returns the namespaces to watch for secrets as a map.
+// If SecretNamespaces is explicitly configured, those namespaces are used.
+// Otherwise, it defaults to the collectorNamespace (the target allocator's own namespace).
+func (c PrometheusCRConfig) GetSecretsAllowList(collectorNamespace string) map[string]struct{} {
 	secretsAllowList := make(map[string]struct{})
-	for _, ns := range c.SecretNamespaces {
-		secretsAllowList[ns] = struct{}{}
+	if len(c.SecretNamespaces) > 0 {
+		for _, ns := range c.SecretNamespaces {
+			secretsAllowList[ns] = struct{}{}
+		}
+	} else if collectorNamespace != "" {
+		secretsAllowList[collectorNamespace] = struct{}{}
 	}
 	return secretsAllowList
 }
