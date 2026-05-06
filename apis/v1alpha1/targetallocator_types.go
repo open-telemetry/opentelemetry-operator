@@ -99,4 +99,10 @@ type TargetAllocatorSpec struct {
 	// ReadinessProbe defines the readiness probe configuration for the Target Allocator container.
 	// +optional
 	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
+	// Telemetry defines the self-telemetry configuration for the TargetAllocator.
+	// When set, the TargetAllocator exports its own metrics via OTLP in addition
+	// to the Prometheus /metrics endpoint.
+	//
+	// +optional
+	Telemetry v1beta1.TargetAllocatorTelemetry `json:"telemetry,omitempty"`
 }
