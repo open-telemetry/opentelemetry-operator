@@ -80,6 +80,19 @@ func TestIsInstrumentationVersionUnupgradable(t *testing.T) {
 			wantMessage: "Breaking changes in dotNet agent.",
 		},
 		{
+			name:         "java upgrade across breaking 2.0.0 is blocked",
+			language:     constants.InstrumentationLanguageJava,
+			image:        "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.33.6",
+			defaultImage: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.27.0",
+			unupgradableMap: map[constants.InstrumentationLanguage]map[string]string{
+				constants.InstrumentationLanguageJava: {
+					"2.0.0": "Breaking changes in Java agent.",
+				},
+			},
+			wantBlocked: true,
+			wantMessage: "Breaking changes in Java agent.",
+		},
+		{
 			name:         "different repo skips check",
 			language:     constants.InstrumentationLanguageJava,
 			image:        "my-registry.io/custom/java:v1.0.0",

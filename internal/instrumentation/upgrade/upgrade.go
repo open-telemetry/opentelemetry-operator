@@ -117,7 +117,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if warningMsg != "" {
 						msg = fmt.Sprintf("Automated upgrade blocked for %s: %s", instCfg.language, warningMsg)
 					}
-					u.Recorder.Eventf(upgraded, nil, corev1.EventTypeWarning, "UpgradeBlocked", "Upgrade", msg)
+					// Include the language in the event action so that two events
+					// for the same Instrumentation but different languages are
+					// not aggregated into one by the events.k8s.io broadcaster
+					// (which keys by type/action/reason/regarding, not note).
+					u.Recorder.Eventf(upgraded, nil, corev1.EventTypeWarning, "UpgradeBlocked", fmt.Sprintf("Upgrade-%s", instCfg.language), msg)
 					u.Logger.Info("upgrade blocked for unupgradable instrumentation version",
 						"name", inst.Name,
 						"namespace", inst.Namespace,

@@ -6,7 +6,7 @@ metadata:
 spec:
   # This test modifies the operator deployment to verify upgrade blocking behavior.
   steps:
-  - name: Create instrumentation with blocked dotnet version and verify webhook warning
+  - name: Create instrumentation with blocked dotnet and java versions and verify webhook warnings
     try:
     - script:
         timeout: 30s
@@ -16,7 +16,7 @@ spec:
           (contains($stdout, 'cannot be automatically upgraded')): true
     - assert:
         file: 00-assert.yaml
-  - name: Patch operator to use old dotnet version as default
+  - name: Patch operator to use old dotnet and java versions as defaults
     try:
     - script:
         timeout: 5m
@@ -26,12 +26,13 @@ spec:
           set -eo pipefail
           NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
-          OLD_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
+          OLD_DOTNET_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
+          OLD_JAVA_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.33.6"
 
-          # Add the dotnet image arg to override the compiled-in default
+          # Add the dotnet and java image args to override the compiled-in defaults
           ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
-          NEW_ARGS=$(echo "$ARGS" | jq -c --arg img "$OLD_IMG" \
-            '[.[] | select(startswith("--auto-instrumentation-dotnet-image=") | not)] + ["--auto-instrumentation-dotnet-image=" + $img]')
+          NEW_ARGS=$(echo "$ARGS" | jq -c --arg dotnet "$OLD_DOTNET_IMG" --arg java "$OLD_JAVA_IMG" \
+            '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
 
           kubectl patch deploy -n $NS $DEPLOY --type='json' \
             -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -43,7 +44,7 @@ spec:
         file: 01-install-instrumentation-upgrade-test.yaml
     - assert:
         file: 01-assert.yaml
-  - name: Restore operator to default dotnet version and trigger upgrade
+  - name: Restore operator to default dotnet and java versions and trigger upgrade
     try:
     - script:
         timeout: 5m
@@ -54,9 +55,9 @@ spec:
           NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
 
-          # Remove the override arg so the operator uses its compiled-in default (1.15.0)
+          # Remove the override args so the operator uses its compiled-in defaults
           ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
-          NEW_ARGS=$(echo "$ARGS" | jq -c '[.[] | select(startswith("--auto-instrumentation-dotnet-image=") | not)]')
+          NEW_ARGS=$(echo "$ARGS" | jq -c '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
 
           kubectl patch deploy -n $NS $DEPLOY --type='json' \
             -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -64,9 +65,57 @@ spec:
           kubectl rollout status deploy/$DEPLOY -n $NS --timeout=120s
           # Give the upgrade mechanism time to process existing Instrumentation CRs
           sleep 5
-  - name: Assert upgrade was blocked with status and event
+  - name: Assert upgrades were blocked
     try:
-    # DotNet image should still be 1.2.0 (not upgraded to 1.15.0)
-    # and the status should reflect the blocked upgrade
+    # DotNet image should still be 1.2.0 and Java image should still be 1.33.6
+    # (neither upgraded to their respective compiled-in defaults), and the
+    # Instrumentation status should record the blocked upgrade reason for both
+    # languages.
     - assert:
         file: 02-assert.yaml
+    # Verify both UpgradeBlocked events were emitted by the operator. We do
+    # this in a script (instead of two chainsaw `assert` blocks on the Event
+    # resource) because chainsaw's assertion-tree matcher cannot reliably
+    # disambiguate two Events that share every field except `note` — it picks
+    # one actual event and compares it against both expected matchers, which
+    # fails for at least one of them.
+    - script:
+        timeout: 90s
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+          # Events are queued by the operator's event recorder and flushed
+          # asynchronously, so the Instrumentation status may be updated before
+          # the events surface in the API. Retry briefly to allow them to land.
+          notes=""
+          missing=()
+          for _ in {1..30}; do
+            events_json=$(kubectl get events.events.k8s.io -n "$NAMESPACE" -o json)
+            notes=$(jq -r '.items[] | select(.reason == "UpgradeBlocked" and .regarding.name == "upgrade-test") | .note' <<<"$events_json")
+            missing=()
+            grep -qF "Automated upgrade blocked for dotnet:" <<<"$notes" || missing+=("dotnet")
+            grep -qF "Automated upgrade blocked for java:"   <<<"$notes" || missing+=("java")
+            [ ${#missing[@]} -eq 0 ] && exit 0
+            sleep 2
+          done
+          echo "Missing UpgradeBlocked events for: ${missing[*]}" >&2
+          echo "Notes for UpgradeBlocked / upgrade-test events:" >&2
+          echo "$notes" >&2
+          echo "All events in namespace $NAMESPACE:" >&2
+          jq '.items[] | {reason, type, regarding: .regarding.name, note}' <<<"$events_json" >&2
+          exit 1
+    catch:
+    - get:
+        apiVersion: opentelemetry.io/v1alpha1
+        kind: Instrumentation
+        name: upgrade-test
+        format: yaml
+    - get:
+        apiVersion: events.k8s.io/v1
+        kind: Event
+        format: yaml
+    - podLogs:
+        namespace: opentelemetry-operator-system
+        selector: app.kubernetes.io/name=opentelemetry-operator
+        container: manager

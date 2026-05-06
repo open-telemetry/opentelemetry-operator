@@ -79,6 +79,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -170,6 +175,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -273,6 +283,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -365,6 +380,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -481,6 +501,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -597,6 +622,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
