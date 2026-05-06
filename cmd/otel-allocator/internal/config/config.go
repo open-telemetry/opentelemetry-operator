@@ -131,6 +131,10 @@ type OTLPExporterConfig struct {
 	// "delta" exports all instruments as delta; "lowmemory" uses delta for counters and
 	// histograms and cumulative for gauges.
 	Temporality string `yaml:"temporality,omitempty"`
+	// ExportInterval is the time between two consecutive exports (default 60s).
+	ExportInterval time.Duration `yaml:"export_interval,omitempty"`
+	// Timeout is the max duration for a single export attempt (default 10s).
+	Timeout time.Duration `yaml:"timeout,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType

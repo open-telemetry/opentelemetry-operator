@@ -317,6 +317,7 @@ func main() {
 // an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
 func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
 	temporality := temporalitySelector(cfg.Temporality)
+	readerOpts := periodicReaderOptions(cfg)
 	switch cfg.Protocol {
 	case "http":
 		// WithEndpointURL does not append /v1/metrics automatically. We do it here
@@ -341,7 +342,7 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 		if err != nil {
 			return nil, err
 		}
-		return sdkmetric.NewPeriodicReader(exp), nil
+		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
 	default: // "grpc"
 		opts := []otlpmetricgrpc.Option{
 			otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
@@ -357,8 +358,20 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 		if err != nil {
 			return nil, err
 		}
-		return sdkmetric.NewPeriodicReader(exp), nil
+		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
 	}
+}
+
+// periodicReaderOptions builds PeriodicReaderOptions from the export interval and timeout config.
+func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicReaderOption {
+	var opts []sdkmetric.PeriodicReaderOption
+	if cfg.ExportInterval > 0 {
+		opts = append(opts, sdkmetric.WithInterval(cfg.ExportInterval))
+	}
+	if cfg.Timeout > 0 {
+		opts = append(opts, sdkmetric.WithTimeout(cfg.Timeout))
+	}
+	return opts
 }
 
 // temporalitySelector maps a config string to an SDK TemporalitySelector.
