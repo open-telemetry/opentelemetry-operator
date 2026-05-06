@@ -697,7 +697,7 @@ GOLANGCI_LINT_VERSION ?= v2.12.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.31.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
-CHAINSAW_VERSION ?= v0.2.15-beta.4
+CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=git-refs packageName=https://github.com/kubernetes-sigs/controller-runtime versioning=loose
