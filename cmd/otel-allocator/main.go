@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/oklog/run"
@@ -315,9 +316,21 @@ func main() {
 // newOTLPMetricReader creates a PeriodicExportingMetricReader backed by either
 // an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
 func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
+	temporality := temporalitySelector(cfg.Temporality)
 	switch cfg.Protocol {
 	case "http":
-		opts := []otlpmetrichttp.Option{otlpmetrichttp.WithEndpoint(cfg.Endpoint)}
+		// WithEndpointURL does not append /v1/metrics automatically. We do it here
+		// so the endpoint convention matches the OTel collector's otlphttp exporter
+		// (where users specify the base URL, not the full signal path).
+		// Skip if the caller already included the signal path.
+		endpoint := strings.TrimRight(cfg.Endpoint, "/")
+		if !strings.HasSuffix(endpoint, "/v1/metrics") {
+			endpoint += "/v1/metrics"
+		}
+		opts := []otlpmetrichttp.Option{
+			otlpmetrichttp.WithEndpointURL(endpoint),
+			otlpmetrichttp.WithTemporalitySelector(temporality),
+		}
 		if cfg.Insecure {
 			opts = append(opts, otlpmetrichttp.WithInsecure())
 		}
@@ -330,7 +343,10 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 		}
 		return sdkmetric.NewPeriodicReader(exp), nil
 	default: // "grpc"
-		opts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithEndpoint(cfg.Endpoint)}
+		opts := []otlpmetricgrpc.Option{
+			otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
+			otlpmetricgrpc.WithTemporalitySelector(temporality),
+		}
 		if cfg.Insecure {
 			opts = append(opts, otlpmetricgrpc.WithInsecure())
 		}
@@ -342,5 +358,19 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 			return nil, err
 		}
 		return sdkmetric.NewPeriodicReader(exp), nil
+	}
+}
+
+// temporalitySelector maps a config string to an SDK TemporalitySelector.
+// "delta" → all instruments delta; "lowmemory" → delta for counters/histograms,
+// cumulative for gauges; anything else → cumulative (SDK default).
+func temporalitySelector(t string) sdkmetric.TemporalitySelector {
+	switch t {
+	case "delta":
+		return sdkmetric.DeltaTemporalitySelector
+	case "lowmemory":
+		return sdkmetric.LowMemoryTemporalitySelector
+	default:
+		return sdkmetric.DefaultTemporalitySelector
 	}
 }

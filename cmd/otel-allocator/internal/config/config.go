@@ -116,8 +116,10 @@ type MetricsConfig struct {
 
 // OTLPExporterConfig holds connection settings for the OTLP metric exporter.
 type OTLPExporterConfig struct {
-	// Endpoint is the OTLP receiver address (e.g. "localhost:4317" for gRPC,
-	// "http://localhost:4318" for HTTP).
+	// Endpoint is the OTLP receiver base URL or address.
+	// For HTTP, provide the base URL without the signal path
+	// (e.g. "https://example.com/api/v2/otlp"); /v1/metrics is appended automatically.
+	// For gRPC, provide host:port (e.g. "example.com:4317").
 	Endpoint string `yaml:"endpoint"`
 	// Protocol selects the transport: "grpc" (default) or "http".
 	Protocol string `yaml:"protocol,omitempty"`
@@ -125,6 +127,10 @@ type OTLPExporterConfig struct {
 	Headers map[string]string `yaml:"headers,omitempty"`
 	// Insecure disables TLS — only suitable for local development.
 	Insecure bool `yaml:"insecure,omitempty"`
+	// Temporality sets the aggregation temporality: "cumulative" (default), "delta", or "lowmemory".
+	// "delta" exports all instruments as delta; "lowmemory" uses delta for counters and
+	// histograms and cumulative for gauges.
+	Temporality string `yaml:"temporality,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
