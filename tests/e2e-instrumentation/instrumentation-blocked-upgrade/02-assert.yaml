@@ -5,17 +5,9 @@ metadata:
 spec:
   dotnet:
     image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
+  java:
+    image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.33.6"
 status:
   upgradeBlockedVersions:
     dotnet: "Automated upgrade blocked for dotnet: .NET instrumentation 1.3.0 contains breaking HTTP semantic convention changes. See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. To upgrade, manually set the image on this Instrumentation resource to 1.3.0 or higher."
----
-apiVersion: events.k8s.io/v1
-kind: Event
-note: "Automated upgrade blocked for dotnet: .NET instrumentation 1.3.0 contains breaking HTTP semantic convention changes. See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. To upgrade, manually set the image on this Instrumentation resource to 1.3.0 or higher."
-reason: "UpgradeBlocked"
-regarding:
-  apiVersion: opentelemetry.io/v1alpha1
-  kind: Instrumentation
-  name: upgrade-test
-reportingController: opentelemetry-operator
-type: Warning
+    java: "Automated upgrade blocked for java: Java instrumentation 2.0.0 contains breaking HTTP semantic convention changes. See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. To upgrade, manually set the image on this Instrumentation resource to 2.0.0 or higher."

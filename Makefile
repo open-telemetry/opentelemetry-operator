@@ -700,13 +700,14 @@ CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
 GOTESTSUM ?= $(LOCALBIN)/gotestsum
+GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.20.1
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.11.4
+GOLANGCI_LINT_VERSION ?= v2.12.1
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.31.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -715,10 +716,12 @@ CHAINSAW_VERSION ?= v0.2.15-beta.3.0.20260401082229-93b1e3d86203
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=git-refs packageName=https://github.com/kubernetes-sigs/controller-runtime versioning=loose
 ENVTEST_VERSION ?= release-0.23
+# renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
+GOVULNCHECK_VERSION ?= v1.3.0
 
 # Install all development tools
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl govulncheck
 
 # Download kustomize locally if necessary
 .PHONY: kustomize
@@ -761,6 +764,16 @@ chainsaw: ## Find or download chainsaw
 .PHONY: gotestsum
 gotestsum: ## Find or download gotestsum
 	$(call go-install-tool,$(GOTESTSUM),gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
+
+# Download govulncheck locally if necessary
+.PHONY: govulncheck
+govulncheck: ## Download govulncheck locally if necessary.
+	$(call go-install-tool,$(GOVULNCHECK),golang.org/x/vuln/cmd/govulncheck,$(GOVULNCHECK_VERSION))
+
+# Run govulncheck with the project's CVE exception list
+.PHONY: govulncheck-run
+govulncheck-run: govulncheck ## Run govulncheck, applying excepted CVEs from hack/govulncheck.sh.
+	GOVULNCHECK=$(GOVULNCHECK) ./hack/govulncheck.sh
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

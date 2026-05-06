@@ -17,6 +17,9 @@ const (
 	dotNet130WarningMessage = ".NET instrumentation 1.3.0 contains breaking HTTP semantic convention changes. " +
 		"See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. " +
 		"To upgrade, manually set the image on this Instrumentation resource to 1.3.0 or higher."
+	java200WarningMessage = "Java instrumentation 2.0.0 contains breaking HTTP semantic convention changes. " +
+		"See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. " +
+		"To upgrade, manually set the image on this Instrumentation resource to 2.0.0 or higher."
 )
 
 // unupgradableInstrumentationVersions contains instrumentation versions that cannot be automatically upgraded from.
@@ -24,6 +27,9 @@ const (
 var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]map[string]string{
 	constants.InstrumentationLanguageDotNet: {
 		"1.3.0": dotNet130WarningMessage,
+	},
+	constants.InstrumentationLanguageJava: {
+		"2.0.0": java200WarningMessage,
 	},
 }
 
