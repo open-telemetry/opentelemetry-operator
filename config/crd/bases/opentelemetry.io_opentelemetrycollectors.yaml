@@ -8639,6 +8639,40 @@ spec:
                     type: object
                   serviceAccount:
                     type: string
+                  telemetry:
+                    properties:
+                      metrics:
+                        properties:
+                          otlp:
+                            properties:
+                              endpoint:
+                                type: string
+                              exportInterval:
+                                type: string
+                              headers:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              insecure:
+                                type: boolean
+                              protocol:
+                                enum:
+                                - grpc
+                                - http
+                                type: string
+                              temporality:
+                                enum:
+                                - cumulative
+                                - delta
+                                - lowmemory
+                                type: string
+                              timeout:
+                                type: string
+                            required:
+                            - endpoint
+                            type: object
+                        type: object
+                    type: object
                   tolerations:
                     items:
                       properties:
