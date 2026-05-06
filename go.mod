@@ -215,7 +215,10 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 )
 
-require github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
+require (
+	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
+	sigs.k8s.io/e2e-framework v0.7.0
+)
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1 // indirect
@@ -259,7 +262,9 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
+	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/openshift/library-go v0.0.0-20260210145149-d0e860e8d752 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect

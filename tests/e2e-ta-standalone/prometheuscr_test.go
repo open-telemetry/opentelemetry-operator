@@ -23,16 +23,28 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+type (
+	promCRStateKey struct{}
+	promCRState    struct {
+		mclient *monitoringclient.Clientset
+		smName  string
+		pmName  string
+		scName  string
+	}
 )
 
 // TestPrometheusCRTargetAllocator validates ServiceMonitor and PodMonitor
@@ -53,64 +65,86 @@ import (
 // Prerequisites: ServiceMonitor/PodMonitor CRDs must be installed
 // (hack/install-targetallocator-prometheus-crds.sh, run by prepare-e2e-ta-standalone).
 func TestPrometheusCRTargetAllocator(t *testing.T) {
-	env := newTestEnv(t)
-	ctx, ns := env.ctx, env.ns
+	feat := features.New("prometheus CR discovery in standalone TA").
+		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			var ns string
+			ctx, ns = setupTestNamespace(ctx, t)
 
-	mclient := newMonitoringClient(t)
+			mclient := newMonitoringClient(t)
 
-	// Deploy workload and monitoring CRs BEFORE starting the TA so the informer
-	// picks them up during its first sync.
-	deployMetricsWorkload(t, ctx, ns)
-	smName := deployServiceMonitor(t, ctx, mclient, ns)
-	pmName := deployPodMonitor(t, ctx, mclient, ns)
-	scName := deployScrapeConfig(t, ctx, mclient, ns)
+			// Deploy workload and monitoring CRs BEFORE starting the TA so the informer
+			// picks them up during its first sync.
+			deployMetricsWorkload(t, ctx, ns)
+			smName := deployServiceMonitor(t, ctx, mclient, ns)
+			pmName := deployPodMonitor(t, ctx, mclient, ns)
+			scName := deployScrapeConfig(t, ctx, mclient, ns)
 
-	taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
-	deployTA(t, ctx, ns, taConfig)
-	waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
+			taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
+			deployTA(t, ctx, ns, taConfig)
+			waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
 
-	deployCollectors(t, ctx, ns, 1)
-	waitForStatefulSetReady(t, ctx, ns, "collector", 1)
+			deployCollectors(t, ctx, ns, 1)
+			waitForStatefulSetReady(t, ctx, ns, "collector", 1)
 
-	// TA informer resync is 30s; allow up to 90s for all CRs to appear.
-	smJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", ns, smName)
-	pmJobName := fmt.Sprintf("podMonitor/%s/%s/0", ns, pmName)
-	scJobName := fmt.Sprintf("scrapeConfig/%s/%s", ns, scName)
+			return context.WithValue(ctx, promCRStateKey{}, promCRState{
+				mclient: mclient,
+				smName:  smName,
+				pmName:  pmName,
+				scName:  scName,
+			})
+		}).
+		Assess("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			ns := nsFromCtx(ctx)
+			state := ctx.Value(promCRStateKey{}).(promCRState)
+			proxyBase := taProxyBase(ns)
 
-	t.Run("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(t *testing.T) {
-		proxyBase := taProxyBase(ns)
-		waitForJobInScrapeConfigs(t, ctx, proxyBase, smJobName)
-		waitForJobInScrapeConfigs(t, ctx, proxyBase, pmJobName)
-		waitForJobInScrapeConfigs(t, ctx, proxyBase, scJobName)
-		t.Logf("SM, PM and ScrapeConfig jobs found in /scrape_configs")
-	})
+			// TA informer resync is 30s; allow up to 90s for all CRs to appear.
+			smJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", ns, state.smName)
+			pmJobName := fmt.Sprintf("podMonitor/%s/%s/0", ns, state.pmName)
+			scJobName := fmt.Sprintf("scrapeConfig/%s/%s", ns, state.scName)
 
-	t.Run("ServiceMonitor targets disappear after deletion", func(t *testing.T) {
-		err := mclient.MonitoringV1().ServiceMonitors(ns).Delete(ctx, smName, metav1.DeleteOptions{})
-		require.NoError(t, err, "delete ServiceMonitor %s", smName)
-		t.Logf("deleted ServiceMonitor %s", smName)
+			waitForJobInScrapeConfigs(t, ctx, proxyBase, smJobName)
+			waitForJobInScrapeConfigs(t, ctx, proxyBase, pmJobName)
+			waitForJobInScrapeConfigs(t, ctx, proxyBase, scJobName)
+			t.Logf("SM, PM and ScrapeConfig jobs found in /scrape_configs")
+			return ctx
+		}).
+		Assess("ServiceMonitor targets disappear after deletion", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			ns := nsFromCtx(ctx)
+			state := ctx.Value(promCRStateKey{}).(promCRState)
+			proxyBase := taProxyBase(ns)
 
-		proxyBase := taProxyBase(ns)
+			smJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", ns, state.smName)
+			pmJobName := fmt.Sprintf("podMonitor/%s/%s/0", ns, state.pmName)
+			scJobName := fmt.Sprintf("scrapeConfig/%s/%s", ns, state.scName)
 
-		// Wait for SM job to disappear (informer resync ~30s + rate limit ~5s).
-		err = wait.PollUntilContextTimeout(ctx, 5*time.Second, discoveryTimeout, false, func(ctx context.Context) (bool, error) {
-			body, err := clientset.CoreV1().RESTClient().Get().
-				AbsPath(proxyBase + "/scrape_configs").DoRaw(ctx)
-			if err != nil {
-				return false, nil
-			}
-			return !strings.Contains(string(body), smJobName), nil
-		})
-		require.NoError(t, err, "ServiceMonitor job %s should disappear from /scrape_configs after deletion", smJobName)
-		t.Logf("ServiceMonitor job %s removed from /scrape_configs", smJobName)
+			err := state.mclient.MonitoringV1().ServiceMonitors(ns).Delete(ctx, state.smName, metav1.DeleteOptions{})
+			require.NoError(t, err, "delete ServiceMonitor %s", state.smName)
+			t.Logf("deleted ServiceMonitor %s", state.smName)
 
-		// PodMonitor and ScrapeConfig jobs must still be present.
-		body := kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
-		assert.Contains(t, string(body), pmJobName,
-			"PodMonitor job %s should still be present in /scrape_configs", pmJobName)
-		assert.Contains(t, string(body), scJobName,
-			"ScrapeConfig job %s should still be present in /scrape_configs", scJobName)
-	})
+			// Wait for SM job to disappear (informer resync ~30s + rate limit ~5s).
+			err = wait.PollUntilContextTimeout(ctx, 5*time.Second, discoveryTimeout, false, func(ctx context.Context) (bool, error) {
+				body, err := clientset.CoreV1().RESTClient().Get().
+					AbsPath(proxyBase + "/scrape_configs").DoRaw(ctx)
+				if err != nil {
+					return false, nil
+				}
+				return !strings.Contains(string(body), smJobName), nil
+			})
+			require.NoError(t, err, "ServiceMonitor job %s should disappear from /scrape_configs after deletion", smJobName)
+			t.Logf("ServiceMonitor job %s removed from /scrape_configs", smJobName)
+
+			// PodMonitor and ScrapeConfig jobs must still be present.
+			body := kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
+			assert.Contains(t, string(body), pmJobName,
+				"PodMonitor job %s should still be present in /scrape_configs", pmJobName)
+			assert.Contains(t, string(body), scJobName,
+				"ScrapeConfig job %s should still be present in /scrape_configs", scJobName)
+			return ctx
+		}).
+		Feature()
+
+	testenv.Test(t, feat)
 }
 
 // ---------------------------------------------------------------------------

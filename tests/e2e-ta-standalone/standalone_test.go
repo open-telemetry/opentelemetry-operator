@@ -17,77 +17,96 @@
 package e2e_ta_standalone
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 // TestStandaloneTargetAllocator validates the standalone TA with consistent-hashing:
 // target distribution, scale-up (2→3) and scale-down (3→2), and HTTP API contract.
 func TestStandaloneTargetAllocator(t *testing.T) {
-	env := newTestEnv(t)
-	ctx, ns := env.ctx, env.ns
+	type initialAssignmentKey struct{}
 
-	taConfig := newTAConfig("consistent-hashing").withStaticTargets(testTargets).build()
-	deployTA(t, ctx, ns, taConfig)
-	waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
+	feat := features.New("standalone TA with consistent-hashing strategy").
+		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			var ns string
+			ctx, ns = setupTestNamespace(ctx, t)
 
-	deployCollectors(t, ctx, ns, 2)
-	waitForStatefulSetReady(t, ctx, ns, "collector", 2)
+			taConfig := newTAConfig("consistent-hashing").withStaticTargets(testTargets).build()
+			deployTA(t, ctx, ns, taConfig)
+			waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
 
-	initialAssignment := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
+			deployCollectors(t, ctx, ns, 2)
+			waitForStatefulSetReady(t, ctx, ns, "collector", 2)
 
-	t.Run("targets distributed across collectors", func(t *testing.T) {
-		allTargets := allAssignedTargets(initialAssignment)
-		assert.Len(t, allTargets, len(testTargets), "all targets should be assigned")
-		hasTargets := false
-		for _, targets := range initialAssignment {
-			if len(targets) > 0 {
-				hasTargets = true
-				break
+			assignment := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
+			return context.WithValue(ctx, initialAssignmentKey{}, assignment)
+		}).
+		Assess("targets distributed across collectors", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			assignment := ctx.Value(initialAssignmentKey{}).(map[string][]string)
+			allTargets := allAssignedTargets(assignment)
+			assert.Len(t, allTargets, len(testTargets), "all targets should be assigned")
+			hasTargets := false
+			for _, targets := range assignment {
+				if len(targets) > 0 {
+					hasTargets = true
+					break
+				}
 			}
-		}
-		assert.True(t, hasTargets, "at least one collector should have targets")
-	})
+			assert.True(t, hasTargets, "at least one collector should have targets")
+			return ctx
+		}).
+		Assess("scale up preserves consistency", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			ns := nsFromCtx(ctx)
+			initialAssignment := ctx.Value(initialAssignmentKey{}).(map[string][]string)
 
-	t.Run("scale up preserves consistency", func(t *testing.T) {
-		scaleStatefulSet(t, ctx, ns, "collector", 3)
-		waitForStatefulSetReady(t, ctx, ns, "collector", 3)
+			scaleStatefulSet(t, ctx, ns, "collector", 3)
+			waitForStatefulSetReady(t, ctx, ns, "collector", 3)
 
-		afterScaleUp := waitForTargetDistribution(t, ctx, ns, "test-targets", 3)
-		assert.Len(t, allAssignedTargets(afterScaleUp), len(testTargets), "all targets assigned after scale-up")
+			afterScaleUp := waitForTargetDistribution(t, ctx, ns, "test-targets", 3)
+			assert.Len(t, allAssignedTargets(afterScaleUp), len(testTargets), "all targets assigned after scale-up")
 
-		stayed := countStayedTargets(initialAssignment, afterScaleUp)
-		assert.GreaterOrEqual(t, stayed, 3, "at least 3/6 targets should stay (consistent hashing)")
-	})
+			stayed := countStayedTargets(initialAssignment, afterScaleUp)
+			assert.GreaterOrEqual(t, stayed, 3, "at least 3/6 targets should stay (consistent hashing)")
+			return ctx
+		}).
+		Assess("scale down reassigns targets", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			ns := nsFromCtx(ctx)
 
-	t.Run("scale down reassigns targets", func(t *testing.T) {
-		scaleStatefulSet(t, ctx, ns, "collector", 2)
-		waitForStatefulSetReady(t, ctx, ns, "collector", 2)
+			scaleStatefulSet(t, ctx, ns, "collector", 2)
+			waitForStatefulSetReady(t, ctx, ns, "collector", 2)
 
-		afterScaleDown := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
-		assert.Len(t, allAssignedTargets(afterScaleDown), len(testTargets), "all targets assigned after scale-down")
-		assert.Empty(t, afterScaleDown["collector-2"], "collector-2 should have no targets after scale-down")
-	})
+			afterScaleDown := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
+			assert.Len(t, allAssignedTargets(afterScaleDown), len(testTargets), "all targets assigned after scale-down")
+			assert.Empty(t, afterScaleDown["collector-2"], "collector-2 should have no targets after scale-down")
+			return ctx
+		}).
+		Assess("HTTP API contract", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			ns := nsFromCtx(ctx)
+			proxyBase := taProxyBase(ns)
 
-	t.Run("HTTP API contract", func(t *testing.T) {
-		proxyBase := taProxyBase(ns)
+			body := kubectlGetRaw(t, ctx, proxyBase+"/jobs")
+			assert.Contains(t, string(body), "test-targets", "/jobs should list test-targets")
 
-		body := kubectlGetRaw(t, ctx, proxyBase+"/jobs")
-		assert.Contains(t, string(body), "test-targets", "/jobs should list test-targets")
+			body = kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
+			assert.Contains(t, string(body), "test-targets", "/scrape_configs should list test-targets")
 
-		body = kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
-		assert.Contains(t, string(body), "test-targets", "/scrape_configs should list test-targets")
+			kubectlGetRaw(t, ctx, proxyBase+"/livez")
+			kubectlGetRaw(t, ctx, proxyBase+"/readyz")
 
-		kubectlGetRaw(t, ctx, proxyBase+"/livez")
-		kubectlGetRaw(t, ctx, proxyBase+"/readyz")
+			body, err := clientset.CoreV1().RESTClient().Get().
+				AbsPath(proxyBase+"/jobs/test-targets/targets").
+				Param("collector_id", "nonexistent").
+				DoRaw(ctx)
+			require.NoError(t, err)
+			assert.NotContains(t, string(body), "target-a:8080", "unknown collector should have no targets")
+			return ctx
+		}).
+		Feature()
 
-		body, err := clientset.CoreV1().RESTClient().Get().
-			AbsPath(proxyBase + "/jobs/test-targets/targets").
-			Param("collector_id", "nonexistent").
-			DoRaw(ctx)
-		require.NoError(t, err)
-		assert.NotContains(t, string(body), "target-a:8080", "unknown collector should have no targets")
-	})
+	testenv.Test(t, feat)
 }

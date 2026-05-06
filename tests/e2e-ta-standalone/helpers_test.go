@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,9 +37,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
 var (
+	testenv          env.Environment
 	clientset        *kubernetes.Clientset
 	restCfg          *rest.Config
 	taImg            string
@@ -72,44 +74,69 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to get working directory: %v", err)
 	}
 	kustomizeBaseDir = filepath.Join(wd, "..", "..", "config", "target-allocator")
-	if _, err := os.Stat(filepath.Join(kustomizeBaseDir, "kustomization.yaml")); err != nil {
-		log.Fatalf("kustomize base not found at %s: %v", kustomizeBaseDir, err)
+	if _, statErr := os.Stat(filepath.Join(kustomizeBaseDir, "kustomization.yaml")); statErr != nil {
+		log.Fatalf("kustomize base not found at %s: %v", kustomizeBaseDir, statErr)
 	}
 
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig == "" {
-		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	}
-	restCfg, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		log.Fatalf("failed to build kubeconfig: %v", err)
-	}
-	clientset, err = kubernetes.NewForConfig(restCfg)
-	if err != nil {
-		log.Fatalf("failed to create kubernetes client: %v", err)
+	var envErr error
+	testenv, envErr = env.NewFromFlags()
+	if envErr != nil {
+		log.Fatalf("failed to create test environment: %v", envErr)
 	}
 
-	os.Exit(m.Run())
+	testenv.Setup(func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		kubeconfig := cfg.KubeconfigFile()
+		if kubeconfig == "" {
+			kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		}
+		var setupErr error
+		restCfg, setupErr = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if setupErr != nil {
+			return ctx, fmt.Errorf("failed to build kubeconfig: %w", setupErr)
+		}
+		clientset, setupErr = kubernetes.NewForConfig(restCfg)
+		if setupErr != nil {
+			return ctx, fmt.Errorf("failed to create kubernetes client: %w", setupErr)
+		}
+		return ctx, nil
+	})
+
+	os.Exit(testenv.Run(m))
 }
 
 // ---------------------------------------------------------------------------
-// Test environment
+// Namespace lifecycle
 // ---------------------------------------------------------------------------
 
-// testEnv holds per-test state: a unique namespace and a context with timeout.
-// Cleanup (namespace deletion + context cancel) is registered via t.Cleanup.
-type testEnv struct {
-	ns  string
-	ctx context.Context
+// nsContextKey is the context key used to store the per-feature namespace name.
+type nsContextKey struct{}
+
+// nsFromCtx retrieves the per-feature namespace stored by setupTestNamespace.
+func nsFromCtx(ctx context.Context) string {
+	return ctx.Value(nsContextKey{}).(string)
 }
 
-func newTestEnv(t *testing.T) testEnv {
+// setupTestNamespace creates a unique namespace for the current test feature,
+// stores its name in the context, registers a t.Cleanup for teardown, and
+// returns the updated context and namespace name.
+func setupTestNamespace(ctx context.Context, t *testing.T) (context.Context, string) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	t.Cleanup(cancel)
-	ns := createTestNamespace(t, ctx)
-	t.Cleanup(func() { cleanupNamespace(t, ns) })
-	return testEnv{ns: ns, ctx: ctx}
+	ns := envconf.RandomName("ta-test", 6)
+	_, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: ns},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err, "create namespace")
+	t.Logf("created namespace %s", ns)
+	updatedCtx := context.WithValue(ctx, nsContextKey{}, ns)
+	t.Cleanup(func() {
+		cleanCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		_ = clientset.RbacV1().ClusterRoleBindings().Delete(cleanCtx, ns, metav1.DeleteOptions{})
+		_ = clientset.RbacV1().ClusterRoles().Delete(cleanCtx, ns, metav1.DeleteOptions{})
+		_ = clientset.CoreV1().Namespaces().Delete(cleanCtx, ns, metav1.DeleteOptions{})
+		t.Logf("cleaned up namespace %s and cluster RBAC", ns)
+	})
+	return updatedCtx, ns
 }
 
 // ---------------------------------------------------------------------------
@@ -502,42 +529,8 @@ func countStayedTargets(before, after map[string][]string) int {
 }
 
 // ---------------------------------------------------------------------------
-// Namespace lifecycle
-// ---------------------------------------------------------------------------
-
-func createTestNamespace(t *testing.T, ctx context.Context) string {
-	t.Helper()
-	name := fmt.Sprintf("ta-test-%s", randomSuffix())
-	_, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err, "create namespace")
-	t.Logf("created namespace %s", name)
-	return name
-}
-
-func cleanupNamespace(t *testing.T, ns string) {
-	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	_ = clientset.RbacV1().ClusterRoleBindings().Delete(ctx, ns, metav1.DeleteOptions{})
-	_ = clientset.RbacV1().ClusterRoles().Delete(ctx, ns, metav1.DeleteOptions{})
-	_ = clientset.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
-	t.Logf("cleaned up namespace %s and cluster RBAC", ns)
-}
-
-// ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
-
-func randomSuffix() string {
-	const letters = "abcdefghijklmnopqrstuvwxyz"
-	b := make([]byte, 6)
-	for i := range b {
-		b[i] = letters[rand.IntN(len(letters))]
-	}
-	return string(b)
-}
 
 func splitImageNameTag(img string) (string, string) {
 	if idx := strings.LastIndex(img, ":"); idx > 0 {
