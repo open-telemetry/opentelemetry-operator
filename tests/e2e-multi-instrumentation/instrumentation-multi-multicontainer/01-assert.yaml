@@ -354,11 +354,11 @@ spec:
       name: opentelemetry-auto-instrumentation-dotnet
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-  - args:
-    - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
-    command:
-    - /bin/sh
-    - -c
+  - command:
+    - cp
+    - -r
+    - /usr/local/apache2/conf/.
+    - /opt/opentelemetry-webserver/source-conf
     env:
     - name: OTEL_SERVICE_NAME
       value: apache-httpd-app
