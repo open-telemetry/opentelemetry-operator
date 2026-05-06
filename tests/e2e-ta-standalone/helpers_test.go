@@ -121,7 +121,7 @@ func nsFromCtx(ctx context.Context) string {
 // returns the updated context and namespace name.
 func setupTestNamespace(ctx context.Context, t *testing.T) (context.Context, string) {
 	t.Helper()
-	ns := envconf.RandomName("ta-test", 6)
+	ns := envconf.RandomName("ta-test", 16)
 	_, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{Name: ns},
 	}, metav1.CreateOptions{})
