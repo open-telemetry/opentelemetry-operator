@@ -480,7 +480,6 @@ e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
 
 # Standalone Target Allocator end-to-end tests
-# Uses a multi-node kind cluster to support per-node strategy testing.
 .PHONY: prepare-e2e-ta-standalone
 prepare-e2e-ta-standalone: kind gotestsum
 	$(MAKE) start-kind KUBE_VERSION=$(KUBE_VERSION)
@@ -489,6 +488,7 @@ prepare-e2e-ta-standalone: kind gotestsum
 
 .PHONY: e2e-ta-standalone
 e2e-ta-standalone: gotestsum
+# Tests deploy TA and collector directly (not via the operator), so image refs are passed as env vars.
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) \
 	COLLECTOR_IMG=$${COLLECTOR_IMG:-"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:$$(awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"} \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
