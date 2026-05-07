@@ -969,7 +969,7 @@ COSIGN_VERSION ?= v2.5.0
 # renovate: datasource=github-releases depName=anchore/syft
 SYFT_VERSION ?= v1.44.0
 # renovate: datasource=github-releases depName=anchore/grype
-GRYPE_VERSION ?= v0.104.0
+GRYPE_VERSION ?= v0.112.0
 # renovate: datasource=github-releases depName=slsa-framework/slsa-verifier
 SLSA_VERIFIER_VERSION ?= v2.7.1
 
