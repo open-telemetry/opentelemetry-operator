@@ -132,6 +132,7 @@ jobs:
 
   slsa-provenance:
     permissions:
+      actions: read
       contents: read
       id-token: write
       packages: write
