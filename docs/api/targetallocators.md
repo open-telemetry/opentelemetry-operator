@@ -10485,6 +10485,14 @@ protocols supported by Prometheus in order of preference (from most to least pre
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>secretNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
+If not configured, defaults to the target allocator's own namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrservicemonitornamespaceselector">serviceMonitorNamespaceSelector</a></b></td>
         <td>object</td>
         <td>
