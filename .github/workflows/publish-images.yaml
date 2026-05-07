@@ -132,12 +132,13 @@ jobs:
 
   slsa-provenance:
     permissions:
+      actions: read
       contents: read
       id-token: write
       packages: write
     needs: publish
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a #v2.1.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0 # v2.1.0
     with:
       image: ${{ needs.publish.outputs.image }}
       digest: ${{ needs.publish.outputs.digest }}
