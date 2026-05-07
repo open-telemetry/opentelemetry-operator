@@ -145,8 +145,8 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 	cfg := &v1beta1.Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
-	telemetry := &v1beta1.Telemetry{
-		Metrics: v1beta1.MetricsConfig{
+	telemetry := &Telemetry{
+		Metrics: MetricsConfig{
 			Level:   "detailed",
 			Address: "0.0.0.0:8888",
 		},

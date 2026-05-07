@@ -6,8 +6,6 @@ package v1beta1
 import (
 	"encoding/json"
 	"maps"
-
-	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 )
 
 type ComponentKind int
@@ -122,43 +120,3 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-// MetricsConfig comes from the collector.
-type MetricsConfig struct {
-	// Level is the level of telemetry metrics, the possible values are:
-	//  - "none" indicates that no telemetry data should be collected;
-	//  - "basic" is the recommended and covers the basics of the service telemetry.
-	//  - "normal" adds some other indicators on top of basic.
-	//  - "detailed" adds dimensions and views to the previous levels.
-	Level string `json:"level,omitempty" yaml:"level,omitempty"`
-
-	// Address is the [address]:port that metrics exposition should be bound to.
-	Address string `json:"address,omitempty" yaml:"address,omitempty"`
-
-	otelConfig.MeterProvider `mapstructure:",squash"`
-}
-
-func (in *MetricsConfig) DeepCopyInto(out *MetricsConfig) {
-	*out = *in
-	out.MeterProvider = in.MeterProvider
-}
-
-// DeepCopy creates a new deepcopy of MetricsConfig.
-func (in *MetricsConfig) DeepCopy() *MetricsConfig {
-	if in == nil {
-		return nil
-	}
-	out := new(MetricsConfig)
-	in.DeepCopyInto(out)
-	return out
-}
-
-// Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
-type Telemetry struct {
-	Metrics MetricsConfig `json:"metrics,omitempty" yaml:"metrics,omitempty"`
-
-	// Resource specifies user-defined attributes to include with all emitted telemetry.
-	// Note that some attributes are added automatically (e.g. service.version) even
-	// if they are not specified here. In order to suppress such attributes the
-	// attribute must be specified in this map with null YAML value (nil string pointer).
-	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
-}

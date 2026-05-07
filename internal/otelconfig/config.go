@@ -26,6 +26,47 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
+// MetricsConfig comes from the collector.
+type MetricsConfig struct {
+	// Level is the level of telemetry metrics, the possible values are:
+	//  - "none" indicates that no telemetry data should be collected;
+	//  - "basic" is the recommended and covers the basics of the service telemetry.
+	//  - "normal" adds some other indicators on top of basic.
+	//  - "detailed" adds dimensions and views to the previous levels.
+	Level string `json:"level,omitempty" yaml:"level,omitempty"`
+
+	// Address is the [address]:port that metrics exposition should be bound to.
+	Address string `json:"address,omitempty" yaml:"address,omitempty"`
+
+	otelConfig.MeterProvider `mapstructure:",squash"`
+}
+
+func (in *MetricsConfig) DeepCopyInto(out *MetricsConfig) {
+	*out = *in
+	out.MeterProvider = in.MeterProvider
+}
+
+// DeepCopy creates a new deepcopy of MetricsConfig.
+func (in *MetricsConfig) DeepCopy() *MetricsConfig {
+	if in == nil {
+		return nil
+	}
+	out := new(MetricsConfig)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
+type Telemetry struct {
+	Metrics MetricsConfig `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+
+	// Resource specifies user-defined attributes to include with all emitted telemetry.
+	// Note that some attributes are added automatically (e.g. service.version) even
+	// if they are not specified here. In order to suppress such attributes the
+	// attribute must be specified in this map with null YAML value (nil string pointer).
+	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
+}
+
 // GetEnabledComponents constructs a list of enabled components by component type.
 func GetEnabledComponents(c *v1beta1.Config) map[v1beta1.ComponentKind]map[string]any {
 	toReturn := map[v1beta1.ComponentKind]map[string]any{
@@ -423,7 +464,7 @@ func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.Eve
 
 	if tel == nil {
 		logger.V(2).Info("no telemetry configuration parsed, creating default")
-		tel = &v1beta1.Telemetry{}
+		tel = &Telemetry{}
 		s.Telemetry = &v1beta1.AnyConfig{
 			Object: map[string]any{},
 		}
@@ -482,7 +523,7 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *v1beta1.Telemetry {
+func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *Telemetry {
 	if s.Telemetry == nil {
 		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil
@@ -497,7 +538,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *v1beta1.Telemetry {
 
 	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
 
-	t := &v1beta1.Telemetry{}
+	t := &Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
 		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
@@ -513,7 +554,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *v1beta1.Telemetry {
 }
 
 // TelemetryToAnyConfig converts the Telemetry struct to an AnyConfig struct.
-func TelemetryToAnyConfig(t *v1beta1.Telemetry) (*v1beta1.AnyConfig, error) {
+func TelemetryToAnyConfig(t *Telemetry) (*v1beta1.AnyConfig, error) {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return nil, err
