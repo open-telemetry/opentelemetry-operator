@@ -119,4 +119,3 @@ type Service struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
-

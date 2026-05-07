@@ -58,7 +58,7 @@ func (in *MetricsConfig) DeepCopy() *MetricsConfig {
 
 // Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
 type Telemetry struct {
-	Metrics MetricsConfig `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	Metrics MetricsConfig `json:"metrics,omitzero" yaml:"metrics,omitempty"`
 
 	// Resource specifies user-defined attributes to include with all emitted telemetry.
 	// Note that some attributes are added automatically (e.g. service.version) even
