@@ -38,7 +38,10 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Describe the current state
-        run: git describe --tags
+        run: |
+          # Ensure tags are available, but don't fail the workflow if none exist.
+          git fetch --tags || true
+          git describe --tags || echo "no-tag-$(git rev-parse --short HEAD)"
 
       - name: Set env vars for the job
         run: |
