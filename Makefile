@@ -61,6 +61,8 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
 
+COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
+
 INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
 INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
 
@@ -481,16 +483,17 @@ e2e-crd-validations: chainsaw
 
 # Standalone Target Allocator end-to-end tests
 .PHONY: prepare-e2e-ta-standalone
-prepare-e2e-ta-standalone: kind gotestsum
+prepare-e2e-ta-standalone: kind kustomize gotestsum
 	$(MAKE) start-kind KUBE_VERSION=$(KUBE_VERSION)
 	$(MAKE) load-image-all install-targetallocator-prometheus-crds
 	@mkdir -p ./.testresults/e2e
 
 .PHONY: e2e-ta-standalone
-e2e-ta-standalone: gotestsum
+e2e-ta-standalone: kustomize gotestsum
 # Tests deploy TA and collector directly (not via the operator), so image refs are passed as env vars.
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) \
-	COLLECTOR_IMG=$${COLLECTOR_IMG:-"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:$$(awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"} \
+	COLLECTOR_IMG=$(COLLECTOR_IMG) \
+	KUSTOMIZE=$(KUSTOMIZE) \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
 # Prepare environment for e2e tests

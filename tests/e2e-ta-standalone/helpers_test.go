@@ -47,6 +47,7 @@ var (
 	restCfg          *rest.Config
 	taImg            string
 	collectorImg     string
+	kustomizeBin     string
 	kustomizeBaseDir string
 
 	collectorLabel = map[string]string{"app": "otel-collector"}
@@ -67,6 +68,10 @@ func TestMain(m *testing.M) {
 	collectorImg = os.Getenv("COLLECTOR_IMG")
 	if collectorImg == "" {
 		log.Fatal("COLLECTOR_IMG environment variable must be set")
+	}
+	kustomizeBin = os.Getenv("KUSTOMIZE")
+	if kustomizeBin == "" {
+		kustomizeBin = "kustomize"
 	}
 
 	wd, err := os.Getwd()
@@ -267,7 +272,7 @@ patches:
 
 	// --load-restrictor=LoadRestrictionsNone is required when the overlay references
 	// a sibling directory (relBase = "../target-allocator").
-	out, err := exec.CommandContext(ctx, "kustomize", "build",
+	out, err := exec.CommandContext(ctx, kustomizeBin, "build",
 		"--load-restrictor=LoadRestrictionsNone", overlayDir).CombinedOutput()
 	require.NoError(t, err, "kustomize build failed: %s", string(out))
 
