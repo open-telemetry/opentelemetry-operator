@@ -16,9 +16,8 @@ import (
 )
 
 var (
-	nginxSdkInitContainerTestCommand           = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"nginx.conf\" \"<<SID-PLACEHOLDER>>\""
-	nginxSdkInitContainerTestCommandCustomFile = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"custom-nginx.conf\" \"<<SID-PLACEHOLDER>>\""
-	nginxSdkInitContainerI13nScript            = "\nNGINX_AGENT_DIR_FULL=$1\t\\n\nNGINX_AGENT_CONF_DIR_FULL=$2 \\n\nNGINX_CONFIG_FILE=$3 \\n\nNGINX_SID_PLACEHOLDER=$4 \\n\nNGINX_SID_VALUE=$5 \\n\necho \"Input Parameters: $@\" \\n\nset -x \\n\n\\n\ncp -r /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \\n\n\\n\nNGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \\n\nNGINX_AGENT_LOG_DIR=$(echo \"${NGINX_AGENT_DIR_FULL}/logs\" | sed 's,/,\\\\/,g') \\n\n\\n\ncat ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml \\n\necho -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g\" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \\n\nsed -i \"1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nsed -i \"1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\\\n,g\" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \\n\nmv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \\n\n\t\t"
+	nginxSdkInitContainerTestArgs           = []string{nginxAgentScript, "--", "nginx.conf"}
+	nginxSdkInitContainerTestArgsCustomFile = []string{nginxAgentScript, "--", "custom-nginx.conf"}
 )
 
 func TestInjectNginxSDK(t *testing.T) {
@@ -73,7 +72,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxCloneScript, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -83,15 +82,11 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommand},
+							Args:    nginxSdkInitContainerTestArgs,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelMaxQueueSize 4096;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName nginx-service-name;\nNginxModuleServiceNamespace req-namespace;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,
@@ -178,7 +173,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /opt/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxCloneScript, "--", "/opt/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -188,15 +183,11 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommandCustomFile},
+							Args:    nginxSdkInitContainerTestArgsCustomFile,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName nginx-service-name;\nNginxModuleServiceNamespace req-namespace;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,
@@ -291,7 +282,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxCloneScript, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -301,15 +292,11 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommand},
+							Args:    nginxSdkInitContainerTestArgs,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName nginx-service-name;\nNginxModuleServiceNamespace req-namespace;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,
@@ -403,7 +390,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxCloneScript, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -413,15 +400,11 @@ func TestInjectNginxSDK(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommand},
+							Args:    nginxSdkInitContainerTestArgs,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName nginx-service-name;\nNginxModuleServiceNamespace my-namespace;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,
@@ -526,7 +509,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{nginxCloneScript, "--", "/etc/nginx"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
@@ -536,15 +519,11 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 							Name:    nginxAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{nginxSdkInitContainerTestCommand},
+							Args:    nginxSdkInitContainerTestArgs,
 							Env: []corev1.EnvVar{
 								{
 									Name:  nginxAttributesEnvVar,
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName nginx-service-name;\nNginxModuleServiceNamespace nginx;\nNginxModuleTraceAsError ON;\n",
-								},
-								{
-									Name:  "OTEL_NGINX_I13N_SCRIPT",
-									Value: nginxSdkInitContainerI13nScript,
 								},
 								{
 									Name: nginxServiceInstanceIdEnvVar,
