@@ -50,11 +50,19 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 
+	var binaryAssetsDir string
+	binaryAssetsDir, err = envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
+	if err != nil {
+		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
+	}
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
+		DownloadBinaryAssets:  true,
+		BinaryAssetsDirectory: binaryAssetsDir,
 	}
 	cfg, err = testEnv.Start()
 	if err != nil {
