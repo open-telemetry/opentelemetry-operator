@@ -161,13 +161,6 @@ type OpenTelemetryCollectorSpec struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
-	// Command overrides the container entrypoint (Pod.spec.containers[].command), for example
-	// ["/path/to/binary", "subcommand"]. When omitted, the image ENTRYPOINT is used.
-	// +optional
-	// +listType=atomic
-	// +kubebuilder:validation:MaxItems=50
-	// +kubebuilder:validation:MinItems=1
-	Command []string `json:"command,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`

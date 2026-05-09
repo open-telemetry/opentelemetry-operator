@@ -5,7 +5,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"slices"
 
 	go_yaml "github.com/goccy/go-yaml"
 	appsv1 "k8s.io/api/apps/v1"
@@ -125,7 +124,6 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 			TargetAllocator: tov1beta1TA(c.Spec.TargetAllocator),
 			Mode:            v1beta1.Mode(c.Spec.Mode),
 			UpgradeStrategy: v1beta1.UpgradeStrategy(c.Spec.UpgradeStrategy),
-			Command:         slices.Clone(c.Spec.Command),
 			Config:          *cfg,
 			Ingress: v1beta1.Ingress{
 				Type:             v1beta1.IngressType(c.Spec.Ingress.Type),
@@ -336,7 +334,6 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ServiceAccount:       c.Spec.ServiceAccount,
 			Image:                c.Spec.Image,
 			UpgradeStrategy:      UpgradeStrategy(c.Spec.UpgradeStrategy),
-			Command:              slices.Clone(c.Spec.Command),
 			ImagePullPolicy:      c.Spec.ImagePullPolicy,
 			Config:               configYaml,
 			VolumeMounts:         c.Spec.VolumeMounts,

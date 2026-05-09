@@ -143,14 +143,6 @@ for the OpenTelemetryCollector workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>command</b></td>
-        <td>[]string</td>
-        <td>
-          Command overrides the container entrypoint (Pod.spec.containers[].command), for example
-["/path/to/binary", "subcommand"]. When omitted, the image ENTRYPOINT is used.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecconfigmapsindex">configmaps</a></b></td>
         <td>[]object</td>
         <td>
@@ -20196,9 +20188,7 @@ for the workload.<br/>
         <td><b>command</b></td>
         <td>[]string</td>
         <td>
-          Command overrides the container entrypoint (Pod.spec.containers[].command), for example
-["/path/to/binary", "subcommand"] when the collector runs as a subcommand of another binary. Operator-generated
-args (--config=..., spec.args) are still passed as container args. When omitted, the image ENTRYPOINT is used.<br/>
+          Command overrides the container entrypoint (Pod.spec.containers[].command). When omitted, the image ENTRYPOINT is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>

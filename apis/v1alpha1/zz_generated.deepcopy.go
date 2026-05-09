@@ -1086,11 +1086,6 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		}
 	}
 	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
-	if in.Command != nil {
-		in, out := &in.Command, &out.Command
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))

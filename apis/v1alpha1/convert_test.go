@@ -197,7 +197,6 @@ func Test_tov1beta1AndBack(t *testing.T) {
 			Mode:            ModeDeployment,
 			ServiceAccount:  "foo",
 			Image:           "baz/bar:1.0",
-			Command: []string{"/usr/share/agent", "otel"},
 			UpgradeStrategy: UpgradeStrategyAutomatic,
 			ImagePullPolicy: v1.PullAlways,
 			Config:          collectorCfg,
