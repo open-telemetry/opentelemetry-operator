@@ -1,0 +1,259 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        opentelemetry-operator-config/sha256: 2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/component: opentelemetry-collector
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: test-collector
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - args:
+        - --config=/conf/collector.yaml
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.cpu
+        image: test
+        name: otc-container
+        ports:
+        - containerPort: 12345
+          name: examplereceiver
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: otc-internal
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: test-collector
+      shareProcessNamespace: false
+      volumes:
+      - configMap:
+          items:
+          - key: collector.yaml
+            path: collector.yaml
+          name: test-collector-2d266e55
+        name: otc-internal
+status: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0
+---
+apiVersion: v1
+data:
+  collector.yaml: |
+    receivers:
+      examplereceiver:
+        endpoint: 0.0.0.0:12345
+    exporters:
+      debug: null
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - debug
+          receivers:
+            - examplereceiver
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector-2d266e55
+  namespace: test
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: base
+  name: test-collector
+  namespace: test
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: examplereceiver
+    port: 12345
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: test-collector-headless-tls
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
+  name: test-collector-headless
+  namespace: test
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: examplereceiver
+    port: 12345
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-monitoring-service: Exists
+    operator.opentelemetry.io/collector-service-type: monitoring
+  name: test-collector-monitoring
+  namespace: test
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector-networkpolicy
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector-networkpolicy
+  namespace: test
+spec:
+  ingress:
+  - ports:
+    - port: 12345
+      protocol: TCP
+    - port: 8888
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+  - Ingress

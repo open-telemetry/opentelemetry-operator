@@ -1,0 +1,336 @@
+apiVersion: v1
+data:
+  targetallocator.yaml: |
+    allocation_strategy: consistent-hashing
+    collector_selector:
+      matchlabels:
+        app.kubernetes.io/component: opentelemetry-collector
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/part-of: opentelemetry
+      matchexpressions: []
+    config:
+      scrape_configs:
+      - job_name: example
+        metric_relabel_configs:
+        - replacement: $1_$2
+          source_labels:
+          - job
+          target_label: job
+        relabel_configs:
+        - replacement: my_service_$1
+          source_labels:
+          - __meta_service_id
+          target_label: job
+        - replacement: $1
+          source_labels:
+          - __meta_service_name
+          target_label: instance
+    filter_strategy: relabel-config
+    https:
+      ca_file_path: /tls/ca.crt
+      enabled: true
+      listen_addr: :8443
+      tls_cert_file_path: /tls/tls.crt
+      tls_key_file_path: /tls/tls.key
+    prometheus_cr:
+      enabled: true
+      pod_monitor_namespace_selector: null
+      pod_monitor_selector: null
+      probe_namespace_selector: null
+      probe_selector: null
+      scrape_config_namespace_selector: null
+      scrape_config_selector: null
+      service_monitor_namespace_selector: null
+      service_monitor_selector: null
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: test-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        opentelemetry-targetallocator-config/hash: 02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37
+      labels:
+        app.kubernetes.io/component: opentelemetry-targetallocator
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: test-targetallocator
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - env:
+        - name: OTELCOL_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: ta-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: ta-container
+              divisor: "0"
+              resource: limits.cpu
+        image: default-ta-allocator
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 8080
+        name: ta-container
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: ta-internal
+        - mountPath: /tls
+          name: test-ta-server-cert
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: test-targetallocator
+      shareProcessNamespace: false
+      volumes:
+      - configMap:
+          items:
+          - key: targetallocator.yaml
+            path: targetallocator.yaml
+          name: test-targetallocator
+        name: ta-internal
+      - name: test-ta-server-cert
+        secret:
+          secretName: test-ta-server-cert
+status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  ports:
+  - name: targetallocation
+    port: 80
+    targetPort: http
+  - name: targetallocation-https
+    port: 443
+    targetPort: https
+  selector:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  loadBalancer: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations:
+    opentelemetry-targetallocator-config/hash: 02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: test-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-self-signed-issuer
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-self-signed-issuer
+  namespace: test
+spec:
+  selfSigned: {}
+status: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-ca-cert
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-ca-cert
+  namespace: test
+spec:
+  commonName: test-ca-cert
+  duration: 17280h0m0s
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: test-self-signed-issuer
+  renewBefore: 4344h0m0s
+  secretName: test-ca-cert
+  subject:
+    organizationalUnits:
+    - opentelemetry-operator
+status: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-ca-issuer
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-ca-issuer
+  namespace: test
+spec:
+  ca:
+    secretName: test-ca-cert
+status: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-ta-server-cert
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-ta-server-cert
+  namespace: test
+spec:
+  dnsNames:
+  - test-targetallocator
+  - test-targetallocator.test.svc
+  - test-targetallocator.test.svc.cluster.local
+  duration: 2160h0m0s
+  issuerRef:
+    kind: Issuer
+    name: test-ca-issuer
+  secretName: test-ta-server-cert
+  subject:
+    organizationalUnits:
+    - opentelemetry-operator
+  usages:
+  - client auth
+  - server auth
+status: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-ta-client-cert
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-ta-client-cert
+  namespace: test
+spec:
+  dnsNames:
+  - test-targetallocator
+  - test-targetallocator.test.svc
+  - test-targetallocator.test.svc.cluster.local
+  duration: 2160h0m0s
+  issuerRef:
+    kind: Issuer
+    name: test-ca-issuer
+  secretName: test-ta-client-cert
+  subject:
+    organizationalUnits:
+    - opentelemetry-operator
+  usages:
+  - client auth
+  - server auth
+status: {}
