@@ -1,0 +1,27 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: deployment
+  httpRoute:
+    enabled: true
+    gateway: my-gateway
+    gatewayNamespace: default
+    hostnames:
+      - "example.com"
+      - "*.example.com"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

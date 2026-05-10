@@ -1,0 +1,25 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: deployment
+  configmaps:
+    - name: mount-test1
+      mountpath: /
+    - name: mount-test2
+      mountpath: /dir
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

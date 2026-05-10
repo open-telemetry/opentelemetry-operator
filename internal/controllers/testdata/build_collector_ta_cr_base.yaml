@@ -77,9 +77,6 @@ spec:
           name: test-collector-42773025
         name: otc-internal
   updateStrategy: {}
-status:
-  availableReplicas: 0
-  replicas: 0
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -101,11 +98,6 @@ spec:
       app.kubernetes.io/instance: test.test
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-status:
-  currentHealthy: 0
-  desiredHealthy: 0
-  disruptionsAllowed: 0
-  expectedPods: 0
 ---
 apiVersion: v1
 data:
@@ -175,8 +167,6 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: TargetAllocator
@@ -196,4 +186,3 @@ spec:
   prometheusCR:
     enabled: true
   resources: {}
-status: {}

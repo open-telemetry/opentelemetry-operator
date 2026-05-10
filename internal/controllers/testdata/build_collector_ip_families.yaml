@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
@@ -11,7 +11,6 @@ metadata:
   name: test-collector
   namespace: test
 spec:
-  podManagementPolicy: Parallel
   replicas: 1
   selector:
     matchLabels:
@@ -19,11 +18,11 @@ spec:
       app.kubernetes.io/instance: test.test
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-  serviceName: test-collector-headless
+  strategy: {}
   template:
     metadata:
       annotations:
-        opentelemetry-operator-config/sha256: 42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0
+        opentelemetry-operator-config/sha256: f2b5d7e85aee6bedcf5d75e67ff9a0dc4529a9ebfbbb99e84b86e483ba23514b
         prometheus.io/path: /metrics
         prometheus.io/port: "8888"
         prometheus.io/scrape: "true"
@@ -61,6 +60,10 @@ spec:
         - containerPort: 8888
           name: metrics
           protocol: TCP
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
         resources: {}
         volumeMounts:
         - mountPath: /conf
@@ -74,9 +77,8 @@ spec:
           items:
           - key: collector.yaml
             path: collector.yaml
-          name: test-collector-42773025
+          name: test-collector-f2b5d7e8
         name: otc-internal
-  updateStrategy: {}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -102,22 +104,20 @@ spec:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: null
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://test-targetallocator:80
-                interval: 30s
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug: null
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - debug
-                receivers:
-                    - prometheus
+      pipelines:
+        traces:
+          exporters:
+            - debug
+          receivers:
+            - otlp
 kind: ConfigMap
 metadata:
   labels:
@@ -127,7 +127,7 @@ metadata:
     app.kubernetes.io/name: test-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
-  name: test-collector-42773025
+  name: test-collector-f2b5d7e8
   namespace: test
 ---
 apiVersion: v1
@@ -150,6 +150,78 @@ metadata:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: base
+  name: test-collector
+  namespace: test
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  - IPv6
+  ipFamilyPolicy: PreferDualStack
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: test-collector-headless-tls
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
+  name: test-collector-headless
+  namespace: test
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  - IPv6
+  ipFamilyPolicy: PreferDualStack
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: test-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
@@ -158,6 +230,10 @@ metadata:
   name: test-collector-monitoring
   namespace: test
 spec:
+  ipFamilies:
+  - IPv4
+  - IPv6
+  ipFamilyPolicy: PreferDualStack
   ports:
   - name: monitoring
     port: 8888
@@ -167,22 +243,3 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
----
-apiVersion: opentelemetry.io/v1alpha1
-kind: TargetAllocator
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: opentelemetry-operator
-  name: test
-  namespace: test
-spec:
-  filterStrategy: relabel-config
-  global: null
-  networkPolicy: {}
-  observability:
-    metrics:
-      enableMetrics: true
-  podDnsConfig: {}
-  prometheusCR:
-    enabled: true
-  resources: {}

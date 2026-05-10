@@ -31,7 +31,9 @@ import (
 // from testScheme when known, so the generated fixtures stay readable even
 // though the builder itself does not set apiVersion/kind on returned objects.
 // Types not registered in testScheme (e.g. cert-manager) are emitted without
-// apiVersion/kind.
+// apiVersion/kind. The top-level "status" field is stripped — the builder
+// must never set status, and zero-value status structs (Deployment, etc.)
+// would otherwise pollute the golden files.
 func renderObjects(t *testing.T, objs []client.Object) string {
 	t.Helper()
 	var buf bytes.Buffer
@@ -44,7 +46,12 @@ func renderObjects(t *testing.T, objs []client.Object) string {
 				obj.GetObjectKind().SetGroupVersionKind(gvks[0])
 			}
 		}
-		out, err := sigsyaml.Marshal(obj)
+		raw, err := sigsyaml.Marshal(obj)
+		require.NoError(t, err)
+		var m map[string]any
+		require.NoError(t, sigsyaml.Unmarshal(raw, &m))
+		delete(m, "status")
+		out, err := sigsyaml.Marshal(m)
 		require.NoError(t, err)
 		buf.Write(out)
 	}
@@ -83,6 +90,81 @@ func TestBuildCollector(t *testing.T) {
 			name:      "specified service account case",
 			inputFile: "build_collector_service_account.input.yaml",
 			wantFile:  "build_collector_service_account.yaml",
+		},
+		{
+			name:      "affinity",
+			inputFile: "build_collector_affinity.input.yaml",
+			wantFile:  "build_collector_affinity.yaml",
+		},
+		{
+			name:      "node selector",
+			inputFile: "build_collector_node_selector.input.yaml",
+			wantFile:  "build_collector_node_selector.yaml",
+		},
+		{
+			name:      "args",
+			inputFile: "build_collector_args.input.yaml",
+			wantFile:  "build_collector_args.yaml",
+		},
+		{
+			name:      "init containers",
+			inputFile: "build_collector_init_containers.input.yaml",
+			wantFile:  "build_collector_init_containers.yaml",
+		},
+		{
+			name:      "pod DNS config",
+			inputFile: "build_collector_dns_config.input.yaml",
+			wantFile:  "build_collector_dns_config.yaml",
+		},
+		{
+			name:      "pod annotations",
+			inputFile: "build_collector_pod_annotations.input.yaml",
+			wantFile:  "build_collector_pod_annotations.yaml",
+		},
+		{
+			name:      "additional containers",
+			inputFile: "build_collector_additional_containers.input.yaml",
+			wantFile:  "build_collector_additional_containers.yaml",
+		},
+		{
+			name:      "daemonset features",
+			inputFile: "build_collector_daemonset_features.input.yaml",
+			wantFile:  "build_collector_daemonset_features.yaml",
+		},
+		{
+			name:      "extension",
+			inputFile: "build_collector_extension.input.yaml",
+			wantFile:  "build_collector_extension.yaml",
+		},
+		{
+			name:      "http route",
+			inputFile: "build_collector_http_route.input.yaml",
+			wantFile:  "build_collector_http_route.yaml",
+		},
+		{
+			name:      "configmaps",
+			inputFile: "build_collector_configmaps.input.yaml",
+			wantFile:  "build_collector_configmaps.yaml",
+		},
+		{
+			name:      "ip families",
+			inputFile: "build_collector_ip_families.input.yaml",
+			wantFile:  "build_collector_ip_families.yaml",
+		},
+		{
+			name:      "image with version tag",
+			inputFile: "build_collector_image_version.input.yaml",
+			wantFile:  "build_collector_image_version.yaml",
+		},
+		{
+			name:      "statefulset",
+			inputFile: "build_collector_statefulset.input.yaml",
+			wantFile:  "build_collector_statefulset.yaml",
+		},
+		{
+			name:      "statefulset features",
+			inputFile: "build_collector_statefulset_features.input.yaml",
+			wantFile:  "build_collector_statefulset_features.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -239,6 +321,12 @@ func TestBuildTargetAllocator(t *testing.T) {
 			collectorFile: "build_target_allocator_collector.input.yaml",
 			wantFile:      "build_target_allocator_collector_present.yaml",
 			cfg:           defaultCfg,
+		},
+		{
+			name:      "rich features",
+			inputFile: "build_target_allocator_features.input.yaml",
+			wantFile:  "build_target_allocator_features.yaml",
+			cfg:       defaultCfg,
 		},
 		{
 			name:          "mtls",

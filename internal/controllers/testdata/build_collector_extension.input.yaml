@@ -1,0 +1,31 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: mirror.gcr.io/jaegertracing/jaeger:latest
+  replicas: 1
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: memstore
+    extensions:
+      jaeger_query:
+        storage:
+          traces: memstore
+      jaeger_storage:
+        backends:
+          memstore:
+            memory:
+              max_traces: 100000
+    service:
+      extensions: [jaeger_storage, jaeger_query]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [jaeger_storage_exporter]

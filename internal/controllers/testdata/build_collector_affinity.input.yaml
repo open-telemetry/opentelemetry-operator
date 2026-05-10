@@ -1,0 +1,27 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: deployment
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

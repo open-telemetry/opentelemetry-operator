@@ -1,0 +1,20 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  mode: daemonset
+  terminationGracePeriodSeconds: 600
+  hostNetwork: true
+  hostPID: true
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

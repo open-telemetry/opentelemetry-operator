@@ -1,0 +1,18 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.121.0
+  replicas: 1
+  mode: deployment
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

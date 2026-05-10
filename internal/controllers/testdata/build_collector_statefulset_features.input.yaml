@@ -1,0 +1,35 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  mode: statefulset
+  replicas: 3
+  podManagementPolicy: OrderedReady
+  terminationGracePeriodSeconds: 600
+  volumes:
+  - name: testvolume
+  volumeMounts:
+  - name: testvolume
+    mountPath: /usr/share/testvolume
+  volumeClaimTemplates:
+  - metadata:
+      name: testvolume
+      labels:
+        test: "true"
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

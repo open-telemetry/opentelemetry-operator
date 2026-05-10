@@ -77,7 +77,6 @@ spec:
             path: collector.yaml
           name: test-collector-2d266e55
         name: otc-internal
-status: {}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -99,11 +98,6 @@ spec:
       app.kubernetes.io/instance: test.test
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-status:
-  currentHealthy: 0
-  desiredHealthy: 0
-  disruptionsAllowed: 0
-  expectedPods: 0
 ---
 apiVersion: v1
 data:
@@ -169,8 +163,6 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}
 ---
 apiVersion: v1
 kind: Service
@@ -200,8 +192,6 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}
 ---
 apiVersion: v1
 kind: Service
@@ -227,8 +217,6 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

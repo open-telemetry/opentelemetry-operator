@@ -1,7 +1,3 @@
-# Run e2e tests for httpRoute
-.PHONY: e2e-httproute
-e2e-httproute: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')

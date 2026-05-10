@@ -1,0 +1,20 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: deployment
+  nodeSelector:
+    kubernetes.io/os: linux
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

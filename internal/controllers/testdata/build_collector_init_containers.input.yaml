@@ -1,0 +1,22 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: deployment
+  initContainers:
+    - name: init-test-echo
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'sleep 5 && echo "this is a test"']
+  config:
+    receivers:
+      examplereceiver:
+        endpoint: "0.0.0.0:12345"
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [examplereceiver]
+          exporters: [debug]

@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
@@ -11,7 +11,6 @@ metadata:
   name: test-collector
   namespace: test
 spec:
-  podManagementPolicy: Parallel
   replicas: 1
   selector:
     matchLabels:
@@ -19,11 +18,11 @@ spec:
       app.kubernetes.io/instance: test.test
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-  serviceName: test-collector-headless
+  strategy: {}
   template:
     metadata:
       annotations:
-        opentelemetry-operator-config/sha256: 42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0
+        opentelemetry-operator-config/sha256: f99c3aed5138a73f96cb18fbb8a8f433ee1ca93ebd6290cd0a0ddc85bd857110
         prometheus.io/path: /metrics
         prometheus.io/port: "8888"
         prometheus.io/scrape: "true"
@@ -55,12 +54,18 @@ spec:
               containerName: otc-container
               divisor: "0"
               resource: limits.cpu
-        image: test
+        image: mirror.gcr.io/jaegertracing/jaeger:latest
         name: otc-container
         ports:
+        - containerPort: 16686
+          name: jaeger-query
         - containerPort: 8888
           name: metrics
           protocol: TCP
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
         resources: {}
         volumeMounts:
         - mountPath: /conf
@@ -74,9 +79,8 @@ spec:
           items:
           - key: collector.yaml
             path: collector.yaml
-          name: test-collector-42773025
+          name: test-collector-f99c3aed
         name: otc-internal
-  updateStrategy: {}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -102,22 +106,33 @@ spec:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: null
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://test-targetallocator:80
-                interval: 30s
+      otlp:
+        protocols:
+          grpc: null
+          http: null
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: memstore
+    extensions:
+      jaeger_query:
+        storage:
+          traces: memstore
+      jaeger_storage:
+        backends:
+          memstore:
+            memory:
+              max_traces: 100000
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - debug
-                receivers:
-                    - prometheus
+      extensions:
+        - jaeger_storage
+        - jaeger_query
+      pipelines:
+        traces:
+          exporters:
+            - jaeger_storage_exporter
+          receivers:
+            - otlp
 kind: ConfigMap
 metadata:
   labels:
@@ -127,7 +142,7 @@ metadata:
     app.kubernetes.io/name: test-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
-  name: test-collector-42773025
+  name: test-collector-f99c3aed
   namespace: test
 ---
 apiVersion: v1
@@ -142,6 +157,70 @@ metadata:
     app.kubernetes.io/version: latest
   name: test-collector
   namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: base
+  name: test-collector
+  namespace: test
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: test-collector-headless-tls
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
+  name: test-collector-headless
+  namespace: test
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 ---
 apiVersion: v1
 kind: Service
@@ -168,21 +247,26 @@ spec:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
 ---
-apiVersion: opentelemetry.io/v1alpha1
-kind: TargetAllocator
+apiVersion: v1
+kind: Service
 metadata:
   labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
-  name: test
+    app.kubernetes.io/name: test-collector-extension
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: extension
+  name: test-collector-extension
   namespace: test
 spec:
-  filterStrategy: relabel-config
-  global: null
-  networkPolicy: {}
-  observability:
-    metrics:
-      enableMetrics: true
-  podDnsConfig: {}
-  prometheusCR:
-    enabled: true
-  resources: {}
+  ports:
+  - name: jaeger-query
+    port: 16686
+    targetPort: 16686
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry

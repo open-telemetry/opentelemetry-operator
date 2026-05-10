@@ -11,8 +11,8 @@ metadata:
   name: test-collector
   namespace: test
 spec:
-  podManagementPolicy: Parallel
-  replicas: 1
+  podManagementPolicy: OrderedReady
+  replicas: 3
   selector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-collector
@@ -23,7 +23,7 @@ spec:
   template:
     metadata:
       annotations:
-        opentelemetry-operator-config/sha256: 42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0
+        opentelemetry-operator-config/sha256: 2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25
         prometheus.io/path: /metrics
         prometheus.io/port: "8888"
         prometheus.io/scrape: "true"
@@ -58,6 +58,8 @@ spec:
         image: test
         name: otc-container
         ports:
+        - containerPort: 12345
+          name: examplereceiver
         - containerPort: 8888
           name: metrics
           protocol: TCP
@@ -65,18 +67,34 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: otc-internal
+        - mountPath: /usr/share/testvolume
+          name: testvolume
       dnsConfig: {}
       dnsPolicy: ClusterFirst
       serviceAccountName: test-collector
       shareProcessNamespace: false
+      terminationGracePeriodSeconds: 600
       volumes:
       - configMap:
           items:
           - key: collector.yaml
             path: collector.yaml
-          name: test-collector-42773025
+          name: test-collector-2d266e55
         name: otc-internal
+      - name: testvolume
   updateStrategy: {}
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        test: "true"
+      name: testvolume
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+    status: {}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -102,22 +120,18 @@ spec:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: null
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://test-targetallocator:80
-                interval: 30s
+      examplereceiver:
+        endpoint: 0.0.0.0:12345
+    exporters:
+      debug: null
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - debug
-                receivers:
-                    - prometheus
+      pipelines:
+        metrics:
+          exporters:
+            - debug
+          receivers:
+            - examplereceiver
 kind: ConfigMap
 metadata:
   labels:
@@ -127,7 +141,7 @@ metadata:
     app.kubernetes.io/name: test-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
-  name: test-collector-42773025
+  name: test-collector-2d266e55
   namespace: test
 ---
 apiVersion: v1
@@ -142,6 +156,60 @@ metadata:
     app.kubernetes.io/version: latest
   name: test-collector
   namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: base
+  name: test-collector
+  namespace: test
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: examplereceiver
+    port: 12345
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: test-collector-headless-tls
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
+  name: test-collector-headless
+  namespace: test
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: examplereceiver
+    port: 12345
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 ---
 apiVersion: v1
 kind: Service
@@ -167,22 +235,3 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
----
-apiVersion: opentelemetry.io/v1alpha1
-kind: TargetAllocator
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: opentelemetry-operator
-  name: test
-  namespace: test
-spec:
-  filterStrategy: relabel-config
-  global: null
-  networkPolicy: {}
-  observability:
-    metrics:
-      enableMetrics: true
-  podDnsConfig: {}
-  prometheusCR:
-    enabled: true
-  resources: {}
