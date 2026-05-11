@@ -185,12 +185,20 @@ func TestMain(m *testing.M) {
 
 	utilruntime.Must(gatewayv1.Install(testScheme))
 
+	var binaryAssetsDir string
+	binaryAssetsDir, err = envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
+	if err != nil {
+		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
+	}
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
+		DownloadBinaryAssets:  true,
+		BinaryAssetsDirectory: binaryAssetsDir,
 	}
 	restCfg, err = testEnv.Start()
 	if err != nil {

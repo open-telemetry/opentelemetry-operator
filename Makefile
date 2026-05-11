@@ -61,6 +61,8 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
 
+COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
+
 INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
 INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
 
@@ -346,10 +348,9 @@ manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
 
 # Run tests
-# setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: envtest gotestsum
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+test: gotestsum
+	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
@@ -478,6 +479,21 @@ e2e-upgrade: undeploy chainsaw
 .PHONY: e2e-crd-validations
 e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
+
+# Standalone Target Allocator end-to-end tests
+.PHONY: prepare-e2e-ta-standalone
+prepare-e2e-ta-standalone: kind kustomize gotestsum
+	$(MAKE) start-kind KUBE_VERSION=$(KUBE_VERSION)
+	$(MAKE) load-image-all install-targetallocator-prometheus-crds
+	@mkdir -p ./.testresults/e2e
+
+.PHONY: e2e-ta-standalone
+e2e-ta-standalone: kustomize gotestsum
+# Tests deploy TA and collector directly (not via the operator), so image refs are passed as env vars.
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) \
+	COLLECTOR_IMG=$(COLLECTOR_IMG) \
+	KUSTOMIZE=$(KUSTOMIZE) \
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
@@ -681,7 +697,6 @@ cmctl:
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KIND ?= $(LOCALBIN)/kind
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
@@ -700,14 +715,12 @@ KIND_VERSION ?= v0.31.0
 CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
-# renovate: datasource=git-refs packageName=https://github.com/kubernetes-sigs/controller-runtime versioning=loose
-ENVTEST_VERSION ?= release-0.23
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
 GOVULNCHECK_VERSION ?= v1.3.0
 
 # Install all development tools
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl govulncheck
+install-tools: kustomize golangci-lint kind controller-gen crdoc operator-sdk chainsaw gotestsum cmctl govulncheck
 
 # Download kustomize locally if necessary
 .PHONY: kustomize
@@ -728,12 +741,6 @@ kind: ## Download kind locally if necessary.
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
-
-# Download envtest-setup locally if necessary
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
 CRDOC = $(shell pwd)/bin/crdoc
 # Download crdoc locally if necessary
