@@ -9,6 +9,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
@@ -139,6 +140,10 @@ type Config struct {
 	FeatureGates string `yaml:"feature-gates"`
 	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
 	Internal Internal `yaml:"-"`
+	// Instrumentation is the set of instrumentations to use if CRDs are not present
+	Instrumentation v1alpha1.Instrumentation `yaml:"instrumentations"`
+	// EnableInstrumentationCRDs enables looking for instrumentation CRDs.
+	EnableInstrumentationCRDs bool `yaml:"enable-instrumentation-crds"`
 }
 
 // Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
@@ -215,6 +220,7 @@ func New() Config {
 		Internal: Internal{
 			NativeSidecarSupport: false,
 		},
+		EnableInstrumentationCRDs: true,
 	}
 }
 
