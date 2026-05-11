@@ -37,6 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -284,7 +285,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		}
 	}
 
-	desiredObjects, buildErr := BuildCollector(params)
+	desiredObjects, buildErr := BuildCollector(r.config.TargetAllocatorAvailability, params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
@@ -371,6 +372,9 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 
 	if r.config.GatewayAPIsAvailability == gatewayapi.ApiAvailable {
 		ownedResources = append(ownedResources, &gatewayv1.HTTPRoute{})
+	}
+	if r.config.TargetAllocatorAvailability == targetallocator.Available {
+		ownedResources = append(ownedResources, &v1alpha1.TargetAllocator{})
 	}
 
 	return ownedResources
