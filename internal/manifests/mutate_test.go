@@ -2625,3 +2625,117 @@ func TestGetMutateFunc_MutateNetworkPolicy(t *testing.T) {
 	require.Exactly(t, got.Annotations, want.Annotations)
 	require.Exactly(t, got.Spec, want.Spec)
 }
+
+// TestMutatePodTemplateStripsOperatorManagedAnnotations exercises the disable-after-create
+// scenario described in https://github.com/open-telemetry/opentelemetry-operator/issues/5043.
+// When the operator re-renders a Deployment with prometheus annotations disabled, the
+// existing prometheus.io/* annotations on the pod template must be removed; merely omitting
+// them from the desired pod template was not enough because the surrounding merge preserves
+// any key only present on the existing side.
+func TestMutatePodTemplateStripsOperatorManagedAnnotations(t *testing.T) {
+	const (
+		userKept       = "ops/internal-bookkeeping"
+		userValue      = "should-be-preserved-across-reconciles"
+		nonProm        = "non.prom/key-with-prefix-but-not-prom"
+		nonPromValue   = "should-also-be-preserved"
+		sha256Key      = "opentelemetry-operator-config/sha256"
+		oldHash        = "old-hash"
+		newHash        = "new-hash"
+	)
+
+	tests := []struct {
+		name              string
+		existingTemplate  corev1.PodTemplateSpec
+		desiredTemplate   corev1.PodTemplateSpec
+		expectAnnotations map[string]string
+	}{
+		{
+			name: "disable removes prometheus annotations but keeps user keys",
+			existingTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"prometheus.io/scrape": "true",
+						"prometheus.io/port":   "8888",
+						"prometheus.io/path":   "/metrics",
+						sha256Key:              oldHash,
+						userKept:               userValue,
+						nonProm:                nonPromValue,
+					},
+				},
+			},
+			desiredTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						sha256Key: newHash,
+					},
+				},
+			},
+			expectAnnotations: map[string]string{
+				sha256Key:    newHash,
+				userKept:     userValue,
+				nonProm:      nonPromValue,
+			},
+		},
+		{
+			name: "enable keeps prometheus annotations when desired sets them",
+			existingTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						sha256Key: oldHash,
+						userKept:  userValue,
+					},
+				},
+			},
+			desiredTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"prometheus.io/scrape": "true",
+						"prometheus.io/port":   "8888",
+						"prometheus.io/path":   "/metrics",
+						sha256Key:              newHash,
+					},
+				},
+			},
+			expectAnnotations: map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/port":   "8888",
+				"prometheus.io/path":   "/metrics",
+				sha256Key:              newHash,
+				userKept:               userValue,
+			},
+		},
+		{
+			name: "no operator-managed keys on either side leaves user annotations intact",
+			existingTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						userKept: userValue,
+						nonProm:  nonPromValue,
+					},
+				},
+			},
+			desiredTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						sha256Key: newHash,
+					},
+				},
+			},
+			expectAnnotations: map[string]string{
+				userKept:  userValue,
+				nonProm:   nonPromValue,
+				sha256Key: newHash,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := tt.existingTemplate.DeepCopy()
+			desired := tt.desiredTemplate.DeepCopy()
+			err := mutatePodTemplate(existing, desired)
+			require.NoError(t, err)
+			require.Exactly(t, tt.expectAnnotations, existing.Annotations)
+		})
+	}
+}
