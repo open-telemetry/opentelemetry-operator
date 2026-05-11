@@ -35,7 +35,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // TargetAllocatorReconciler reconciles a TargetAllocator object.
@@ -200,7 +199,7 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
 	}
 
-	if r.config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if r.config.CertManagerAvailability == certmanager.Available {
 		ctrlBuilder.Owns(&cmv1.Certificate{})
 		ctrlBuilder.Owns(&cmv1.Issuer{})
 	}

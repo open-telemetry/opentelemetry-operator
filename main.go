@@ -83,6 +83,8 @@ func init() {
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(gatewayv1.Install(scheme))
+	// Always register cert-manager types in the scheme as cermanager is now default for MTLS
+	utilruntime.Must(cmv1.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
@@ -332,10 +334,6 @@ func main() {
 	if cfg.CertManagerAvailability == certmanager.Available {
 		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
-
-		if featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-			setupLog.Info("Securing the connection between the target allocator and the collector")
-		}
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}

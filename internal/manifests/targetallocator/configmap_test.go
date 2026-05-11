@@ -419,15 +419,15 @@ prometheus_cr:
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
+		}
+		testParams.TargetAllocator.Annotations = map[string]string{
+			"opentelemetry.io/ta-mtls-enabled": "true",
 		}
 
 		expectedData := map[string]string{
@@ -476,11 +476,15 @@ https:
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
 		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
+		}
+		testParams.TargetAllocator.Annotations = map[string]string{
+			"opentelemetry.io/ta-mtls-enabled": "true",
 		}
 
 		expectedData := map[string]string{

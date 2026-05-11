@@ -421,7 +421,9 @@ Prerequisites:
           - delete
         ```
 
-- Enable the `operator.targetallocator.mtls` feature gate in the operator's deployment. 
+* Configure mTLS by setting `spec.mtls.enabled: true` on the `TargetAllocator` CR.
+* If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
+* `useCertManager` defaults to `true`, so cert-manager will provision the serving and client certificates unless you explicitly disable it.
 
 
 

@@ -30,7 +30,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -2850,6 +2849,9 @@ prometheus_cr:
 						Name:      "test",
 						Namespace: "test",
 						Labels:    nil,
+						Annotations: map[string]string{
+							"opentelemetry.io/ta-mtls-enabled": "true",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy: v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
@@ -2864,6 +2866,12 @@ prometheus_cr:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+							Enabled: true,
+							Mtls: &v1beta1.TargetAllocatorMTLS{
+								Enabled: true,
+							},
+						},
 						Config: v1beta1.Config{
 							Receivers: v1beta1.AnyConfig{
 								Object: map[string]any{
@@ -2914,7 +2922,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"opentelemetry.io/ta-mtls-enabled": "true",
+						},
 					},
 					Data: map[string]string{
 						"targetallocator.yaml": `allocation_strategy: consistent-hashing
@@ -2992,6 +3002,7 @@ prometheus_cr:
 								},
 								Annotations: map[string]string{
 									"opentelemetry-targetallocator-config/hash": "02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37",
+									"opentelemetry.io/ta-mtls-enabled":          "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -3115,6 +3126,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
+						Annotations: map[string]string{
+							"opentelemetry.io/ta-mtls-enabled": "true",
+						},
 					},
 				},
 				&corev1.Service{
@@ -3168,6 +3182,7 @@ prometheus_cr:
 						},
 						Annotations: map[string]string{
 							"opentelemetry-targetallocator-config/hash": "02ef308f21c5312c388985bd8ca91246d1df7a3a5031135ec176f3c975e2fa37",
+							"opentelemetry.io/ta-mtls-enabled":          "true",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -3337,7 +3352,6 @@ prometheus_cr:
 				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
 			},
-			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {
