@@ -30,8 +30,15 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(clientgoscheme.AddToScheme(sch))
 	utilruntime.Must(v1beta1.AddToScheme(sch))
 
+	binaryAssetsDir, err := envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
+	if err != nil {
+		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
+	}
+
 	testEnv := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		DownloadBinaryAssets:  true,
+		BinaryAssetsDirectory: binaryAssetsDir,
 	}
 
 	cfg, err := testEnv.Start()

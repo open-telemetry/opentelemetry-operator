@@ -148,14 +148,7 @@ kubectl create secret docker-registry regcred --docker-server=<registry> --docke
 
 ### Unit tests
 
-Some unit tests use [envtest](https://book.kubebuilder.io/reference/envtest.html) which requires Kubernetes binaries (e.g. `api-server`, `etcd` and `kubectl`) to be present on the host filesystem. Makefile takes care of installing all dependent binaries, however running the tests from IDE or via `go test` might not work out-of-the-box. The `envtest` uses env variable `KUBEBUILDER_ASSETS` that points to a directory with these binaries. To make the test work in IDE or `go test` the environment variable has to be correctly set.
-
-Example how to run test that use `envtest`:
-
-```bash
-make envtest
-KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.35) go test ./pkg...
-```
+Some unit tests use [envtest](https://book.kubebuilder.io/reference/envtest.html) which requires Kubernetes binaries (e.g. `api-server`, `etcd` and `kubectl`) to be present on the host filesystem. The tests download these binaries automatically on first run, so no additional setup is required to run them via `make test`, `go test`, or from an IDE.
 
 ### End to end tests
 
