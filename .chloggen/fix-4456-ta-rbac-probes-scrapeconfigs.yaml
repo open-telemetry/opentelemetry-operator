@@ -1,0 +1,14 @@
+change_type: bug_fix
+
+component: target allocator
+
+note: "Webhook RBAC check for PrometheusCR now validates permissions for `probes` and `scrapeconfigs` in addition to `servicemonitors` and `podmonitors`, only for CRDs that are installed in the cluster."
+
+issues: [4456]
+
+subtext: |
+  Previously, the Target Allocator webhook only checked RBAC for `servicemonitors` and
+  `podmonitors`. The fix detects which `monitoring.coreos.com` CRDs are present via the
+  autodetect package at startup and stores the list in operator config. The webhook then
+  checks RBAC only for those CRDs, avoiding false warnings when prometheus-operator is
+  not installed.

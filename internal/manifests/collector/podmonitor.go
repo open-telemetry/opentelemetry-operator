@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -11,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -83,7 +83,7 @@ func shouldCreatePodMonitor(params manifests.Params) bool {
 	case !params.OtelCol.Spec.Observability.Metrics.EnableMetrics:
 		l.V(2).Info("Metrics disabled for this OTEL Collector. PodMonitor will not ve created")
 		return false
-	case params.Config.PrometheusCRAvailability == prometheus.NotAvailable:
+	case !slices.Contains(params.Config.PrometheusCRAvailability, "podmonitors"):
 		l.V(2).Info("Cannot enable PodMonitor when prometheus CRDs are unavailable")
 		return false
 	case params.OtelCol.Spec.Mode != v1beta1.ModeSidecar:

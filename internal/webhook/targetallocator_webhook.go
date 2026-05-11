@@ -102,7 +102,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 		if ta.Spec.ServiceAccount == "" {
 			saname = naming.TargetAllocatorServiceAccount(ta.Name)
 		}
-		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.GetNamespace(), saname)
+		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, w.cfg.PrometheusCRAvailability, ta.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}

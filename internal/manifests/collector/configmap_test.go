@@ -12,7 +12,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -146,7 +145,7 @@ service:
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    []string{"servicemonitors", "podmonitors"},
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
@@ -206,7 +205,7 @@ service:
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    []string{"servicemonitors", "podmonitors"},
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)

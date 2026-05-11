@@ -30,7 +30,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
@@ -195,8 +194,10 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&policyV1.PodDisruptionBudget{})
 
-	if r.config.PrometheusCRAvailability == prometheus.Available {
+	if slices.Contains(r.config.PrometheusCRAvailability, "servicemonitors") {
 		ctrlBuilder.Owns(&monitoringv1.ServiceMonitor{})
+	}
+	if slices.Contains(r.config.PrometheusCRAvailability, "podmonitors") {
 		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
 	}
 

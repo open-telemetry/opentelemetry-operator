@@ -226,8 +226,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/probes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/scrapeconfigs: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes/metrics: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - services: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - endpoints: [get,list,watch]",
@@ -327,6 +329,9 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "targetallocator:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
+				PrometheusCRAvailability: []string{
+					"servicemonitors", "podmonitors", "probes", "scrapeconfigs",
+				},
 			}
 			cvw := &TargetAllocatorWebhook{
 				logger:   logr.Discard(),

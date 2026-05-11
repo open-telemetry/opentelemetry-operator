@@ -17,7 +17,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -50,7 +49,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	cfg2 := config.Config{
 		CollectorImage:           defaultCollectorImage,
 		TargetAllocatorImage:     defaultTaAllocationImage,
-		PrometheusCRAvailability: prometheus.Available,
+		PrometheusCRAvailability: []string{"servicemonitors", "podmonitors"},
 	}
 
 	return manifests.Params{
@@ -117,7 +116,7 @@ func newParams(taContainerImage, file string, cfg *config.Config) (manifests.Par
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    []string{"servicemonitors", "podmonitors"},
 		}
 	}
 

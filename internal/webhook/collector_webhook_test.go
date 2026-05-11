@@ -716,8 +716,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/servicemonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/podmonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/probes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/scrapeconfigs: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nodes/metrics: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - services: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - endpoints: [get,list,watch]",
@@ -1419,6 +1421,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "default-collector",
 				TargetAllocatorImage: "default-ta-allocator",
+				PrometheusCRAvailability: []string{
+					"servicemonitors", "podmonitors", "probes", "scrapeconfigs",
+				},
 			}
 			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),
