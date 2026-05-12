@@ -48,6 +48,7 @@ kind: Test
 metadata:
   name: instrumentation-python-oldest
 spec:
+  skip: true # https://github.com/open-telemetry/opentelemetry-operator/issues/5072
   bindings:
     - name: LABEL_SELECTOR
       value: app=my-python
