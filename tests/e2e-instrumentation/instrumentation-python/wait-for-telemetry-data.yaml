@@ -11,7 +11,7 @@ spec:
         - name: CONTAINER_NAME
           value: "otc-container"
         - name: RETRY_TIMEOUT
-          value: "120"
+          value: "240"
         - name: RETRY_SLEEP
           value: "5"
         - name: SEARCH_STRINGS_ENV
