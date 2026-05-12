@@ -272,7 +272,7 @@ func checkAgentCollectorStatus(ctx context.Context, cli client.Client, co *v1alp
 	}
 }
 
-// checkClusterCollectorStatus checks the status of the cluster collector Deployment.
+// checkClusterCollectorStatus checks the status of the cluster collector StatefulSet.
 func checkClusterCollectorStatus(ctx context.Context, cli client.Client, co *v1alpha1.ClusterObservability) componentStatus {
 	clusterCollectorName := fmt.Sprintf("%s-cluster", co.Name)
 
@@ -293,43 +293,26 @@ func checkClusterCollectorStatus(ctx context.Context, cli client.Client, co *v1a
 		}
 	}
 
-	// Check underlying Deployment status
-	var deployment appsv1.Deployment
-	deployKey := types.NamespacedName{Name: clusterCollectorName + "-collector", Namespace: co.Namespace}
-
-	if err := cli.Get(ctx, deployKey, &deployment); err != nil {
+	var sts appsv1.StatefulSet
+	stsKey := types.NamespacedName{Name: clusterCollectorName + "-collector", Namespace: co.Namespace}
+	if err := cli.Get(ctx, stsKey, &sts); err != nil {
 		if apierrors.IsNotFound(err) {
-			return componentStatus{
-				ready:   false,
-				message: "Cluster collector Deployment not found",
-			}
+			return componentStatus{ready: false, message: "Cluster collector StatefulSet not found"}
 		}
+		return componentStatus{ready: false, message: fmt.Sprintf("Failed to get cluster collector StatefulSet: %v", err)}
+	}
+	if sts.Status.Replicas == 0 {
+		return componentStatus{ready: false, message: "Cluster collector StatefulSet has no replicas"}
+	}
+	if sts.Status.ReadyReplicas != sts.Status.Replicas {
 		return componentStatus{
 			ready:   false,
-			message: fmt.Sprintf("Failed to get cluster collector Deployment: %v", err),
+			message: fmt.Sprintf("Cluster collector StatefulSet not ready: %d/%d replicas ready", sts.Status.ReadyReplicas, sts.Status.Replicas),
 		}
 	}
-
-	// Check if Deployment is ready
-	if deployment.Status.Replicas == 0 {
-		return componentStatus{
-			ready:   false,
-			message: "Cluster collector Deployment has no replicas",
-		}
-	}
-
-	if deployment.Status.ReadyReplicas != deployment.Status.Replicas {
-		return componentStatus{
-			ready: false,
-			message: fmt.Sprintf("Cluster collector Deployment not ready: %d/%d replicas ready",
-				deployment.Status.ReadyReplicas, deployment.Status.Replicas),
-		}
-	}
-
 	return componentStatus{
-		ready: true,
-		message: fmt.Sprintf("Cluster collector Deployment ready: %d/%d replicas ready",
-			deployment.Status.ReadyReplicas, deployment.Status.Replicas),
+		ready:   true,
+		message: fmt.Sprintf("Cluster collector StatefulSet ready: %d/%d replicas ready", sts.Status.ReadyReplicas, sts.Status.Replicas),
 	}
 }
 

@@ -5,6 +5,7 @@ package clusterobservability
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -43,22 +43,25 @@ const (
 	hostPathOSRelease = "/etc/os-release"
 )
 
-// getCollectorImage returns a sensible default collector image when build-time version is not set.
+// getCollectorImage rewrites the configured collector image to the contrib distribution.
 func getCollectorImage(configuredImage string) string {
 	// If the configured image has a 0.0.0 tag (fallback during development builds)
 	// replace it with latest
 	if configuredImage == "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.0.0" {
 		return "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest"
 	}
-	return configuredImage
+	return strings.Replace(configuredImage, "/opentelemetry-collector:", "/opentelemetry-collector-contrib:", 1)
 }
 
 // Build creates the manifest for the ClusterObservability resource.
 func Build(params manifests.Params) ([]client.Object, error) {
+	// Detect Kubernetes distribution
+	distro := config.NewConfigLoader().DetectDistroProvider(params.Config)
+
 	var resourceManifests []client.Object
 
 	// Build agent-level collector (DaemonSet)
-	agentCollector, err := buildAgentCollector(params)
+	agentCollector, err := buildAgentCollector(params, distro)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build agent collector: %w", err)
 	}
@@ -83,28 +86,24 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	resourceManifests = append(resourceManifests, instrumentations...)
 
 	// Build OpenShift Security Context Constraints if on OpenShift
-	if isOpenShiftEnvironment(params) {
-		sccResources := buildOpenShiftSCC(params)
-		resourceManifests = append(resourceManifests, sccResources...)
+	if distro == config.OpenShift {
+		resourceManifests = append(resourceManifests, buildOpenShiftSCC(params)...)
 	}
 
 	return resourceManifests, nil
 }
 
 // buildAgentCollector creates an OpenTelemetryCollector CR for agent-level collection.
-func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollector, error) {
+func buildAgentCollector(params manifests.Params, distro config.DistroProvider) (*v1beta1.OpenTelemetryCollector, error) {
 	co := params.ClusterObservability
 
 	// Load configuration using the config loader
 	configLoader := config.NewConfigLoader()
 
-	// Detect Kubernetes distribution
-	distroProvider := configLoader.DetectDistroProvider(params.Config)
-
 	// Load the configuration
 	collectorConfig, err := configLoader.LoadCollectorConfig(
 		config.AgentCollectorType,
-		distroProvider,
+		distro,
 		co.Spec,
 	)
 	if err != nil {
@@ -142,6 +141,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 			Config: collectorConfig,
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Image: getCollectorImage(params.Config.CollectorImage),
+				Env:   agentEnvVars(),
 				SecurityContext: &corev1.SecurityContext{
 					AllowPrivilegeEscalation: &[]bool{false}[0],
 					Capabilities: &corev1.Capabilities{
@@ -158,148 +158,11 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
 				},
-				// Enable host networking for DaemonSet to allow direct port access
-				HostNetwork: true,
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "host-dev",
-						MountPath: "/hostfs" + hostPathDev,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-etc",
-						MountPath: "/hostfs" + hostPathEtc,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-proc",
-						MountPath: "/hostfs" + hostPathProc,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-run-udev-data",
-						MountPath: "/hostfs" + hostPathRunUdevData,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-sys",
-						MountPath: "/hostfs" + hostPathSys,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-var-run-utmp",
-						MountPath: "/hostfs" + hostPathVarRunUtmp,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "host-etc-osrelease",
-						MountPath: "/hostfs" + hostPathOSRelease,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "var-log-pods",
-						MountPath: hostPathVarLogPods,
-						ReadOnly:  true,
-					},
-					{
-						Name:      "var-lib-docker-containers",
-						MountPath: hostPathDockerContain,
-						ReadOnly:  true,
-					},
-				},
-				Volumes: []corev1.Volume{
-					{
-						Name: "host-dev",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathDev,
-							},
-						},
-					},
-					{
-						Name: "host-etc",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathEtc,
-							},
-						},
-					},
-					{
-						Name: "host-proc",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathProc,
-							},
-						},
-					},
-					{
-						Name: "host-run-udev-data",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathRunUdevData,
-							},
-						},
-					},
-					{
-						Name: "host-sys",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathSys,
-							},
-						},
-					},
-					{
-						Name: "host-var-run-utmp",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathVarRunUtmp,
-							},
-						},
-					},
-					{
-						Name: "host-etc-osrelease",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathOSRelease,
-							},
-						},
-					},
-					{
-						Name: "var-log-pods",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathVarLogPods,
-							},
-						},
-					},
-					{
-						Name: "var-lib-docker-containers",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: hostPathDockerContain,
-							},
-						},
-					},
-				},
+				HostNetwork:  true,
+				VolumeMounts: agentVolumeMounts(distro),
+				Volumes:      agentVolumes(distro),
 			},
 		},
-	}
-
-	if isOpenShiftEnvironment(params) {
-		agentCollector.Spec.VolumeMounts = append(agentCollector.Spec.VolumeMounts, corev1.VolumeMount{
-			Name:      "kubelet-serving-ca",
-			MountPath: "/etc/kubelet-serving-ca/ca-bundle.crt",
-			ReadOnly:  true,
-		})
-		agentCollector.Spec.Volumes = append(agentCollector.Spec.Volumes, corev1.Volume{
-			Name: "kubelet-serving-ca",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/kubernetes/kubelet-ca.crt",
-					Type: &[]corev1.HostPathType{corev1.HostPathFile}[0],
-				},
-			},
-		})
 	}
 
 	return agentCollector, nil
@@ -469,7 +332,66 @@ func buildInstrumentationEndpoint(v1alpha1.ClusterObservabilitySpec) (string, er
 	return endpoint, nil
 }
 
-// isOpenShiftEnvironment detects if we're running in an OpenShift environment using cached config.
-func isOpenShiftEnvironment(params manifests.Params) bool {
-	return params.Config.OpenShiftRoutesAvailability == openshift.RoutesAvailable
+// agentEnvVars returns the downward-API env vars referenced by the agent base config.
+func agentEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "K8S_NODE_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+			},
+		},
+	}
+}
+
+func agentVolumeMounts(distro config.DistroProvider) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{
+		{Name: "host-dev", MountPath: "/hostfs" + hostPathDev, ReadOnly: true},
+		{Name: "host-etc", MountPath: "/hostfs" + hostPathEtc, ReadOnly: true},
+		{Name: "host-proc", MountPath: "/hostfs" + hostPathProc, ReadOnly: true},
+		{Name: "host-run-udev-data", MountPath: "/hostfs" + hostPathRunUdevData, ReadOnly: true},
+		{Name: "host-sys", MountPath: "/hostfs" + hostPathSys, ReadOnly: true},
+		{Name: "host-var-run-utmp", MountPath: "/hostfs" + hostPathVarRunUtmp, ReadOnly: true},
+		{Name: "host-etc-osrelease", MountPath: "/hostfs" + hostPathOSRelease, ReadOnly: true},
+		{Name: "var-log-pods", MountPath: hostPathVarLogPods, ReadOnly: true},
+		{Name: "var-lib-docker-containers", MountPath: hostPathDockerContain, ReadOnly: true},
+	}
+	if distro == config.OpenShift {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "kubelet-serving-ca",
+			MountPath: "/etc/kubelet-serving-ca/ca-bundle.crt",
+			ReadOnly:  true,
+		})
+	}
+	return mounts
+}
+
+func agentVolumes(distro config.DistroProvider) []corev1.Volume {
+	hostPath := func(path string) corev1.VolumeSource {
+		return corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: path}}
+	}
+	volumes := []corev1.Volume{
+		{Name: "host-dev", VolumeSource: hostPath(hostPathDev)},
+		{Name: "host-etc", VolumeSource: hostPath(hostPathEtc)},
+		{Name: "host-proc", VolumeSource: hostPath(hostPathProc)},
+		{Name: "host-run-udev-data", VolumeSource: hostPath(hostPathRunUdevData)},
+		{Name: "host-sys", VolumeSource: hostPath(hostPathSys)},
+		{Name: "host-var-run-utmp", VolumeSource: hostPath(hostPathVarRunUtmp)},
+		{Name: "host-etc-osrelease", VolumeSource: hostPath(hostPathOSRelease)},
+		{Name: "var-log-pods", VolumeSource: hostPath(hostPathVarLogPods)},
+		{Name: "var-lib-docker-containers", VolumeSource: hostPath(hostPathDockerContain)},
+	}
+	if distro == config.OpenShift {
+		fileType := corev1.HostPathFile
+		volumes = append(volumes, corev1.Volume{
+			Name: "kubelet-serving-ca",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/etc/kubernetes/kubelet-ca.crt",
+					Type: &fileType,
+				},
+			},
+		})
+	}
+	return volumes
 }

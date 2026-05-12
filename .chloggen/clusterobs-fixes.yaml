@@ -1,0 +1,17 @@
+change_type: bug_fix
+
+component: cluster-observability
+
+note: Fix dependencies (image, env, volumes) required by the bundled agent and cluster collector configs
+
+issues: [3821, 3818]
+
+subtext: |
+  Follow-ups to the initial ClusterObservability framework so the generated
+  agent and cluster collectors come up cleanly on stock distributions:
+    - Use the contrib distribution of the configured collector image.
+    - Inject `K8S_NODE_NAME` on the agent pod, referenced by the bundled
+      `kubeletstats` receiver's endpoint.
+    - Report the cluster collector's readiness from its StatefulSet workload
+      so `ClusterObservability` no longer stays in `Pending` when the cluster
+      collector is fully healthy.
