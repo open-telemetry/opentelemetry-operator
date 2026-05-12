@@ -1,0 +1,27 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+status:
+  (conditions[?type == 'Configured']):
+  - status: "True"
+    reason: Configured
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-agent
+spec:
+  mode: daemonset
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-cluster
+spec:
+  mode: deployment
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: cluster-obs

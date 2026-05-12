@@ -1,0 +1,28 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: assert-telemetry-flow
+spec:
+  try:
+  - script:
+      content: |
+        kubectl run telemetry-trigger -n "$NAMESPACE" \
+          --image=registry.k8s.io/pause:3.10 --restart=Never
+  - script:
+      env:
+      - name: LABEL_SELECTOR
+        value: app.kubernetes.io/name=sink-collector
+      - name: CONTAINER_NAME
+        value: otc-container
+      - name: RETRY_TIMEOUT
+        value: "480"
+      - name: RETRY_SLEEP
+        value: "10"
+      - name: SEARCH_STRINGS_ENV
+        value: |
+          /receiver/kubeletstatsreceiver
+          /receiver/k8sclusterreceiver
+          /receiver/k8seventsreceiver
+          k8s.container.name
+      timeout: 9m
+      content: ../../test-e2e-apps/scripts/check_pod_logs.sh

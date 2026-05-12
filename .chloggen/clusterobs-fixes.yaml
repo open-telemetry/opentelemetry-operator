@@ -1,0 +1,19 @@
+change_type: bug_fix
+
+component: cluster-observability
+
+note: Fix dependencies (image, env, volumes) required by the bundled agent and cluster collector configs
+
+issues: [3821, 3818]
+
+subtext: |
+  Follow-ups to the initial ClusterObservability framework so the generated
+  agent and cluster collectors come up cleanly on stock distributions:
+    - Use the contrib distribution of the configured collector image (the
+      base configs use contrib-only receivers and processors).
+    - Inject `K8S_NODE_NAME` and `OTEL_NODE_IP` on the agent pod (referenced
+      by the Instrumentation OTLP endpoint).
+    - Mount the OpenShift `kubelet-serving-ca` only on OpenShift, where the
+      host file exists.
+    - Use the single `container` filelog operator instead of separate
+      `parser-docker` / `parser-crio` / `parser-containerd` operators.
