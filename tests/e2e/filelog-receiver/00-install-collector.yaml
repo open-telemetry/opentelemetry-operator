@@ -5,7 +5,7 @@ metadata:
   name: filelog
 spec:
   mode: sidecar
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.150.1
   volumeMounts:
   - name: logs
     mountPath: /var/log/app
