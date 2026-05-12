@@ -33,6 +33,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 const (
@@ -45,9 +46,9 @@ const (
 	otherCollectorName = "other"
 	thirdCollectorName = "third"
 	emptyConfigHash    = ""
-	testCollectorKey   = testNamespace + "/" + testCollectorName
-	otherCollectorKey  = testNamespace + "/" + otherCollectorName
-	thirdCollectorKey  = otherCollectorName + "/" + thirdCollectorName
+	testCollectorKey   = resourcekey.KindOtelCol + "/" + testNamespace + "/" + testCollectorName
+	otherCollectorKey  = resourcekey.KindOtelCol + "/" + testNamespace + "/" + otherCollectorName
+	thirdCollectorKey  = resourcekey.KindOtelCol + "/" + otherCollectorName + "/" + thirdCollectorName
 
 	agentTestFileName                       = "testdata/agent.yaml"
 	agentTestFileHttpName                   = "testdata/agenthttpbasic.yaml"

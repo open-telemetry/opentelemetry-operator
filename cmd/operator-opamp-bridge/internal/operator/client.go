@@ -29,17 +29,14 @@ const (
 )
 
 type ConfigApplier interface {
-	// Apply receives a name and namespace to apply an OpenTelemetryCollector CRD that is contained in the configmap.
+	// Apply receives a name and namespace to apply a collector configuration.
 	Apply(name, namespace string, configmap *protobufs.AgentConfigFile) error
 
-	// Delete attempts to delete an OpenTelemetryCollector object given a name and namespace.
+	// Delete attempts to delete a collector resource given a name and namespace.
 	Delete(name, namespace string) error
 
-	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
-	ListInstances() ([]v1beta1.OpenTelemetryCollector, error)
-
-	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
-	GetInstance(name, namespace string) (*v1beta1.OpenTelemetryCollector, error)
+	// ListInstances retrieves all collector instances managed by the bridge.
+	ListInstances() ([]CollectorInstance, error)
 
 	// GetCollectorPods retrieves all pods that match the given collector's selector labels and namespace.
 	GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error)
@@ -207,7 +204,19 @@ func (c Client) Delete(name, namespace string) error {
 	return c.k8sClient.Delete(ctx, &result)
 }
 
-func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
+func (c Client) ListInstances() ([]CollectorInstance, error) {
+	collectors, err := c.listOpenTelemetryCollectors()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]CollectorInstance, len(collectors))
+	for i := range collectors {
+		result[i] = newCRDInstance(collectors[i])
+	}
+	return result, nil
+}
+
+func (c Client) listOpenTelemetryCollectors() ([]v1beta1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 
 	var instances []v1beta1.OpenTelemetryCollector

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-opamp-bridge-standalone
+  namespace: opentelemetry-opamp-bridge
+  labels:
+    app.kubernetes.io/name: otel-opamp-bridge-standalone
+    app.kubernetes.io/component: opamp-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-opamp-bridge-standalone
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-opamp-bridge-standalone
+        app.kubernetes.io/component: opamp-bridge
+    spec:
+      serviceAccountName: otel-opamp-bridge-standalone
+      containers:
+        - name: bridge
+          image: operator-opamp-bridge:latest
+          args:
+            - --config-file=/conf/config.yaml
+            - --mode=standalone
+          ports:
+            - name: opamp
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+              readOnly: true
+          livenessProbe:
+            tcpSocket:
+              port: opamp
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: otel-opamp-bridge-standalone-config
+

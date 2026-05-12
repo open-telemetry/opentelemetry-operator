@@ -1,0 +1,114 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: opampbridge-standalone
+spec:
+  steps:
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+      name: install fake OpAMP server
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+    - catch:
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: install standalone bridge
+      try:
+        - apply:
+            bindings:
+              - name: operatorOpampBridgeImage
+                value: (env('OPERATOROPAMPBRIDGE_IMG'))
+            file: 01-install.yaml
+            template: true
+        - assert:
+            file: 01-assert.yaml
+    - name: wait for standalone bridge heartbeat
+      try:
+        - sleep:
+            duration: 5s
+    - name: verify standalone effective config report
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.sequence_num >= `2`): true
+              (values($result)[0].status.health.healthy): true
+              (contains(keys(values($result)[0].status.health.component_health_map), join('/', [$namespace, 'standalone-collector']))): true
+              (contains(keys(values($result)[0].effective_config), join('/', ['configmap', $namespace, 'standalone-collector']))): true
+              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), join('/', ['configmap', $namespace, 'standalone-collector']))): true
+    - name: send remote config to standalone bridge
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              remote_config=$(cat <<EOF
+              {
+                "config": {
+                  "configmap/${NAMESPACE}/remote-standalone-collector": "version: opentelemetry.io/opamp-bridge-standalone/v1alpha1\nname: remote-standalone-collector\nnamespace: ${NAMESPACE}\nconfig:\n  collector.yaml: |\n    receivers:\n      otlp:\n        protocols:\n          grpc: {}\n          http: {}\n    exporters:\n      debug: {}\n    service:\n      pipelines:\n        traces:\n          receivers: [otlp]\n          exporters: [debug]\n"
+                },
+                "content_type": "application/yaml"
+              }
+              EOF
+              )
+
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-remote-config \
+                --image=mirror.gcr.io/curlimages/curl:latest \
+                --restart=Never \
+                --rm -i \
+                --command -- curl -fsS \
+                -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
+                -H "Content-Type: application/json" \
+                --data-binary @-
+        - assert:
+            timeout: 30s
+            resource:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: remote-standalone-collector
+                labels:
+                  opentelemetry.io/managed-by: opamp-bridge-standalone
+              data:
+                collector.yaml: |
+                  receivers:
+                    otlp:
+                      protocols:
+                        grpc: {}
+                        http: {}
+                  exporters:
+                    debug: {}
+                  service:
+                    pipelines:
+                      traces:
+                        receivers: [otlp]
+                        exporters: [debug]
+    - name: verify remote config applied status
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.remote_config_status.status): 1
+              (length(values($result)[0].status.remote_config_status.last_remote_config_hash) > `0`): true
+              (contains(keys(values($result)[0].effective_config), join('/', ['configmap', $namespace, 'remote-standalone-collector']))): true
+              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), join('/', ['configmap', $namespace, 'remote-standalone-collector']))): true
