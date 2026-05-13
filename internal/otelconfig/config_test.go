@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package otelconfig
 
 import (
 	"encoding/json"
@@ -18,6 +18,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -37,7 +39,7 @@ func TestConfigFiles(t *testing.T) {
 			collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 			require.NoError(t, err)
 
-			cfg := &Config{}
+			cfg := &v1beta1.Config{}
 			err = json.Unmarshal(collectorJson, cfg)
 			require.NoError(t, err)
 			jsonCfg, err := json.Marshal(cfg)
@@ -49,37 +51,6 @@ func TestConfigFiles(t *testing.T) {
 			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
 	}
-}
-
-func TestNullObjects(t *testing.T) {
-	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
-	require.NoError(t, err)
-
-	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
-	require.NoError(t, err)
-
-	cfg := &Config{}
-	err = json.Unmarshal(collectorJson, cfg)
-	require.NoError(t, err)
-
-	nullObjects := cfg.NullObjects()
-	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
-}
-
-func TestNullObjects_issue_3445(t *testing.T) {
-	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
-	require.NoError(t, err)
-
-	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
-	require.NoError(t, err)
-
-	cfg := &Config{}
-	err = json.Unmarshal(collectorJson, cfg)
-	require.NoError(t, err)
-
-	_, err = cfg.ApplyDefaults(logr.Discard())
-	require.NoError(t, err)
-	assert.Empty(t, cfg.NullObjects())
 }
 
 func TestConfigFiles_go_yaml(t *testing.T) {
@@ -96,7 +67,7 @@ func TestConfigFiles_go_yaml(t *testing.T) {
 			collectorYaml, err := os.ReadFile(testFile)
 			require.NoError(t, err)
 
-			cfg := &Config{}
+			cfg := &v1beta1.Config{}
 			err = go_yaml.Unmarshal(collectorYaml, cfg)
 			require.NoError(t, err)
 			yamlCfg, err := go_yaml.Marshal(cfg)
@@ -108,53 +79,150 @@ func TestConfigFiles_go_yaml(t *testing.T) {
 	}
 }
 
+func TestAnyConfigDeepCopyInto_NestedMapIndependence(t *testing.T) {
+	src := v1beta1.AnyConfig{Object: map[string]any{
+		"prometheus": map[string]any{
+			"config": map[string]any{
+				"scrape_configs": []any{
+					map[string]any{
+						"job_name": "kubelet",
+						"tls_config": map[string]any{
+							"ca_file":              "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+							"insecure_skip_verify": true,
+						},
+					},
+				},
+			},
+		},
+	}}
+
+	dst := src.DeepCopy()
+
+	// Mutate a nested map in the copy (simulates TLS profile injection).
+	scrapeConfigs := dst.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)
+	tlsConfig := scrapeConfigs[0].(map[string]any)["tls_config"].(map[string]any)
+	tlsConfig["min_version"] = "TLS12"
+
+	// Source nested map must be unaffected.
+	srcTLS := src.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)[0].(map[string]any)["tls_config"].(map[string]any)
+	assert.NotContains(t, srcTLS, "min_version", "DeepCopy must produce independent nested maps; source was mutated through the copy")
+}
+
+func TestAnyConfigDeepCopyInto_NilObject(t *testing.T) {
+	src := v1beta1.AnyConfig{Object: nil}
+	dst := src.DeepCopy()
+	assert.Nil(t, dst.Object)
+}
+
+func TestAnyConfigDeepCopyInto_EmptyObject(t *testing.T) {
+	src := v1beta1.AnyConfig{Object: map[string]any{}}
+	dst := src.DeepCopy()
+	assert.NotNil(t, dst.Object)
+	assert.Empty(t, dst.Object)
+	// Mutating dst should not affect src.
+	dst.Object["key"] = "value"
+	assert.Empty(t, src.Object)
+}
+
+func TestAnyConfigDeepCopyInto_PreservesValues(t *testing.T) {
+	src := v1beta1.AnyConfig{Object: map[string]any{
+		"string_val": "hello",
+		"number_val": float64(42),
+		"bool_val":   true,
+		"nested": map[string]any{
+			"inner": "value",
+			"list":  []any{"a", "b"},
+		},
+	}}
+
+	dst := src.DeepCopy()
+
+	assert.Equal(t, "hello", dst.Object["string_val"])
+	assert.Equal(t, float64(42), dst.Object["number_val"])
+	assert.Equal(t, true, dst.Object["bool_val"])
+	nested := dst.Object["nested"].(map[string]any)
+	assert.Equal(t, "value", nested["inner"])
+	assert.Equal(t, []any{"a", "b"}, nested["list"])
+}
+
+func TestNullObjects(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
+	require.NoError(t, err)
+
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
+	require.NoError(t, err)
+
+	cfg := &v1beta1.Config{}
+	err = json.Unmarshal(collectorJson, cfg)
+	require.NoError(t, err)
+
+	nullObjects := NullObjects(cfg)
+	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
+}
+
+func TestNullObjects_issue_3445(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
+	require.NoError(t, err)
+
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
+	require.NoError(t, err)
+
+	cfg := &v1beta1.Config{}
+	err = json.Unmarshal(collectorJson, cfg)
+	require.NoError(t, err)
+
+	_, err = ApplyDefaults(cfg, logr.Discard())
+	require.NoError(t, err)
+	assert.Empty(t, NullObjects(cfg))
+}
+
 func TestNullObjects_go_yaml(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
 	require.NoError(t, err)
 
-	cfg := &Config{}
+	cfg := &v1beta1.Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 
-	nullObjects := cfg.NullObjects()
+	nullObjects := NullObjects(cfg)
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
 func TestConfigYaml(t *testing.T) {
-	cfg := &Config{
-		Receivers: AnyConfig{
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{
 			Object: map[string]any{
 				"otlp": nil,
 			},
 		},
-		Processors: &AnyConfig{
+		Processors: &v1beta1.AnyConfig{
 			Object: map[string]any{
 				"modify_2000": "enabled",
 			},
 		},
-		Exporters: AnyConfig{
+		Exporters: v1beta1.AnyConfig{
 			Object: map[string]any{
 				"otlp/exporter": nil,
 			},
 		},
-		Connectors: &AnyConfig{
+		Connectors: &v1beta1.AnyConfig{
 			Object: map[string]any{
 				"con": "magic",
 			},
 		},
-		Extensions: &AnyConfig{
+		Extensions: &v1beta1.AnyConfig{
 			Object: map[string]any{
 				"addon": "option1",
 			},
 		},
-		Service: Service{
+		Service: v1beta1.Service{
 			Extensions: []string{"addon"},
-			Telemetry: &AnyConfig{
+			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]any{
 					"insights": "yeah!",
 				},
 			},
-			Pipelines: map[string]*Pipeline{
+			Pipelines: map[string]*v1beta1.Pipeline{
 				"traces": {
 					Receivers:  []string{"otlp"},
 					Processors: []string{"modify_2000"},
@@ -163,7 +231,7 @@ func TestConfigYaml(t *testing.T) {
 			},
 		},
 	}
-	yamlCollector, err := cfg.Yaml()
+	yamlCollector, err := Yaml(cfg)
 	require.NoError(t, err)
 
 	const expected = `receivers:
@@ -199,7 +267,7 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
 	require.NoError(t, err)
 
-	cfg := &Config{}
+	cfg := &v1beta1.Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	telemetry := &Telemetry{
@@ -209,18 +277,18 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 		},
 	}
 	logger := logr.Discard()
-	assert.Equal(t, telemetry, cfg.Service.GetTelemetry(logger))
+	assert.Equal(t, telemetry, GetTelemetry(&cfg.Service, logger))
 }
 
 func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-couchbase.yaml")
 	require.NoError(t, err)
 
-	cfg := &Config{}
+	cfg := &v1beta1.Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	logger := logr.Discard()
-	assert.Nil(t, cfg.Service.GetTelemetry(logger))
+	assert.Nil(t, GetTelemetry(&cfg.Service, logger))
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
@@ -229,14 +297,14 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 		expectedAddr string
 		expectedPort int32
 		expectedErr  bool
-		config       Service
+		config       v1beta1.Service
 	}{
 		{
 			desc:         "custom port",
 			expectedAddr: "localhost",
 			expectedPort: 9090,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "localhost:9090",
@@ -249,8 +317,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "custom port ipv6",
 			expectedAddr: "[::]",
 			expectedPort: 9090,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "[::]:9090",
@@ -263,8 +331,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "missing port",
 			expectedAddr: "localhost",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "localhost",
@@ -277,8 +345,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "missing port ipv6",
 			expectedAddr: "[::]",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "[::]",
@@ -291,8 +359,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "env var and missing port",
 			expectedAddr: "${env:POD_IP}",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "${env:POD_IP}",
@@ -305,8 +373,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "env var and missing port ipv6",
 			expectedAddr: "[${env:POD_IP}]",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "[${env:POD_IP}]",
@@ -319,8 +387,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "env var and with port",
 			expectedAddr: "${POD_IP}",
 			expectedPort: 1234,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "${POD_IP}:1234",
@@ -333,8 +401,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "env var and with port ipv6",
 			expectedAddr: "[${POD_IP}]",
 			expectedPort: 1234,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "[${POD_IP}]:1234",
@@ -346,8 +414,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 		{
 			desc:        "port is env var",
 			expectedErr: true,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "localhost:${env:POD_PORT}",
@@ -359,8 +427,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 		{
 			desc:        "port is env var ipv6",
 			expectedErr: true,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "[::]:${env:POD_PORT}",
@@ -373,8 +441,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "missing address",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"level": "detailed",
@@ -387,8 +455,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "missing metrics",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{},
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{},
 			},
 		},
 		{
@@ -400,8 +468,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "configured telemetry",
 			expectedAddr: "1.2.3.4",
 			expectedPort: 4567,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "1.2.3.4:4567",
@@ -414,8 +482,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "derive from readers prometheus host+port",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8889,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"level": "detailed",
@@ -440,8 +508,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "derive from readers prometheus port only (default host)",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8899,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"readers": []any{
@@ -464,8 +532,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "derive from readers prometheus host only (default port)",
 			expectedAddr: "127.0.0.1",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"readers": []any{
@@ -488,8 +556,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "readers takes precedence over address",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8889,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"address": "1.2.3.4:4567",
@@ -514,8 +582,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "readers present but no prometheus -> defaults",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8888,
-			config: Service{
-				Telemetry: &AnyConfig{
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
 							"readers": []any{
@@ -541,7 +609,7 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// these are acceptable failures, we return to the collector's default metric port
-			addr, port, err := tt.config.MetricsEndpoint(logr.Discard())
+			addr, port, err := MetricsEndpoint(&tt.config, logr.Discard())
 			if tt.expectedErr {
 				assert.Error(t, err)
 			} else {
@@ -557,59 +625,59 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 	tests := []struct {
 		name string
 		file string
-		want map[ComponentKind]map[string]any
+		want map[v1beta1.ComponentKind]map[string]any
 	}{
 		{
 			name: "connectors",
 			file: "testdata/otelcol-connectors.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver: {
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver: {
 					"foo":   struct{}{},
 					"count": struct{}{},
 				},
-				KindProcessor: {},
-				KindExporter: {
+				v1beta1.KindProcessor: {},
+				v1beta1.KindExporter: {
 					"bar":   struct{}{},
 					"count": struct{}{},
 				},
-				KindExtension: {},
+				v1beta1.KindExtension: {},
 			},
 		},
 		{
 			name: "couchbase",
 			file: "testdata/otelcol-couchbase.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver: {
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver: {
 					"prometheus/couchbase": struct{}{},
 				},
-				KindProcessor: {
+				v1beta1.KindProcessor: {
 					"filter/couchbase":           struct{}{},
 					"metricstransform/couchbase": struct{}{},
 					"transform/couchbase":        struct{}{},
 				},
-				KindExporter: {
+				v1beta1.KindExporter: {
 					"prometheus": struct{}{},
 				},
-				KindExtension: {},
+				v1beta1.KindExtension: {},
 			},
 		},
 		{
 			name: "demo",
 			file: "testdata/otelcol-demo.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver: {
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver: {
 					"otlp": struct{}{},
 				},
-				KindProcessor: {
+				v1beta1.KindProcessor: {
 					"memory_limiter": struct{}{},
 				},
-				KindExporter: {
+				v1beta1.KindExporter: {
 					"debug":      struct{}{},
 					"zipkin":     struct{}{},
 					"otlp":       struct{}{},
 					"prometheus": struct{}{},
 				},
-				KindExtension: {
+				v1beta1.KindExtension: {
 					"health_check": struct{}{},
 					"pprof":        struct{}{},
 					"zpages":       struct{}{},
@@ -619,15 +687,15 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "extensions",
 			file: "testdata/otelcol-extensions.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver: {
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver: {
 					"otlp": struct{}{},
 				},
-				KindProcessor: {},
-				KindExporter: {
+				v1beta1.KindProcessor: {},
+				v1beta1.KindExporter: {
 					"otlp/auth": struct{}{},
 				},
-				KindExtension: {
+				v1beta1.KindExtension: {
 					"oauth2client": struct{}{},
 				},
 			},
@@ -635,25 +703,25 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "filelog",
 			file: "testdata/otelcol-filelog.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver: {
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver: {
 					"filelog": struct{}{},
 				},
-				KindProcessor: {},
-				KindExporter: {
+				v1beta1.KindProcessor: {},
+				v1beta1.KindExporter: {
 					"debug": struct{}{},
 				},
-				KindExtension: {},
+				v1beta1.KindExtension: {},
 			},
 		},
 		{
 			name: "null",
 			file: "testdata/otelcol-null-values.yaml",
-			want: map[ComponentKind]map[string]any{
-				KindReceiver:  {},
-				KindProcessor: {},
-				KindExporter:  {},
-				KindExtension: {},
+			want: map[v1beta1.ComponentKind]map[string]any{
+				v1beta1.KindReceiver:  {},
+				v1beta1.KindProcessor: {},
+				v1beta1.KindExporter:  {},
+				v1beta1.KindExtension: {},
 			},
 		},
 	}
@@ -662,10 +730,10 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 			collectorYaml, err := os.ReadFile(tt.file)
 			require.NoError(t, err)
 
-			c := &Config{}
+			c := &v1beta1.Config{}
 			err = go_yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
-			assert.Equalf(t, tt.want, c.GetEnabledComponents(), "GetEnabledComponents()")
+			assert.Equalf(t, tt.want, GetEnabledComponents(c), "GetEnabledComponents()")
 		})
 	}
 }
@@ -673,48 +741,48 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
 	tests := []struct {
 		name           string
-		config         *Config
-		componentKinds []ComponentKind
+		config         *v1beta1.Config
+		componentKinds []v1beta1.ComponentKind
 		envVarsLen     int
 	}{
 		{
 			name: "no env vars",
-			config: &Config{
-				Receivers: AnyConfig{
+			config: &v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
 					Object: map[string]any{
 						"myreceiver": map[string]any{
 							"env": "test",
 						},
 					},
 				},
-				Service: Service{
-					Pipelines: map[string]*Pipeline{
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
 						"test": {
 							Receivers: []string{"myreceiver"},
 						},
 					},
 				},
 			},
-			componentKinds: []ComponentKind{KindReceiver},
+			componentKinds: []v1beta1.ComponentKind{v1beta1.KindReceiver},
 			envVarsLen:     0,
 		},
 		{
 			name: "kubeletstats env vars",
-			config: &Config{
-				Receivers: AnyConfig{
+			config: &v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
 					Object: map[string]any{
 						"kubeletstats": map[string]any{},
 					},
 				},
-				Service: Service{
-					Pipelines: map[string]*Pipeline{
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
 						"test": {
 							Receivers: []string{"kubeletstats"},
 						},
 					},
 				},
 			},
-			componentKinds: []ComponentKind{KindReceiver},
+			componentKinds: []v1beta1.ComponentKind{v1beta1.KindReceiver},
 			envVarsLen:     1,
 		},
 	}
@@ -722,7 +790,7 @@ func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := logr.Discard()
-			envVars, err := tt.config.GetEnvironmentVariables(logger)
+			envVars, err := GetEnvironmentVariables(tt.config, logger)
 
 			assert.NoError(t, err)
 			assert.Len(t, envVars, tt.envVarsLen)
@@ -804,10 +872,10 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 			collectorYaml, err := os.ReadFile(tt.file)
 			require.NoError(t, err)
 
-			c := &Config{}
+			c := &v1beta1.Config{}
 			err = go_yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
-			ports, err := c.GetReceiverPorts(logr.Discard())
+			ports, err := GetReceiverPorts(c, logr.Discard())
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -872,10 +940,10 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			collectorYaml, err := os.ReadFile(tt.file)
 			require.NoError(t, err)
 
-			c := &Config{}
+			c := &v1beta1.Config{}
 			err = go_yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
-			ports, err := c.GetExporterPorts(logr.Discard())
+			ports, err := GetExporterPorts(c, logr.Discard())
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -889,15 +957,15 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 func TestConfig_GetLivenessProbe(t *testing.T) {
 	tests := []struct {
 		name      string
-		config    *Config
+		config    *v1beta1.Config
 		wantProbe *v1.Probe
 		wantErr   bool
 	}{
 		{
 			name: "nil extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -905,9 +973,9 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "nil extensions with health_check in service extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -915,11 +983,11 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -927,11 +995,11 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions with health_check in service extensions should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -946,13 +1014,13 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension enabled should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -967,15 +1035,15 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom path",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -990,15 +1058,15 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom endpoint port",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1013,13 +1081,13 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "extension without liveness probe should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"jaeger_query": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"jaeger_query"},
 				},
 			},
@@ -1027,13 +1095,13 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 		},
 		{
 			name: "invalid health_check config should return error",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1043,13 +1111,13 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.config.GetLivenessProbe(logr.Discard())
+			got, err := GetLivenessProbe(tt.config, logr.Discard())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Config.GetLivenessProbe() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetLivenessProbe() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
-				t.Errorf("Config.GetLivenessProbe() mismatch (-want +got):\n%s", diff)
+				t.Errorf("GetLivenessProbe() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -1058,15 +1126,15 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 func TestConfig_GetReadinessProbe(t *testing.T) {
 	tests := []struct {
 		name      string
-		config    *Config
+		config    *v1beta1.Config
 		wantProbe *v1.Probe
 		wantErr   bool
 	}{
 		{
 			name: "nil extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -1074,9 +1142,9 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "nil extensions with health_check in service extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1084,11 +1152,11 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -1096,11 +1164,11 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions with health_check in service extensions should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1115,13 +1183,13 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension enabled should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1136,15 +1204,15 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom path",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1159,15 +1227,15 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom endpoint port",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1182,13 +1250,13 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "extension without readiness probe should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"jaeger_query": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"jaeger_query"},
 				},
 			},
@@ -1196,13 +1264,13 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		},
 		{
 			name: "invalid health_check config should return error",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1212,13 +1280,13 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.config.GetReadinessProbe(logr.Discard())
+			got, err := GetReadinessProbe(tt.config, logr.Discard())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Config.GetReadinessProbe() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetReadinessProbe() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
-				t.Errorf("Config.GetReadinessProbe() mismatch (-want +got):\n%s", diff)
+				t.Errorf("GetReadinessProbe() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -1227,15 +1295,15 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 func TestConfig_GetStartupProbe(t *testing.T) {
 	tests := []struct {
 		name      string
-		config    *Config
+		config    *v1beta1.Config
 		wantProbe *v1.Probe
 		wantErr   bool
 	}{
 		{
 			name: "nil extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -1243,9 +1311,9 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "nil extensions with health_check in service extensions should return nil",
-			config: &Config{
+			config: &v1beta1.Config{
 				Extensions: nil,
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1253,11 +1321,11 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{},
 				},
 			},
@@ -1265,11 +1333,11 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "empty extensions with health_check in service extensions should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1284,13 +1352,13 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension enabled should return probe",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1305,15 +1373,15 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom path",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1328,15 +1396,15 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "health_check extension with custom endpoint port",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1351,13 +1419,13 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "extension without startup probe should return nil",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"jaeger_query": map[string]any{},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"jaeger_query"},
 				},
 			},
@@ -1365,13 +1433,13 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 		},
 		{
 			name: "invalid health_check config should return error",
-			config: &Config{
-				Extensions: &AnyConfig{
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
-				Service: Service{
+				Service: v1beta1.Service{
 					Extensions: []string{"health_check"},
 				},
 			},
@@ -1380,13 +1448,13 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.config.GetStartupProbe(logr.Discard())
+			got, err := GetStartupProbe(tt.config, logr.Discard())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Config.GetStartupProbe() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetStartupProbe() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
-				t.Errorf("Config.GetStartupProbe() mismatch (-want +got):\n%s", diff)
+				t.Errorf("GetStartupProbe() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -1394,9 +1462,9 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 
 func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	// Test case where logs configuration exists and metrics is added
-	cfg := &Config{
-		Service: Service{
-			Telemetry: &AnyConfig{
+	cfg := &v1beta1.Config{
+		Service: v1beta1.Service{
+			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]any{
 					"logs": map[string]any{
 						"level": "debug",
@@ -1406,9 +1474,9 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	expected := &Config{
-		Service: Service{
-			Telemetry: &AnyConfig{
+	expected := &v1beta1.Config{
+		Service: v1beta1.Service{
+			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]any{
 					"logs": map[string]any{
 						"level": "debug",
@@ -1432,19 +1500,19 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	_, err := cfg.Service.ApplyDefaults(logr.Discard())
+	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
 	require.NoError(t, err)
 
 	logger := logr.Discard()
-	telemetry := cfg.Service.GetTelemetry(logger)
+	telemetry := GetTelemetry(&cfg.Service, logger)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
 }
 
 func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
-	cfg := &Config{
-		Service: Service{
-			Telemetry: &AnyConfig{
+	cfg := &v1beta1.Config{
+		Service: v1beta1.Service{
+			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]any{
 					"metrics": map[string]any{
 						"level": "basic",
@@ -1466,11 +1534,11 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 		},
 	}
 
-	_, err := cfg.Service.ApplyDefaults(logr.Discard())
+	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
 	require.NoError(t, err)
 
 	logger := logr.Discard()
-	telemetry := cfg.Service.GetTelemetry(logger)
+	telemetry := GetTelemetry(&cfg.Service, logger)
 	require.NotNil(t, telemetry)
 
 	require.Len(t, telemetry.Metrics.Readers, 1)
@@ -1479,70 +1547,4 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
 	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
-}
-
-func TestAnyConfigDeepCopyInto_NestedMapIndependence(t *testing.T) {
-	src := AnyConfig{Object: map[string]any{
-		"prometheus": map[string]any{
-			"config": map[string]any{
-				"scrape_configs": []any{
-					map[string]any{
-						"job_name": "kubelet",
-						"tls_config": map[string]any{
-							"ca_file":              "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-							"insecure_skip_verify": true,
-						},
-					},
-				},
-			},
-		},
-	}}
-
-	dst := src.DeepCopy()
-
-	// Mutate a nested map in the copy (simulates TLS profile injection).
-	scrapeConfigs := dst.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)
-	tlsConfig := scrapeConfigs[0].(map[string]any)["tls_config"].(map[string]any)
-	tlsConfig["min_version"] = "TLS12"
-
-	// Source nested map must be unaffected.
-	srcTLS := src.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"].([]any)[0].(map[string]any)["tls_config"].(map[string]any)
-	assert.NotContains(t, srcTLS, "min_version", "DeepCopy must produce independent nested maps; source was mutated through the copy")
-}
-
-func TestAnyConfigDeepCopyInto_NilObject(t *testing.T) {
-	src := AnyConfig{Object: nil}
-	dst := src.DeepCopy()
-	assert.Nil(t, dst.Object)
-}
-
-func TestAnyConfigDeepCopyInto_EmptyObject(t *testing.T) {
-	src := AnyConfig{Object: map[string]any{}}
-	dst := src.DeepCopy()
-	assert.NotNil(t, dst.Object)
-	assert.Empty(t, dst.Object)
-	// Mutating dst should not affect src.
-	dst.Object["key"] = "value"
-	assert.Empty(t, src.Object)
-}
-
-func TestAnyConfigDeepCopyInto_PreservesValues(t *testing.T) {
-	src := AnyConfig{Object: map[string]any{
-		"string_val": "hello",
-		"number_val": float64(42),
-		"bool_val":   true,
-		"nested": map[string]any{
-			"inner": "value",
-			"list":  []any{"a", "b"},
-		},
-	}}
-
-	dst := src.DeepCopy()
-
-	assert.Equal(t, "hello", dst.Object["string_val"])
-	assert.Equal(t, float64(42), dst.Object["number_val"])
-	assert.Equal(t, true, dst.Object["bool_val"])
-	nested := dst.Object["nested"].(map[string]any)
-	assert.Equal(t, "value", nested["inner"])
-	assert.Equal(t, []any{"a", "b"}, nested["list"])
 }

@@ -21,7 +21,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -45,7 +47,7 @@ type CollectorWebhook struct {
 	cfg      config.Config
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
-	metrics  *v1beta1.Metrics
+	metrics  *metrics.Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
 	recorder events.EventRecorder
@@ -103,7 +105,7 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	// TLS defaults are applied at reconciliation time (ConfigMap generation) so that
 	// existing collectors automatically get updated TLS settings when the operator
 	// restarts after a cluster TLS profile change.
-	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	events, err := otelconfig.ApplyDefaults(&otelcol.Spec.Config, c.logger)
 	if err != nil {
 		return err
 	}
@@ -166,7 +168,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *v1beta1.O
 func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
-	nullObjects := r.Spec.Config.NullObjects()
+	nullObjects := otelconfig.NullObjects(&r.Spec.Config)
 	if len(nullObjects) > 0 {
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
@@ -219,7 +221,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
 	}
-	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	ports, errPorts := otelconfig.GetAllPorts(&r.Spec.Config, c.logger)
 	if errPorts != nil {
 		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
 	}
@@ -294,7 +296,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 	}
 
 	if c.fips != nil {
-		components := r.Spec.Config.GetEnabledComponents()
+		components := otelconfig.GetEnabledComponents(&r.Spec.Config)
 		if notAllowedComponents := c.fips.DisabledComponents(components[v1beta1.KindReceiver], components[v1beta1.KindExporter], components[v1beta1.KindProcessor], components[v1beta1.KindExtension]); notAllowedComponents != nil {
 			return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
 		}
@@ -316,7 +318,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.ModeDaemonSet)
 	}
 
-	cfgYaml, err := r.Spec.Config.Yaml()
+	cfgYaml, err := otelconfig.Yaml(&r.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +409,7 @@ func NewCollectorWebhook(
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
 	recorder events.EventRecorder,
-	metrics *v1beta1.Metrics,
+	metrics *metrics.Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
 ) *CollectorWebhook {
@@ -423,7 +425,7 @@ func NewCollectorWebhook(
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *v1beta1.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *metrics.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
 	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorder("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).

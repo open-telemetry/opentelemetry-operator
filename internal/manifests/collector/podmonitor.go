@@ -15,6 +15,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 var monitoringPortName = "monitoring"
@@ -56,7 +57,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 }
 
 func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
-	exporterPorts, err := otelcol.Spec.Config.GetExporterPorts(logger)
+	exporterPorts, err := otelconfig.GetExporterPorts(&otelcol.Spec.Config, logger)
 	if err != nil {
 		logger.Error(err, "couldn't build endpoints to podMonitors from configuration")
 		return []monitoringv1.PodMetricsEndpoint{}
