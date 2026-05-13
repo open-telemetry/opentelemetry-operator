@@ -15,3 +15,5 @@ issues: [4362]
 # Use pipe (|) for multiline entries.
 subtext: |
   - `Yaml` standalone functions in `internal/otelconfig` is moved to a methods on `*Config` (package `apis/v1beta1`)
+  - Move `CheckTargetAllocatorPrometheusCRPolicyRules` from `apis/v1beta1/targetallocator_rbac.go` to `internal/webhook/targetallocator_rbac.go` + rename it to `checkTargetAllocatorPrometheusCRPolicyRules`.
+  - Move `apis` package to a dedicated sub-module.
