@@ -330,14 +330,14 @@ func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementSt
 
 func convertTov1beta1(t *testing.T, collector v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	betacollector := v1beta1.OpenTelemetryCollector{}
-	err := collector.ConvertTo(&betacollector)
+	err := v1alpha1.OtelColConvertTo(&collector, &betacollector)
 	require.NoError(t, err)
 	return betacollector
 }
 
 func convertTov1alpha1(t *testing.T, collector v1beta1.OpenTelemetryCollector) v1alpha1.OpenTelemetryCollector {
 	alphacollector := v1alpha1.OpenTelemetryCollector{}
-	err := alphacollector.ConvertFrom(&collector)
+	err := v1alpha1.OtelColConvertFrom(&alphacollector, &collector)
 	require.NoError(t, err)
 	return alphacollector
 }

@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	ctrlenvtest "sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -43,8 +44,9 @@ func TestMain(m *testing.M) {
 
 	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-		WebhookInstallOptions: ctrlenvtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			Paths:                   []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			IgnoreSchemeConvertible: true,
 		},
 	}, testScheme)
 	if err != nil {

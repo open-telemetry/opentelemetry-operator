@@ -125,7 +125,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 		if available.GreaterThan(instanceV) {
 			if available.upgrade != nil {
 				otelcolV1alpha1 := &v1alpha1.OpenTelemetryCollector{}
-				if err := otelcolV1alpha1.ConvertFrom(&updated); err != nil {
+				if err := v1alpha1.OtelColConvertFrom(otelcolV1alpha1, &updated); err != nil {
 					return updated, err
 				}
 
@@ -136,7 +136,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 				}
 				upgradedV1alpha1.Status.Version = available.String()
 
-				if err := upgradedV1alpha1.ConvertTo(&updated); err != nil {
+				if err := v1alpha1.OtelColConvertTo(upgradedV1alpha1, &updated); err != nil {
 					return updated, err
 				}
 				u.Log.V(1).Info("step upgrade", "name", updated.Name, "namespace", updated.Namespace, "version", available.String())
