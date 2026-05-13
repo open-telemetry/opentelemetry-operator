@@ -17,3 +17,14 @@ data:
       ReportsHealth: true
       ReportsOwnMetrics: true
       ReportsRemoteConfig: true
+    standalone:
+      agents:
+        - name: standalone-collector
+          namespace: opentelemetry-opamp-bridge
+          type: otel-collector
+          config:
+            collector:
+              kind: configmap
+              namespace: opentelemetry-opamp-bridge
+              name: standalone-collector
+              key: collector.yaml

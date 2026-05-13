@@ -32,8 +32,10 @@ func New(namespace, name, kind string) Key {
 // Parse creates a Key from an OpAMP config map key string.
 func Parse(key string) (Key, error) {
 	s := strings.Split(key, "/")
-	// We expect map keys to be of the form namespace/name or kind/namespace/name.
+	// We expect map keys to be of the form name, namespace/name, or kind/namespace/name.
 	switch len(s) {
+	case 1:
+		return New("", s[0], ""), nil
 	case 2:
 		return New(s[0], s[1], ""), nil
 	case 3:
@@ -62,6 +64,9 @@ func (k Key) Kind() string {
 func (k Key) String() string {
 	if k.kind != "" {
 		return fmt.Sprintf("%s/%s/%s", k.kind, k.namespace, k.name)
+	}
+	if k.namespace == "" {
+		return k.name
 	}
 	return fmt.Sprintf("%s/%s", k.namespace, k.name)
 }

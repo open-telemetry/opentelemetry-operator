@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -93,9 +94,10 @@ type Config struct {
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
 	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
+	Standalone        StandaloneConfig    `yaml:"standalone,omitempty"`
 
 	// Mode selects the operating mode: "operator" (default) uses OpenTelemetryCollector CRDs,
-	// "standalone" discovers configmaps by label and manages them.
+	// "standalone" manages static Kubernetes config sources from this config.
 	Mode string `yaml:"mode,omitempty"`
 }
 
@@ -105,6 +107,24 @@ type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
 	NonIdentifyingAttributes map[string]string `yaml:"non_identifying_attributes"`
+}
+
+type StandaloneConfig struct {
+	Agents []StandaloneAgentConfig `yaml:"agents,omitempty"`
+}
+
+type StandaloneAgentConfig struct {
+	Name      string                           `yaml:"name"`
+	Namespace string                           `yaml:"namespace"`
+	Type      string                           `yaml:"type"`
+	Config    map[string]StandaloneConfigEntry `yaml:"config"`
+}
+
+type StandaloneConfigEntry struct {
+	Kind      string `yaml:"kind"`
+	Namespace string `yaml:"namespace"`
+	Name      string `yaml:"name"`
+	Key       string `yaml:"key"`
 }
 
 func NewConfig(logger logr.Logger) *Config {
@@ -163,7 +183,10 @@ func (c *Config) GetAgentScheme() string {
 	return uri.Scheme
 }
 
-func (*Config) GetAgentType() string {
+func (c *Config) GetAgentType() string {
+	if c.Name != opampBridgeName && c.Mode == standaloneMode {
+		return c.Name
+	}
 	return agentType
 }
 
@@ -188,6 +211,77 @@ func (c *Config) GetDescription() *protobufs.AgentDescription {
 			keyValuePair("host.name", hostname),
 		),
 	}
+}
+
+func (c *Config) ForStandaloneAgent(agent StandaloneAgentConfig) *Config {
+	agentConfig := *c
+	agentConfig.Name = agent.Name
+	agentConfig.instanceId = uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("%s/%s/%s", agent.Namespace, agent.Name, agent.Type)))
+	agentConfig.AgentDescription.NonIdentifyingAttributes = cloneStringMap(c.AgentDescription.NonIdentifyingAttributes)
+	if agentConfig.AgentDescription.NonIdentifyingAttributes == nil {
+		agentConfig.AgentDescription.NonIdentifyingAttributes = map[string]string{}
+	}
+	agentConfig.AgentDescription.NonIdentifyingAttributes["k8s.namespace.name"] = agent.Namespace
+	agentConfig.AgentDescription.NonIdentifyingAttributes["opentelemetry.io/agent.name"] = agent.Name
+	agentConfig.AgentDescription.NonIdentifyingAttributes["opentelemetry.io/agent.type"] = agent.Type
+	return &agentConfig
+}
+
+func cloneStringMap(in map[string]string) map[string]string {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
+}
+
+func (c *Config) Validate() error {
+	if !c.IsStandaloneMode() {
+		return nil
+	}
+	if len(c.Standalone.Agents) == 0 {
+		return errors.New("standalone mode requires at least one configured agent")
+	}
+	agents := map[string]struct{}{}
+	for _, agent := range c.Standalone.Agents {
+		if strings.TrimSpace(agent.Name) == "" {
+			return errors.New("standalone agent name is required")
+		}
+		if _, ok := agents[agent.Name]; ok {
+			return fmt.Errorf("duplicate standalone agent name %q", agent.Name)
+		}
+		agents[agent.Name] = struct{}{}
+		if strings.TrimSpace(agent.Namespace) == "" {
+			return fmt.Errorf("standalone agent %q namespace is required", agent.Name)
+		}
+		if strings.TrimSpace(agent.Type) == "" {
+			return fmt.Errorf("standalone agent %q type is required", agent.Name)
+		}
+		if len(agent.Config) == 0 {
+			return fmt.Errorf("standalone agent %q requires at least one config entry", agent.Name)
+		}
+		for remoteName, entry := range agent.Config {
+			if strings.TrimSpace(remoteName) == "" {
+				return fmt.Errorf("standalone agent %q config remote name is required", agent.Name)
+			}
+			if strings.ToLower(entry.Kind) != "configmap" {
+				return fmt.Errorf("standalone agent %q config %q has unsupported kind %q", agent.Name, remoteName, entry.Kind)
+			}
+			if strings.TrimSpace(entry.Namespace) == "" {
+				return fmt.Errorf("standalone agent %q config %q namespace is required", agent.Name, remoteName)
+			}
+			if strings.TrimSpace(entry.Name) == "" {
+				return fmt.Errorf("standalone agent %q config %q name is required", agent.Name, remoteName)
+			}
+			if strings.TrimSpace(entry.Key) == "" {
+				return fmt.Errorf("standalone agent %q config %q key is required", agent.Name, remoteName)
+			}
+		}
+	}
+	return nil
 }
 
 func (ad *AgentDescription) nonIdentifyingAttributes() []*protobufs.KeyValue {
@@ -273,6 +367,9 @@ func Load(logger logr.Logger, args []string) (*Config, error) {
 
 	err = LoadFromCLI(cfg, flagSet)
 	if err != nil {
+		return nil, err
+	}
+	if err = cfg.Validate(); err != nil {
 		return nil, err
 	}
 

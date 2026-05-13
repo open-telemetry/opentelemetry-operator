@@ -34,7 +34,7 @@ func (p *standaloneCollectorInstance) GetNamespace() string {
 }
 
 func (p *standaloneCollectorInstance) GetConfigMapKey() resourcekey.Key {
-	return resourcekey.New(p.GetNamespace(), p.GetName(), resourcekey.KindConfigMap)
+	return resourcekey.New("", p.GetName(), "")
 }
 
 func (p *standaloneCollectorInstance) GetCreationTimestamp() time.Time {

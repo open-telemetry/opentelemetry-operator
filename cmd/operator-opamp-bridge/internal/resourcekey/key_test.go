@@ -68,12 +68,14 @@ func TestParse(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "unable to get key",
+			name: "remote name",
 			args: args{
 				key: "badnamespace",
 			},
-			want:    Key{},
-			wantErr: assert.Error,
+			want: Key{
+				name: "badnamespace",
+			},
+			wantErr: assert.NoError,
 		},
 		{
 			name: "too many slashes",
@@ -113,6 +115,13 @@ func TestKey_String(t *testing.T) {
 				namespace: "namespace",
 			},
 			want: "namespace/good",
+		},
+		{
+			name: "can make a remote name key",
+			fields: fields{
+				name: "good",
+			},
+			want: "good",
 		},
 		{
 			name: "can make a key with kind",

@@ -44,9 +44,9 @@ spec:
               (length(values($result))): 1
               (values($result)[0].status.sequence_num >= `2`): true
               (values($result)[0].status.health.healthy): true
-              (contains(keys(values($result)[0].status.health.component_health_map), join('/', [$namespace, 'standalone-collector']))): true
-              (contains(keys(values($result)[0].effective_config), join('/', ['configmap', $namespace, 'standalone-collector']))): true
-              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), join('/', ['configmap', $namespace, 'standalone-collector']))): true
+              (contains(keys(values($result)[0].status.health.component_health_map), 'collector')): true
+              (contains(keys(values($result)[0].effective_config), 'collector')): true
+              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), 'collector')): true
     - name: send remote config to standalone bridge
       try:
         - script:
@@ -57,7 +57,7 @@ spec:
               remote_config=$(cat <<EOF
               {
                 "config": {
-                  "configmap/${NAMESPACE}/remote-standalone-collector": "version: opentelemetry.io/opamp-bridge-standalone/v1alpha1\nname: remote-standalone-collector\nnamespace: ${NAMESPACE}\nconfig:\n  collector.yaml: |\n    receivers:\n      otlp:\n        protocols:\n          grpc: {}\n          http: {}\n    exporters:\n      debug: {}\n    service:\n      pipelines:\n        traces:\n          receivers: [otlp]\n          exporters: [debug]\n"
+                  "collector": "receivers:\n  otlp:\n    protocols:\n      grpc: {}\n      http: {}\nexporters:\n  debug: {}\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
                 },
                 "content_type": "application/yaml"
               }
@@ -79,9 +79,7 @@ spec:
               apiVersion: v1
               kind: ConfigMap
               metadata:
-                name: remote-standalone-collector
-                labels:
-                  opentelemetry.io/managed-by: opamp-bridge-standalone
+                name: standalone-collector
               data:
                 collector.yaml: |
                   receivers:
@@ -110,5 +108,5 @@ spec:
               (length(values($result))): 1
               (values($result)[0].status.remote_config_status.status): 1
               (length(values($result)[0].status.remote_config_status.last_remote_config_hash) > `0`): true
-              (contains(keys(values($result)[0].effective_config), join('/', ['configmap', $namespace, 'remote-standalone-collector']))): true
-              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), join('/', ['configmap', $namespace, 'remote-standalone-collector']))): true
+              (contains(keys(values($result)[0].effective_config), 'collector')): true
+              (contains(keys(values($result)[0].status.effective_config.config_map.config_map), 'collector')): true

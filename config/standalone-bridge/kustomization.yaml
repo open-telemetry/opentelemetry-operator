@@ -13,4 +13,4 @@ resources:
 images:
 - name: operator-opamp-bridge
   newName: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge
-  newTag: v0.150.0-24-g1180fafc
+  newTag: v0.150.0-24-g73b0c64d

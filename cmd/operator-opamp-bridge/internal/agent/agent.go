@@ -380,17 +380,22 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		if key == "" || len(file.Body) == 0 {
 			continue
 		}
-		colKey, err := resourcekey.Parse(key)
-		if err != nil {
+		var colKey resourcekey.Key
+		if agent.config.IsStandaloneMode() {
+			colKey = resourcekey.New("", key, "")
+		} else {
+			var err error
+			colKey, err = resourcekey.Parse(key)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+		}
+		if err := agent.validateConfigMapKey(colKey); err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		if err = agent.validateConfigMapKey(colKey); err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		err = agent.applier.Apply(colKey.Name(), colKey.Namespace(), file)
-		if err != nil {
+		if err := agent.applier.Apply(colKey.Name(), colKey.Namespace(), file); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -422,8 +427,8 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 
 func (agent *Agent) validateConfigMapKey(key resourcekey.Key) error {
 	if agent.config.IsStandaloneMode() {
-		if key.Kind() != resourcekey.KindConfigMap {
-			return errors.New("standalone config key must use configmap kind")
+		if key.Kind() != "" && key.Kind() != resourcekey.KindConfigMap {
+			return errors.New("standalone config key must use a configured remote name")
 		}
 		return nil
 	}

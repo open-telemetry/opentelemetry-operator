@@ -33,9 +33,20 @@ capabilities:
   AcceptsRemoteConfig: true
   ReportsEffectiveConfig: true
   ReportsRemoteConfig: true
+standalone:
+  agents:
+    - name: my-collector
+      namespace: default
+      type: otel-collector
+      config:
+        collector:
+          kind: configmap
+          namespace: default
+          name: collector-config
+          key: collector.yaml
 ```
 
-In this mode, the bridge watches ConfigMaps labeled with `opentelemetry.io/managed-by: opamp-bridge-standalone`. Each managed ConfigMap is reported to the OpAMP server as `kind/namespace/name`, for example `configmap/default/collector-config`.
+In this mode, the bridge creates one OpAMP client connection for each entry under `standalone.agents`. Each key under an agent's `config` section is the OpAMP config file name reported to the server. The value describes the local Kubernetes resource that backs that file. In the example above, the OpAMP server sees a config file named `collector`, and the bridge maps it locally to `ConfigMap/default/collector-config`, key `collector.yaml`.
 
 ```yaml
 apiVersion: v1
@@ -43,10 +54,6 @@ kind: ConfigMap
 metadata:
   name: collector-config
   namespace: default
-  labels:
-    opentelemetry.io/managed-by: opamp-bridge-standalone
-  annotations:
-    opentelemetry.io/opamp-rollout-target: Deployment/my-collector
 data:
   collector.yaml: |
     receivers:
@@ -65,9 +72,9 @@ data:
 ```
 
 
-The bridge will create a missing ConfigMap, but it will only update an existing ConfigMap if that managed-by label is present. Remote deletion is not supported in standalone mode.
+The bridge will not create or delete ConfigMaps in standalone mode. Remote config updates are only applied to the configured local resource and key.
 
-Standalone mode needs RBAC for ConfigMaps and for any workload kinds used as rollout targets. The repository includes a starter manifest at [`config/standalone-bridge/rbac.yaml`](../../config/standalone-bridge/rbac.yaml).
+Standalone mode needs RBAC for ConfigMaps. The repository includes a starter manifest at [`config/standalone-bridge/rbac.yaml`](../../config/standalone-bridge/rbac.yaml).
 
 ### OpAMPBridge CRD
 
