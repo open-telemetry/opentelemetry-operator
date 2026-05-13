@@ -65,7 +65,6 @@ spec:
             path: remoteconfiguration.yaml
           name: test-opamp-bridge
         name: opamp-bridge-internal
-status: {}
 ---
 apiVersion: v1
 data:
@@ -137,5 +136,3 @@ spec:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}

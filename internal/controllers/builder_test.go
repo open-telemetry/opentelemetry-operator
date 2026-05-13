@@ -31,7 +31,9 @@ import (
 // from testScheme when known, so the generated fixtures stay readable even
 // though the builder itself does not set apiVersion/kind on returned objects.
 // Types not registered in testScheme (e.g. cert-manager) are emitted without
-// apiVersion/kind.
+// apiVersion/kind. The top-level "status" field is stripped — the builder
+// must never set status, and zero-value status structs (Deployment, etc.)
+// would otherwise pollute the golden files.
 func renderObjects(t *testing.T, objs []client.Object) string {
 	t.Helper()
 	var buf bytes.Buffer
@@ -44,7 +46,12 @@ func renderObjects(t *testing.T, objs []client.Object) string {
 				obj.GetObjectKind().SetGroupVersionKind(gvks[0])
 			}
 		}
-		out, err := sigsyaml.Marshal(obj)
+		raw, err := sigsyaml.Marshal(obj)
+		require.NoError(t, err)
+		var m map[string]any
+		require.NoError(t, sigsyaml.Unmarshal(raw, &m))
+		delete(m, "status")
+		out, err := sigsyaml.Marshal(m)
 		require.NoError(t, err)
 		buf.Write(out)
 	}

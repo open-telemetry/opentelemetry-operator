@@ -129,7 +129,6 @@ spec:
             path: targetallocator.yaml
           name: test-targetallocator
         name: ta-internal
-status: {}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -167,8 +166,6 @@ spec:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: test-targetallocator
     app.kubernetes.io/part-of: opentelemetry
-status:
-  loadBalancer: {}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -193,8 +190,3 @@ spec:
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/name: test-targetallocator
       app.kubernetes.io/part-of: opentelemetry
-status:
-  currentHealthy: 0
-  desiredHealthy: 0
-  disruptionsAllowed: 0
-  expectedPods: 0
