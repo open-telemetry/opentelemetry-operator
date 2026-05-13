@@ -366,7 +366,7 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		}
 
 		colbeta1 := v1beta1.OpenTelemetryCollector{}
-		err := colalpha1.ConvertTo(&colbeta1)
+		err := OtelColConvertTo(&colalpha1, &colbeta1)
 		require.NoError(t, err)
 
 		// nil LabelSelector means select nothing
@@ -376,7 +376,7 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector))
 		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector))
 
-		err = colalpha1.ConvertFrom(&colbeta1)
+		err = OtelColConvertFrom(&colalpha1, &colbeta1)
 		require.NoError(t, err)
 		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
@@ -395,7 +395,7 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		}
 
 		colbeta1 := v1beta1.OpenTelemetryCollector{}
-		err := colalpha1.ConvertTo(&colbeta1)
+		err := OtelColConvertTo(&colalpha1, &colbeta1)
 		require.NoError(t, err)
 
 		// nil LabelSelector means select nothing
@@ -403,7 +403,7 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
 
-		err = colalpha1.ConvertFrom(&colbeta1)
+		err = OtelColConvertFrom(&colalpha1, &colbeta1)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
@@ -421,13 +421,13 @@ func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
 	}
 
 	colbeta1 := v1beta1.OpenTelemetryCollector{}
-	err := colalpha1.ConvertTo(&colbeta1)
+	err := OtelColConvertTo(&colalpha1, &colbeta1)
 	require.NoError(t, err)
 
 	assert.Equal(t, one, *colbeta1.Spec.Autoscaler.MinReplicas)
 	assert.Equal(t, two, *colbeta1.Spec.Autoscaler.MaxReplicas)
 
-	err = colalpha1.ConvertFrom(&colbeta1)
+	err = OtelColConvertFrom(&colalpha1, &colbeta1)
 	require.NoError(t, err)
 	assert.Nil(t, colalpha1.Spec.MinReplicas)
 	assert.Nil(t, colalpha1.Spec.MaxReplicas)
@@ -547,7 +547,7 @@ func TestConvertTo(t *testing.T) {
 		},
 	}
 	colbeta1 := v1beta1.OpenTelemetryCollector{}
-	err := col.ConvertTo(&colbeta1)
+	err := OtelColConvertTo(&col, &colbeta1)
 	require.NoError(t, err)
 	expected := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -593,7 +593,7 @@ func TestConvertFrom(t *testing.T) {
 		},
 	}
 	col := OpenTelemetryCollector{}
-	err := col.ConvertFrom(&colbeta1)
+	err := OtelColConvertFrom(&col, &colbeta1)
 	require.NoError(t, err)
 	// set config to empty. The v1beta1 marshals config with empty receivers, exporters..
 	col.Spec.Config = ""
