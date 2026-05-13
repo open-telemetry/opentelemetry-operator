@@ -63,6 +63,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0
 )
 
+replace github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished => ./apis
+
 require (
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.18.2 // indirect
@@ -215,6 +217,7 @@ require (
 )
 
 require (
+	github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished
 	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
 	sigs.k8s.io/e2e-framework v0.7.0
 )
