@@ -16,4 +16,7 @@ issues: [4362]
 subtext: |
   - `Yaml` standalone functions in `internal/otelconfig` is moved to a methods on `*Config` (package `apis/v1beta1`)
   - Move `CheckTargetAllocatorPrometheusCRPolicyRules` from `apis/v1beta1/targetallocator_rbac.go` to `internal/webhook/targetallocator_rbac.go` + rename it to `checkTargetAllocatorPrometheusCRPolicyRules`.
+  - `OpenTelemetryCollector` is not implementing the `Convertible` interface from `sigs.k8s.io/controller-runtime/pkg/conversion`, but implements 2 helper function the achieve the same functionality:
+    - OtelColConvertTo(otc *OpenTelemetryCollector, dstRaw any) error
+    - OtelColConvertFrom(otc *OpenTelemetryCollector, srcRaw any) error
   - Move `apis` package to a dedicated sub-module.
