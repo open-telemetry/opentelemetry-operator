@@ -7,7 +7,6 @@ require (
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
-	sigs.k8s.io/controller-runtime v0.23.3
 )
 
 require (

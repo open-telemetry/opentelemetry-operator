@@ -10,14 +10,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-var _ conversion.Convertible = &OpenTelemetryCollector{}
-
-func (otc *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+func OtelColConvertTo(otc *OpenTelemetryCollector, dstRaw any) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
@@ -31,7 +28,7 @@ func (otc *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (otc *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+func OtelColConvertFrom(otc *OpenTelemetryCollector, srcRaw any) error {
 	switch t := srcRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
