@@ -5,7 +5,7 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Explicitly set without_type_suffix, without_units, and without_scope_info to false on the operator-injected Prometheus telemetry reader to preserve historical metric names. Without this, users upgrading to a collector containing open-telemetry/opentelemetry-collector#15027 would see operator-managed collector metric names silently change shape.
+note: Explicitly set without_type_suffix, without_units, and without_scope_info to false on the operator-injected Prometheus telemetry reader.
 
 # One or more tracking issues related to the change
 issues: [5075]
@@ -14,4 +14,4 @@ issues: [5075]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Added alpha feature gate operator.collector.usedefaulttelemetryshape (off by default) to opt into collector defaults instead. The gate will be promoted to beta (on by default) in a future release.
+  Preserves historical metric names. Without this, users upgrading to a collector containing open-telemetry/opentelemetry-collector#15027 would see operator-managed collector metric names silently change shape. Added alpha feature gate operator.collector.usedefaulttelemetryshape (off by default) to opt into collector defaults instead. The gate will be promoted to beta (on by default) in a future release.
