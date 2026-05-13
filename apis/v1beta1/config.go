@@ -116,9 +116,6 @@ type Config struct {
 }
 
 // Yaml encodes the Config as a YAML string.
-// NOTE: This duplicates the logic in internal/otelconfig.Yaml to avoid a
-// dependency from the apis module back to the root module, allowing apis
-// to be consumed as an independent Go module.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
 	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())

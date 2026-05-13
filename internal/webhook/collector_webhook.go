@@ -318,7 +318,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.ModeDaemonSet)
 	}
 
-	cfgYaml, err := otelconfig.Yaml(&r.Spec.Config)
+	cfgYaml, err := r.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}

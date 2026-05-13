@@ -4,7 +4,6 @@
 package otelconfig
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -13,7 +12,6 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
-	go_yaml "github.com/goccy/go-yaml"
 	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -369,16 +367,6 @@ func GetStartupProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, erro
 		}
 	}
 	return nil, nil
-}
-
-// Yaml encodes the current object and returns it as a string.
-func Yaml(c *v1beta1.Config) (string, error) {
-	var buf bytes.Buffer
-	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
-	if err := yamlEncoder.Encode(&c); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
 }
 
 // NullObjects returns null objects in the config.
