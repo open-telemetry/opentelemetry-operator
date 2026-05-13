@@ -87,7 +87,7 @@ func TestScopedApplierListInstancesReturnsConfiguredConfigMapKey(t *testing.T) {
 	require.Len(t, instances, 1)
 
 	assert.Equal(t, "collector", instances[0].GetName())
-	assert.Equal(t, "collector", instances[0].GetConfigMapKey().String())
+	assert.Equal(t, "collector", instances[0].GetConfigMapKey())
 	assert.Equal(t, validCollectorConfig, string(instances[0].GetEffectiveConfig()))
 }
 

@@ -22,13 +22,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 type Agent struct {
 	logger logr.Logger
 
-	appliedKeys map[resourcekey.Key]bool
+	appliedKeys map[string]bool
 	clock       clock.Clock
 	startTime   uint64
 	lastHash    []byte
@@ -58,7 +57,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 		applier:             applier,
 		proxy:               p,
 		logger:              logger,
-		appliedKeys:         map[resourcekey.Key]bool{},
+		appliedKeys:         map[string]bool{},
 		instanceId:          cfg.GetInstanceId(),
 		agentDescription:    cfg.GetDescription(),
 		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
@@ -116,7 +115,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	healthMap := map[string]*protobufs.ComponentHealth{}
 	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
 	for _, col := range cols {
-		key := resourcekey.New(col.GetNamespace(), col.GetName(), "")
+		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
 		podMap, err := agent.generateCollectorHealth(col.GetSelectorLabels(), col.GetNamespace())
 		if err != nil {
 			return nil, err
@@ -167,7 +166,7 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 	}
 	healthMap := map[string]*protobufs.ComponentHealth{}
 	for _, item := range pods.Items {
-		key := resourcekey.New(item.GetNamespace(), item.GetName(), "")
+		key := newKubeResourceKey(item.GetNamespace(), item.GetName())
 		healthy := true
 		if item.Status.Phase != "Running" {
 			healthy = false
@@ -331,7 +330,7 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 				"name", instance.GetName(), "namespace", instance.GetNamespace())
 			continue
 		}
-		instanceMap[instance.GetConfigMapKey().String()] = &protobufs.AgentConfigFile{
+		instanceMap[instance.GetConfigMapKey()] = &protobufs.AgentConfigFile{
 			Body:        body,
 			ContentType: "yaml",
 		}
@@ -380,32 +379,16 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		if key == "" || len(file.Body) == 0 {
 			continue
 		}
-		var colKey resourcekey.Key
-		if agent.config.IsStandaloneMode() {
-			colKey = resourcekey.New("", key, "")
-		} else {
-			var err error
-			colKey, err = resourcekey.Parse(key)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-		}
-		if err := agent.validateConfigMapKey(colKey); err != nil {
+		if err := agent.applyConfigFile(key, file); err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		if err := agent.applier.Apply(colKey.Name(), colKey.Namespace(), file); err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		agent.appliedKeys[colKey] = true
+		agent.appliedKeys[key] = true
 	}
 	// Check if anything was deleted
 	for key := range agent.appliedKeys {
-		if _, ok := config.Config.GetConfigMap()[key.String()]; !ok {
-			err := agent.applier.Delete(key.Name(), key.Namespace())
-			if err != nil {
+		if _, ok := config.Config.GetConfigMap()[key]; !ok {
+			if err := agent.deleteConfigFile(key); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -425,17 +408,26 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 	}, nil
 }
 
-func (agent *Agent) validateConfigMapKey(key resourcekey.Key) error {
+func (agent *Agent) applyConfigFile(key string, file *protobufs.AgentConfigFile) error {
 	if agent.config.IsStandaloneMode() {
-		if key.Kind() != "" && key.Kind() != resourcekey.KindConfigMap {
-			return errors.New("standalone config key must use a configured remote name")
-		}
-		return nil
+		return agent.applier.Apply(key, "", file)
 	}
-	if key.Kind() != resourcekey.KindOtelCol {
-		return errors.New("operator config key must use otelcol kind")
+	colKey, err := kubeResourceFromKey(key)
+	if err != nil {
+		return err
 	}
-	return nil
+	return agent.applier.Apply(colKey.name, colKey.namespace, file)
+}
+
+func (agent *Agent) deleteConfigFile(key string) error {
+	if agent.config.IsStandaloneMode() {
+		return agent.applier.Delete(key, "")
+	}
+	colKey, err := kubeResourceFromKey(key)
+	if err != nil {
+		return err
+	}
+	return agent.applier.Delete(colKey.name, colKey.namespace)
 }
 
 // Shutdown will stop the OpAMP client gracefully.

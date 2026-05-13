@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 var _ CollectorInstance = CRDInstance{}
@@ -33,8 +32,8 @@ func (c CRDInstance) GetNamespace() string {
 	return c.Col.GetNamespace()
 }
 
-func (c CRDInstance) GetConfigMapKey() resourcekey.Key {
-	return resourcekey.New(c.GetNamespace(), c.GetName(), resourcekey.KindOtelCol)
+func (c CRDInstance) GetConfigMapKey() string {
+	return fmt.Sprintf("%s/%s", c.GetNamespace(), c.GetName())
 }
 
 func (c CRDInstance) GetCreationTimestamp() time.Time {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 var _ operator.CollectorInstance = &standaloneCollectorInstance{}
@@ -33,8 +32,8 @@ func (p *standaloneCollectorInstance) GetNamespace() string {
 	return p.namespace
 }
 
-func (p *standaloneCollectorInstance) GetConfigMapKey() resourcekey.Key {
-	return resourcekey.New("", p.GetName(), "")
+func (p *standaloneCollectorInstance) GetConfigMapKey() string {
+	return p.GetName()
 }
 
 func (p *standaloneCollectorInstance) GetCreationTimestamp() time.Time {

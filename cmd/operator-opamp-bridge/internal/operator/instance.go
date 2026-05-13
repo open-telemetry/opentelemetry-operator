@@ -5,8 +5,6 @@ package operator
 
 import (
 	"time"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/resourcekey"
 )
 
 // CollectorInstance represents a collector managed by the bridge, abstracting
@@ -14,7 +12,7 @@ import (
 type CollectorInstance interface {
 	GetName() string
 	GetNamespace() string
-	GetConfigMapKey() resourcekey.Key
+	GetConfigMapKey() string
 	GetCreationTimestamp() time.Time
 	GetSelectorLabels() map[string]string
 	GetStatusReplicas() string
