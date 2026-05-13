@@ -145,6 +145,33 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
+	if otlp := taSpec.Telemetry.Metrics.OTLP; otlp != nil {
+		otlpMap := map[string]any{"endpoint": otlp.Endpoint}
+		if otlp.Protocol != "" {
+			otlpMap["protocol"] = otlp.Protocol
+		}
+		if len(otlp.Headers) > 0 {
+			otlpMap["headers"] = otlp.Headers
+		}
+		if otlp.Insecure {
+			otlpMap["insecure"] = true
+		}
+		if otlp.Temporality != "" {
+			otlpMap["temporality"] = otlp.Temporality
+		}
+		if otlp.ExportInterval != nil {
+			otlpMap["export_interval"] = otlp.ExportInterval.Duration
+		}
+		if otlp.Timeout != nil {
+			otlpMap["timeout"] = otlp.Timeout.Duration
+		}
+		taConfig["telemetry"] = map[string]any{
+			"metrics": map[string]any{
+				"otlp": otlpMap,
+			},
+		}
+	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return &corev1.ConfigMap{}, err

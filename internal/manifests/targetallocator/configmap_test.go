@@ -880,6 +880,85 @@ func TestGetGlobalConfig(t *testing.T) {
 	}
 }
 
+func TestTelemetryOTLP(t *testing.T) {
+	t.Run("should emit telemetry block with all OTLP fields", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
+			Metrics: v1beta1.TargetAllocatorMetricsConfig{
+				OTLP: &v1beta1.TargetAllocatorOTLPConfig{
+					Endpoint:       "https://ingest.example.com:4318",
+					Protocol:       "http",
+					Headers:        map[string]string{"Authorization": "Api-Token secret"},
+					Insecure:       true,
+					Temporality:    "delta",
+					ExportInterval: &metav1.Duration{Duration: 30 * time.Second},
+					Timeout:        &metav1.Duration{Duration: 15 * time.Second},
+				},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
+		assert.Contains(t, data, "protocol: http")
+		assert.Contains(t, data, "Authorization: Api-Token secret")
+		assert.Contains(t, data, "insecure: true")
+		assert.Contains(t, data, "temporality: delta")
+		assert.Contains(t, data, "export_interval: 30s")
+		assert.Contains(t, data, "timeout: 15s")
+	})
+
+	t.Run("should omit optional fields when not set", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
+			Metrics: v1beta1.TargetAllocatorMetricsConfig{
+				OTLP: &v1beta1.TargetAllocatorOTLPConfig{
+					Endpoint: "https://ingest.example.com:4318",
+				},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
+		assert.NotContains(t, data, "protocol:")
+		assert.NotContains(t, data, "insecure:")
+		assert.NotContains(t, data, "temporality:")
+		assert.NotContains(t, data, "export_interval:")
+		assert.NotContains(t, data, "timeout:")
+	})
+
+	t.Run("no telemetry block when OTLP is nil", func(t *testing.T) {
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocatorInstance(),
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		assert.NotContains(t, actual.Data[targetAllocatorFilename], "telemetry:")
+	})
+}
+
 func TestGetCollectorNotReadyGracePeriod(t *testing.T) {
 	collector := collectorInstance()
 	targetAllocator := targetAllocatorInstanceWithCollectorNotReadyGracePeriod()

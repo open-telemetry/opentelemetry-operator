@@ -71,6 +71,7 @@ type Config struct {
 	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
+	Telemetry                    TelemetryConfig       `yaml:"telemetry,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
@@ -99,6 +100,41 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+// TelemetryConfig mirrors the collector's service.telemetry structure for the Target Allocator.
+type TelemetryConfig struct {
+	Metrics MetricsConfig `yaml:"metrics,omitempty"`
+}
+
+// MetricsConfig holds metric-export settings for the Target Allocator's own telemetry.
+type MetricsConfig struct {
+	// OTLP configures an optional OTLP metric exporter. When set, metrics are
+	// exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+	OTLP *OTLPExporterConfig `yaml:"otlp,omitempty"`
+}
+
+// OTLPExporterConfig holds connection settings for the OTLP metric exporter.
+type OTLPExporterConfig struct {
+	// Endpoint is the OTLP receiver base URL or address.
+	// For HTTP, provide the base URL without the signal path
+	// (e.g. "https://example.com/api/v2/otlp"); /v1/metrics is appended automatically.
+	// For gRPC, provide host:port (e.g. "example.com:4317").
+	Endpoint string `yaml:"endpoint"`
+	// Protocol selects the transport: "grpc" (default) or "http".
+	Protocol string `yaml:"protocol,omitempty"`
+	// Headers are additional key/value pairs sent with every export request.
+	Headers map[string]string `yaml:"headers,omitempty"`
+	// Insecure disables TLS — only suitable for local development.
+	Insecure bool `yaml:"insecure,omitempty"`
+	// Temporality sets the aggregation temporality: "cumulative" (default), "delta", or "lowmemory".
+	// "delta" exports all instruments as delta; "lowmemory" uses delta for counters and
+	// histograms and cumulative for gauges.
+	Temporality string `yaml:"temporality,omitempty"`
+	// ExportInterval is the time between two consecutive exports (default 60s).
+	ExportInterval time.Duration `yaml:"export_interval,omitempty"`
+	// Timeout is the max duration for a single export attempt (default 10s).
+	Timeout time.Duration `yaml:"timeout,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType

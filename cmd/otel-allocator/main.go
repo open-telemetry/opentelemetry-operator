@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/oklog/run"
@@ -18,6 +19,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"k8s.io/client-go/kubernetes"
@@ -85,7 +88,18 @@ func main() {
 	if promErr != nil {
 		panic(promErr)
 	}
-	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
+	meterProviderOpts := []sdkmetric.Option{sdkmetric.WithReader(metricExporter)}
+
+	if cfg.Telemetry.Metrics.OTLP != nil {
+		otlpReader, otlpErr := newOTLPMetricReader(ctx, cfg.Telemetry.Metrics.OTLP)
+		if otlpErr != nil {
+			setupLog.Error(otlpErr, "Failed to create OTLP metric reader")
+			os.Exit(1)
+		}
+		meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader))
+	}
+
+	meterProvider := sdkmetric.NewMeterProvider(meterProviderOpts...)
 	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
@@ -297,4 +311,79 @@ func main() {
 		setupLog.Error(runErr, "run group exited")
 	}
 	setupLog.Info("Target allocator exited.")
+}
+
+// newOTLPMetricReader creates a PeriodicExportingMetricReader backed by either
+// an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
+func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
+	temporality := temporalitySelector(cfg.Temporality)
+	readerOpts := periodicReaderOptions(cfg)
+	switch cfg.Protocol {
+	case "http":
+		// WithEndpointURL does not append /v1/metrics automatically. We do it here
+		// so the endpoint convention matches the OTel collector's otlphttp exporter
+		// (where users specify the base URL, not the full signal path).
+		// Skip if the caller already included the signal path.
+		endpoint := strings.TrimRight(cfg.Endpoint, "/")
+		if !strings.HasSuffix(endpoint, "/v1/metrics") {
+			endpoint += "/v1/metrics"
+		}
+		opts := []otlpmetrichttp.Option{
+			otlpmetrichttp.WithEndpointURL(endpoint),
+			otlpmetrichttp.WithTemporalitySelector(temporality),
+		}
+		if cfg.Insecure {
+			opts = append(opts, otlpmetrichttp.WithInsecure())
+		}
+		if len(cfg.Headers) > 0 {
+			opts = append(opts, otlpmetrichttp.WithHeaders(cfg.Headers))
+		}
+		exp, err := otlpmetrichttp.New(ctx, opts...)
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
+	default: // "grpc"
+		opts := []otlpmetricgrpc.Option{
+			otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
+			otlpmetricgrpc.WithTemporalitySelector(temporality),
+		}
+		if cfg.Insecure {
+			opts = append(opts, otlpmetricgrpc.WithInsecure())
+		}
+		if len(cfg.Headers) > 0 {
+			opts = append(opts, otlpmetricgrpc.WithHeaders(cfg.Headers))
+		}
+		exp, err := otlpmetricgrpc.New(ctx, opts...)
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
+	}
+}
+
+// periodicReaderOptions builds PeriodicReaderOptions from the export interval and timeout config.
+func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicReaderOption {
+	var opts []sdkmetric.PeriodicReaderOption
+	if cfg.ExportInterval > 0 {
+		opts = append(opts, sdkmetric.WithInterval(cfg.ExportInterval))
+	}
+	if cfg.Timeout > 0 {
+		opts = append(opts, sdkmetric.WithTimeout(cfg.Timeout))
+	}
+	return opts
+}
+
+// temporalitySelector maps a config string to an SDK TemporalitySelector.
+// "delta" → all instruments delta; "lowmemory" → delta for counters/histograms,
+// cumulative for gauges; anything else → cumulative (SDK default).
+func temporalitySelector(t string) sdkmetric.TemporalitySelector {
+	switch t {
+	case "delta":
+		return sdkmetric.DeltaTemporalitySelector
+	case "lowmemory":
+		return sdkmetric.LowMemoryTemporalitySelector
+	default:
+		return sdkmetric.DefaultTemporalitySelector
+	}
 }

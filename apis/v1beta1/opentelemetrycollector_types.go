@@ -237,6 +237,12 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorTargetReloadInterval *metav1.Duration `json:"collectorTargetReloadInterval,omitempty"`
+	// Telemetry defines the self-telemetry configuration for the TargetAllocator.
+	// When set, the TargetAllocator exports its own metrics via OTLP in addition
+	// to the Prometheus /metrics endpoint.
+	//
+	// +optional
+	Telemetry TargetAllocatorTelemetry `json:"telemetry,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
@@ -313,6 +319,55 @@ type MetricsConfigSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
+}
+
+// TargetAllocatorTelemetry defines the self-telemetry configuration for the TargetAllocator.
+type TargetAllocatorTelemetry struct {
+	// Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
+	// +optional
+	Metrics TargetAllocatorMetricsConfig `json:"metrics,omitempty"`
+}
+
+// TargetAllocatorMetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
+type TargetAllocatorMetricsConfig struct {
+	// OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
+	// When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+	// +optional
+	OTLP *TargetAllocatorOTLPConfig `json:"otlp,omitempty"`
+}
+
+// TargetAllocatorOTLPConfig holds connection settings for the TargetAllocator's OTLP self-telemetry exporter.
+type TargetAllocatorOTLPConfig struct {
+	// Endpoint is the OTLP receiver address (e.g. "https://example.com:4318" for HTTP,
+	// "example.com:4317" for gRPC).
+	// +kubebuilder:validation:Required
+	Endpoint string `json:"endpoint"`
+	// Protocol selects the transport: "grpc" (default) or "http".
+	// +optional
+	// +kubebuilder:validation:Enum=grpc;http
+	Protocol string `json:"protocol,omitempty"`
+	// Headers are additional key/value pairs sent with every export request,
+	// e.g. for authentication.
+	// +optional
+	Headers map[string]string `json:"headers,omitempty"`
+	// Insecure disables TLS. Only suitable for local development.
+	// +optional
+	Insecure bool `json:"insecure,omitempty"`
+	// Temporality sets the aggregation temporality for exported metrics.
+	// Valid values are "cumulative" (default), "delta", and "lowmemory".
+	// "delta" exports all instruments as delta; "lowmemory" uses delta for
+	// counters and histograms and cumulative for gauges.
+	// +optional
+	// +kubebuilder:validation:Enum=cumulative;delta;lowmemory
+	Temporality string `json:"temporality,omitempty"`
+	// ExportInterval is the time between two consecutive exports.
+	// Defaults to 60s.
+	// +optional
+	ExportInterval *metav1.Duration `json:"exportInterval,omitempty"`
+	// Timeout is the max duration for a single export attempt.
+	// Defaults to 10s.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
