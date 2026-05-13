@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 var _ conversion.Convertible = &OpenTelemetryCollector{}
@@ -302,7 +301,7 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 
 func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
 	c := in.DeepCopy()
-	configYaml, err := otelconfig.Yaml(&c.Spec.Config)
+	configYaml, err := c.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
