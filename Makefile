@@ -989,6 +989,38 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
 
+##@ Supply Chain Security
+
+# Tool versions for supply chain securitya
+# renovate: datasource=github-releases depName=sigstore/cosign
+COSIGN_VERSION ?= v2.5.0
+COSIGN ?= $(LOCALBIN)/cosign
+
+
+# Download cosign locally if necessary
+.PHONY: cosign
+cosign: $(LOCALBIN)
+	@{ \
+	set -e ;\
+	if [ -x "$(COSIGN)" ] && "$(COSIGN)" version 2>/dev/null | grep -q "$(COSIGN_VERSION)"; then exit 0; fi ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) ;\
+	curl -sSfL "https://github.com/sigstore/cosign/releases/download/$(COSIGN_VERSION)/cosign-$${OS}-$${ARCH}" -o "$(COSIGN)" ;\
+	chmod +x "$(COSIGN)" ;\
+	}
+
+# Sign container images with keyless cosign.
+# Usage: make cosign-sign IMAGE=ghcr.io/... DIGEST=sha256:...
+# Both IMAGE and DIGEST must be set.
+.PHONY: cosign-sign
+cosign-sign: cosign
+ifndef IMAGE
+	$(error IMAGE is not set. Usage: make cosign-sign IMAGE=<image> DIGEST=<digest>)
+endif
+ifndef DIGEST
+	$(error DIGEST is not set. Usage: make cosign-sign IMAGE=<image> DIGEST=<digest>)
+endif
+	$(COSIGN) sign --yes "$(IMAGE)@$(DIGEST)"
+
 ##@ Release
 
 .PHONY: create-release-issue
