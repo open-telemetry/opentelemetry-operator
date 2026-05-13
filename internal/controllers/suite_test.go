@@ -195,7 +195,8 @@ func TestMain(m *testing.M) {
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
+			Paths:                   []string{filepath.Join("..", "..", "config", "webhook")},
+			IgnoreSchemeConvertible: true,
 		},
 		DownloadBinaryAssets:  true,
 		BinaryAssetsDirectory: binaryAssetsDir,

@@ -16,7 +16,9 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/conversion"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
@@ -430,5 +432,17 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
+		WithConverter(conversion.NewHubSpokeConverter(
+			&v1beta1.OpenTelemetryCollector{},
+			conversion.NewSpokeConverter(
+				&v1alpha1.OpenTelemetryCollector{},
+				func(_ context.Context, src *v1beta1.OpenTelemetryCollector, dst *v1alpha1.OpenTelemetryCollector) error {
+					return v1alpha1.OtelColConvertFrom(dst, src)
+				},
+				func(_ context.Context, src *v1alpha1.OpenTelemetryCollector, dst *v1beta1.OpenTelemetryCollector) error {
+					return v1alpha1.OtelColConvertTo(src, dst)
+				},
+			),
+		)).
 		Complete()
 }
