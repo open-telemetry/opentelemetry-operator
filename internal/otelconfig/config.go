@@ -24,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/extensions"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // MetricsConfig comes from the collector.
@@ -507,15 +508,26 @@ func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.Eve
 }
 
 // AddPrometheusMetricsEndpoint creates a MetricReader with a Prometheus pull exporter.
+// without_type_suffix/without_units/without_scope_info are explicitly set to false to
+// preserve the historical metric name shape produced by operator-managed collectors
+// before open-telemetry/opentelemetry-collector#15027. Opt into collector defaults via
+// the operator.collector.usedefaulttelemetryshape feature gate. See issue #5075.
 func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
 	portInt := int(port)
+	prom := &otelConfig.Prometheus{
+		Host: &host,
+		Port: &portInt,
+	}
+	if !featuregate.UseCollectorDefaultTelemetryShape.IsEnabled() {
+		falseVal := false
+		prom.WithoutTypeSuffix = &falseVal
+		prom.WithoutUnits = &falseVal
+		prom.WithoutScopeInfo = &falseVal
+	}
 	return otelConfig.MetricReader{
 		Pull: &otelConfig.PullMetricReader{
 			Exporter: otelConfig.PullMetricExporter{
-				Prometheus: &otelConfig.Prometheus{
-					Host: &host,
-					Port: &portInt,
-				},
+				Prometheus: prom,
 			},
 		},
 	}
