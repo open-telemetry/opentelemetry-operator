@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
@@ -21,7 +22,7 @@ import (
 func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1.Volume {
 	collectorCfg := otelcol.Spec.Config.DeepCopy()
 	if cfg.Internal.OperandTLSProfile != nil {
-		_, _ = collectorCfg.ApplyDefaults(logr.Discard(), components.WithTLSProfile(cfg.Internal.OperandTLSProfile))
+		_, _ = apihelpers.ApplyDefaults(collectorCfg, logr.Discard(), components.WithTLSProfile(cfg.Internal.OperandTLSProfile))
 	}
 	hash, _ := manifestutils.GetConfigMapSHA(*collectorCfg)
 	configMapName := naming.ConfigMap(otelcol.Name, hash)

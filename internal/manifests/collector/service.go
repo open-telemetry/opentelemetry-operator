@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	apihelpers "github.com/open-telemetry/opentelemetry-operator/apihelpers/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -71,7 +72,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	_, metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsEndpoint(params.Log)
+	_, metricsPort, err := apihelpers.MetricsEndpoint(&params.OtelCol.Spec.Config.Service, params.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetExtensionPorts(params.Log)
+	ports, err := apihelpers.GetExtensionPorts(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +142,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetReceiverAndExporterPorts(params.Log)
+	ports, err := apihelpers.GetReceiverAndExporterPorts(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	}
