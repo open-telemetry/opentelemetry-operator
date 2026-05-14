@@ -65,7 +65,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: stateful-collector
     app.kubernetes.io/part-of: opentelemetry
-  name: stateful-collector-00248fbf
+  name: stateful-collector-cbacb1a5
   namespace: chainsaw-must-gather
 ---
 apiVersion: v1
