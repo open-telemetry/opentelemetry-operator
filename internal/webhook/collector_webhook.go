@@ -437,10 +437,10 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 			conversion.NewSpokeConverter(
 				&v1alpha1.OpenTelemetryCollector{},
 				func(_ context.Context, src *v1beta1.OpenTelemetryCollector, dst *v1alpha1.OpenTelemetryCollector) error {
-					return v1alpha1.OtelColConvertFrom(dst, src)
+					return OtelColConvertFrom(dst, src)
 				},
 				func(_ context.Context, src *v1alpha1.OpenTelemetryCollector, dst *v1beta1.OpenTelemetryCollector) error {
-					return v1alpha1.OtelColConvertTo(src, dst)
+					return OtelColConvertTo(src, dst)
 				},
 			),
 		)).
