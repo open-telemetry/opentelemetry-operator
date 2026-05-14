@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
@@ -330,14 +331,14 @@ func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementSt
 
 func convertTov1beta1(t *testing.T, collector v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	betacollector := v1beta1.OpenTelemetryCollector{}
-	err := v1alpha1.OtelColConvertTo(&collector, &betacollector)
+	err := webhook.OtelColConvertTo(&collector, &betacollector)
 	require.NoError(t, err)
 	return betacollector
 }
 
 func convertTov1alpha1(t *testing.T, collector v1beta1.OpenTelemetryCollector) v1alpha1.OpenTelemetryCollector {
 	alphacollector := v1alpha1.OpenTelemetryCollector{}
-	err := v1alpha1.OtelColConvertFrom(&alphacollector, &collector)
+	err := webhook.OtelColConvertFrom(&alphacollector, &collector)
 	require.NoError(t, err)
 	return alphacollector
 }
