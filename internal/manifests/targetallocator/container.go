@@ -98,6 +98,11 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
+	if featuregate.EnableTargetAllocatorLabeledMetrics.IsEnabled() {
+		if _, exists := argsMap[featuregate.FeatureGatesFlag]; !exists {
+			args = append(args, fmt.Sprintf("--%s=%s", featuregate.FeatureGatesFlag, "targetallocator.labeledmetrics"))
+		}
+	}
 	for k, v := range argsMap {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
