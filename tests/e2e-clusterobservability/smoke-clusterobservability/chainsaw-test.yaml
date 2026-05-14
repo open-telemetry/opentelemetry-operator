@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-clusterobservability
+spec:
+  timeouts:
+    apply: 30s
+    assert: 5m
+    cleanup: 2m
+  steps:
+  - name: Install sink and ClusterObservability
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: Assert collectors are running
+    try:
+    - assert:
+        file: 01-assert-collectors.yaml
+  - name: Assert telemetry reaches the sink
+    use:
+      template: 02-assert-telemetry-flow.yaml
+  - name: Cleanup
+    try:
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1alpha1
+          kind: ClusterObservability
+          name: cluster-obs
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1beta1
+          kind: OpenTelemetryCollector
+          name: sink
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Pod
+          name: telemetry-trigger

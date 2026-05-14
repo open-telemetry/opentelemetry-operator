@@ -13,7 +13,7 @@ receivers:
     endpoint: "https://${env:K8S_NODE_NAME}:10250"
     metric_groups:
       - container
-      - pod  
+      - pod
       - node
       - volume
   filelog:
@@ -25,15 +25,8 @@ receivers:
     include_file_path: true
     include_file_name: false
     operators:
-      - type: router
-        id: get-format
-        routes:
-          - output: parser-docker
-            expr: 'body matches "^\\{"'
-          - output: parser-crio  
-            expr: 'body matches "^[^ Z]+ "'
-          - output: parser-containerd
-            expr: 'body matches "^[^ Z]+Z"'
+      - type: container
+        id: container-parser
 
 processors:
   batch: {}

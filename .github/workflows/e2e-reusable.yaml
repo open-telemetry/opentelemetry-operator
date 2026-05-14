@@ -56,6 +56,11 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     needs: [ build-test-images ]
+    # Allow opt-in matrix entries (those with `experimental: true` in their
+    # `include` block) to fail without marking the workflow run red. Combined
+    # with fail-fast: false this means experimental groups never block other
+    # operator e2e jobs or the merge queue.
+    continue-on-error: ${{ matrix.experimental == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +74,7 @@ jobs:
         - e2e
         - e2e-automatic-rbac
         - e2e-autoscale
+        - e2e-clusterobservability
         - e2e-instrumentation-default
         - e2e-instrumentation
         - e2e-no-crds
@@ -87,6 +93,11 @@ jobs:
         - e2e-crd-validations
         - e2e-ta-standalone
         include:
+        - group: e2e-clusterobservability
+          # ClusterObservability is behind a feature gate and still maturing;
+          # mark experimental so failures don't block other operator e2e jobs.
+          experimental: true
+          setup: "add-operator-arg OPERATOR_ARG='--feature-gates=+operator.clusterobservability' prepare-e2e-clusterobservability"
         - group: e2e-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation
