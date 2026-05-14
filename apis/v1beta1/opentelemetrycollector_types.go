@@ -146,7 +146,6 @@ type OpenTelemetryCollectorSpec struct {
 	// Command overrides the container entrypoint (Pod.spec.containers[].command). When omitted, the image ENTRYPOINT is used.
 	// +optional
 	// +listType=atomic
-	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:MinItems=1
 	Command []string `json:"command,omitempty"`
 }

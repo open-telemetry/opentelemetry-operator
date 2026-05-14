@@ -6088,7 +6088,6 @@ spec:
               command:
                 items:
                   type: string
-                maxItems: 50
                 minItems: 1
                 type: array
                 x-kubernetes-list-type: atomic
