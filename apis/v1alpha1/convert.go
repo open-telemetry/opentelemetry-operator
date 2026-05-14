@@ -516,4 +516,3 @@ func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocati
 	}
 	return ""
 }
-
