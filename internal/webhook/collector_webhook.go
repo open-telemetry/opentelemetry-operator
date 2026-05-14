@@ -166,14 +166,6 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *v1beta1.O
 func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
-	if len(r.Spec.Command) > 0 {
-		for i, a := range r.Spec.Command {
-			if strings.TrimSpace(a) == "" {
-				return warnings, fmt.Errorf("spec.command[%d] must be non-empty", i)
-			}
-		}
-	}
-
 	nullObjects := r.Spec.Config.NullObjects()
 	if len(nullObjects) > 0 {
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))

@@ -681,36 +681,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid spec with empty command element",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeDeployment,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: &one,
-					},
-					UpgradeStrategy: "adhoc",
-					Command:         []string{"/bin/foo", "otel", ""},
-					Config:          cfg,
-				},
-			},
-			expectedErr: "spec.command[2] must be non-empty",
-		},
-		{
-			name: "invalid command with whitespace-only element",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeDeployment,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: &one,
-					},
-					UpgradeStrategy: "adhoc",
-					Command:         []string{"   ", "otel"},
-					Config:          cfg,
-				},
-			},
-			expectedErr: "spec.command[0] must be non-empty",
-		},
-		{
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
 			otelcol: v1beta1.OpenTelemetryCollector{
