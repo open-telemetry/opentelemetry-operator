@@ -18,6 +18,10 @@ type TargetAllocatorPrometheusCR struct {
 	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
 	// +optional
 	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
+	// SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
+	// If not configured, defaults to the target allocator's own namespace.
+	// +optional
+	SecretNamespaces []string `json:"secretNamespaces,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//
 	// Default: "30s"

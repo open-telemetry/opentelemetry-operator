@@ -20,6 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -183,8 +184,12 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	return nil
 }
 
-func (InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
+func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	var warnings []string
+
+	// Check for unupgradable instrumentation versions
+	warnings = append(warnings, w.checkUnupgradableVersions(r)...)
+
 	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
@@ -333,6 +338,41 @@ func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg c
 		scheme: scheme,
 		cfg:    cfg,
 	}
+}
+
+// checkUnupgradableVersions checks if any instrumentation images are at unupgradable versions.
+func (w InstrumentationWebhook) checkUnupgradableVersions(r *v1alpha1.Instrumentation) []string {
+	var warnings []string
+
+	// Check each language's image against its default
+	type langImage struct {
+		image        string
+		defaultImage string
+	}
+	languageImages := map[constants.InstrumentationLanguage]langImage{
+		constants.InstrumentationLanguageJava:        {r.Spec.Java.Image, w.cfg.AutoInstrumentationJavaImage},
+		constants.InstrumentationLanguageNodeJS:      {r.Spec.NodeJS.Image, w.cfg.AutoInstrumentationNodeJSImage},
+		constants.InstrumentationLanguagePython:      {r.Spec.Python.Image, w.cfg.AutoInstrumentationPythonImage},
+		constants.InstrumentationLanguageDotNet:      {r.Spec.DotNet.Image, w.cfg.AutoInstrumentationDotNetImage},
+		constants.InstrumentationLanguageGo:          {r.Spec.Go.Image, w.cfg.AutoInstrumentationGoImage},
+		constants.InstrumentationLanguageApacheHttpd: {r.Spec.ApacheHttpd.Image, w.cfg.AutoInstrumentationApacheHttpdImage},
+		constants.InstrumentationLanguageNginx:       {r.Spec.Nginx.Image, w.cfg.AutoInstrumentationNginxImage},
+	}
+
+	for lang, li := range languageImages {
+		if li.image == "" {
+			continue
+		}
+		if isUnupgradable, warningMsg := version.IsInstrumentationVersionUnupgradable(lang, li.image, li.defaultImage); isUnupgradable {
+			msg := fmt.Sprintf("Instrumentation %s/%s: %s image %s is at a version that cannot be automatically upgraded. Manual upgrade is required.", r.Namespace, r.Name, lang, li.image)
+			if warningMsg != "" {
+				msg = fmt.Sprintf("Instrumentation %s/%s: %s image %s is at a version that cannot be automatically upgraded. %s", r.Namespace, r.Name, lang, li.image, warningMsg)
+			}
+			warnings = append(warnings, msg)
+		}
+	}
+
+	return warnings
 }
 
 func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {

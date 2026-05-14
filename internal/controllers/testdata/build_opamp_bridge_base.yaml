@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-opamp-bridge
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-opamp-bridge
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-opamp-bridge
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-opamp-bridge
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        opentelemetry-opampbridge-config/hash: 05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f
+      labels:
+        app.kubernetes.io/component: opentelemetry-opamp-bridge
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: test-opamp-bridge
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - env:
+        - name: OTELCOL_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: opamp-bridge-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: opamp-bridge-container
+              divisor: "0"
+              resource: limits.cpu
+        image: test
+        name: opamp-bridge-container
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: opamp-bridge-internal
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: test-opamp-bridge
+      volumes:
+      - configMap:
+          items:
+          - key: remoteconfiguration.yaml
+            path: remoteconfiguration.yaml
+          name: test-opamp-bridge
+        name: opamp-bridge-internal
+---
+apiVersion: v1
+data:
+  remoteconfiguration.yaml: |
+    capabilities:
+      AcceptsOpAMPConnectionSettings: true
+      AcceptsOtherConnectionSettings: true
+      AcceptsRemoteConfig: true
+      AcceptsRestartCommand: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnLogs: true
+      ReportsOwnMetrics: true
+      ReportsOwnTraces: true
+      ReportsRemoteConfig: true
+      ReportsStatus: true
+    componentsAllowed:
+      exporters:
+      - debug
+      processors:
+      - memory_limiter
+      receivers:
+      - otlp
+    endpoint: ws://opamp-server:4320/v1/opamp
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-opamp-bridge
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-opamp-bridge
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-opamp-bridge
+  namespace: test
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-opamp-bridge
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-opamp-bridge
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-opamp-bridge
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-opamp-bridge
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-opamp-bridge
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-opamp-bridge
+  namespace: test
+spec:
+  ports:
+  - name: opamp-bridge
+    port: 80
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/component: opentelemetry-opamp-bridge
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry

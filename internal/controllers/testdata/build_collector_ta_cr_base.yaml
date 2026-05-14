@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  serviceName: test-collector-headless
+  template:
+    metadata:
+      annotations:
+        opentelemetry-operator-config/sha256: 42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/component: opentelemetry-collector
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: test-collector
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - args:
+        - --config=/conf/collector.yaml
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.cpu
+        image: test
+        name: otc-container
+        ports:
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: otc-internal
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: test-collector
+      shareProcessNamespace: false
+      volumes:
+      - configMap:
+          items:
+          - key: collector.yaml
+            path: collector.yaml
+          name: test-collector-42773025
+        name: otc-internal
+  updateStrategy: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: v1
+data:
+  collector.yaml: |
+    exporters:
+        debug: null
+    receivers:
+        prometheus:
+            config: {}
+            target_allocator:
+                collector_id: ${POD_NAME}
+                endpoint: http://test-targetallocator:80
+                interval: 30s
+    service:
+        pipelines:
+            metrics:
+                exporters:
+                    - debug
+                receivers:
+                    - prometheus
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector-42773025
+  namespace: test
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-collector
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-monitoring-service: Exists
+    operator.opentelemetry.io/collector-service-type: monitoring
+  name: test-collector-monitoring
+  namespace: test
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    targetPort: 0
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: opentelemetry-operator
+  name: test
+  namespace: test
+spec:
+  allocationStrategy: consistent-hashing
+  filterStrategy: relabel-config
+  global: null
+  networkPolicy: {}
+  observability:
+    metrics: {}
+  podDnsConfig: {}
+  prometheusCR:
+    enabled: true
+  resources: {}

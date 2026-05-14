@@ -79,6 +79,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -170,6 +175,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -273,6 +283,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -365,6 +380,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -481,6 +501,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -597,6 +622,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
+					StorageConfig: promconfig.StorageConfig{
+						TSDBConfig: &promconfig.TSDBConfig{
+							Retention: &promconfig.TSDBRetentionConfig{},
+						},
+					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:                        "prometheus",
@@ -764,6 +794,53 @@ func TestGetAllowDenyLists(t *testing.T) {
 			allowList, denyList := tc.promCRConfig.GetAllowDenyLists()
 			assert.Equal(t, tc.expectedAllowList, allowList)
 			assert.Equal(t, tc.expectedDenyList, denyList)
+		})
+	}
+}
+
+func TestGetSecretsAllowList(t *testing.T) {
+	testCases := []struct {
+		name                     string
+		promCRConfig             PrometheusCRConfig
+		collectorNamespace       string
+		expectedSecretsAllowList map[string]struct{}
+	}{
+		{
+			name:                     "no secrets namespaces configured, defaults to collector namespace",
+			promCRConfig:             PrometheusCRConfig{Enabled: true},
+			collectorNamespace:       "ta-namespace",
+			expectedSecretsAllowList: map[string]struct{}{"ta-namespace": {}},
+		},
+		{
+			name:                     "no secrets namespaces and no collector namespace",
+			promCRConfig:             PrometheusCRConfig{Enabled: true},
+			collectorNamespace:       "",
+			expectedSecretsAllowList: map[string]struct{}{},
+		},
+		{
+			name:                     "single namespace overrides default",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{"ns1"}},
+			collectorNamespace:       "ta-namespace",
+			expectedSecretsAllowList: map[string]struct{}{"ns1": {}},
+		},
+		{
+			name:                     "multiple namespaces",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{"ns1", "ns2", "ns3"}},
+			collectorNamespace:       "ta-namespace",
+			expectedSecretsAllowList: map[string]struct{}{"ns1": {}, "ns2": {}, "ns3": {}},
+		},
+		{
+			name:                     "empty slice defaults to collector namespace",
+			promCRConfig:             PrometheusCRConfig{Enabled: true, SecretNamespaces: []string{}},
+			collectorNamespace:       "ta-namespace",
+			expectedSecretsAllowList: map[string]struct{}{"ta-namespace": {}},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			secretsAllowList := tc.promCRConfig.GetSecretsAllowList(tc.collectorNamespace)
+			assert.Equal(t, tc.expectedSecretsAllowList, secretsAllowList)
 		})
 	}
 }

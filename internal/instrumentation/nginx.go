@@ -31,7 +31,6 @@ const (
 	nginxAttributesEnvVar        = "OTEL_NGINX_AGENT_CONF"
 	nginxServiceInstanceId       = "<<SID-PLACEHOLDER>>"
 	nginxServiceInstanceIdEnvVar = "OTEL_NGINX_SERVICE_INSTANCE_ID"
-	nginxVersionEnvVar           = "NGINX_VERSION"
 	nginxLibraryPathEnv          = "LD_LIBRARY_PATH"
 )
 
@@ -66,30 +65,15 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 			},
 		})
 
-		nginxConfFile := getNginxConfFile(nginxSpec.ConfigFile)
 		nginxConfDir := getNginxConfDir(nginxSpec.ConfigFile)
 
-		// from original Nginx container, we need
-		// 1) original configuration files, which then get modified in the instrumentation process
-		// 2) version of Nginx to select the proper version of OTel modules.
-		//    - run Nginx with -v to get the version
-		//    - store the version into a file where instrumentation initContainer can pick it up
-		nginxCloneScriptTemplate := `
-cp -r %[2]s/* %[3]s &&
-export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
-`
-		nginxAgentCommands := prepareCommandFromTemplate(nginxCloneScriptTemplate,
-			nginxConfFile,
-			nginxConfDir,
-			nginxAgentConfDirFull,
-			nginxVersionEnvVar,
-		)
-
+		// User-controlled value is passed as a positional arg (read as $1 in
+		// the script) so it is never parsed by the shell.
 		cloneContainer := corev1.Container{
 			Name:    nginxAgentCloneContainerName,
 			Image:   container.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args:    []string{nginxAgentCommands},
+			Args:    []string{nginxCloneScript, "--", nginxConfDir},
 			Env:     container.Env,
 			EnvFrom: container.EnvFrom,
 			VolumeMounts: slices.Concat(container.VolumeMounts, []corev1.VolumeMount{{
@@ -97,7 +81,7 @@ export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 				MountPath: nginxAgentConfDirFull,
 			}}),
 			Resources:       nginxSpec.Resources,
-			SecurityContext: container.SecurityContext,
+			SecurityContext: resolveInitContainerSecurityContext(instSpec.InitContainerSecurityContext, container.SecurityContext),
 			ImagePullPolicy: container.ImagePullPolicy,
 		}
 
@@ -141,65 +125,17 @@ export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 			},
 		})
 
-		// Following is the template for a shell script, which does the actual instrumentation
-		// It does following:
-		// 1) Copies Nginx OTel modules from the webserver agent image
-		// 2) Picks-up the Nginx version stored by the clone of original container (see comment there)
-		// 3) Finds out which directory to use for logs
-		// 4) Configures the directory in logging configuration file of OTel modules
-		// 5) Creates a configuration file for OTel modules
-		// 6) In that configuration file, set SID parameter to pod name (in env var OTEL_NGINX_SERVICE_INSTANCE_ID)
-		// 7) In Nginx config file, inject directive to load OTel module
-		// 8) In Nginx config file, enable use of env var OTEL_RESOURCE_ATTRIBUTES in Nginx process
-		//    (by default, env vars are hidden to Nginx process, they need to be enabled specifically)
-		// 9) Move OTel module configuration file to Nginx configuration directory.
-
-		// Each line of the script MUST end with \n !
-		nginxAgentI13nScript := `
-NGINX_AGENT_DIR_FULL=$1	\n
-NGINX_AGENT_CONF_DIR_FULL=$2 \n
-NGINX_CONFIG_FILE=$3 \n
-NGINX_SID_PLACEHOLDER=$4 \n
-NGINX_SID_VALUE=$5 \n
-echo "Input Parameters: $@" \n
-set -x \n
-\n
-cp -r /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \n
-\n
-NGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \n
-NGINX_AGENT_LOG_DIR=$(echo "${NGINX_AGENT_DIR_FULL}/logs" | sed 's,/,\\/,g') \n
-\n
-cat ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml \n
-echo -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
-sed -i "s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
-sed -i "1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \n
-sed -i "1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \n
-mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \n
-		`
-
-		nginxAgentI13nCommand := "echo -e $OTEL_NGINX_I13N_SCRIPT > " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
-			"chmod +x " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
-			"cat " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
-			fmt.Sprintf(nginxAgentDirFull+"/nginx_instrumentation.sh \"%s\" \"%s\" \"%s\" \"%s\"",
-				nginxAgentDirFull,
-				nginxAgentConfDirFull,
-				getNginxConfFile(nginxSpec.ConfigFile),
-				nginxServiceInstanceId,
-			)
-
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    nginxAgentInitContainerName,
 			Image:   nginxSpec.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args:    []string{nginxAgentI13nCommand},
+			// User-controlled value is passed as a positional arg (read as $1
+			// in the script) so it is never parsed by the shell.
+			Args: []string{nginxAgentScript, "--", getNginxConfFile(nginxSpec.ConfigFile)},
 			Env: []corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
 					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, container, otlpEndpoint, resourceMap),
-				},
-				{
-					Name:  "OTEL_NGINX_I13N_SCRIPT",
-					Value: nginxAgentI13nScript,
 				},
 				{
 					Name: nginxServiceInstanceIdEnvVar,
@@ -221,7 +157,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 					MountPath: nginxAgentConfDirFull,
 				},
 			},
-			SecurityContext: container.SecurityContext,
+			SecurityContext: resolveInitContainerSecurityContext(instSpec.InitContainerSecurityContext, container.SecurityContext),
 			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 
@@ -316,17 +252,4 @@ func getNginxConfFile(configuredFile string) string {
 	}
 	configFilenameOnly := filepath.Base(nginxConfFile)
 	return configFilenameOnly
-}
-
-func prepareCommandFromTemplate(template string, params ...any) string {
-	command := fmt.Sprintf(template,
-		params...,
-	)
-
-	command = strings.ReplaceAll(command, "\n", " ")
-	command = strings.ReplaceAll(command, "\t", " ")
-	command = strings.TrimLeft(command, " ")
-	command = strings.TrimRight(command, " ")
-
-	return command
 }

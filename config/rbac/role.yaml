@@ -12,7 +12,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
   - serviceaccounts
   - services
   verbs:
@@ -27,6 +26,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - pods
   - secrets
   verbs:
   - get
@@ -163,7 +163,6 @@ rules:
   - opampbridges
   - opentelemetrycollectors
   - targetallocators
-  - targetallocators/finalizers
   verbs:
   - create
   - delete
@@ -177,12 +176,14 @@ rules:
   resources:
   - clusterobservabilities/finalizers
   - opampbridges/finalizers
+  - targetallocators/finalizers
   verbs:
   - update
 - apiGroups:
   - opentelemetry.io
   resources:
   - clusterobservabilities/status
+  - instrumentations/status
   - opampbridges/status
   - opentelemetrycollectors/finalizers
   - opentelemetrycollectors/status

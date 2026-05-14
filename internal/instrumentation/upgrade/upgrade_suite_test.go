@@ -27,10 +27,18 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	var binaryAssetsDir string
+	binaryAssetsDir, err = envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
+	if err != nil {
+		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
+	}
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "config", "crd", "bases"),
 		},
+		DownloadBinaryAssets:  true,
+		BinaryAssetsDirectory: binaryAssetsDir,
 	}
 
 	cfg, err = testEnv.Start()

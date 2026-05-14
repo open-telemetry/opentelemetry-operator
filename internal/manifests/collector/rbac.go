@@ -13,11 +13,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	rules, err := otelconfig.GetAllRbacRules(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	} else if len(rules) == 0 {
@@ -43,7 +44,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	rules, err := otelconfig.GetAllRbacRules(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	} else if len(rules) == 0 {
@@ -82,7 +83,7 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
 	ctx := context.Background()
 
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	rules, err := otelconfig.GetAllRbacRules(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	}
