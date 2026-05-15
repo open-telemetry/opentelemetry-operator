@@ -9,8 +9,8 @@ RUN INSTALL_PKGS=" \
 WORKDIR /
 
 ARG TARGETARCH
-COPY bin/must-gather_${TARGETARCH} /usr/bin/must-gather
+COPY bin/must-gather_${TARGETARCH} /usr/bin/gather
 
 USER 65532:65532
 
-ENTRYPOINT ["/usr/bin/must-gather"]
+ENTRYPOINT ["/usr/bin/gather"]
