@@ -71,11 +71,38 @@ collector_selector: null
 filter_strategy: relabel-config
 `,
 		}
-		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
 		testParams := Params{
 			Collector:       nil,
 			TargetAllocator: targetAllocatorInstance(),
+		}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
+	t.Run("should return target allocator config map without collector but with collectorSelector", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: my-collector
+  matchexpressions: []
+filter_strategy: relabel-config
+`,
+		}
+		ta := targetAllocatorInstance()
+		ta.Spec.CollectorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"app.kubernetes.io/component": "opentelemetry-collector",
+				"app.kubernetes.io/instance":  "my-collector",
+			},
+		}
+		testParams := Params{
+			Collector:       nil,
+			TargetAllocator: ta,
 		}
 		actual, err := ConfigMap(testParams)
 		require.NoError(t, err)
