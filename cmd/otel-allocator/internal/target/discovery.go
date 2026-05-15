@@ -18,7 +18,6 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
-	"github.com/prometheus/prometheus/scrape"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -26,6 +25,8 @@ import (
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
+
+const labelBuilderPreallocSize = 100
 
 type Discoverer struct {
 	log                         logr.Logger
@@ -221,6 +222,8 @@ func (m *Discoverer) Reload() {
 // with what Prometheus computes.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item, cfg *promconfig.ScrapeConfig) {
 	lb := labels.NewBuilder(labels.EmptyLabels())
+	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
+	defaults := newDiscoveredLabelDefaults(cfg)
 
 	begin := time.Now()
 	defer func() {
@@ -229,10 +232,10 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	var count float64
 	index := 0
 	for _, tg := range groups {
+		groupLabels := populateGroupLabels(&groupBuilder, tg.Labels)
 		for _, t := range tg.Targets {
 			count++
-			scrape.PopulateDiscoveredLabels(lb, cfg, t, tg.Labels)
-			lset := lb.Labels()
+			lset := populateDiscoveredLabels(lb, defaults, t, groupLabels)
 			item := NewItem(jobName, string(t[model.AddressLabel]), lset, "")
 			intoTargets[index] = item
 			index++
@@ -241,6 +244,78 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
 }
 
+func populateGroupLabels(groupBuilder *labels.ScratchBuilder, tgLabels model.LabelSet) labels.Labels {
+	groupBuilder.Reset()
+	for ln, lv := range tgLabels {
+		if lv != "" {
+			groupBuilder.Add(string(ln), string(lv))
+		}
+	}
+	groupBuilder.Sort()
+	return groupBuilder.Labels()
+}
+
+type discoveredLabelDefaults struct {
+	jobName        string
+	scrapeInterval string
+	scrapeTimeout  string
+	metricsPath    string
+	scheme         string
+	params         []labels.Label
+}
+
+func newDiscoveredLabelDefaults(cfg *promconfig.ScrapeConfig) discoveredLabelDefaults {
+	defaults := discoveredLabelDefaults{
+		jobName:        cfg.JobName,
+		scrapeInterval: cfg.ScrapeInterval.String(),
+		scrapeTimeout:  cfg.ScrapeTimeout.String(),
+		metricsPath:    cfg.MetricsPath,
+		scheme:         cfg.Scheme,
+	}
+
+	if len(cfg.Params) > 0 {
+		defaults.params = make([]labels.Label, 0, len(cfg.Params))
+		for k, v := range cfg.Params {
+			if len(v) > 0 {
+				defaults.params = append(defaults.params, labels.Label{
+					Name:  model.ParamLabelPrefix + k,
+					Value: v[0],
+				})
+			}
+		}
+	}
+
+	return defaults
+}
+
+// populateDiscoveredLabels matches scrape.PopulateDiscoveredLabels. Keep this
+// local hot-path helper in sync with Prometheus and covered by the comparison
+// test, because calling the Prometheus helper directly repeats group-label and
+// scrape-default work for every target.
+func populateDiscoveredLabels(lb *labels.Builder, defaults discoveredLabelDefaults, tLabels model.LabelSet, groupLabels labels.Labels) labels.Labels {
+	lb.Reset(groupLabels)
+	for ln, lv := range tLabels {
+		lb.Set(string(ln), string(lv))
+	}
+
+	setDefaultLabel(lb, model.JobLabel, defaults.jobName)
+	setDefaultLabel(lb, model.ScrapeIntervalLabel, defaults.scrapeInterval)
+	setDefaultLabel(lb, model.ScrapeTimeoutLabel, defaults.scrapeTimeout)
+	setDefaultLabel(lb, model.MetricsPathLabel, defaults.metricsPath)
+	setDefaultLabel(lb, model.SchemeLabel, defaults.scheme)
+
+	for _, param := range defaults.params {
+		setDefaultLabel(lb, param.Name, param.Value)
+	}
+
+	return lb.Labels()
+}
+
+func setDefaultLabel(lb *labels.Builder, name, value string) {
+	if lb.Get(name) == "" {
+		lb.Set(name, value)
+	}
+}
 
 // Run receives and saves target set updates and triggers the scraping loops reloading.
 // Reloading happens in the background so that it doesn't block receiving targets updates.
