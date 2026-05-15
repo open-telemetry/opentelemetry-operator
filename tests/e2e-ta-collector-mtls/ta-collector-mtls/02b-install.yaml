@@ -38,7 +38,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: capture-cert
-          image: docker.io/nicolaka/netshoot:latest
+          image: mirror.gcr.io/nicolaka/netshoot:latest
           command:
             - /bin/sh
             - -c

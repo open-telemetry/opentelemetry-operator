@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,6 +39,7 @@ func init() {
 	utilruntime.Must(routev1.AddToScheme(testScheme))
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
+	utilruntime.Must(cmv1.AddToScheme(testScheme))
 }
 
 func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
@@ -53,7 +55,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 	reconciler := NewTargetAllocatorReconciler(
 		fakeClient,
 		testScheme,
-		record.NewFakeRecorder(10),
+		events.NewFakeRecorder(10),
 		config.New(),
 		testLogger,
 	)
@@ -113,7 +115,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 		reconciler := NewTargetAllocatorReconciler(
 			fakeClient,
 			testScheme,
-			record.NewFakeRecorder(10),
+			events.NewFakeRecorder(10),
 			config.New(),
 			testLogger,
 		)

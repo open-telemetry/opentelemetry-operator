@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-update
+status:
+  succeeded: 1

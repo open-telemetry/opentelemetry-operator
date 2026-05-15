@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -618,6 +618,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				PrometheusCRAvailability:      prometheus.Available,
 				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
+				EnableInstrumentationCRDs:     true,
 			}
 			reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -787,6 +788,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
 		PrometheusCRAvailability:    prometheus.Available,
+		EnableInstrumentationCRDs:   true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -823,8 +825,16 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
 			}
+
+			// Wait for the reconciler's cache to see the collector
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				actual := &v1beta1.OpenTelemetryCollector{}
+				getErr := reconciler.Get(clientCtx, nsn, actual)
+				assert.NoError(collect, getErr)
+			}, time.Second*10, time.Millisecond*100)
+
 			_, reconcileErr := reconciler.Reconcile(clientCtx, req)
-			assert.NoError(t, reconcileErr)
+			require.NoError(t, reconcileErr)
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				list, listErr := getAllOwnedResources(clientCtx, reconciler, collector, opts...)
@@ -838,7 +848,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			tc.mutateCollector(collector)
 			err = k8sClient.Update(clientCtx, collector)
 			require.NoError(t, err)
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
 				actual := &v1beta1.OpenTelemetryCollector{}
 				err = reconciler.Get(clientCtx, nsn, actual)
 				assert.NoError(collect, err)
@@ -846,7 +856,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			}, time.Second*30, time.Millisecond*100)
 
 			_, reconcileErr = reconciler.Reconcile(clientCtx, req)
-			assert.NoError(t, reconcileErr)
+			require.NoError(t, reconcileErr)
 
 			expectedResourceCount := expectedStartingResourceCount - tc.expectedResourcesDeletedCount
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -902,6 +912,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		TargetAllocatorImage:        "default-ta-allocator",
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		EnableInstrumentationCRDs:   true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1097,12 +1108,13 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:           "collector.yaml",
 				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
+				EnableInstrumentationCRDs:         true,
 			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
 				Log:      logger,
 				Scheme:   testScheme,
-				Recorder: record.NewFakeRecorder(20),
+				Recorder: events.NewFakeRecorder(20),
 				Config:   cfg,
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
@@ -1246,6 +1258,7 @@ service:
 		CreateRBACPermissions:             autoRBAC.Available,
 		CollectorConfigMapEntry:           "collector.yaml",
 		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+		EnableInstrumentationCRDs:         true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1301,6 +1314,7 @@ func TestUpgrade(t *testing.T) {
 		TargetAllocatorImage:          "default-ta-allocator",
 		CollectorConfigMapEntry:       "collector.yaml",
 		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+		EnableInstrumentationCRDs:     true,
 	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,
@@ -1448,6 +1462,14 @@ func TestUpgrade(t *testing.T) {
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
 				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
 				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
+				assert.NoError(collect, getErr)
+				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
+			}, time.Second*10, time.Millisecond*10)
+
+			// Wait for the reconciler's cache to see the correct status
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
+				getErr := reconciler.Get(testCtx, nsn, freshOtelcol)
 				assert.NoError(collect, getErr)
 				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
 			}, time.Second*10, time.Millisecond*10)
@@ -1688,7 +1710,7 @@ func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg conf
 		Client:   cacheClient,
 		Log:      logger,
 		Scheme:   testScheme,
-		Recorder: record.NewFakeRecorder(20),
+		Recorder: events.NewFakeRecorder(20),
 		Config:   cfg,
 		Version:  v,
 	})

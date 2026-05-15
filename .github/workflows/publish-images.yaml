@@ -9,6 +9,8 @@ on:
 
 env:
   PLATFORMS: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/opentelemetry-operator/opentelemetry-operator
+  DOCKERHUB_IMAGE: otel/opentelemetry-operator
 
 permissions:
   contents: read
@@ -21,18 +23,24 @@ jobs:
       id-token: write
     name: Publish container images
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      image: ${{ steps.release-image.outputs.image }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: "~1.25.7"
+          go-version: "~1.26.3"
 
       - name: Unshallow
         run: git fetch --prune --unshallow
 
       - name: Describe the current state
-        run: git describe --tags
+        run: |
+          # make sure that tags are available, but don't fail the workflow if none exist.
+          git fetch --tags || true
+          git describe --tags || echo "no-tag-$(git rev-parse --short HEAD)"
 
       - name: Set env vars for the job
         run: |
@@ -47,7 +55,8 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print "AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print "AUTO_INSTRUMENTATION_NGINX_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-          echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
+          VERSION="$(git describe --tags 2>/dev/null || echo "no-tag-$(git rev-parse --short HEAD)")"
+          echo "VERSION=${VERSION#v}" >> $GITHUB_ENV
 
       - name: Build the binary for each supported architecture
         run: |
@@ -62,13 +71,17 @@ jobs:
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: |
-            otel/opentelemetry-operator
-            ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+            ${{ env.GHCR_IMAGE }}
+            ${{ env.DOCKERHUB_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{raw}}
             type=ref,event=branch
+
+      - name: Resolve release image name
+        id: release-image
+        run: echo "image=${GHCR_IMAGE}" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
@@ -77,7 +90,7 @@ jobs:
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Cache Docker layers
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -85,14 +98,14 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Log into Docker.io
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         if: ${{ github.event_name == 'push' }}
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
@@ -100,7 +113,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Operator image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           file: ./Dockerfile
@@ -110,3 +124,11 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Sign release images
+        if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          make cosign-sign IMAGE="${GHCR_IMAGE}" DIGEST="${DIGEST}"
+          make cosign-sign IMAGE="${DOCKERHUB_IMAGE}" DIGEST="${DIGEST}"

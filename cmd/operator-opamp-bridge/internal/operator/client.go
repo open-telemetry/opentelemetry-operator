@@ -111,9 +111,11 @@ func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
 	}
 
 	configuredComponents := map[string]map[string]any{
-		"receivers":  collectorConfig.Receivers.Object,
-		"processors": collectorConfig.Processors.Object,
-		"exporters":  collectorConfig.Exporters.Object,
+		"receivers": collectorConfig.Receivers.Object,
+		"exporters": collectorConfig.Exporters.Object,
+	}
+	if collectorConfig.Processors != nil {
+		configuredComponents["processors"] = collectorConfig.Processors.Object
 	}
 
 	var invalidComponents []string
@@ -181,12 +183,12 @@ func (c Client) create(ctx context.Context, name, namespace string, collector *v
 	return c.k8sClient.Create(ctx, collector)
 }
 
-func (c Client) update(ctx context.Context, old, new *v1beta1.OpenTelemetryCollector) error {
-	new.ObjectMeta = old.ObjectMeta
-	new.TypeMeta = old.TypeMeta
+func (c Client) update(ctx context.Context, o, n *v1beta1.OpenTelemetryCollector) error {
+	n.ObjectMeta = o.ObjectMeta
+	n.TypeMeta = o.TypeMeta
 
 	c.log.Info("Updating collector")
-	return c.k8sClient.Update(ctx, new)
+	return c.k8sClient.Update(ctx, n)
 }
 
 func (c Client) Delete(name, namespace string) error {

@@ -20,13 +20,14 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var (
-	_                                  admission.CustomValidator = &InstrumentationWebhook{}
-	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
-	initContainerDefaultLimitResources                           = corev1.ResourceList{
+	_                                  admission.Validator[*v1alpha1.Instrumentation] = &InstrumentationWebhook{}
+	_                                  admission.Defaulter[*v1alpha1.Instrumentation] = &InstrumentationWebhook{}
+	initContainerDefaultLimitResources                                                = corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("500m"),
 		corev1.ResourceMemory: resource.MustParse("256Mi"),
 	}
@@ -47,35 +48,19 @@ type InstrumentationWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) error {
-	instrumentation, ok := obj.(*v1alpha1.Instrumentation)
-	if !ok {
-		return fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
+func (w InstrumentationWebhook) Default(_ context.Context, instrumentation *v1alpha1.Instrumentation) error {
 	return w.defaulter(instrumentation)
 }
 
-func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*v1alpha1.Instrumentation)
-	if !ok {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
+func (w InstrumentationWebhook) ValidateCreate(_ context.Context, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	inst, ok := newObj.(*v1alpha1.Instrumentation)
-	if !ok {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
-	}
+func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*v1alpha1.Instrumentation)
-	if !ok || inst == nil {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
+func (w InstrumentationWebhook) ValidateDelete(_ context.Context, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	return w.validate(inst)
 }
 
@@ -199,8 +184,12 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	return nil
 }
 
-func (InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
+func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	var warnings []string
+
+	// Check for unupgradable instrumentation versions
+	warnings = append(warnings, w.checkUnupgradableVersions(r)...)
+
 	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
@@ -351,14 +340,48 @@ func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg c
 	}
 }
 
+// checkUnupgradableVersions checks if any instrumentation images are at unupgradable versions.
+func (w InstrumentationWebhook) checkUnupgradableVersions(r *v1alpha1.Instrumentation) []string {
+	var warnings []string
+
+	// Check each language's image against its default
+	type langImage struct {
+		image        string
+		defaultImage string
+	}
+	languageImages := map[constants.InstrumentationLanguage]langImage{
+		constants.InstrumentationLanguageJava:        {r.Spec.Java.Image, w.cfg.AutoInstrumentationJavaImage},
+		constants.InstrumentationLanguageNodeJS:      {r.Spec.NodeJS.Image, w.cfg.AutoInstrumentationNodeJSImage},
+		constants.InstrumentationLanguagePython:      {r.Spec.Python.Image, w.cfg.AutoInstrumentationPythonImage},
+		constants.InstrumentationLanguageDotNet:      {r.Spec.DotNet.Image, w.cfg.AutoInstrumentationDotNetImage},
+		constants.InstrumentationLanguageGo:          {r.Spec.Go.Image, w.cfg.AutoInstrumentationGoImage},
+		constants.InstrumentationLanguageApacheHttpd: {r.Spec.ApacheHttpd.Image, w.cfg.AutoInstrumentationApacheHttpdImage},
+		constants.InstrumentationLanguageNginx:       {r.Spec.Nginx.Image, w.cfg.AutoInstrumentationNginxImage},
+	}
+
+	for lang, li := range languageImages {
+		if li.image == "" {
+			continue
+		}
+		if isUnupgradable, warningMsg := version.IsInstrumentationVersionUnupgradable(lang, li.image, li.defaultImage); isUnupgradable {
+			msg := fmt.Sprintf("Instrumentation %s/%s: %s image %s is at a version that cannot be automatically upgraded. Manual upgrade is required.", r.Namespace, r.Name, lang, li.image)
+			if warningMsg != "" {
+				msg = fmt.Sprintf("Instrumentation %s/%s: %s image %s is at a version that cannot be automatically upgraded. %s", r.Namespace, r.Name, lang, li.image, warningMsg)
+			}
+			warnings = append(warnings, msg)
+		}
+	}
+
+	return warnings
+}
+
 func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
 	ivw := NewInstrumentationWebhook(
 		mgr.GetLogger().WithValues("handler", "InstrumentationWebhook"),
 		mgr.GetScheme(),
 		cfg,
 	)
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.Instrumentation{}).
+	return ctrl.NewWebhookManagedBy(mgr, &v1alpha1.Instrumentation{}).
 		WithValidator(ivw).
 		WithDefaulter(ivw).
 		Complete()

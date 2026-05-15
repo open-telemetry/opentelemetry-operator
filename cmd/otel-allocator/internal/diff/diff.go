@@ -29,10 +29,10 @@ func (c Changes[K, T]) Removals() map[K]T {
 // Maps generates Changes for two maps with the same type signature by checking for any removals and then checking for
 // additions.
 // TODO: This doesn't need to create maps, it can return slices only. This function doesn't need to insert the values.
-func Maps[K comparable, T Hasher[K]](current, new map[K]T) Changes[K, T] {
+func Maps[K comparable, T Hasher[K]](current, m map[K]T) Changes[K, T] {
 	additions := map[K]T{}
 	removals := map[K]T{}
-	for key, newValue := range new {
+	for key, newValue := range m {
 		if currentValue, found := current[key]; !found {
 			additions[key] = newValue
 		} else if currentValue.Hash() != newValue.Hash() {
@@ -41,7 +41,7 @@ func Maps[K comparable, T Hasher[K]](current, new map[K]T) Changes[K, T] {
 		}
 	}
 	for key, value := range current {
-		if _, found := new[key]; !found {
+		if _, found := m[key]; !found {
 			removals[key] = value
 		}
 	}

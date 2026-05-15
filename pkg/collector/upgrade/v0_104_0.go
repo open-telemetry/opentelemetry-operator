@@ -24,7 +24,7 @@ func upgrade0_104_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (
 			"The new default is localhost. Please revisit your \"%s\" configuration. See: %s",
 		otelcol.Name, issueID,
 	)
-	u.Recorder.Event(otelcol, "Warning", "Upgrade", warnStr)
+	u.Recorder.Eventf(otelcol, nil, "Warning", "Upgrade", "Upgrade", warnStr)
 	return otelcol, nil
 }
 

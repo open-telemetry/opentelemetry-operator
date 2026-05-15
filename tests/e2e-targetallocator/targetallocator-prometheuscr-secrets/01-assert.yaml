@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+status:
+  availableReplicas: 1
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-in-config
+status:
+  succeeded: 1

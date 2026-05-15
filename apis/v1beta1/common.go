@@ -244,6 +244,11 @@ type OpenTelemetryCommonFields struct {
 	// HostUsers isolates pod processes in a separate user namespace, reducing the risk of privilege escalation.
 	// +optional
 	HostUsers *bool `json:"hostUsers,omitempty"`
+	// HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+	// This is only valid for non-hostNetwork pods and is not supported on Windows.
+	// +optional
+	// +listType=atomic
+	HostAliases []v1.HostAlias `json:"hostAliases,omitempty"`
 }
 
 type StatefulSetCommonFields struct {
@@ -263,4 +268,10 @@ type StatefulSetCommonFields struct {
 	// Note that the custom service name is not created by the operator.
 	// +optional
 	ServiceName string `json:"serviceName,omitempty"`
+
+	// PodManagementPolicy defines the pod creation and termination order in StatefulSet.
+	// If not specified, it will default to "Parallel"
+	// +optional
+	// +kubebuilder:validation:Enum=OrderedReady;Parallel
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 }

@@ -12,7 +12,7 @@ ENV GOPATH=/tmp/go
 ENV GOBIN=/tmp/go/bin
 ENV GOCACHE=/tmp/.cache/go-build
 ENV PATH=$PATH:$GOBIN
-ENV CHAINSAW_VERSION=v0.2.14
+ENV CHAINSAW_VERSION=v0.2.15
 
 # Create the /tmp/go/bin and build cache directories, and grant read and write permissions to all users
 RUN mkdir -p /tmp/go/bin $GOCACHE \
@@ -38,6 +38,10 @@ RUN curl -LO https://github.com/grafana/loki/releases/latest/download/logcli-lin
     && unzip logcli-linux-amd64.zip \
     && chmod +x logcli-linux-amd64 \
     && mv logcli-linux-amd64 /usr/local/bin/logcli
+
+# Install yq (for YAML processing in TLS profile tests)
+RUN curl -L -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+    && chmod +x /usr/local/bin/yq
 
 # Install AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \

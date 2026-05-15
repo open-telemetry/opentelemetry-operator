@@ -34,6 +34,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
@@ -551,7 +552,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				_, applyErr := test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard())
+				_, applyErr := otelconfig.ServiceApplyDefaults(&test.expected.Spec.Config.Service, logr.Discard())
 				assert.NoError(t, applyErr, "could not apply defaults")
 			}
 			assert.NoError(t, err)
@@ -1769,7 +1770,7 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 }
 
 func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
-	c := fake.NewSimpleClientset()
+	c := fake.NewClientset()
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {

@@ -181,7 +181,7 @@ func TestBuild(t *testing.T) {
 			wantErr:         false,
 		},
 		{
-			name: "sidecar mode skips deployment manifests",
+			name: "sidecar mode skips service and other pod-controlling manifests",
 			params: manifests.Params{
 				Log: logger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -190,6 +190,27 @@ func TestBuild(t *testing.T) {
 					},
 				},
 				Config: config.New(),
+			},
+			expectedObjects: 2,
+			wantErr:         false,
+		},
+		{
+			name: "sidecar mode with metrics enabled builds pod monitor but no services",
+			params: manifests.Params{
+				Log: logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode: v1beta1.ModeSidecar,
+						Observability: v1beta1.ObservabilitySpec{
+							Metrics: v1beta1.MetricsConfigSpec{
+								EnableMetrics: true,
+							},
+						},
+					},
+				},
+				Config: config.Config{
+					PrometheusCRAvailability: prometheus.Available,
+				},
 			},
 			expectedObjects: 3,
 			wantErr:         false,

@@ -26,6 +26,10 @@ var registry = map[string]components.Parser{
 		MustBuild(),
 	"jaeger_query": NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
+	"k8s_leader_elector": components.NewBuilder[any]().
+		WithName("k8s_leader_elector").
+		WithRbacGen(generatek8sleaderelectorRbacRules).
+		MustBuild(),
 	"k8s_observer": components.NewBuilder[k8sobserverConfig]().
 		WithName("k8s_observer").
 		WithRbacGen(generatek8sobserverRbacRules).

@@ -51,7 +51,7 @@ func upgrade0_61_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 				"Please use the extension instead with a different remote sampling port. See: %s",
 			issueID,
 		)
-		u.Recorder.Event(otelcol, "Error", "Upgrade", errStr)
+		u.Recorder.Eventf(otelcol, nil, "Error", "Upgrade", "Upgrade", errStr)
 		return nil, errors.New(errStr)
 	}
 	return otelcol, nil

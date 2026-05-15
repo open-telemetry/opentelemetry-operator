@@ -12,9 +12,11 @@ spec:
     runAsUser: 1000
     runAsGroup: 3000
     fsGroup: 3000
+    seccompProfile:
+      type: RuntimeDefault
   initContainers:
   - name: sdk-init
-    image: busybox:latest
+    image: mirror.gcr.io/library/busybox:latest
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -31,7 +33,7 @@ spec:
         exit 0
   containers:
   - name: main-app
-    image: busybox:latest
+    image: mirror.gcr.io/library/busybox:latest
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

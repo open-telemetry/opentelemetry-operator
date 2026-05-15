@@ -1,3 +1,7 @@
+# Run e2e tests for httpRoute
+.PHONY: e2e-httproute
+e2e-httproute: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -56,6 +60,8 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+
+COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
 INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
 INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
@@ -318,11 +324,12 @@ add-rbac-permissions-to-operator: manifests kustomize
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicaset.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicationcontrollers.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/resourcequotas.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/leases.yaml
 
 ##@ Deploy
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller
+deploy: install-gateway-api-crds set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
@@ -330,6 +337,18 @@ deploy: set-image-controller
 .PHONY: undeploy
 undeploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+##@ Deploy without CRDs
+# Deploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: deploy-no-crds
+deploy-no-crds: set-image-controller
+	$(KUSTOMIZE) build config/no-crds | INSTRUMENTATION_JAVA_IMG=$(INSTRUMENTATION_JAVA_IMG) envsubst | kubectl apply -f -
+	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
+
+# Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: undeploy-no-crds
+undeploy-no-crds: set-image-controller
+	$(KUSTOMIZE) build config/no-crds | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Generates the released manifests
 .PHONY: release-artifacts
@@ -344,10 +363,9 @@ manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
 
 # Run tests
-# setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: envtest gotestsum
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+test: gotestsum
+	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
@@ -405,6 +423,11 @@ e2e-instrumentation-default: e2e-instrumentation
 .PHONY: e2e-instrumentation
 e2e-instrumentation: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
+
+# no-crds end-to-tests
+.PHONY: e2e-no-crds
+e2e-no-crds: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-no-crds --report-name e2e-no-crds
 
 # Log operator pod information for debugging
 .PHONY: e2e-log-operator
@@ -477,9 +500,28 @@ e2e-upgrade: undeploy chainsaw
 e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
 
+# Standalone Target Allocator end-to-end tests
+.PHONY: prepare-e2e-ta-standalone
+prepare-e2e-ta-standalone: kind kustomize gotestsum
+	$(MAKE) start-kind KUBE_VERSION=$(KUBE_VERSION)
+	$(MAKE) load-image-all install-targetallocator-prometheus-crds
+	@mkdir -p ./.testresults/e2e
+
+.PHONY: e2e-ta-standalone
+e2e-ta-standalone: kustomize gotestsum
+# Tests deploy TA and collector directly (not via the operator), so image refs are passed as env vars.
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) \
+	COLLECTOR_IMG=$(COLLECTOR_IMG) \
+	KUSTOMIZE=$(KUSTOMIZE) \
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
+
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
+	@mkdir -p ./.testresults/e2e
+
+.PHONY: prepare-e2e-no-crds
+prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
 
 # Run operator-sdk scorecard tests for bundles
@@ -594,6 +636,10 @@ endif
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
+.PHONY: install-gateway-api-crds
+install-gateway-api-crds:
+	./hack/install-gateway-api-crds.sh
+
 # This only installs the CRDs Target Allocator supports
 .PHONY: install-targetallocator-prometheus-crds
 install-targetallocator-prometheus-crds:
@@ -675,28 +721,30 @@ cmctl:
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KIND ?= $(LOCALBIN)/kind
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
 GOTESTSUM ?= $(LOCALBIN)/gotestsum
+GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.20.1
+CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.11.3
+GOLANGCI_LINT_VERSION ?= v2.12.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.31.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
-CHAINSAW_VERSION ?= v0.2.14
+CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
+# renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
+GOVULNCHECK_VERSION ?= v1.3.0
 
 # Install all development tools
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl
+install-tools: kustomize golangci-lint kind controller-gen crdoc operator-sdk chainsaw gotestsum cmctl govulncheck
 
 # Download kustomize locally if necessary
 .PHONY: kustomize
@@ -718,12 +766,6 @@ kind: ## Download kind locally if necessary.
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
-# Download envtest-setup locally if necessary
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
-
 CRDOC = $(shell pwd)/bin/crdoc
 # Download crdoc locally if necessary
 .PHONY: crdoc
@@ -740,13 +782,23 @@ chainsaw: ## Find or download chainsaw
 gotestsum: ## Find or download gotestsum
 	$(call go-install-tool,$(GOTESTSUM),gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
 
+# Download govulncheck locally if necessary
+.PHONY: govulncheck
+govulncheck: ## Download govulncheck locally if necessary.
+	$(call go-install-tool,$(GOVULNCHECK),golang.org/x/vuln/cmd/govulncheck,$(GOVULNCHECK_VERSION))
+
+# Run govulncheck with the project's CVE exception list
+.PHONY: govulncheck-run
+govulncheck-run: govulncheck ## Run govulncheck, applying excepted CVEs from hack/govulncheck.sh.
+	GOVULNCHECK=$(GOVULNCHECK) ./hack/govulncheck.sh
+
 # go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-install-tool
 @set -e ; \
 BIN="$(1)"; PKG="$(2)"; VER="$(3)"; \
 DIR="$$(dirname "$$BIN")"; mkdir -p "$$DIR"; \
-if [ -x "$$BIN" ] && [ "$$VER" != "latest" ]; then \
+if [ -x "$$BIN" ] && [ "$$VER" != "latest" ] && echo "$$VER" | grep -q '^v'; then \
   CUR=$$(go version -m "$$BIN" 2>/dev/null | awk '$$1=="mod"{print $$3; exit}'); \
   if [ "$$CUR" = "$$VER" ]; then \
     exit 0; \
@@ -939,6 +991,38 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+
+##@ Supply Chain Security
+
+# Tool versions for supply chain securitya
+# renovate: datasource=github-releases depName=sigstore/cosign
+COSIGN_VERSION ?= v2.5.0
+COSIGN ?= $(LOCALBIN)/cosign
+
+
+# Download cosign locally if necessary
+.PHONY: cosign
+cosign: $(LOCALBIN)
+	@{ \
+	set -e ;\
+	if [ -x "$(COSIGN)" ] && "$(COSIGN)" version 2>/dev/null | grep -q "$(COSIGN_VERSION)"; then exit 0; fi ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) ;\
+	curl -sSfL "https://github.com/sigstore/cosign/releases/download/$(COSIGN_VERSION)/cosign-$${OS}-$${ARCH}" -o "$(COSIGN)" ;\
+	chmod +x "$(COSIGN)" ;\
+	}
+
+# Sign container images with keyless cosign.
+# Usage: make cosign-sign IMAGE=ghcr.io/... DIGEST=sha256:...
+# Both IMAGE and DIGEST must be set.
+.PHONY: cosign-sign
+cosign-sign: cosign
+ifndef IMAGE
+	$(error IMAGE is not set. Usage: make cosign-sign IMAGE=<image> DIGEST=<digest>)
+endif
+ifndef DIGEST
+	$(error DIGEST is not set. Usage: make cosign-sign IMAGE=<image> DIGEST=<digest>)
+endif
+	$(COSIGN) sign --yes "$(IMAGE)@$(DIGEST)"
 
 ##@ Release
 

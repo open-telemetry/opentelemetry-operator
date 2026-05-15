@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -49,6 +50,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -99,6 +101,7 @@ type mockAutoDetect struct {
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	GatewayAPIsAvailabilityFunc     func() (gatewayapi.ApiAvailability, error)
 }
 
 func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
@@ -158,6 +161,13 @@ func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, err
 	return opampbridge.NotAvailable, nil
 }
 
+func (m *mockAutoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
+	if m.GatewayAPIsAvailabilityFunc != nil {
+		return m.GatewayAPIsAvailabilityFunc()
+	}
+	return gatewayapi.ApiNotAvailable, nil
+}
+
 func TestMain(m *testing.M) {
 	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
@@ -173,12 +183,22 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 
+	utilruntime.Must(gatewayv1.Install(testScheme))
+
+	var binaryAssetsDir string
+	binaryAssetsDir, err = envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
+	if err != nil {
+		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
+	}
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
+		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
+		DownloadBinaryAssets:  true,
+		BinaryAssetsDirectory: binaryAssetsDir,
 	}
 	restCfg, err = testEnv.Start()
 	if err != nil {
@@ -546,7 +566,7 @@ func opampBridgeParams() manifests.Params {
 		},
 		Scheme:   testScheme,
 		Log:      logger,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: events.NewFakeRecorder(10),
 	}
 }
 

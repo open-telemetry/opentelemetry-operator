@@ -18,6 +18,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -617,7 +618,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			configStr, err := testCase.input.Yaml()
+			configStr, err := otelconfig.Yaml(&testCase.input)
 			require.NoError(t, err)
 			actual, err := getScrapeConfigsFromOtelConfig(configStr)
 			assert.Equal(t, testCase.wantErr, err)

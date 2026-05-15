@@ -12,7 +12,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
   - serviceaccounts
   - services
   verbs:
@@ -26,19 +25,21 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - ""
-  resources:
   - namespaces
+  - pods
   - secrets
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -93,6 +94,7 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - apiservers
   - infrastructures
   - infrastructures/status
   verbs:
@@ -115,6 +117,18 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - httproutes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -149,7 +163,6 @@ rules:
   - opampbridges
   - opentelemetrycollectors
   - targetallocators
-  - targetallocators/finalizers
   verbs:
   - create
   - delete
@@ -163,12 +176,14 @@ rules:
   resources:
   - clusterobservabilities/finalizers
   - opampbridges/finalizers
+  - targetallocators/finalizers
   verbs:
   - update
 - apiGroups:
   - opentelemetry.io
   resources:
   - clusterobservabilities/status
+  - instrumentations/status
   - opampbridges/status
   - opentelemetrycollectors/finalizers
   - opentelemetrycollectors/status

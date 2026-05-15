@@ -8,9 +8,6 @@ Steps to release a new version of the OpenTelemetry Operator:
       - Operator, target allocator and opamp-bridge should be `$VERSION`.
       - OpenTelemetry Collector should be the latest collector version. The `major.minor` should typically match, with the patch portion being possibly different.
       - The `autoinstrumentation-*` versions should match the latest supported versions in `autoinstrumentation/`.
-        > **:warning: Warning**
-        >
-        > DO NOT BUMP JAVA PAST `1.X.X` AND DO NOT BUMP .NET PAST `1.2.0`. Upgrades past these versions will introduce breaking HTTP semantic convention changes.
    1. Check if the compatible OpenShift versions are updated in the `Makefile`.
    1. Update the bundle by running `make bundle reset VERSION=$VERSION`.
    1. Change the compatibility matrix in the [compatibility doc](./docs/compatibility.md). Remove the oldest entry.
@@ -48,11 +45,11 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.147.0 | @yuriolisa      |
-| v0.148.0 | @TylerHelmuth   |
-| v0.149.0 | @frzifus        |
-| v0.150.0 | @pavolloffay    |
-| v0.151.0 | @swiatekm       |
 | v0.152.0 | @iblancasa      |
 | v0.153.0 | @atoulme        |
 | v0.154.0 | @jaronoff97     |
+| v0.155.0 | @yuriolisa      |
+| v0.156.0 | @TylerHelmuth   |
+| v0.157.0 | @frzifus        |
+| v0.158.0 | @pavolloffay    |
+| v0.159.0 | @swiatekm       |

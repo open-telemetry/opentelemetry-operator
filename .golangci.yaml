@@ -23,15 +23,11 @@ linters:
       disabled-checks:
         - appendAssign
         - appendCombine
-        - builtinShadow
         - deferInLoop
-        - emptyFallthrough
         - exitAfterDefer
         - hugeParam
         - importShadow
         - rangeValCopy
-        - sloppyReassign
-        - typeDefFirst
         - whyNoLint
       enable-all: true
     goheader:
@@ -72,7 +68,6 @@ linters:
         - name: add-constant
           disabled: true
         - name: bare-return
-          disabled: true # FIXME
         - name: blank-imports
           disabled: true
         - name: context-as-argument
@@ -85,7 +80,6 @@ linters:
         - name: confusing-naming
           disabled: true # FIXME
         - name: confusing-results
-          disabled: true # FIXME
         - name: comment-spacings
           arguments:
             - +kubebuilder
@@ -102,7 +96,6 @@ linters:
         - name: error-naming
           disabled: true
         - name: error-strings
-          disabled: true # FIXME
         - name: exported
           disabled: true
         - name: flag-parameter
@@ -126,7 +119,6 @@ linters:
         - name: package-directory-mismatch
           disabled: true # FIXME
         - name: receiver-naming
-          disabled: true
         - name: redundant-test-main-exit
           disabled: true # FIXME
         - name: redefines-builtin-id

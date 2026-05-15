@@ -42,6 +42,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -59,6 +60,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/upgrade"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
@@ -81,6 +83,8 @@ func init() {
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
+
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -141,15 +145,14 @@ func main() {
 	restConfig := ctrl.GetConfigOrDie()
 
 	var namespaces map[string]cache.Config
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+	if cfg.WatchNamespace != "" {
+		setupLog.Info("watching namespace(s)", "namespaces", cfg.WatchNamespace)
 		namespaces = map[string]cache.Config{}
-		for ns := range strings.SplitSeq(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(cfg.WatchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+		setupLog.Info("watching all namespaces")
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
@@ -367,10 +370,12 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg)
-	if err != nil {
-		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
-		os.Exit(1)
+	if cfg.EnableInstrumentationCRDs {
+		err = addInstrumentationUpgrader(ctx, mgr, cfg)
+		if err != nil {
+			setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+			os.Exit(1)
+		}
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
@@ -380,7 +385,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Recorder: mgr.GetEventRecorder("opentelemetry-operator"),
 			Reviewer: reviewer,
 			Version:  v,
 		})
@@ -395,7 +400,7 @@ func main() {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
-			mgr.GetEventRecorderFor("targetallocator"),
+			mgr.GetEventRecorder("targetallocator"),
 			cfg,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
 		).SetupWithManager(mgr); err != nil {
@@ -410,7 +415,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+			Recorder: mgr.GetEventRecorder("opamp-bridge"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 			os.Exit(1)
@@ -424,7 +429,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("ClusterObservability"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("cluster-observability"),
+			Recorder: mgr.GetEventRecorder("cluster-observability"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ClusterObservability")
 			os.Exit(1)
@@ -445,15 +450,15 @@ func main() {
 	}
 
 	if cfg.EnableWebhooks {
-		var crdMetrics *otelv1beta1.Metrics
+		var crdMetrics *metrics.Metrics
 
 		if cfg.EnableCRMetrics {
-			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+			meterProvider, metricsErr := metrics.Bootstrap()
 			if metricsErr != nil {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
 
-			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
+			crdMetrics, err = metrics.New(ctx, meterProvider, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}
@@ -507,7 +512,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 				}),
 		})
 
@@ -634,13 +639,13 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	return nil
 }
 
-func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
+func addInstrumentationUpgrader(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := instrumentationupgrade.NewInstrumentationUpgrade(
 			mgr.GetClient(),
 			ctrl.Log.WithName("instrumentation-upgrade"),
-			mgr.GetEventRecorderFor("opentelemetry-operator"),
+			mgr.GetEventRecorder("opentelemetry-operator"),
 			cfg,
 		)
 		return u.ManagedInstances(c)

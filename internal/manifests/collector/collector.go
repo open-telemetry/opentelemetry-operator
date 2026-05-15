@@ -36,16 +36,25 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.Factory(ConfigMap),
-		manifests.Factory(HorizontalPodAutoscaler),
 		manifests.Factory(ServiceAccount),
-		manifests.Factory(Service),
-		manifests.Factory(HeadlessService),
-		manifests.Factory(MonitoringService),
-		manifests.Factory(ExtensionService),
-		manifests.Factory(Ingress),
-		manifests.Factory(NetworkPolicy),
-		manifests.Factory(TargetAllocator),
 	}...)
+
+	// Services, ingress, network policies, and autoscalers only make sense when
+	// the operator controls the collector Pod. In sidecar mode the Pod is owned
+	// by the user's workload, so these resources are not provisioned.
+	if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {
+		manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory[manifests.Params]{
+			manifests.Factory(HorizontalPodAutoscaler),
+			manifests.Factory(Service),
+			manifests.Factory(HeadlessService),
+			manifests.Factory(MonitoringService),
+			manifests.Factory(ExtensionService),
+			manifests.Factory(Ingress),
+			manifests.Factory(NetworkPolicy),
+		}...)
+	}
+
+	manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
 
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
@@ -92,6 +101,15 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)
 	}
+
+	httpRoutes, err := HTTPRoutes(params)
+	if err != nil {
+		return nil, err
+	}
+	for _, httpRoute := range httpRoutes {
+		resourceManifests = append(resourceManifests, httpRoute)
+	}
+
 	return resourceManifests, nil
 }
 

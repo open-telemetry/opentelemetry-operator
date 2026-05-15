@@ -14,7 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -31,7 +31,7 @@ type instPodMutator struct {
 	Client      client.Client
 	sdkInjector *sdkInjector
 	Logger      logr.Logger
-	Recorder    record.EventRecorder
+	Recorder    events.EventRecorder
 	config      config.Config
 }
 
@@ -79,25 +79,26 @@ func (langInsts *languageInstrumentations) hasAnyInstrumentation() bool {
 func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bool, error) {
 	var instrWithoutContainers int
 	var instrWithContainers int
-	var allContainers []string
 	var instrumentationWithNoContainers bool
-
-	// Check for instrumentations with and without containers.
+	// Validate each enabled instrumentation independently.
+	// The same target container name is allowed across different languages
+	// (e.g., Java + Go on the same app container), but duplicates within a
+	// single instrumentation list are still invalid.
 	for _, inst := range instrumentationsList(&langInsts) {
-		if inst.Instrumentation != nil {
-			instrWithContainers += isInstrWithContainers(*inst)
-			instrWithoutContainers += isInstrWithoutContainers(*inst)
-			allContainers = append(allContainers, inst.Containers...)
-			if len(inst.Containers) == 0 {
-				instrumentationWithNoContainers = true
-			}
+		if inst.Instrumentation == nil {
+			continue
 		}
-	}
 
-	// Look for duplicated containers.
-	containerDuplicates := findDuplicatedContainers(allContainers)
-	if containerDuplicates != nil {
-		return false, containerDuplicates
+		instrWithContainers += isInstrWithContainers(*inst)
+		instrWithoutContainers += isInstrWithoutContainers(*inst)
+
+		if len(inst.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+
+		if containerDuplicates := findDuplicatedContainers(inst.Containers); containerDuplicates != nil {
+			return false, containerDuplicates
+		}
 	}
 
 	// Look for mixed multiple instrumentations with and without container names.
@@ -193,7 +194,7 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config) podmutation.PodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder events.EventRecorder, cfg config.Config) podmutation.PodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -236,7 +237,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Java.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
@@ -248,7 +249,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
@@ -261,7 +262,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Python.AdditionalAnnotations = map[string]string{annotationPythonPlatform: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPythonPlatform)}
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
@@ -274,7 +275,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
@@ -286,7 +287,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Go.Instrumentation = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApacheHttpd); err != nil {
@@ -298,7 +299,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx); err != nil {
@@ -310,7 +311,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Nginx.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
-		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
@@ -366,6 +367,9 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
+		if !pm.config.EnableInstrumentationCRDs {
+			return &pm.config.Instrumentation, nil
+		}
 		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
 	}
 
