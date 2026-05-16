@@ -6,7 +6,9 @@ package target
 import (
 	"context"
 	"errors"
+	"fmt"
 	"hash"
+	"net/url"
 	"slices"
 	"testing"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/prometheus/prometheus/scrape"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -497,15 +500,194 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, nil, scu, nil)
 	require.NoError(t, err)
-	d.processTargetGroups("test", groups, results)
+	d.processTargetGroups("test", groups, results, &promconfig.ScrapeConfig{JobName: "test"})
 
-	i := 0
+	// Verify all labels are in sorted order (the core invariant this test validates).
+	// scrape.PopulateDiscoveredLabels adds scrape config defaults (__scheme__, etc.)
+	// which interleave with the alphabetic test labels.
+	var prevName string
 	results[0].Labels.Range(func(l labels.Label) {
-		expected := string(rune('a' + i))
-		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
-		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
-		i++
+		if prevName != "" {
+			assert.Less(t, prevName, l.Name, "labels should be sorted, but %q came after %q", l.Name, prevName)
+		}
+		prevName = l.Name
 	})
+
+	// Verify that all original group and target labels are present.
+	for i := 'a'; i <= 'z'; i++ {
+		name := string(rune(i))
+		assert.Equal(t, name, results[0].Labels.Get(name), "expected label %q to be present", name)
+	}
+}
+
+func TestPopulateDiscoveredLabels(t *testing.T) {
+	tests := []struct {
+		description string
+		cfg         *promconfig.ScrapeConfig
+		tLabels     model.LabelSet
+		tgLabels    model.LabelSet
+		wantLabels  map[string]string
+	}{
+		{
+			description: "scrape config defaults and params are applied",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:        "my-job",
+				ScrapeInterval: model.Duration(30 * time.Second),
+				ScrapeTimeout:  model.Duration(10 * time.Second),
+				MetricsPath:    "/metrics",
+				Scheme:         "http",
+				Params: url.Values{
+					"module": []string{"http_2xx"},
+				},
+			},
+			tLabels:  model.LabelSet{"__address__": "localhost:9090"},
+			tgLabels: model.LabelSet{},
+			wantLabels: map[string]string{
+				"__address__":         "localhost:9090",
+				"job":                 "my-job",
+				"__scrape_interval__": "30s",
+				"__scrape_timeout__":  "10s",
+				"__metrics_path__":    "/metrics",
+				"__scheme__":          "http",
+				"__param_module":      "http_2xx",
+			},
+		},
+		{
+			description: "target labels override group labels",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:     "job1",
+				MetricsPath: "/metrics",
+				Scheme:      "http",
+			},
+			tLabels:  model.LabelSet{"__address__": "target-addr", "env": "target-env"},
+			tgLabels: model.LabelSet{"env": "group-env", "region": "us-west"},
+			wantLabels: map[string]string{
+				"__address__": "target-addr",
+				"env":         "target-env",
+				"region":      "us-west",
+				"job":         "job1",
+			},
+		},
+		{
+			description: "existing labels are not overridden by scrape config",
+			cfg: &promconfig.ScrapeConfig{
+				JobName:     "default-job",
+				MetricsPath: "/default-metrics",
+				Scheme:      "https",
+			},
+			tLabels: model.LabelSet{
+				"__address__":      "addr",
+				"job":              "custom-job",
+				"__metrics_path__": "/custom-path",
+			},
+			tgLabels: model.LabelSet{},
+			wantLabels: map[string]string{
+				"__address__":      "addr",
+				"job":              "custom-job",
+				"__metrics_path__": "/custom-path",
+				"__scheme__":       "https",
+			},
+		},
+	}
+
+	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
+	lb := labels.NewBuilder(labels.EmptyLabels())
+	prometheusLabelsBuilder := labels.NewBuilder(labels.EmptyLabels())
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			groupLabels := populateGroupLabels(&groupBuilder, tc.tgLabels)
+			lset := populateDiscoveredLabels(lb, newDiscoveredLabelDefaults(tc.cfg), tc.tLabels, groupLabels)
+
+			scrape.PopulateDiscoveredLabels(prometheusLabelsBuilder, tc.cfg, tc.tLabels, tc.tgLabels)
+			prometheusLabels := prometheusLabelsBuilder.Labels()
+			assert.Equal(t, prometheusLabels, lset)
+			for k, v := range tc.wantLabels {
+				assert.Equal(t, v, lset.Get(k), "label %q mismatch", k)
+			}
+		})
+	}
+}
+
+func BenchmarkProcessTargetGroups(b *testing.B) {
+	tests := []struct {
+		name             string
+		groupCount       int
+		targetsPerGroup  int
+		groupLabelCount  int
+		targetLabelCount int
+	}{
+		{
+			name:             "1k_targets_10_labels",
+			groupCount:       10,
+			targetsPerGroup:  100,
+			groupLabelCount:  5,
+			targetLabelCount: 5,
+		},
+		{
+			name:             "10k_targets_20_labels",
+			groupCount:       100,
+			targetsPerGroup:  100,
+			groupLabelCount:  10,
+			targetLabelCount: 10,
+		},
+	}
+
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	require.NoError(b, err)
+	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
+	d, err := NewDiscoverer(ctrl.Log.WithName("benchmark"), manager, nil, scu, nil)
+	require.NoError(b, err)
+
+	cfg := &promconfig.ScrapeConfig{
+		JobName:        "benchmark",
+		ScrapeInterval: model.Duration(30 * time.Second),
+		ScrapeTimeout:  model.Duration(10 * time.Second),
+		MetricsPath:    "/metrics",
+		Scheme:         "http",
+	}
+
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			groups := benchmarkTargetGroups(tt.groupCount, tt.targetsPerGroup, tt.groupLabelCount, tt.targetLabelCount)
+			results := make([]*Item, tt.groupCount*tt.targetsPerGroup)
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				d.processTargetGroups("benchmark", groups, results, cfg)
+			}
+		})
+	}
+}
+
+func benchmarkTargetGroups(groupCount, targetsPerGroup, groupLabelCount, targetLabelCount int) []*targetgroup.Group {
+	groups := make([]*targetgroup.Group, groupCount)
+	for groupIndex := range groupCount {
+		groupLabels := make(model.LabelSet, groupLabelCount)
+		for labelIndex := range groupLabelCount {
+			groupLabels[model.LabelName(fmt.Sprintf("__meta_kubernetes_group_label_%02d", labelIndex))] = model.LabelValue(fmt.Sprintf("group-%d-%d", groupIndex, labelIndex))
+		}
+
+		targets := make([]model.LabelSet, targetsPerGroup)
+		for targetIndex := range targetsPerGroup {
+			targetLabels := make(model.LabelSet, targetLabelCount+1)
+			targetLabels[model.AddressLabel] = model.LabelValue(fmt.Sprintf("10.%d.%d.%d:9100", groupIndex%255, targetIndex/255, targetIndex%255))
+			for labelIndex := range targetLabelCount {
+				targetLabels[model.LabelName(fmt.Sprintf("__meta_kubernetes_target_label_%02d", labelIndex))] = model.LabelValue(fmt.Sprintf("target-%d-%d-%d", groupIndex, targetIndex, labelIndex))
+			}
+			targets[targetIndex] = targetLabels
+		}
+
+		groups[groupIndex] = &targetgroup.Group{
+			Targets: targets,
+			Labels:  groupLabels,
+			Source:  fmt.Sprintf("benchmark/%d", groupIndex),
+		}
+	}
+	return groups
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {

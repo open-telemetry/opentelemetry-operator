@@ -4,7 +4,6 @@
 package target
 
 import (
-	"encoding/binary"
 	"strconv"
 	"strings"
 	"sync"
@@ -67,15 +66,18 @@ func WithHash(hash ItemHash) ItemOption {
 
 func (t *Item) Hash() ItemHash {
 	if t.hash == 0 {
-		t.hash = ItemHash(LabelsHashWithJobName(t.Labels, t.JobName))
+		// Labels already include job name and other scrape config defaults
+		// populated by scrape.PopulateDiscoveredLabels, so labels.Hash() is sufficient.
+		t.hash = ItemHash(t.Labels.Hash())
 	}
 	return t.hash
 }
 
 // HashFromBuilder computes a hash from a labels.Builder, skipping meta labels.
 // This is used during relabeling to compute the hash efficiently without materializing
-// the filtered labels.
-func HashFromBuilder(builder *labels.Builder, jobName string) ItemHash {
+// the filtered labels. Labels are expected to already include scrape config defaults
+// (job, metrics_path, scheme, etc.) from scrape.PopulateDiscoveredLabels.
+func HashFromBuilder(builder *labels.Builder) ItemHash {
 	hash := hasherPool.Get().(*xxhash.Digest)
 	hash.Reset()
 	builder.Range(func(l labels.Label) {
@@ -89,7 +91,6 @@ func HashFromBuilder(builder *labels.Builder, jobName string) ItemHash {
 		_, _ = hash.WriteString(l.Value)
 		_, _ = hash.Write(seps)
 	})
-	_, _ = hash.WriteString(jobName)
 	result := hash.Sum64()
 	hasherPool.Put(hash)
 	return ItemHash(result)
@@ -130,21 +131,4 @@ func NewItem(jobName, targetURL string, itemLabels labels.Labels, collectorName 
 		opt(item)
 	}
 	return item
-}
-
-// LabelsHashWithJobName computes a hash of the labels and the job name.
-// Same logic as Prometheus labels.Hash: https://github.com/prometheus/prometheus/blob/8fd46f74aa0155e4d5aa30654f9c02e564e03743/model/labels/labels.go#L72
-// but adds in the job name since this is not in the labelset from the discovery manager.
-// The scrape manager adds it later. Address is already included in the labels, so it is not needed here.
-func LabelsHashWithJobName(ls labels.Labels, jobName string) uint64 {
-	labelsHash := ls.Hash()
-	var labelsHashBytes [8]byte
-	binary.LittleEndian.PutUint64(labelsHashBytes[:], labelsHash)
-	hash := hasherPool.Get().(*xxhash.Digest)
-	hash.Reset()
-	_, _ = hash.Write(labelsHashBytes[:])
-	_, _ = hash.WriteString(jobName)
-	result := hash.Sum64()
-	hasherPool.Put(hash)
-	return result
 }

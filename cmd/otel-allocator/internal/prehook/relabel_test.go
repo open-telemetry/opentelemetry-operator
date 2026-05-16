@@ -382,7 +382,7 @@ func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*targe
 	}
 
 	// Compute the hash from the builder, skipping meta labels
-	hash := target.HashFromBuilder(lb, rawTarget.JobName)
+	hash := target.HashFromBuilder(lb)
 	newTarget := target.NewItem(
 		rawTarget.JobName,
 		rawTarget.TargetURL,
