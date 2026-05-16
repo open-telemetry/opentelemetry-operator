@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,7 @@ func init() {
 	utilruntime.Must(routev1.AddToScheme(testScheme))
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
+	utilruntime.Must(cmv1.AddToScheme(testScheme))
 }
 
 func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {

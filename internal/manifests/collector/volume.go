@@ -14,6 +14,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -21,7 +22,7 @@ import (
 func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1.Volume {
 	collectorCfg := otelcol.Spec.Config.DeepCopy()
 	if cfg.Internal.OperandTLSProfile != nil {
-		_, _ = collectorCfg.ApplyDefaults(logr.Discard(), components.WithTLSProfile(cfg.Internal.OperandTLSProfile))
+		_, _ = otelconfig.ApplyDefaults(collectorCfg, logr.Discard(), components.WithTLSProfile(cfg.Internal.OperandTLSProfile))
 	}
 	hash, _ := manifestutils.GetConfigMapSHA(*collectorCfg)
 	configMapName := naming.ConfigMap(otelcol.Name, hash)

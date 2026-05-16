@@ -2,19 +2,15 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: auto-instrumentation
+component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Validate `spec.apacheHttpd.configPath` and `spec.nginx.configFile` more strictly for Instrumentations
+note: Fix when configuring a gRPC port for the `jaeger_query` extension, the `collector-extension` Service only generates an HTTP port and is missing the gRPC port.
 
 # One or more tracking issues related to the change
-issues: [4925]
+issues: [4912]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: |
-  Values from `Instrumentation.spec.apacheHttpd.configPath` and `Instrumentation.spec.nginx.configFile`
-  are now passed to init container scripts as positional arguments instead of being concatenated into
-  the shell command string, so they are no longer parsed by the shell. They're also restricted to usual Unix
-  path characters and limited to 256 characters.
+subtext:

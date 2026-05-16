@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 // headless and monitoring labels are to differentiate the base/headless/monitoring services from the clusterIP service.
@@ -71,7 +72,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	_, metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsEndpoint(params.Log)
+	_, metricsPort, err := otelconfig.MetricsEndpoint(&params.OtelCol.Spec.Config.Service, params.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetExtensionPorts(params.Log)
+	ports, err := otelconfig.GetExtensionPorts(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +142,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetReceiverAndExporterPorts(params.Log)
+	ports, err := otelconfig.GetReceiverAndExporterPorts(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
 		return nil, err
 	}

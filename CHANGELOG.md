@@ -2,6 +2,53 @@
 
 <!-- next version -->
 
+## 0.151.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update default Java auto-instrumentation version from 1.33.6 to 2.27.0 (#4996)
+  This is a breaking change due to HTTP semantic convention changes between versions.
+  Existing Instrumentation CRs using a 1.x.x version will NOT be automatically upgraded.
+  To upgrade, manually update the image in your Instrumentation CR after reviewing the migration guide.
+  See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for details.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add `secretNamespaces` field to PrometheusCR configuration to make the namespaces watched for secrets configurable instead of hardcoding to the collector namespace. (#4999)
+  Previously, the Target Allocator always watched the collector namespace for secrets used in
+  ServiceMonitor/PodMonitor basicAuth and other secret references. Now, the namespaces to watch
+  for secrets can be explicitly configured via `spec.prometheusCR.secretNamespaces`.
+  If not configured, no namespaces are watched for secrets.
+  
+- `operator`: Split kubebuilder RBAC markers and restrict pod permissions to get/list/watch only (#3156)
+  The operator does not create, update, patch, or delete Pod objects directly;
+  pods are managed by Deployment, DaemonSet, and StatefulSet controllers.
+  Also reduced targetallocators/finalizers to only the `update` verb.
+  
+- `target allocator`: Introduce kustomizaton manifests for standalone deployment (#4945)
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Validate `spec.apacheHttpd.configPath` and `spec.nginx.configFile` more strictly for Instrumentations (#4925)
+  Values from `Instrumentation.spec.apacheHttpd.configPath` and `Instrumentation.spec.nginx.configFile`
+  are now passed to init container scripts as positional arguments instead of being concatenated into
+  the shell command string, so they are no longer parsed by the shell. They're also restricted to usual Unix
+  path characters and limited to 256 characters.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.151.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.151.0)
+* [OpenTelemetry Contrib - v0.151.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.151.0)
+* [Java auto-instrumentation - v2.27.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.27.0)
+* [.NET auto-instrumentation - v1.15.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0)
+* [Node.JS - v0.75.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.75.0)
+* [Python - v0.62b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.62b1)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.150.0
 
 ### 🛑 Breaking changes 🛑

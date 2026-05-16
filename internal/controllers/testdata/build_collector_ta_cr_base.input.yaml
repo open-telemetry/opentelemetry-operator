@@ -1,0 +1,37 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  image: test
+  replicas: 1
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    filterStrategy: relabel-config
+    allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: true
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'example'
+            relabel_configs:
+            - source_labels: ['__meta_service_id']
+              target_label: 'job'
+              replacement: 'my_service_$$1'
+            - source_labels: ['__meta_service_name']
+              target_label: 'instance'
+              replacement: '$1'
+            metric_relabel_configs:
+            - source_labels: ['job']
+              target_label: 'job'
+              replacement: '$$1_$2'
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [debug]
