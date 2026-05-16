@@ -80,6 +80,9 @@ INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
+# External images used by e2e tests, generated from test manifests by hack/list-e2e-images.sh
+E2E_EXTERNAL_IMGS ?= $(shell hack/list-e2e-images.sh --all 2>/dev/null)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -1031,9 +1034,17 @@ else
 	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION))
 endif
 
+# Pull external images used by e2e tests so they can be included in the image archive
+.PHONY: pull-test-images
+pull-test-images:
+	@for img in $(E2E_EXTERNAL_IMGS); do \
+		echo "Pulling $$img..."; \
+		docker pull "$$img" || echo "WARNING: failed to pull $$img, skipping"; \
+	done
+
 # Create container image archive with all images
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all pull-test-images
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -1047,6 +1058,13 @@ endif
 	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
+	@for img in $(E2E_EXTERNAL_IMGS); do \
+		if docker image inspect "$$img" >/dev/null 2>&1; then \
+			echo "$$img" >>$(IMAGE_LIST_FILE); \
+		else \
+			echo "Skipping $$img (not available locally)"; \
+		fi; \
+	done
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
 
 ##@ Validation
