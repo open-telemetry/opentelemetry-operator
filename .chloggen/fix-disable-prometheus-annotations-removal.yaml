@@ -1,0 +1,24 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Honor `spec.observability.metrics.disablePrometheusAnnotations: true` on update by removing existing prometheus.io annotations from the pod template, not just stopping new ones from being added.
+
+# One or more tracking issues related to the change
+issues: [5043]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The pod-template mutate path preserves any annotation that exists on the
+  current resource but is absent from the desired render, so toggling
+  disablePrometheusAnnotations from false to true on an existing
+  OpenTelemetryCollector previously left the prometheus.io/scrape, port, and
+  path annotations stuck on the rolled pods. The mutate path now explicitly
+  strips a small fixed set of operator-managed keys (currently the
+  prometheus.io annotations) when they are absent from the desired pod
+  template, while continuing to preserve all other externally-set annotations.

@@ -386,9 +386,38 @@ func mutateIssuer(existing, desired *cmv1.Issuer) {
 	existing.Spec = desired.Spec
 }
 
+// operatorManagedPodAnnotationKeys is the set of pod-template annotation keys
+// whose presence is exclusively governed by the operator. When mutating an
+// existing pod template, any key in this set that is absent from the desired
+// pod template is stripped from the existing pod template before the
+// preserve-external-annotations merge runs. This lets operator-managed feature
+// toggles (e.g. spec.observability.metrics.disablePrometheusAnnotations) take
+// effect on already-running collectors without requiring a manual edit of the
+// rendered Deployment, StatefulSet, or DaemonSet.
+//
+// Keys that are NOT in this set are preserved if previously set, matching the
+// long-standing "external annotations on the pod template should survive a
+// reconcile" contract enforced by the Ingress/Service mutate tests.
+var operatorManagedPodAnnotationKeys = []string{
+	"prometheus.io/scrape",
+	"prometheus.io/port",
+	"prometheus.io/path",
+}
+
 func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
 		return err
+	}
+
+	// Strip operator-managed annotation keys from existing when they're absent
+	// from desired so that disabling the feature actually removes them. See the
+	// comment on operatorManagedPodAnnotationKeys for the rationale.
+	if existing.Annotations != nil {
+		for _, key := range operatorManagedPodAnnotationKeys {
+			if _, inDesired := desired.Annotations[key]; !inDesired {
+				delete(existing.Annotations, key)
+			}
+		}
 	}
 
 	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {
