@@ -668,6 +668,20 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "valid spec with command override",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeDeployment,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
+					UpgradeStrategy: "adhoc",
+					Command:         []string{"/usr/share/agent", "otel"},
+					Config:          cfg,
+				},
+			},
+		},
+		{
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
 			otelcol: v1beta1.OpenTelemetryCollector{

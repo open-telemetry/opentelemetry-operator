@@ -88,6 +88,35 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	assert.Equal(t, "overridden-image", c.Image)
 }
 
+func TestContainerCommandPassthrough(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Command: []string{"/usr/share/agent", "otel"},
+		},
+	}
+	cfg := config.Config{CollectorImage: "default-image"}
+	c := Container(cfg, testLogger, otelcol, true)
+
+	assert.Equal(t, []string{"/usr/share/agent", "otel"}, c.Command)
+	assert.Contains(t, c.Args[0], "--config=")
+}
+
+func TestContainerCommandOmittedWhenUnset(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{Spec: v1beta1.OpenTelemetryCollectorSpec{}}
+	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true)
+	assert.Nil(t, c.Command)
+}
+
+func TestContainerCommandNameOnly(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Command: []string{"/otelcol"},
+		},
+	}
+	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true)
+	assert.Equal(t, []string{"/otelcol"}, c.Command)
+}
+
 func TestContainerPorts(t *testing.T) {
 	goodConfig := `receivers:
   examplereceiver:

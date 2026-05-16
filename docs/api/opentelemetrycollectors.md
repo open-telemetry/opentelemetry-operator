@@ -20185,6 +20185,13 @@ for the workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the container entrypoint (Pod.spec.containers[].command). When omitted, the image ENTRYPOINT is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>configVersions</b></td>
         <td>integer</td>
         <td>

@@ -1,0 +1,10 @@
+change_type: enhancement
+
+component: collector
+
+note: Add optional `spec.command` to OpenTelemetryCollector to override the collector container entrypoint
+
+issues: [3188]
+
+subtext: |
+  `spec.command` is a `[]string` matching `Pod.spec.containers[].command`.
