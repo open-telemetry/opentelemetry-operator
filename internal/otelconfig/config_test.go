@@ -233,7 +233,7 @@ func TestConfigYaml(t *testing.T) {
 			},
 		},
 	}
-	yamlCollector, err := Yaml(cfg)
+	yamlCollector, err := cfg.Yaml()
 	require.NoError(t, err)
 
 	const expected = `receivers:

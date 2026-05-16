@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"fmt"
@@ -10,15 +10,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
-var _ conversion.Convertible = &OpenTelemetryCollector{}
-
-func (otc *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+func OtelColConvertTo(otc *v1alpha1.OpenTelemetryCollector, dstRaw any) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
@@ -32,7 +29,7 @@ func (otc *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (otc *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+func OtelColConvertFrom(otc *v1alpha1.OpenTelemetryCollector, srcRaw any) error {
 	switch t := srcRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
@@ -49,7 +46,7 @@ func (otc *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
+func tov1beta1(in v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	c := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := go_yaml.Unmarshal([]byte(c.Spec.Config), cfg); err != nil {
@@ -121,7 +118,7 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: c.Spec.VolumeClaimTemplates,
 			},
-			Autoscaler:      tov1beta1Autoscaler(c.Spec.Autoscaler, c.Spec.MinReplicas, c.Spec.MaxReplicas),
+			Autoscaler:      tov1beta1Autoscaler(c.Spec.Autoscaler, c.Spec.MinReplicas, c.Spec.MaxReplicas), //nolint:staticcheck
 			TargetAllocator: tov1beta1TA(c.Spec.TargetAllocator),
 			Mode:            v1beta1.Mode(c.Spec.Mode),
 			UpgradeStrategy: v1beta1.UpgradeStrategy(c.Spec.UpgradeStrategy),
@@ -154,7 +151,7 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	}
 }
 
-func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
+func tov1beta1Ports(in []v1alpha1.PortsSpec) []v1beta1.PortsSpec {
 	var ports []v1beta1.PortsSpec
 
 	for _, p := range in {
@@ -174,7 +171,7 @@ func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
 	return ports
 }
 
-func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
+func tov1beta1TA(in v1alpha1.OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
 	return v1beta1.TargetAllocatorEmbedded{
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
@@ -213,12 +210,12 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 }
 
 // The conversion takes into account deprecated v1alpha1 spec.minReplicas and spec.maxReplicas.
-func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
+func tov1beta1Autoscaler(in *v1alpha1.AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
 	if in == nil && minReplicas == nil && maxReplicas == nil {
 		return nil
 	}
 	if in == nil {
-		in = &AutoscalerSpec{}
+		in = &v1alpha1.AutoscalerSpec{}
 	}
 
 	var metrics []v1beta1.MetricSpec
@@ -245,7 +242,7 @@ func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v
 	}
 }
 
-func tov1beta1PodDisruptionBudget(in *PodDisruptionBudgetSpec) *v1beta1.PodDisruptionBudgetSpec {
+func tov1beta1PodDisruptionBudget(in *v1alpha1.PodDisruptionBudgetSpec) *v1beta1.PodDisruptionBudgetSpec {
 	if in == nil {
 		return nil
 	}
@@ -255,7 +252,7 @@ func tov1beta1PodDisruptionBudget(in *PodDisruptionBudgetSpec) *v1beta1.PodDisru
 	}
 }
 
-func tov1beta1Probe(in *Probe) *v1beta1.Probe {
+func tov1beta1Probe(in *v1alpha1.Probe) *v1beta1.Probe {
 	if in == nil {
 		return nil
 	}
@@ -269,7 +266,7 @@ func tov1beta1Probe(in *Probe) *v1beta1.Probe {
 	}
 }
 
-func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
+func tov1beta1ConfigMaps(in []v1alpha1.ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	var mapsSpecs []v1beta1.ConfigMapsSpec
 	for _, m := range in {
 		mapsSpecs = append(mapsSpecs, v1beta1.ConfigMapsSpec{
@@ -280,11 +277,11 @@ func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	return mapsSpecs
 }
 
-func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
-	var ports []PortsSpec
+func tov1alpha1Ports(in []v1beta1.PortsSpec) []v1alpha1.PortsSpec {
+	var ports []v1alpha1.PortsSpec
 
 	for _, p := range in {
-		ports = append(ports, PortsSpec{
+		ports = append(ports, v1alpha1.PortsSpec{
 			ServicePort: v1.ServicePort{
 				Name:        p.Name,
 				Protocol:    p.Protocol,
@@ -300,17 +297,17 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 	return ports
 }
 
-func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
+func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	c := in.DeepCopy()
-	configYaml, err := otelconfig.Yaml(&c.Spec.Config)
+	configYaml, err := c.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
 
-	return &OpenTelemetryCollector{
+	return &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: c.ObjectMeta,
-		Status: OpenTelemetryCollectorStatus{
-			Scale: ScaleSubresourceStatus{
+		Status: v1alpha1.OpenTelemetryCollectorStatus{
+			Scale: v1alpha1.ScaleSubresourceStatus{
 				Selector:       in.Status.Scale.Selector,
 				Replicas:       in.Status.Scale.Replicas,
 				StatusReplicas: in.Status.Scale.StatusReplicas,
@@ -319,8 +316,8 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Image:   in.Status.Image,
 		},
 
-		Spec: OpenTelemetryCollectorSpec{
-			ManagementState:      ManagementStateType(c.Spec.ManagementState),
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ManagementState:      v1alpha1.ManagementStateType(c.Spec.ManagementState),
 			Resources:            c.Spec.Resources,
 			NodeSelector:         c.Spec.NodeSelector,
 			Args:                 c.Spec.Args,
@@ -331,10 +328,10 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			PodSecurityContext:   c.Spec.PodSecurityContext,
 			PodAnnotations:       c.Spec.PodAnnotations,
 			TargetAllocator:      tov1alpha1TA(c.Spec.TargetAllocator),
-			Mode:                 Mode(c.Spec.Mode),
+			Mode:                 v1alpha1.Mode(c.Spec.Mode),
 			ServiceAccount:       c.Spec.ServiceAccount,
 			Image:                c.Spec.Image,
-			UpgradeStrategy:      UpgradeStrategy(c.Spec.UpgradeStrategy),
+			UpgradeStrategy:      v1alpha1.UpgradeStrategy(c.Spec.UpgradeStrategy),
 			ImagePullPolicy:      c.Spec.ImagePullPolicy,
 			Config:               configYaml,
 			VolumeMounts:         c.Spec.VolumeMounts,
@@ -344,15 +341,15 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			VolumeClaimTemplates: c.Spec.VolumeClaimTemplates,
 			Tolerations:          c.Spec.Tolerations,
 			Volumes:              c.Spec.Volumes,
-			Ingress: Ingress{
-				Type:             IngressType(c.Spec.Ingress.Type),
-				RuleType:         IngressRuleType(c.Spec.Ingress.RuleType),
+			Ingress: v1alpha1.Ingress{
+				Type:             v1alpha1.IngressType(c.Spec.Ingress.Type),
+				RuleType:         v1alpha1.IngressRuleType(c.Spec.Ingress.RuleType),
 				Hostname:         c.Spec.Ingress.Hostname,
 				Annotations:      c.Spec.Ingress.Annotations,
 				TLS:              c.Spec.Ingress.TLS,
 				IngressClassName: c.Spec.Ingress.IngressClassName,
-				Route: OpenShiftRoute{
-					Termination: TLSRouteTerminationType(c.Spec.Ingress.Route.Termination),
+				Route: v1alpha1.OpenShiftRoute{
+					Termination: v1alpha1.TLSRouteTerminationType(c.Spec.Ingress.Route.Termination),
 				},
 			},
 			HostNetwork:                   c.Spec.HostNetwork,
@@ -364,8 +361,8 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			LivenessProbe:                 tov1alpha1Probe(c.Spec.LivenessProbe),
 			InitContainers:                c.Spec.InitContainers,
 			AdditionalContainers:          c.Spec.AdditionalContainers,
-			Observability: ObservabilitySpec{
-				Metrics: MetricsConfigSpec{
+			Observability: v1alpha1.ObservabilitySpec{
+				Metrics: v1alpha1.MetricsConfigSpec{
 					EnableMetrics:                c.Spec.Observability.Metrics.EnableMetrics,
 					DisablePrometheusAnnotations: c.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
@@ -379,21 +376,21 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 	}, nil
 }
 
-func tov1alpha1PodDisruptionBudget(in *v1beta1.PodDisruptionBudgetSpec) *PodDisruptionBudgetSpec {
+func tov1alpha1PodDisruptionBudget(in *v1beta1.PodDisruptionBudgetSpec) *v1alpha1.PodDisruptionBudgetSpec {
 	if in == nil {
 		return nil
 	}
-	return &PodDisruptionBudgetSpec{
+	return &v1alpha1.PodDisruptionBudgetSpec{
 		MinAvailable:   in.MinAvailable,
 		MaxUnavailable: in.MaxUnavailable,
 	}
 }
 
-func tov1alpha1Probe(in *v1beta1.Probe) *Probe {
+func tov1alpha1Probe(in *v1beta1.Probe) *v1alpha1.Probe {
 	if in == nil {
 		return nil
 	}
-	return &Probe{
+	return &v1alpha1.Probe{
 		InitialDelaySeconds:           in.InitialDelaySeconds,
 		TimeoutSeconds:                in.TimeoutSeconds,
 		PeriodSeconds:                 in.PeriodSeconds,
@@ -403,20 +400,20 @@ func tov1alpha1Probe(in *v1beta1.Probe) *Probe {
 	}
 }
 
-func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *AutoscalerSpec {
+func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *v1alpha1.AutoscalerSpec {
 	if in == nil {
 		return nil
 	}
 
-	var metrics []MetricSpec
+	var metrics []v1alpha1.MetricSpec
 	for _, m := range in.Metrics {
-		metrics = append(metrics, MetricSpec{
+		metrics = append(metrics, v1alpha1.MetricSpec{
 			Type: m.Type,
 			Pods: m.Pods,
 		})
 	}
 
-	return &AutoscalerSpec{
+	return &v1alpha1.AutoscalerSpec{
 		MinReplicas:             in.MinReplicas,
 		MaxReplicas:             in.MaxReplicas,
 		Behavior:                in.Behavior,
@@ -426,10 +423,10 @@ func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *AutoscalerSpec {
 	}
 }
 
-func tov1alpha1ConfigMaps(in []v1beta1.ConfigMapsSpec) []ConfigMapsSpec {
-	var mapsSpecs []ConfigMapsSpec
+func tov1alpha1ConfigMaps(in []v1beta1.ConfigMapsSpec) []v1alpha1.ConfigMapsSpec {
+	var mapsSpecs []v1alpha1.ConfigMapsSpec
 	for _, m := range in {
-		mapsSpecs = append(mapsSpecs, ConfigMapsSpec{
+		mapsSpecs = append(mapsSpecs, v1alpha1.ConfigMapsSpec{
 			Name:      m.Name,
 			MountPath: m.MountPath,
 		})
@@ -437,7 +434,7 @@ func tov1alpha1ConfigMaps(in []v1beta1.ConfigMapsSpec) []ConfigMapsSpec {
 	return mapsSpecs
 }
 
-func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocator {
+func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) v1alpha1.OpenTelemetryTargetAllocator {
 	var podMonitorSelector map[string]string
 	if in.PrometheusCR.PodMonitorSelector != nil {
 		podMonitorSelector = in.PrometheusCR.PodMonitorSelector.MatchLabels
@@ -447,7 +444,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		serviceMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
 	}
 
-	return OpenTelemetryTargetAllocator{
+	return v1alpha1.OpenTelemetryTargetAllocator{
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
@@ -457,7 +454,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Image:              in.Image,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
-		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
+		PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                in.PrometheusCR.Enabled,
 			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
 			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
@@ -469,8 +466,8 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		TopologySpreadConstraints: in.TopologySpreadConstraints,
 		Tolerations:               in.Tolerations,
 		Env:                       in.Env,
-		Observability: ObservabilitySpec{
-			Metrics: MetricsConfigSpec{
+		Observability: v1alpha1.ObservabilitySpec{
+			Metrics: v1alpha1.MetricsConfigSpec{
 				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
 				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
 			},
@@ -486,14 +483,14 @@ func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) 
 	return ""
 }
 
-func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) OpenTelemetryTargetAllocatorAllocationStrategy {
+func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategy {
 	switch strategy {
 	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashing:
-		return OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
+		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
 	case v1beta1.TargetAllocatorAllocationStrategyPerNode:
-		return OpenTelemetryTargetAllocatorAllocationStrategyPerNode
+		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyPerNode
 	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
-		return OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
 	}
 	return ""
 }
@@ -505,13 +502,13 @@ func tov1beta1TAFilterStrategy(strategy string) v1beta1.TargetAllocatorFilterStr
 	return ""
 }
 
-func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
+func tov1beta1TAAllocationStrategy(strategy v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
 	switch strategy {
-	case OpenTelemetryTargetAllocatorAllocationStrategyPerNode:
+	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyPerNode:
 		return v1beta1.TargetAllocatorAllocationStrategyPerNode
-	case OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
+	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
 		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
-	case OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
+	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
 		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
 	}
 	return ""

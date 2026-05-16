@@ -60,7 +60,8 @@ func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			Paths:                   []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			IgnoreSchemeConvertible: true,
 		},
 		DownloadBinaryAssets:  true,
 		BinaryAssetsDirectory: binaryAssetsDir,

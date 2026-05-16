@@ -16,7 +16,9 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/conversion"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
@@ -318,7 +320,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.ModeDaemonSet)
 	}
 
-	cfgYaml, err := otelconfig.Yaml(&r.Spec.Config)
+	cfgYaml, err := r.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +343,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		if r.Spec.TargetAllocator.ServiceAccount == "" {
 			saname = naming.TargetAllocatorServiceAccount(r.Name)
 		}
-		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(
+		warnings, err := checkTargetAllocatorPrometheusCRPolicyRules(
 			ctx, c.reviewer, r.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
@@ -430,5 +432,17 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
+		WithConverter(conversion.NewHubSpokeConverter(
+			&v1beta1.OpenTelemetryCollector{},
+			conversion.NewSpokeConverter(
+				&v1alpha1.OpenTelemetryCollector{},
+				func(_ context.Context, src *v1beta1.OpenTelemetryCollector, dst *v1alpha1.OpenTelemetryCollector) error {
+					return OtelColConvertFrom(dst, src)
+				},
+				func(_ context.Context, src *v1alpha1.OpenTelemetryCollector, dst *v1beta1.OpenTelemetryCollector) error {
+					return OtelColConvertTo(src, dst)
+				},
+			),
+		)).
 		Complete()
 }
