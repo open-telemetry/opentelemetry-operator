@@ -155,7 +155,10 @@
     {
       "matchManagers": ["gomod"],
       "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"],
-      "groupName": "kubernetes"
+      "groupName": "kubernetes",
+      "group": {
+        "commitMessageTopic": "kubernetes group to {{#each upgrades}}{{#if (equals depName \"k8s.io/api\")}}{{newVersion}}{{/if}}{{/each}}"
+      }
     },
     {
       "matchManagers": ["gomod"],
