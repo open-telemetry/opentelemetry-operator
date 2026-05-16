@@ -58,6 +58,17 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
+	// UseCollectorDefaultTelemetryShape, when enabled, makes the operator-injected
+	// Prometheus telemetry reader use collector defaults for without_type_suffix,
+	// without_units, and without_scope_info. When disabled (default), the operator
+	// explicitly sets all three to false to preserve historical metric name shape.
+	// See open-telemetry/opentelemetry-operator#5075.
+	UseCollectorDefaultTelemetryShape = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.usedefaulttelemetryshape",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("when enabled, the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. When disabled (default), the operator explicitly sets all three to false to preserve historical metric name shape."),
+		featuregate.WithRegisterFromVersion("v0.152.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

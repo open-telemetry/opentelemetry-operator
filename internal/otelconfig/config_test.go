@@ -15,11 +15,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -1487,8 +1489,11 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 								"pull": map[string]any{
 									"exporter": map[string]any{
 										"prometheus": map[string]any{
-											"host": "0.0.0.0",
-											"port": int32(8888),
+											"host":                "0.0.0.0",
+											"port":                int32(8888),
+											"without_type_suffix": false,
+											"without_units":       false,
+											"without_scope_info":  false,
 										},
 									},
 								},
@@ -1547,4 +1552,38 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
 	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
+	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutUnits)
+	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
+}
+
+func TestAddPrometheusMetricsEndpointPreservesShape(t *testing.T) {
+	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
+	require.NotNil(t, reader.Pull)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
+	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutUnits)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
+	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
+}
+
+func TestAddPrometheusMetricsEndpointGateUsesCollectorDefaults(t *testing.T) {
+	registry := colfeaturegate.GlobalRegistry()
+	originalVal := featuregate.UseCollectorDefaultTelemetryShape.IsEnabled()
+	require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), originalVal))
+	})
+
+	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
+	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
+	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
