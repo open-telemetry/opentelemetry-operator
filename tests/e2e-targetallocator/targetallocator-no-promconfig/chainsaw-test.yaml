@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: targetallocator-no-promconfig
+spec:
+  steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: targetallocator-no-promconfig
+        - name: clusterRoleBindingName
+          value: (join('-', ['ta', $namespace]))
+  - name: step-00
+    try:
+    - apply:
+        template: true
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
