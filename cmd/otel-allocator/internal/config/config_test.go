@@ -794,6 +794,31 @@ func TestLoadFromEnv(t *testing.T) {
 	assert.Equal(t, namespace, cfg.CollectorNamespace)
 }
 
+func TestLoadFromEnvAllowInsecureAuthSecrets(t *testing.T) {
+	t.Run("not set defaults to false", func(t *testing.T) {
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to true", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "true")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.True(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to false", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "false")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
+}
+
 func TestValidateConfig(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -1187,5 +1212,93 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.Equal(t, testNamespace, config.CollectorNamespace, "Env var should override config file for namespace")
 		assert.Equal(t, cliListenAddr, config.ListenAddr, "CLI should override config file for listen address")
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
+	})
+}
+
+func TestAllowInsecureAuthSecrets(t *testing.T) {
+	createDummyKubeConfig := func(t *testing.T, dir string) string {
+		kubeConfigPath := filepath.Join(dir, "kube.config")
+		kubeConfigContent := `
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://example.com
+  name: test-cluster
+contexts:
+- context:
+    cluster: test-cluster
+    user: test-user
+  name: test-context
+current-context: test-context
+users:
+- name: test-user
+  user:
+    token: dummy-token
+`
+		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0o600)
+		require.NoError(t, err)
+		return kubeConfigPath
+	}
+
+	t.Run("defaults to false", func(t *testing.T) {
+		tempDir := t.TempDir()
+		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0o600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		args := []string{
+			"--" + configFilePathFlagName + "=" + emptyConfigPath,
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+		}
+
+		config, err := Load(args)
+		require.NoError(t, err)
+		assert.False(t, config.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("can be enabled via config file", func(t *testing.T) {
+		tempDir := t.TempDir()
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		configContent := fmt.Sprintf(`
+collector_namespace: default
+allow_insecure_auth_secrets: true
+kube_config_file_path: %q
+`, kubeConfigPath)
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
+		require.NoError(t, err)
+
+		args := []string{"--" + configFilePathFlagName + "=" + configPath}
+
+		config, err := Load(args)
+		require.NoError(t, err)
+		assert.True(t, config.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("CLI flag overrides config file", func(t *testing.T) {
+		tempDir := t.TempDir()
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		configContent := fmt.Sprintf(`
+collector_namespace: default
+allow_insecure_auth_secrets: false
+kube_config_file_path: %q
+`, kubeConfigPath)
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
+		require.NoError(t, err)
+
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+			"--" + allowInsecureAuthSecretsFlagName + "=true",
+		}
+
+		config, err := Load(args)
+		require.NoError(t, err)
+		assert.True(t, config.AllowInsecureAuthSecrets, "CLI flag should override config file")
 	})
 }

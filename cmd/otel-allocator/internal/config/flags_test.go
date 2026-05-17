@@ -19,6 +19,7 @@ func TestGetFlagSet(t *testing.T) {
 	assert.NotNil(t, fs.Lookup(listenAddrFlagName), "Flag %s not found", listenAddrFlagName)
 	assert.NotNil(t, fs.Lookup(prometheusCREnabledFlagName), "Flag %s not found", prometheusCREnabledFlagName)
 	assert.NotNil(t, fs.Lookup(kubeConfigPathFlagName), "Flag %s not found", kubeConfigPathFlagName)
+	assert.NotNil(t, fs.Lookup(allowInsecureAuthSecretsFlagName), "Flag %s not found", allowInsecureAuthSecretsFlagName)
 }
 
 func TestFlagGetters(t *testing.T) {
@@ -83,6 +84,15 @@ func TestFlagGetters(t *testing.T) {
 			expectedValue: "/path/to/tls.key",
 			getterFunc: func(fs *pflag.FlagSet) (any, error) {
 				value, _, err := getHttpsTLSKeyFilePath(fs)
+				return value, err
+			},
+		},
+		{
+			name:          "AllowInsecureAuthSecrets",
+			flagArgs:      []string{"--" + allowInsecureAuthSecretsFlagName, "true"},
+			expectedValue: true,
+			getterFunc: func(fs *pflag.FlagSet) (any, error) {
+				value, _, err := getAllowInsecureAuthSecrets(fs)
 				return value, err
 			},
 		},

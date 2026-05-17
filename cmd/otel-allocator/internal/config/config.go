@@ -73,6 +73,7 @@ type Config struct {
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
+	AllowInsecureAuthSecrets     bool                  `yaml:"allow_insecure_auth_secrets,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -315,6 +316,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
 	}
 
+	if allowInsecureAuthSecrets, changed, err := getAllowInsecureAuthSecrets(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.AllowInsecureAuthSecrets = allowInsecureAuthSecrets
+	}
+
 	return nil
 }
 
@@ -322,6 +329,9 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 func LoadFromEnv(target *Config) error {
 	if ns, ok := os.LookupEnv("OTELCOL_NAMESPACE"); ok {
 		target.CollectorNamespace = ns
+	}
+	if val, ok := os.LookupEnv("ALLOW_INSECURE_AUTH_SECRETS"); ok && val == "true" {
+		target.AllowInsecureAuthSecrets = true
 	}
 	return nil
 }

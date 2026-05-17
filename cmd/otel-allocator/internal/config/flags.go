@@ -12,16 +12,17 @@ import (
 
 // Flag names.
 const (
-	targetAllocatorName          = "target-allocator"
-	configFilePathFlagName       = "config-file"
-	listenAddrFlagName           = "listen-addr"
-	prometheusCREnabledFlagName  = "enable-prometheus-cr-watcher"
-	kubeConfigPathFlagName       = "kubeconfig-path"
-	httpsEnabledFlagName         = "enable-https-server"
-	listenAddrHttpsFlagName      = "listen-addr-https"
-	httpsCAFilePathFlagName      = "https-ca-file"
-	httpsTLSCertFilePathFlagName = "https-tls-cert-file"
-	httpsTLSKeyFilePathFlagName  = "https-tls-key-file"
+	targetAllocatorName              = "target-allocator"
+	configFilePathFlagName           = "config-file"
+	listenAddrFlagName               = "listen-addr"
+	prometheusCREnabledFlagName      = "enable-prometheus-cr-watcher"
+	kubeConfigPathFlagName           = "kubeconfig-path"
+	httpsEnabledFlagName             = "enable-https-server"
+	listenAddrHttpsFlagName          = "listen-addr-https"
+	httpsCAFilePathFlagName          = "https-ca-file"
+	httpsTLSCertFilePathFlagName     = "https-tls-cert-file"
+	httpsTLSKeyFilePathFlagName      = "https-tls-key-file"
+	allowInsecureAuthSecretsFlagName = "allow-insecure-auth-secrets"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -38,6 +39,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(httpsCAFilePathFlagName, "", "The path to the HTTPS server TLS CA file.")
 	flagSet.String(httpsTLSCertFilePathFlagName, "", "The path to the HTTPS server TLS certificate file.")
 	flagSet.String(httpsTLSKeyFilePathFlagName, "", "The path to the HTTPS server TLS key file.")
+	flagSet.Bool(allowInsecureAuthSecretsFlagName, false, "Serve scrape configs with secret values over plain HTTP without mTLS. Only enable when transport is secured by a service mesh or equivalent.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -78,6 +80,10 @@ func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (value string, changed bool
 
 func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
 	return getFlagValueAndChangedString(flagSet, httpsTLSKeyFilePathFlagName)
+}
+
+func getAllowInsecureAuthSecrets(flagSet *pflag.FlagSet) (value, changed bool, err error) {
+	return getFlagValueAndChangedBool(flagSet, allowInsecureAuthSecretsFlagName)
 }
 
 // getFlagValueAndChanged returns the given flag's string value and whether it was changed.
