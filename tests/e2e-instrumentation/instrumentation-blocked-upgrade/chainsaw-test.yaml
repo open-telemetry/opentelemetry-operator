@@ -24,20 +24,69 @@ spec:
         content: |
           #!/bin/bash
           set -eo pipefail
-          NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
           OLD_DOTNET_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.2.0"
           OLD_JAVA_IMG="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.33.6"
 
-          # Add the dotnet and java image args to override the compiled-in defaults
-          ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
-          NEW_ARGS=$(echo "$ARGS" | jq -c --arg dotnet "$OLD_DOTNET_IMG" --arg java "$OLD_JAVA_IMG" \
-            '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+          NS=opentelemetry-operator-system
+          echo "Operator namespace: $NS"
 
-          kubectl patch deploy -n $NS $DEPLOY --type='json' \
-            -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          # Detect whether OLM is managing the operator by checking for a CSV.
+          # On kind (upstream CI): no OLM, no CSV — patch the Deployment directly (persists).
+          # On OpenShift (OLM): OLM reconciles Deployment back to CSV template within seconds,
+          # so we must patch the CSV instead and wait for OLM to propagate the change.
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
 
-          kubectl rollout status deploy/$DEPLOY -n $NS --timeout=120s
+          if [ -n "$CSV_NAME" ]; then
+            echo "OLM install detected (CSV: $CSV_NAME) — patching CSV"
+
+            ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
+              -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              --arg dotnet "$OLD_DOTNET_IMG" \
+              --arg java "$OLD_JAVA_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+
+            kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+            # Poll the Deployment spec until OLM propagates the CSV args change.
+            # OLM may need multiple reconciliation cycles to apply the update.
+            echo "Waiting for OLM to propagate args from CSV to operator Deployment..."
+            TIMEOUT=120
+            ELAPSED=0
+            DEP_ARGS=""
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              DEP_ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" \
+                -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null || true)
+              if echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+                echo "Override args found in Deployment spec after ${ELAPSED}s"
+                break
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+
+            if ! echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+              echo "ERROR: OLM did not propagate args from CSV to the Deployment within ${TIMEOUT}s"
+              exit 1
+            fi
+          else
+            echo "Direct install detected (no CSV) — patching Deployment directly"
+
+            ARGS=$(kubectl get deploy -n "$NS" "$DEPLOY" -o json | jq -c '.spec.template.spec.containers[0].args')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              --arg dotnet "$OLD_DOTNET_IMG" \
+              --arg java "$OLD_JAVA_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+
+            kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          fi
+
+          kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s
   - name: Create instrumentation that will be subject to upgrade
     try:
     - apply:
@@ -52,17 +101,57 @@ spec:
         content: |
           #!/bin/bash
           set -eo pipefail
-          NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
 
-          # Remove the override args so the operator uses its compiled-in defaults
-          ARGS=$(kubectl get deploy -n $NS $DEPLOY -o json | jq -c '.spec.template.spec.containers[0].args')
-          NEW_ARGS=$(echo "$ARGS" | jq -c '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+          NS=opentelemetry-operator-system
 
-          kubectl patch deploy -n $NS $DEPLOY --type='json' \
-            -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
 
-          kubectl rollout status deploy/$DEPLOY -n $NS --timeout=120s
+          if [ -n "$CSV_NAME" ]; then
+            echo "OLM install detected (CSV: $CSV_NAME) — restoring CSV args"
+
+            ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
+              -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+
+            kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+            # Poll until override args are removed from the Deployment spec
+            echo "Waiting for OLM to remove override args from Deployment..."
+            TIMEOUT=120
+            ELAPSED=0
+            DEP_ARGS=""
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              DEP_ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" \
+                -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null || true)
+              if ! echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+                echo "Override args removed from Deployment spec after ${ELAPSED}s"
+                break
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+
+            if echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+              echo "ERROR: OLM did not remove override args from the Deployment within ${TIMEOUT}s"
+              exit 1
+            fi
+          else
+            echo "Direct install detected (no CSV) — restoring Deployment args directly"
+
+            ARGS=$(kubectl get deploy -n "$NS" "$DEPLOY" -o json | jq -c '.spec.template.spec.containers[0].args')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+
+            kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          fi
+
+          kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s
           # Give the upgrade mechanism time to process existing Instrumentation CRs
           sleep 5
   - name: Assert upgrades were blocked
@@ -115,7 +204,9 @@ spec:
         apiVersion: events.k8s.io/v1
         kind: Event
         format: yaml
-    - podLogs:
-        namespace: opentelemetry-operator-system
-        selector: app.kubernetes.io/name=opentelemetry-operator
-        container: manager
+    - script:
+        content: |
+          NS=opentelemetry-operator-system
+          kubectl logs -n "$NS" \
+            -l app.kubernetes.io/name=opentelemetry-operator \
+            --container manager --tail=100 || true

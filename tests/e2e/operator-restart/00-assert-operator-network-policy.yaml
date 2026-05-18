@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: opentelemetry-operator
-  namespace: ($OTEL_NAMESPACE)
+  namespace: opentelemetry-operator-system
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
