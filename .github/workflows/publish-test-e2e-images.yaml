@@ -59,8 +59,8 @@ jobs:
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: python
-      build-args: 'python_version=3.9'
-      tag-suffix: '-3.9'
+      build-args: 'python_version=3.10'
+      tag-suffix: '-3.10'
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   java:
     permissions: # required by the reusable workflow
