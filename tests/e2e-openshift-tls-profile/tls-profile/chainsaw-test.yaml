@@ -96,7 +96,7 @@ spec:
           # Wait for the operator to be ready after the TLS profile change triggers a restart.
           # The operator pod may be replaced so we poll for a Running+Ready pod.
           for i in $(seq 1 60); do
-            ready=$(kubectl get pods -n opentelemetry-operator -l app.kubernetes.io/name=opentelemetry-operator \
+            ready=$(kubectl get pods -n opentelemetry-operator-system -l app.kubernetes.io/name=opentelemetry-operator \
               -o jsonpath='{range .items[*]}{.status.phase} {.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' \
               | grep -c "Running True" || true)
             if [ "$ready" -ge 1 ]; then
@@ -177,20 +177,53 @@ spec:
         content: |
           #!/bin/bash
           set -ex
+          DEPLOY=opentelemetry-operator-controller-manager
+          NS=opentelemetry-operator-system
+
+          # Capture current pod UIDs before deleting the collector.
+          # The APIServer profile revert in step-08 may trigger an operator restart;
+          # we must wait for the NEW pod, not the old (about-to-terminate) one.
+          OLD_UIDS=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=opentelemetry-operator \
+            -o jsonpath='{range .items[*]}{.metadata.uid}{" "}{end}' 2>/dev/null || true)
+          echo "Old operator pod UIDs: $OLD_UIDS"
+
           oc delete otelcol tls-profile-test -n "$NAMESPACE" --ignore-not-found
           oc wait --for=delete otelcol/tls-profile-test -n "$NAMESPACE" --timeout=60s 2>/dev/null || true
-          # Wait for the operator to be ready after the TLS profile revert triggers a restart.
-          # The operator pod may be replaced so we poll for a Running+Ready pod.
-          for i in $(seq 1 60); do
-            ready=$(kubectl get pods -n opentelemetry-operator -l app.kubernetes.io/name=opentelemetry-operator \
-              -o jsonpath='{range .items[*]}{.status.phase} {.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' \
-              | grep -c "Running True" || true)
-            if [ "$ready" -ge 1 ]; then
-              echo "Operator pod is ready"
+
+          # Wait up to 30s for a restart to begin (a new UID appears).
+          # If no new pod appears the operator did not restart and we proceed with the existing pod.
+          for i in $(seq 1 6); do
+            NEW_UIDS=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=opentelemetry-operator \
+              -o jsonpath='{range .items[*]}{.metadata.uid}{" "}{end}' 2>/dev/null || true)
+            found_new=false
+            for uid in $NEW_UIDS; do
+              if [ -n "$uid" ] && ! echo " $OLD_UIDS " | grep -qF " $uid "; then
+                found_new=true; break
+              fi
+            done
+            if [ "$found_new" = "true" ]; then
+              echo "New operator pod detected, waiting for rollout to complete..."
               break
             fi
-            echo "Waiting for operator pod to be ready... ($i/60)"
+            echo "Waiting for operator restart to begin... ($i/6)"
             sleep 5
+          done
+
+          # Wait for the deployment rollout to fully complete (handles both
+          # in-progress restart and the stable/no-restart case).
+          kubectl rollout status deploy/"$DEPLOY" -n "$NS" --timeout=120s
+
+          # Webhook endpoint registration can lag pod readiness by a few seconds.
+          # Poll until the service has at least one ready address before apply.
+          for i in $(seq 1 30); do
+            addrs=$(kubectl get endpoints opentelemetry-operator-controller-manager-service \
+              -n "$NS" -o jsonpath='{.subsets[0].addresses}' 2>/dev/null || true)
+            if [ -n "$addrs" ] && [ "$addrs" != "null" ] && [ "$addrs" != "[]" ]; then
+              echo "Webhook endpoint is ready"
+              break
+            fi
+            echo "Waiting for webhook service endpoint... ($i/30)"
+            sleep 2
           done
     - apply:
         file: 09-install-user-override.yaml

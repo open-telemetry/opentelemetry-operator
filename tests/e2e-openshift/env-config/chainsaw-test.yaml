@@ -3,28 +3,15 @@ kind: Test
 metadata:
   name: env-config
 spec:
-  # Running serially as this patches the operator deployment causing a restart
+  # Running serially as this patches the operator Subscription causing a restart
   concurrent: false
   steps:
   - name: Patch operator Subscription with LABELS_FILTER env var
     try:
-    - command:
-        entrypoint: kubectl
-        args:
-        - get
-        - pods
-        - -A
-        - -l control-plane=controller-manager
-        - -l app.kubernetes.io/name=opentelemetry-operator
-        - -o
-        - jsonpath={.items[0].metadata.namespace}
-        outputs:
-        - name: OTEL_NAMESPACE
-          value: ($stdout)
     - script:
         env:
         - name: OTEL_NAMESPACE
-          value: ($OTEL_NAMESPACE)
+          value: opentelemetry-operator-system
         timeout: 180s
         content: |
           #!/bin/bash
@@ -56,9 +43,34 @@ spec:
               -p '{"spec":{"config":{"env":[{"name":"LABELS_FILTER","value":"^env-config-test-label$"}]}}}'
           fi
 
-          # Wait for operator deployment rollout
+          # OLM may require multiple reconciliation cycles to propagate Subscription spec.config.env
+          # to the running deployment when no new CSV version is available (AtLatestKnown state).
+          # Poll the Deployment spec until LABELS_FILTER appears before waiting for the rollout.
+          echo "Waiting for OLM to propagate LABELS_FILTER from Subscription to operator Deployment..."
+          TIMEOUT=120
+          ELAPSED=0
+          DEP_ENV=""
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            DEP_ENV=$(kubectl get deployment opentelemetry-operator-controller-manager \
+              -n "$OTEL_NAMESPACE" \
+              -o jsonpath='{.spec.template.spec.containers[0].env}' 2>/dev/null || true)
+            if echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
+              echo "LABELS_FILTER found in Deployment spec after ${ELAPSED}s"
+              break
+            fi
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+          if ! echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
+            echo "ERROR: OLM did not propagate LABELS_FILTER from Subscription to the Deployment within ${TIMEOUT}s"
+            exit 1
+          fi
+
+          # Now that the Deployment spec has LABELS_FILTER, wait for the rollout to finish
           kubectl rollout status deployment/opentelemetry-operator-controller-manager \
             -n "$OTEL_NAMESPACE" --timeout=120s
+          echo "Operator rolled out with LABELS_FILTER from Subscription config"
     - sleep:
         duration: 10s
     - assert:
@@ -91,10 +103,7 @@ spec:
           #!/bin/bash
           set -e
 
-          OTEL_NAMESPACE=$(kubectl get pods -A \
-            -l control-plane=controller-manager \
-            -l app.kubernetes.io/name=opentelemetry-operator \
-            -o jsonpath='{.items[0].metadata.namespace}')
+          OTEL_NAMESPACE=opentelemetry-operator-system
 
           # Find the OpenTelemetry operator Subscription
           SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
