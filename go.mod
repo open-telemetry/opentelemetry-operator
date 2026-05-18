@@ -24,7 +24,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
-	github.com/oklog/ulid v1.3.1
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-telemetry/opamp-go v0.15.0
 	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
 	github.com/operator-framework/api v0.42.0
@@ -266,7 +266,6 @@ require (
 	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/openshift/library-go v0.0.0-20260210145149-d0e860e8d752 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_golang/exp v0.0.0-20260325093428-d8591d0db856 // indirect
