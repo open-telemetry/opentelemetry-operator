@@ -215,7 +215,6 @@ require (
 )
 
 require (
-	github.com/oklog/ulid v1.3.1
 	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
 	sigs.k8s.io/e2e-framework v0.7.0
 )
