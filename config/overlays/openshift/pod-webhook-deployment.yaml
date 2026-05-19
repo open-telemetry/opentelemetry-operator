@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-operator-pod-webhook
+  namespace: system
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/component: pod-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+      app.kubernetes.io/component: pod-webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentelemetry-operator
+        app.kubernetes.io/component: pod-webhook
+    spec:
+      containers:
+      - name: webhook
+        image: controller
+        args:
+        - auto-instrumentation
+        - --zap-log-level=info
+        - --zap-time-encoding=rfc3339nano
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+          value: "true"
+        - name: ENABLE_GO_AUTO_INSTRUMENTATION
+          value: "true"
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: opentelemetry-operator
+                  app.kubernetes.io/component: pod-webhook
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: opentelemetry-operator-controller-manager

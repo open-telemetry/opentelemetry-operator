@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: pod-webhook
+    app.kubernetes.io/name: opentelemetry-operator
+  name: opentelemetry-operator-pod-webhook
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: pod-webhook
+      app.kubernetes.io/name: opentelemetry-operator

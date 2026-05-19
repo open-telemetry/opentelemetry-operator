@@ -258,6 +258,7 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -929,6 +930,10 @@ generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
 bundle:
 	BUNDLE_VARIANT=community VERSION=$(VERSION) $(MAKE) generate-bundle
 	BUNDLE_VARIANT=openshift VERSION=$(VERSION) $(MAKE) generate-bundle
+	# Patch OpenShift CSV: update mpod.kb.io webhook to use pod-webhook deployment for HA
+	MPOD_LINE=$$(grep -n "generateName: mpod.kb.io" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | cut -d: -f1) && \
+	DEPLOY_LINE=$$(head -n "$$MPOD_LINE" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | grep -n "deploymentName:" | tail -1 | cut -d: -f1) && \
+	sed -i "$${DEPLOY_LINE}s/opentelemetry-operator-controller-manager/opentelemetry-operator-pod-webhook/" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml
 
 
 # Reset bundle configuration to defaults
@@ -950,7 +955,12 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle/community
 	$(OPERATOR_SDK) bundle validate ./bundle/openshift
 	rm bundle.Dockerfile
+	# Patch OpenShift CSV: update mpod.kb.io webhook to use pod-webhook deployment for HA
+	MPOD_LINE=$$(grep -n "generateName: mpod.kb.io" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | cut -d: -f1) && \
+	DEPLOY_LINE=$$(head -n "$$MPOD_LINE" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | grep -n "deploymentName:" | tail -1 | cut -d: -f1) && \
+	sed -i "$${DEPLOY_LINE}s/opentelemetry-operator-controller-manager/opentelemetry-operator-pod-webhook/" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml
 	git checkout config/manager/kustomization.yaml
+	git checkout config/overlays/openshift/kustomization.yaml
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes

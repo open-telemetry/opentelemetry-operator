@@ -5,6 +5,9 @@ metadata:
 spec:
   # Running serially as this patches the operator Subscription causing a restart
   concurrent: false
+  bindings:
+  - name: OTEL_NAMESPACE
+    value: opentelemetry-operator-system
   steps:
   - name: Patch operator Subscription with LABELS_FILTER env var
     try:
@@ -126,3 +129,92 @@ spec:
           kubectl rollout status deployment/opentelemetry-operator-controller-manager \
             -n "$OTEL_NAMESPACE" --timeout=120s || true
           echo "Cleanup complete"
+
+  - name: Patch operator Subscription with POD_WEBHOOK_REPLICAS env var
+    try:
+    - script:
+        env:
+        - name: OTEL_NAMESPACE
+          value: opentelemetry-operator-system
+        timeout: 180s
+        content: |
+          #!/bin/bash
+          set -e
+
+          # Check if pod-webhook deployment exists (OpenShift with OLM only)
+          if ! kubectl get deployment opentelemetry-operator-pod-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+            echo "SKIP: pod-webhook deployment not found"
+            exit 0
+          fi
+
+          # Find the OpenTelemetry operator Subscription
+          SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1)
+
+          if [ -z "$SUB_NAME" ]; then
+            echo "SKIP: No Subscription found"
+            exit 0
+          fi
+
+          echo "Patching Subscription $SUB_NAME with POD_WEBHOOK_REPLICAS=1"
+
+          # Check if spec.config.env already exists
+          ENV_EXISTS=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{.spec.config.env}' 2>/dev/null || true)
+
+          if [ -n "$ENV_EXISTS" ] && [ "$ENV_EXISTS" != "null" ] && [ "$ENV_EXISTS" != "[]" ]; then
+            kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
+              -p '[{"op":"add","path":"/spec/config/env/-","value":{"name":"POD_WEBHOOK_REPLICAS","value":"1"}}]'
+          else
+            kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=merge \
+              -p '{"spec":{"config":{"env":[{"name":"POD_WEBHOOK_REPLICAS","value":"1"}]}}}'
+          fi
+
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s
+    - sleep:
+        duration: 10s
+    - assert:
+        file: 02-assert-pod-webhook-scaled.yaml
+
+  - name: Remove POD_WEBHOOK_REPLICAS and verify default restored
+    try:
+    - script:
+        env:
+        - name: OTEL_NAMESPACE
+          value: opentelemetry-operator-system
+        timeout: 180s
+        content: |
+          #!/bin/bash
+          set -e
+
+          # Check if pod-webhook deployment exists
+          if ! kubectl get deployment opentelemetry-operator-pod-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+            echo "SKIP: pod-webhook deployment not found"
+            exit 0
+          fi
+
+          # Find the OpenTelemetry operator Subscription
+          SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+
+          if [ -n "$SUB_NAME" ]; then
+            echo "Removing POD_WEBHOOK_REPLICAS from Subscription: $SUB_NAME"
+            ENV_INDEX=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
+              -o jsonpath='{range .spec.config.env[*]}{.name}{"\n"}{end}' 2>/dev/null \
+              | grep -n "^POD_WEBHOOK_REPLICAS$" | cut -d: -f1 || true)
+            if [ -n "$ENV_INDEX" ]; then
+              IDX=$((ENV_INDEX - 1))
+              kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
+                -p "[{\"op\":\"remove\",\"path\":\"/spec/config/env/$IDX\"}]"
+            fi
+          fi
+
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s
+    - sleep:
+        duration: 10s
+    - assert:
+        file: 03-assert-pod-webhook-default.yaml

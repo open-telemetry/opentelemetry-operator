@@ -28,6 +28,9 @@ const (
 	defaultCollectorConfigMapEntry           = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry     = "targetallocator.yaml"
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
+	// defaultPodWebhookReplicas is the default replica count for the standalone pod webhook deployment.
+	// This matches the value defined in the OpenShift CSV.
+	defaultPodWebhookReplicas = 2
 )
 
 type ZapConfig struct {
@@ -139,6 +142,10 @@ type Config struct {
 	// FeatureGates is a comma-separated list of feature gates to enable/disable.
 	// Format: "gate1,gate2,-gate3" where - prefix disables the gate.
 	FeatureGates string `yaml:"feature-gates"`
+	// PodWebhookReplicas is the desired number of replicas for the standalone pod webhook deployment.
+	// Only scale-down is supported (0 or 1). Scale-up beyond CSV default (2) is ignored.
+	// Default is 2 (matching the CSV default). Set via --pod-webhook-replicas flag or POD_WEBHOOK_REPLICAS env var.
+	PodWebhookReplicas int32 `yaml:"pod-webhook-replicas"`
 	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
 	Internal Internal `yaml:"-"`
 	// Instrumentation is the set of instrumentations to use if CRDs are not present
@@ -221,7 +228,8 @@ func New() Config {
 			LevelKey:    "level",
 			LevelFormat: "uppercase",
 		},
-		EnableWebhooks: true,
+		EnableWebhooks:     true,
+		PodWebhookReplicas: defaultPodWebhookReplicas,
 		Internal: Internal{
 			NativeSidecarSupport: false,
 		},

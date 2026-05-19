@@ -56,6 +56,7 @@ func TestToStringMap(t *testing.T) {
 		"openshift-create-dashboard":              "false",
 		"operator-op-amp-bridge-configmap-entry":  "foo.yaml",
 		"operatoropampbridge-image":               "",
+		"pod-webhook-replicas":                    "0",
 		"pprof-addr":                              "",
 		"health-probe-addr":                       "",
 		"prometheus-cr-availability":              "0",

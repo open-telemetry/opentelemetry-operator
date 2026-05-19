@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-06-23T13:07:11Z"
+    createdAt: "2026-06-25T13:47:28Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -634,6 +634,74 @@ spec:
                 secret:
                   defaultMode: 420
                   secretName: opentelemetry-operator-controller-manager-service-cert
+      - label:
+          app.kubernetes.io/component: pod-webhook
+          app.kubernetes.io/name: opentelemetry-operator
+        name: opentelemetry-operator-pod-webhook
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: pod-webhook
+              app.kubernetes.io/name: opentelemetry-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/component: pod-webhook
+                app.kubernetes.io/name: opentelemetry-operator
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/component: pod-webhook
+                          app.kubernetes.io/name: opentelemetry-operator
+                      topologyKey: kubernetes.io/hostname
+                    weight: 100
+              containers:
+              - args:
+                - auto-instrumentation
+                - --zap-log-level=info
+                - --zap-time-encoding=rfc3339nano
+                env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: ENABLE_GO_AUTO_INSTRUMENTATION
+                  value: "true"
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.153.0
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: webhook
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources: {}
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: opentelemetry-operator-controller-manager
       permissions:
       - rules:
         - apiGroups:
@@ -760,7 +828,7 @@ spec:
   - admissionReviewVersions:
     - v1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: opentelemetry-operator-pod-webhook
     failurePolicy: Ignore
     generateName: mpod.kb.io
     rules:

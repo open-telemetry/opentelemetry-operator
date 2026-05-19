@@ -145,5 +145,10 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("WATCH_NAMESPACE"); ok {
 		cfg.WatchNamespace = v
 	}
+	if v, ok := os.LookupEnv("POD_WEBHOOK_REPLICAS"); ok {
+		if replicas, err := strconv.ParseInt(v, 10, 32); err == nil && replicas >= 0 {
+			cfg.PodWebhookReplicas = int32(replicas)
+		}
+	}
 	cfg.ProxyEnvVars = proxy.ReadProxyVarsFromEnv()
 }

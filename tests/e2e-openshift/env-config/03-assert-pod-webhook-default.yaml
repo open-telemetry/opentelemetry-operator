@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-operator-pod-webhook
+  namespace: ($OTEL_NAMESPACE)
+spec:
+  replicas: 2
