@@ -171,9 +171,7 @@ type PrometheusCRWatcher struct {
 	resourceSelector                *prometheus.ResourceSelector
 	store                           *assets.StoreBuilder
 	prometheusCR                    *monitoringv1.Prometheus
-	// denyFSAccessThroughSMs indicates whether to reject ServiceMonitors and
-	// PodMonitors that reference arbitrary files on the file system.
-	denyFSAccessThroughSMs bool
+	denyFSAccessThroughSMs          bool
 }
 
 func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
