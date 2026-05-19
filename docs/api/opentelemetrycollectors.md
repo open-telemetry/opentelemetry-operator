@@ -13979,6 +13979,19 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>denyFSAccessThroughSMs</b></td>
+        <td>boolean</td>
+        <td>
+          DenyFSAccessThroughSMs enables rejection of ServiceMonitor and PodMonitor endpoints
+that reference arbitrary files on the file system. When enabled, endpoints with
+bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile, or tlsConfig.keyFile
+will be rejected. This prevents tenants from stealing the Collector's
+service account token via ServiceMonitor bearerTokenFile references.
+This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from the
+Prometheus Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
@@ -34857,6 +34870,19 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>[]string</td>
         <td>
           AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyFSAccessThroughSMs</b></td>
+        <td>boolean</td>
+        <td>
+          DenyFSAccessThroughSMs enables rejection of ServiceMonitor and PodMonitor endpoints
+that reference arbitrary files on the file system. When enabled, endpoints with
+bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile, or tlsConfig.keyFile
+will be rejected. This prevents tenants from stealing the Collector's
+service account token via ServiceMonitor bearerTokenFile references.
+This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from the
+Prometheus Operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>

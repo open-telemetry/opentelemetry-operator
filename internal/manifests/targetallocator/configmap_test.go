@@ -923,3 +923,42 @@ filter_strategy: relabel-config
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
 }
+
+func TestDesiredConfigMapWithDenyFSAccessThroughSMs(t *testing.T) {
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
+	targetAllocator.Spec.PrometheusCR.DenyFSAccessThroughSMs = true
+
+	expectedData := map[string]string{
+		targetAllocatorFilename: `allocation_strategy: consistent-hashing
+	collector_selector:
+	  matchlabels:
+	    app.kubernetes.io/component: opentelemetry-collector
+	    app.kubernetes.io/instance: default.my-instance
+	    app.kubernetes.io/managed-by: opentelemetry-operator
+	    app.kubernetes.io/part-of: opentelemetry
+	  matchexpressions: []
+	config:
+	  scrape_configs:
+	  - job_name: otel-collector
+	    scrape_interval: 10s
+	    static_configs:
+	     - targets:
+	       - 0.0.0.0:8888
+	       - 0.0.0.0:9999
+	filter_strategy: relabel-config
+	prometheus_cr:
+	  deny_fs_access_through_sms: true
+	  enabled: true
+	`,
+	}
+
+	actual, err := ConfigMap(Params{
+		Collector:       collector,
+		TargetAllocator: targetAllocator,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-instance-targetallocator", actual.Name)
+	assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+}
