@@ -687,6 +687,9 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 // references (caFile, certFile, keyFile). This is the equivalent guard from
 // ArbitraryFSAccessThroughSMs.Deny in the Prometheus Operator.
 func (w *PrometheusCRWatcher) validateAndFilterScrapeConfigs(promCfg *promconfig.Config) error {
+	if !w.denyFSAccessThroughSMs {
+		return nil
+	}
 	for _, sc := range promCfg.ScrapeConfigs {
 		// Check the HTTPClientConfig.Authorization.CredentialsFile
 		auth := sc.HTTPClientConfig.Authorization

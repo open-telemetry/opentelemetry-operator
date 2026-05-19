@@ -4,397 +4,297 @@
 package watcher
 
 import (
-	"context"
-	"log/slog"
-	"os"
+	"strings"
 	"testing"
-	"testing/synctest"
 	"time"
 
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
-	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
-	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
-	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
-	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
-	prometheusgoclient "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/config"
+	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/fake"
-	metadatafake "k8s.io/client-go/metadata/fake"
-	"k8s.io/client-go/tools/cache"
-	fcache "k8s.io/client-go/tools/cache/testing"
-
-	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-// TestDenyFSAccessThroughSMsBasic verifies that when DenyFSAccessThroughSMs
-// is enabled, ServiceMonitors with authorization.credentials_file are rejected
-// and the resulting scrape configs are cleared.
-func TestDenyFSAccessThroughSMsBasic(t *testing.T) {
-	namespace := "test"
-	portName := "web"
-
-	sm := &monitoringv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "attacker-sm",
-			Namespace: namespace,
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			JobLabel: "test",
-			Endpoints: []monitoringv1.Endpoint{
-				{
-					Port: portName,
-					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
-						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
-							HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
-								Authorization: &monitoringv1.SafeAuthorization{
-									Type: "Bearer",
-									CredentialsFile: func() *string {
-										s := "/var/run/secrets/kubernetes.io/serviceaccount/token"
-										return &s
-									}(),
-								},
-							},
-						},
-					},
-				},
-			},
-			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "attacker"},
-			},
-		},
+// TestValidateAndFilterScrapeConfigsWithCredentialsFile verifies that the guard
+// rejects scrape configs with authorization.credentials_file.
+func TestValidateAndFilterScrapeConfigsWithCredentialsFile(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
 	}
 
-	cfg := allocatorconfig.Config{
-		PrometheusCR: allocatorconfig.PrometheusCRConfig{
-			ServiceMonitorSelector: &metav1.LabelSelector{},
-			DenyFSAccessThroughSMs: true,
-		},
-	}
-
-	synctest.Test(t, func(t *testing.T) {
-		tw := newTestWatcherWithDenyFlag(t, cfg)
-		tw.ServiceMonitorSource.Add(sm)
-		defer tw.Close()
-
-		time.Sleep(watchSyncDuration)
-		synctest.Wait()
-
-		got, err := tw.LoadConfig(context.Background())
-		require.NoError(t, err)
-
-		assert.Empty(t, got.ScrapeConfigs,
-			"expected no scrape configs when DenyFSAccessThroughSMs rejects credentials_file")
-	})
-}
-
-// TestDenyFSAccessThroughSMsDisabled verifies that when DenyFSAccessThroughSMs
-// is NOT enabled, ServiceMonitors without file references are allowed through.
-func TestDenyFSAccessThroughSMsDisabled(t *testing.T) {
-	namespace := "test"
-	portName := "web"
-
-	sm := &monitoringv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple-sm",
-			Namespace: namespace,
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			JobLabel: "test",
-			Endpoints: []monitoringv1.Endpoint{
-				{Port: portName},
-			},
-		},
-	}
-
-	cfg := allocatorconfig.Config{
-		PrometheusCR: allocatorconfig.PrometheusCRConfig{
-			ServiceMonitorSelector: &metav1.LabelSelector{},
-			DenyFSAccessThroughSMs: false,
-		},
-	}
-
-	synctest.Test(t, func(t *testing.T) {
-		tw := newTestWatcherWithDenyFlag(t, cfg)
-		tw.ServiceMonitorSource.Add(sm)
-		defer tw.Close()
-
-		time.Sleep(watchSyncDuration)
-		synctest.Wait()
-
-		got, err := tw.LoadConfig(context.Background())
-		require.NoError(t, err)
-
-		assert.NotEmpty(t, got.ScrapeConfigs,
-			"expected scrape configs when DenyFSAccessThroughSMs is disabled")
-	})
-}
-
-// TestDenyFSAccessThroughSMsWithBearerTokenFile verifies the exact attack
-// scenario: a tenant sets bearerTokenFile to the Collector's service account
-// token path, and the guard should reject it.
-func TestDenyFSAccessThroughSMsWithBearerTokenFile(t *testing.T) {
-	namespace := "test"
-
-	sm := &monitoringv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "attacker-bearer-sm",
-			Namespace: namespace,
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			JobLabel: "test",
-			Endpoints: []monitoringv1.Endpoint{
-				{
-					Port: "web",
-					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
-						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
-							HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
-								Authorization: &monitoringv1.SafeAuthorization{
-									Type: "Bearer",
-									CredentialsFile: func() *string {
-										s := "/var/run/secrets/kubernetes.io/serviceaccount/token"
-										return &s
-									}(),
-								},
-							},
-						},
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					Authorization: &config.Authorization{
+						Type:            "Bearer",
+						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
 					},
 				},
 			},
 		},
 	}
 
-	cfg := allocatorconfig.Config{
-		PrometheusCR: allocatorconfig.PrometheusCRConfig{
-			ServiceMonitorSelector: &metav1.LabelSelector{},
-			DenyFSAccessThroughSMs: true,
-		},
-	}
-
-	synctest.Test(t, func(t *testing.T) {
-		tw := newTestWatcherWithDenyFlag(t, cfg)
-		tw.ServiceMonitorSource.Add(sm)
-		defer tw.Close()
-
-		time.Sleep(watchSyncDuration)
-		synctest.Wait()
-
-		got, err := tw.LoadConfig(context.Background())
-		require.NoError(t, err)
-
-		assert.Empty(t, got.ScrapeConfigs,
-			"expected no scrape configs when credentials_file points to SA token")
-	})
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "credentials_file")
 }
 
-// TestDenyFSAccessThroughSMsNormalSMsWithoutFileReferences verifies that
-// ServiceMonitors without file references (credentials_file, caFile, etc.)
-// are allowed through even when DenyFSAccessThroughSMs is enabled.
-func TestDenyFSAccessThroughSMsNormalSMsWithoutFileReferences(t *testing.T) {
-	namespace := "test"
+// TestValidateAndFilterScrapeConfigsDisabled verifies that when the guard is
+// disabled, it does not reject scrape configs.
+func TestValidateAndFilterScrapeConfigsDisabled(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: false,
+	}
 
-	sm := &monitoringv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "normal-sm",
-			Namespace: namespace,
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			JobLabel: "test",
-			Endpoints: []monitoringv1.Endpoint{
-				{
-					Port: "web",
-					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
-						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
-							HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
-								BasicAuth: &monitoringv1.BasicAuth{
-									Username: &v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{Name: "secret"},
-										Key:                  "user",
-									},
-									Password: &v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{Name: "secret"},
-										Key:                  "pass",
-									},
-								},
-							},
-						},
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					Authorization: &config.Authorization{
+						Type:            "Bearer",
+						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
 					},
 				},
 			},
 		},
 	}
 
-	cfg := allocatorconfig.Config{
-		PrometheusCR: allocatorconfig.PrometheusCRConfig{
-			ServiceMonitorSelector: &metav1.LabelSelector{},
-			DenyFSAccessThroughSMs: true,
-		},
-	}
-
-	synctest.Test(t, func(t *testing.T) {
-		tw := newTestWatcherWithDenyFlag(t, cfg)
-		tw.ServiceMonitorSource.Add(sm)
-		defer tw.Close()
-
-		time.Sleep(watchSyncDuration)
-		synctest.Wait()
-
-		got, err := tw.LoadConfig(context.Background())
-		require.NoError(t, err)
-
-		assert.NotEmpty(t, got.ScrapeConfigs,
-			"expected scrape configs for ServiceMonitor without file references")
-	})
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.NoError(t, err)
 }
 
-// newTestWatcherWithDenyFlag creates a testWatcher with the deny flag set
-// to match cfg.PrometheusCR.DenyFSAccessThroughSMs.
-func newTestWatcherWithDenyFlag(t *testing.T, cfg allocatorconfig.Config) *testWatcher {
-	t.Helper()
-
-	k8sClient := fake.NewClientset()
-
-	newSource := func() *fcache.FakeControllerSource {
-		s := fcache.NewFakeControllerSource()
-		t.Cleanup(func() { s.Broadcaster.Shutdown() })
-		return s
+// TestValidateAndFilterScrapeConfigsWithTLSFiles verifies the guard also
+// rejects tlsConfig.caFile, certFile, and keyFile.
+func TestValidateAndFilterScrapeConfigsWithTLSFiles(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
 	}
 
-	smSource := newSource()
-	pmSource := newSource()
-	probeSource := newSource()
-	scSource := newSource()
-	nsSource := newSource()
-
-	type gvrInfo struct {
-		gvr      schema.GroupVersionResource
-		source   *fcache.FakeControllerSource
-		exemplar runtime.Object
-	}
-	resources := []gvrInfo{
-		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName), smSource, &monitoringv1.ServiceMonitor{}},
-		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName), pmSource, &monitoringv1.PodMonitor{}},
-		{monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName), probeSource, &monitoringv1.Probe{}},
-		{promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName), scSource, &promv1alpha1.ScrapeConfig{}},
-	}
-
-	sources := make(map[schema.GroupVersionResource]*fcache.FakeControllerSource, len(resources))
-	exemplars := make(map[schema.GroupVersionResource]runtime.Object, len(resources))
-	for _, r := range resources {
-		sources[r.gvr] = r.source
-		exemplars[r.gvr] = r.exemplar
-	}
-
-	fakeFactory := &fakeFactoriesForNamespaces{
-		sources:    sources,
-		exemplars:  exemplars,
-		namespaces: sets.New[string](v1.NamespaceAll),
-	}
-
-	mdScheme := metadatafake.NewTestScheme()
-	_ = metav1.AddMetaToScheme(mdScheme)
-	mdClient := metadatafake.NewSimpleMetadataClient(mdScheme)
-	metadataFactory := informers.NewMetadataInformerFactory(
-		map[string]struct{}{v1.NamespaceAll: {}},
-		map[string]struct{}{},
-		mdClient, 1*time.Second, nil,
-	)
-
-	informerDefs := map[string]schema.GroupVersionResource{
-		monitoringv1.ServiceMonitorName: monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
-		monitoringv1.PodMonitorName:     monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
-		monitoringv1.ProbeName:          monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
-		promv1alpha1.ScrapeConfigName:   promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
-	}
-	informersMap := make(map[string]*informers.ForResource, len(informerDefs)+1)
-	for name, gvr := range informerDefs {
-		inf, infErr := informers.NewInformersForResource(fakeFactory, gvr)
-		require.NoError(t, infErr)
-		if inf != nil {
-			informersMap[name] = inf
-		}
-	}
-	secretInformer, err := informers.NewInformersForResourceWithTransform(
-		metadataFactory,
-		v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)),
-		informers.PartialObjectMetadataStrip(operator.SecretGVK()),
-	)
-	require.NoError(t, err)
-	if secretInformer != nil {
-		informersMap[string(v1.ResourceSecrets)] = secretInformer
-	}
-
-	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
-
-	prom := &monitoringv1.Prometheus{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test",
-		},
-		Spec: monitoringv1.PrometheusSpec{
-			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
-				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
-				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
-				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
-				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
-				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
-				ProbeSelector:                   cfg.PrometheusCR.ProbeSelector,
-				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
-				ScrapeClasses:                   cfg.PrometheusCR.ScrapeClasses,
-				ServiceDiscoveryRole:            &serviceDiscoveryRole,
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					TLSConfig: config.TLSConfig{
+						CAFile:   "/path/to/ca.crt",
+						CertFile: "/path/to/cert.crt",
+						KeyFile:  "/path/to/key.key",
+					},
+				},
 			},
-			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
 	}
 
-	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "ca_file")
+}
 
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom,
-		prometheus.WithEndpointSliceSupport(),
-		prometheus.WithInlineTLSConfig())
-	require.NoError(t, err)
-
-	store := assets.NewStoreBuilder(k8sClient.CoreV1(), k8sClient.CoreV1())
-	promRegisterer := prometheusgoclient.NewRegistry()
-	operatorMetrics := operator.NewMetrics(promRegisterer)
-	eventRecorder := operator.NewFakeRecorder(10, prom)
-
-	nsSource.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
-
-	nsMonInf := cache.NewSharedInformer(nsSource, &v1.Namespace{}, 1*time.Second).(cache.SharedIndexInformer)
-
-	resourceSelector, err := prometheus.NewResourceSelector(
-		promOperatorLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
-	require.NoError(t, err)
-
-	return &testWatcher{
-		PrometheusCRWatcher: &PrometheusCRWatcher{
-			logger:                          slog.Default(),
-			k8sClient:                       k8sClient,
-			informers:                       informersMap,
-			nsInformer:                      nsMonInf,
-			stopChannel:                     make(chan struct{}),
-			configGenerator:                 generator,
-			podMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
-			serviceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
-			probeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
-			scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
-			resourceSelector:                resourceSelector,
-			store:                           store,
-			prometheusCR:                    prom,
-			denyFSAccessThroughSMs:          cfg.PrometheusCR.DenyFSAccessThroughSMs,
-		},
-		NamespaceSource:      nsSource,
-		ServiceMonitorSource: smSource,
-		PodMonitorSource:     pmSource,
-		ProbeSource:          probeSource,
-		ScrapeConfigSource:   scSource,
-		MetadataClient:       mdClient,
+// TestValidateAndFilterScrapeConfigsWithTLSFilesCert verifies cert_file is
+// detected.
+func TestValidateAndFilterScrapeConfigsWithTLSFilesCert(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
 	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					TLSConfig: config.TLSConfig{
+						CertFile: "/path/to/cert.crt",
+					},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cert_file")
+}
+
+// TestValidateAndFilterScrapeConfigsWithTLSFilesKey verifies key_file is
+// detected.
+func TestValidateAndFilterScrapeConfigsWithTLSFilesKey(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					TLSConfig: config.TLSConfig{
+						KeyFile: "/path/to/key.key",
+					},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "key_file")
+}
+
+// TestValidateAndFilterScrapeConfigsWithEmptyScrapeConfigs verifies that
+// empty scrape configs do not cause errors.
+func TestValidateAndFilterScrapeConfigsWithEmptyScrapeConfigs(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.NoError(t, err)
+}
+
+// TestValidateAndFilterScrapeConfigsWithNormalPrometheusConfig verifies
+// that normal scrape configs without file references are allowed through.
+func TestValidateAndFilterScrapeConfigsWithNormalPrometheusConfig(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName:           "test",
+				MetricsPath:       "/metrics",
+				ScrapeInterval:    model.Duration(30 * time.Second),
+				EnableCompression: true,
+				HTTPClientConfig: config.HTTPClientConfig{
+					BasicAuth: &config.BasicAuth{
+						Username: "user",
+						Password: "password",
+					},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.NoError(t, err)
+}
+
+// TestValidateAndFilterScrapeConfigsWithBearerTokenFileRejection tests the
+// exact attack scenario: bearerTokenFile pointing to the Collector's service
+// account token should be rejected.
+func TestValidateAndFilterScrapeConfigsWithBearerTokenFileRejection(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName: "test",
+				HTTPClientConfig: config.HTTPClientConfig{
+					Authorization: &config.Authorization{
+						Type:            "Bearer",
+						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+					},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.True(t, strings.Contains(err.Error(), "credentials_file"),
+		"expected error to mention credentials_file")
+	assert.True(t, strings.Contains(err.Error(),
+		"/var/run/secrets/kubernetes.io/serviceaccount/token"),
+		"expected error to mention the token path")
+}
+
+// TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs verifies that
+// the guard checks all scrape configs in a list.
+func TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName:           "safe-config",
+				EnableCompression: true,
+				HTTPClientConfig: config.HTTPClientConfig{
+					BasicAuth: &config.BasicAuth{
+						Username: "user",
+						Password: "pass",
+					},
+				},
+			},
+			{
+				JobName:           "unsafe-config",
+				EnableCompression: true,
+				HTTPClientConfig: config.HTTPClientConfig{
+					Authorization: &config.Authorization{
+						Type:            "Bearer",
+						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+					},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "credentials_file")
+}
+
+// TestValidateAndFilterScrapeConfigsWithNilAuthorization verifies that nil
+// Authorization fields do not cause panics.
+func TestValidateAndFilterScrapeConfigsWithNilAuthorization(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName:           "test",
+				EnableCompression: true,
+				HTTPClientConfig: config.HTTPClientConfig{
+					Authorization: nil,
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.NoError(t, err)
+}
+
+// TestValidateAndFilterScrapeConfigsWithNilTLSConfig verifies that nil
+// TLSConfig fields do not cause panics.
+func TestValidateAndFilterScrapeConfigsWithNilTLSConfig(t *testing.T) {
+	tw := &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: true,
+	}
+
+	got := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName:           "test",
+				EnableCompression: true,
+				HTTPClientConfig: config.HTTPClientConfig{
+					TLSConfig: config.TLSConfig{},
+				},
+			},
+		},
+	}
+
+	err := tw.validateAndFilterScrapeConfigs(got)
+	assert.NoError(t, err)
 }
