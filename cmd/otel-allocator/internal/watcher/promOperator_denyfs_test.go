@@ -4,7 +4,7 @@
 package watcher
 
 import (
-	"strings"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -14,17 +14,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestValidateAndFilterScrapeConfigsWithCredentialsFile verifies that the guard
-// rejects scrape configs with authorization.credentials_file.
-func TestValidateAndFilterScrapeConfigsWithCredentialsFile(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
+func newDenyFSWatcher(deny bool) *PrometheusCRWatcher {
+	return &PrometheusCRWatcher{
+		denyFSAccessThroughSMs: deny,
+		logger:                 slog.Default(),
 	}
+}
 
-	got := &promconfig.Config{
+// TestFilterScrapeConfigsDropsCredentialsFile verifies that a scrape config
+// with authorization.credentials_file is dropped.
+func TestFilterScrapeConfigsDropsCredentialsFile(t *testing.T) {
+	tw := newDenyFSWatcher(true)
+
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName: "test",
+				JobName: "unsafe",
 				HTTPClientConfig: config.HTTPClientConfig{
 					Authorization: &config.Authorization{
 						Type:            "Bearer",
@@ -35,22 +40,19 @@ func TestValidateAndFilterScrapeConfigsWithCredentialsFile(t *testing.T) {
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "credentials_file")
+	tw.filterScrapeConfigs(cfg)
+	assert.Empty(t, cfg.ScrapeConfigs)
 }
 
-// TestValidateAndFilterScrapeConfigsDisabled verifies that when the guard is
-// disabled, it does not reject scrape configs.
-func TestValidateAndFilterScrapeConfigsDisabled(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: false,
-	}
+// TestFilterScrapeConfigsDisabled verifies that when the guard is disabled, no
+// scrape configs are dropped.
+func TestFilterScrapeConfigsDisabled(t *testing.T) {
+	tw := newDenyFSWatcher(false)
 
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName: "test",
+				JobName: "unsafe",
 				HTTPClientConfig: config.HTTPClientConfig{
 					Authorization: &config.Authorization{
 						Type:            "Bearer",
@@ -61,113 +63,63 @@ func TestValidateAndFilterScrapeConfigsDisabled(t *testing.T) {
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.NoError(t, err)
+	tw.filterScrapeConfigs(cfg)
+	assert.Len(t, cfg.ScrapeConfigs, 1)
 }
 
-// TestValidateAndFilterScrapeConfigsWithTLSFiles verifies the guard also
-// rejects tlsConfig.caFile, certFile, and keyFile.
-func TestValidateAndFilterScrapeConfigsWithTLSFiles(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsDropsTLSFiles verifies the guard drops scrape configs
+// that set tlsConfig.caFile / certFile / keyFile.
+func TestFilterScrapeConfigsDropsTLSFiles(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		tls  config.TLSConfig
+	}{
+		{name: "ca_file", tls: config.TLSConfig{CAFile: "/path/to/ca.crt"}},
+		{name: "cert_file", tls: config.TLSConfig{CertFile: "/path/to/cert.crt"}},
+		{name: "key_file", tls: config.TLSConfig{KeyFile: "/path/to/key.key"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
-		ScrapeConfigs: []*promconfig.ScrapeConfig{
-			{
-				JobName: "test",
-				HTTPClientConfig: config.HTTPClientConfig{
-					TLSConfig: config.TLSConfig{
-						CAFile:   "/path/to/ca.crt",
-						CertFile: "/path/to/cert.crt",
-						KeyFile:  "/path/to/key.key",
+			cfg := &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName: "tls-" + tc.name,
+						HTTPClientConfig: config.HTTPClientConfig{
+							TLSConfig: tc.tls,
+						},
 					},
 				},
-			},
-		},
-	}
+			}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "ca_file")
+			tw.filterScrapeConfigs(cfg)
+			assert.Empty(t, cfg.ScrapeConfigs)
+		})
+	}
 }
 
-// TestValidateAndFilterScrapeConfigsWithTLSFilesCert verifies cert_file is
-// detected.
-func TestValidateAndFilterScrapeConfigsWithTLSFilesCert(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsEmpty verifies that an empty scrape config list is a
+// no-op.
+func TestFilterScrapeConfigsEmpty(t *testing.T) {
+	tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
-		ScrapeConfigs: []*promconfig.ScrapeConfig{
-			{
-				JobName: "test",
-				HTTPClientConfig: config.HTTPClientConfig{
-					TLSConfig: config.TLSConfig{
-						CertFile: "/path/to/cert.crt",
-					},
-				},
-			},
-		},
-	}
-
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cert_file")
-}
-
-// TestValidateAndFilterScrapeConfigsWithTLSFilesKey verifies key_file is
-// detected.
-func TestValidateAndFilterScrapeConfigsWithTLSFilesKey(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
-
-	got := &promconfig.Config{
-		ScrapeConfigs: []*promconfig.ScrapeConfig{
-			{
-				JobName: "test",
-				HTTPClientConfig: config.HTTPClientConfig{
-					TLSConfig: config.TLSConfig{
-						KeyFile: "/path/to/key.key",
-					},
-				},
-			},
-		},
-	}
-
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "key_file")
-}
-
-// TestValidateAndFilterScrapeConfigsWithEmptyScrapeConfigs verifies that
-// empty scrape configs do not cause errors.
-func TestValidateAndFilterScrapeConfigsWithEmptyScrapeConfigs(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
-
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.NoError(t, err)
+	tw.filterScrapeConfigs(cfg)
+	assert.Empty(t, cfg.ScrapeConfigs)
 }
 
-// TestValidateAndFilterScrapeConfigsWithNormalPrometheusConfig verifies
-// that normal scrape configs without file references are allowed through.
-func TestValidateAndFilterScrapeConfigsWithNormalPrometheusConfig(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsKeepsSafeConfigs verifies that scrape configs without
+// file references are kept.
+func TestFilterScrapeConfigsKeepsSafeConfigs(t *testing.T) {
+	tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName:           "test",
+				JobName:           "safe",
 				MetricsPath:       "/metrics",
 				ScrapeInterval:    model.Duration(30 * time.Second),
 				EnableCompression: true,
@@ -181,53 +133,20 @@ func TestValidateAndFilterScrapeConfigsWithNormalPrometheusConfig(t *testing.T) 
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.NoError(t, err)
+	tw.filterScrapeConfigs(cfg)
+	assert.Len(t, cfg.ScrapeConfigs, 1)
+	assert.Equal(t, "safe", cfg.ScrapeConfigs[0].JobName)
 }
 
-// TestValidateAndFilterScrapeConfigsWithBearerTokenFileRejection tests the
-// exact attack scenario: bearerTokenFile pointing to the Collector's service
-// account token should be rejected.
-func TestValidateAndFilterScrapeConfigsWithBearerTokenFileRejection(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsKeepsSafeDropsUnsafe verifies that in a mixed list,
+// only the unsafe scrape configs are dropped.
+func TestFilterScrapeConfigsKeepsSafeDropsUnsafe(t *testing.T) {
+	tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName: "test",
-				HTTPClientConfig: config.HTTPClientConfig{
-					Authorization: &config.Authorization{
-						Type:            "Bearer",
-						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-					},
-				},
-			},
-		},
-	}
-
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.True(t, strings.Contains(err.Error(), "credentials_file"),
-		"expected error to mention credentials_file")
-	assert.True(t, strings.Contains(err.Error(),
-		"/var/run/secrets/kubernetes.io/serviceaccount/token"),
-		"expected error to mention the token path")
-}
-
-// TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs verifies that
-// the guard checks all scrape configs in a list.
-func TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
-
-	got := &promconfig.Config{
-		ScrapeConfigs: []*promconfig.ScrapeConfig{
-			{
-				JobName:           "safe-config",
-				EnableCompression: true,
+				JobName: "safe",
 				HTTPClientConfig: config.HTTPClientConfig{
 					BasicAuth: &config.BasicAuth{
 						Username: "user",
@@ -236,8 +155,7 @@ func TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs(t *testing.T) {
 				},
 			},
 			{
-				JobName:           "unsafe-config",
-				EnableCompression: true,
+				JobName: "unsafe-credentials",
 				HTTPClientConfig: config.HTTPClientConfig{
 					Authorization: &config.Authorization{
 						Type:            "Bearer",
@@ -245,26 +163,29 @@ func TestValidateAndFilterScrapeConfigsMultipleScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
+			{
+				JobName: "unsafe-tls",
+				HTTPClientConfig: config.HTTPClientConfig{
+					TLSConfig: config.TLSConfig{KeyFile: "/path/to/key.key"},
+				},
+			},
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "credentials_file")
+	tw.filterScrapeConfigs(cfg)
+	assert.Len(t, cfg.ScrapeConfigs, 1)
+	assert.Equal(t, "safe", cfg.ScrapeConfigs[0].JobName)
 }
 
-// TestValidateAndFilterScrapeConfigsWithNilAuthorization verifies that nil
-// Authorization fields do not cause panics.
-func TestValidateAndFilterScrapeConfigsWithNilAuthorization(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsNilAuthorization verifies nil Authorization fields do
+// not cause panics or unintended drops.
+func TestFilterScrapeConfigsNilAuthorization(t *testing.T) {
+	tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName:           "test",
-				EnableCompression: true,
+				JobName: "no-auth",
 				HTTPClientConfig: config.HTTPClientConfig{
 					Authorization: nil,
 				},
@@ -272,22 +193,19 @@ func TestValidateAndFilterScrapeConfigsWithNilAuthorization(t *testing.T) {
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.NoError(t, err)
+	tw.filterScrapeConfigs(cfg)
+	assert.Len(t, cfg.ScrapeConfigs, 1)
 }
 
-// TestValidateAndFilterScrapeConfigsWithNilTLSConfig verifies that nil
-// TLSConfig fields do not cause panics.
-func TestValidateAndFilterScrapeConfigsWithNilTLSConfig(t *testing.T) {
-	tw := &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: true,
-	}
+// TestFilterScrapeConfigsEmptyTLSConfig verifies an empty TLSConfig keeps the
+// scrape config.
+func TestFilterScrapeConfigsEmptyTLSConfig(t *testing.T) {
+	tw := newDenyFSWatcher(true)
 
-	got := &promconfig.Config{
+	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
-				JobName:           "test",
-				EnableCompression: true,
+				JobName: "empty-tls",
 				HTTPClientConfig: config.HTTPClientConfig{
 					TLSConfig: config.TLSConfig{},
 				},
@@ -295,6 +213,6 @@ func TestValidateAndFilterScrapeConfigsWithNilTLSConfig(t *testing.T) {
 		},
 	}
 
-	err := tw.validateAndFilterScrapeConfigs(got)
-	assert.NoError(t, err)
+	tw.filterScrapeConfigs(cfg)
+	assert.Len(t, cfg.ScrapeConfigs, 1)
 }

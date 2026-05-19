@@ -651,15 +651,11 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, unmarshalErr
 		}
 
-		// If denyFSAccessThroughSMs is enabled, validate and reject scrape configs
-		// that reference arbitrary files on the file system. This prevents
-		// tenants from stealing the Collector's service account token.
+		// If denyFSAccessThroughSMs is enabled, drop scrape configs that reference
+		// arbitrary files on the file system. This prevents tenants from stealing
+		// the Collector's service account token.
 		if w.denyFSAccessThroughSMs {
-			if err := w.validateAndFilterScrapeConfigs(promCfg); err != nil {
-				w.logger.Error("Rejected scrape configuration due to denied file path access", "error", err)
-				// Return the config without the rejected scrape configs
-				promCfg.ScrapeConfigs = nil
-			}
+			w.filterScrapeConfigs(promCfg)
 		}
 
 		// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
@@ -678,48 +674,45 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	return promCfg, nil
 }
 
-// validateAndFilterScrapeConfigs validates scrape configs and returns an error if
-// any config references arbitrary files on the file system. This prevents
-// tenants from stealing the Collector's service account token via ServiceMonitor
-// bearerTokenFile (via authorization.credentials_file) or tlsConfig file
-// references (caFile, certFile, keyFile). This is the equivalent guard from
+// filterScrapeConfigs drops scrape configs that reference arbitrary files on
+// the file system. This prevents tenants from stealing the Collector's service
+// account token via ServiceMonitor bearerTokenFile (via
+// authorization.credentials_file) or tlsConfig file references (caFile,
+// certFile, keyFile). This is the equivalent guard from
 // ArbitraryFSAccessThroughSMs.Deny in the Prometheus Operator.
-func (w *PrometheusCRWatcher) validateAndFilterScrapeConfigs(promCfg *promconfig.Config) error {
+func (w *PrometheusCRWatcher) filterScrapeConfigs(promCfg *promconfig.Config) {
 	if !w.denyFSAccessThroughSMs {
-		return nil
+		return
 	}
+	filtered := promCfg.ScrapeConfigs[:0]
 	for _, sc := range promCfg.ScrapeConfigs {
-		// Check the HTTPClientConfig.Authorization.CredentialsFile
-		auth := sc.HTTPClientConfig.Authorization
-		if auth != nil && auth.CredentialsFile != "" {
-			return fmt.Errorf(
-				"service monitor denied: endpoint references arbitrary file via authorization.credentials_file: %s",
-				auth.CredentialsFile,
-			)
+		if reason := deniedFSAccessReason(sc); reason != "" {
+			w.logger.Warn("dropping scrape config that references arbitrary file path", "job", sc.JobName, "reason", reason)
+			continue
 		}
-
-		// Check TLS config file paths
-		tls := &sc.HTTPClientConfig.TLSConfig
-		if tls.CAFile != "" {
-			return fmt.Errorf(
-				"service monitor denied: endpoint references arbitrary file via tls_config.ca_file: %s",
-				tls.CAFile,
-			)
-		}
-		if tls.CertFile != "" {
-			return fmt.Errorf(
-				"service monitor denied: endpoint references arbitrary file via tls_config.cert_file: %s",
-				tls.CertFile,
-			)
-		}
-		if tls.KeyFile != "" {
-			return fmt.Errorf(
-				"service monitor denied: endpoint references arbitrary file via tls_config.key_file: %s",
-				tls.KeyFile,
-			)
-		}
+		filtered = append(filtered, sc)
 	}
-	return nil
+	promCfg.ScrapeConfigs = filtered
+}
+
+// deniedFSAccessReason returns a non-empty reason if the scrape config
+// references arbitrary files via authorization or TLS config, or "" if the
+// config is allowed.
+func deniedFSAccessReason(sc *promconfig.ScrapeConfig) string {
+	if auth := sc.HTTPClientConfig.Authorization; auth != nil && auth.CredentialsFile != "" {
+		return fmt.Sprintf("authorization.credentials_file: %s", auth.CredentialsFile)
+	}
+	tls := &sc.HTTPClientConfig.TLSConfig
+	if tls.CAFile != "" {
+		return fmt.Sprintf("tls_config.ca_file: %s", tls.CAFile)
+	}
+	if tls.CertFile != "" {
+		return fmt.Sprintf("tls_config.cert_file: %s", tls.CertFile)
+	}
+	if tls.KeyFile != "" {
+		return fmt.Sprintf("tls_config.key_file: %s", tls.KeyFile)
+	}
+	return ""
 }
 
 // WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.

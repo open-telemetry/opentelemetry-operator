@@ -5,7 +5,7 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Add support for disabling service and pod monitor credential reading"
+note: "Add support for dropping ServiceMonitor/PodMonitor endpoints that reference arbitrary files"
 
 # One or more tracking issues related to the change
 issues: [5104]

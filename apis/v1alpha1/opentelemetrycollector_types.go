@@ -411,13 +411,14 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// Empty or nil map matches all service monitors.
 	// +optional
 	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
-	// DenyFSAccessThroughSMs enables rejection of ServiceMonitor and PodMonitor endpoints
-	// that reference arbitrary files on the file system. When enabled, endpoints with
-	// bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile, or tlsConfig.keyFile
-	// will be rejected. This prevents tenants from stealing the Collector's
-	// service account token via ServiceMonitor bearerTokenFile references.
-	// This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from the
-	// Prometheus Operator.
+	// DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+	// PodMonitor endpoints that reference arbitrary files on the file system. When
+	// enabled, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile,
+	// or tlsConfig.keyFile are dropped from the produced scrape configuration while
+	// the remaining endpoints are kept. This prevents tenants from stealing the
+	// Collector's service account token via ServiceMonitor bearerTokenFile
+	// references. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from
+	// the Prometheus Operator.
 	// +optional
 	DenyFSAccessThroughSMs bool `json:"denyFSAccessThroughSMs,omitempty"`
 }
