@@ -18,25 +18,9 @@ spec:
     - command:
         entrypoint: oc
         args:
-        - get
-        - pods
-        - -A
-        - -l control-plane=controller-manager
-        - -l app.kubernetes.io/name=opentelemetry-operator
-        - -o 
-        - jsonpath={.items[0].metadata.namespace}
-        outputs:
-        - name: OTEL_NAMESPACE
-          value: ($stdout)
-    - command:
-        env:
-        - name: otelnamespace
-          value: ($OTEL_NAMESPACE)
-        entrypoint: oc
-        args:
         - label
         - namespace
-        - $otelnamespace 
+        - opentelemetry-operator-system
         - openshift.io/cluster-monitoring=true
   - name: step-01
     try:

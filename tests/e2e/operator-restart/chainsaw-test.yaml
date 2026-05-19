@@ -11,27 +11,11 @@ spec:
     - command:
         entrypoint: kubectl
         args:
-        - get
-        - pods
-        - -A
-        - -l control-plane=controller-manager
-        - -l app.kubernetes.io/name=opentelemetry-operator
-        - -o 
-        - jsonpath={.items[0].metadata.namespace}
-        outputs:
-        - name: OTEL_NAMESPACE
-          value: ($stdout)
-    - command:
-        env:
-          - name: otelnamespace
-            value: ($OTEL_NAMESPACE)
-        entrypoint: kubectl
-        args:
           - patch
           - deployment
           - opentelemetry-operator-controller-manager
           - -n
-          - $otelnamespace
+          - opentelemetry-operator-system
           - --type=json
           - -p
           - '[{"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "FEATURE_GATES", "value": "operator.networkpolicy,operand.networkpolicy"}}]'

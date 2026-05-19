@@ -4,6 +4,7 @@ kind: Test
 metadata:
   name: instrumentation-no-crds
 spec:
+  skip: true # https://github.com/open-telemetry/opentelemetry-operator/issues/5092
   steps:
   - name: step-00
     try:

@@ -67,8 +67,11 @@ func TestUpgrade0_122_0(t *testing.T) {
 												"pull": map[string]any{
 													"exporter": map[string]any{
 														"prometheus": map[string]any{
-															"host": "0.0.0.0",
-															"port": int32(8888),
+															"host":                "0.0.0.0",
+															"port":                int32(8888),
+															"without_scope_info":  false,
+															"without_type_suffix": false,
+															"without_units":       false,
 														},
 													},
 												},
