@@ -5,7 +5,7 @@ change_type: bug_fix
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix deserialization of prometheus-operator types (e.g. scrapeClasses tlsConfig) in target allocator config by handling json:",inline" embedded structs.
+note: Fix scrapeClass tlsConfig fields being silently dropped in target allocator config.
 
 # One or more tracking issues related to the change
 issues: [5101]
@@ -13,4 +13,11 @@ issues: [5101]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  scrapeClasses with tlsConfig like the following had their TLS fields silently dropped
+  when passed to the target allocator:
+    scrapeClasses:
+      - name: tls-config
+        tlsConfig:
+          caFile: /scrapeclass-ca.pem
+          insecureSkipVerify: true
