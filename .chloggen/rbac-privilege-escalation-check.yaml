@@ -1,0 +1,22 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Restrict automatic RBAC from users without the necessary permissions
+
+# One or more tracking issues related to the change
+issues: [5105]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  If the operator has permission to create ClusterRoles and ClusterRoleBindings, it sets up RBAC
+  for collectors automatically based on their configuration.
+  If a user tries to create an OpenTelemetryCollector whose permissions would be automatically
+  generated this way, and the user doesn't have the permissions themselves, it will be rejected.
+  If the collector tries to use an existing ServiceAccount, only the permissions missing from
+  that ServiceAccount are checked this way.
