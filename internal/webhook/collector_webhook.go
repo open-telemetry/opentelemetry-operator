@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
