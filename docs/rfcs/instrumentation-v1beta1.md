@@ -36,6 +36,20 @@ OpenTelemetry is standardizing on [file-based declarative configuration](https:/
 
 Setting both `declarativeConfig` and `envConfig` is invalid and rejected by the webhook.
 
+#### Language support
+
+Not all language SDKs support declarative configuration yet. See [language-support-status.md](https://github.com/open-telemetry/opentelemetry-configuration/blob/main/language-support-status.md) for the current status.
+
+- **Java** — supported
+- **Python** — supported ([#4856](https://github.com/open-telemetry/opentelemetry-python/issues/4856))
+- **Node.js** — in progress
+- **Go** — in progress
+- **.NET** — not supported ([#6380](https://github.com/open-telemetry/opentelemetry-dotnet/issues/6380))
+
+The operator will **skip injection** for languages that do not support declarative configuration when `spec.declarativeConfig` is set. For example, using `declarativeConfig` with `.NET` auto-instrumentation will result in the pod mutation webhook skipping injection and emitting a warning event.
+
+The operator will have a flag to control declarative configuration support  (e.g., `--instrumentation-declarative-config=java,python,dotnet,cpp,nodejs`). This allows enabling support as SDKs mature without requiring operator upgrades.
+
 #### Declarative config example
 
 ```yaml
