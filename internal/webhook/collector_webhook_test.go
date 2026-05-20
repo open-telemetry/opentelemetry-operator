@@ -517,6 +517,99 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "StatefulSet with volumeClaimTemplates gets default fsGroup",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+							{
+								ObjectMeta: metav1.ObjectMeta{Name: "storage"},
+								Spec: v1.PersistentVolumeClaimSpec{
+									AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:            v1beta1.ModeStatefulSet,
+					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: v1beta1.ManagementStateManaged,
+						PodSecurityContext: &v1.PodSecurityContext{
+							FSGroup: ptr.To(int64(65532)),
+						},
+					},
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+							{
+								ObjectMeta: metav1.ObjectMeta{Name: "storage"},
+								Spec: v1.PersistentVolumeClaimSpec{
+									AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "StatefulSet with volumeClaimTemplates preserves explicit fsGroup",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						PodSecurityContext: &v1.PodSecurityContext{
+							FSGroup: ptr.To(int64(1000)),
+						},
+					},
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+							{
+								ObjectMeta: metav1.ObjectMeta{Name: "storage"},
+								Spec: v1.PersistentVolumeClaimSpec{
+									AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:            v1beta1.ModeStatefulSet,
+					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: v1beta1.ManagementStateManaged,
+						PodSecurityContext: &v1.PodSecurityContext{
+							FSGroup: ptr.To(int64(1000)),
+						},
+					},
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+							{
+								ObjectMeta: metav1.ObjectMeta{Name: "storage"},
+								Spec: v1.PersistentVolumeClaimSpec{
+									AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,6 +101,16 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = v1beta1.ManagementStateManaged
 	}
+	if len(otelcol.Spec.VolumeClaimTemplates) > 0 {
+		if otelcol.Spec.PodSecurityContext == nil {
+			otelcol.Spec.PodSecurityContext = &corev1.PodSecurityContext{}
+		}
+		if otelcol.Spec.PodSecurityContext.FSGroup == nil {
+			defaultFSGroup := int64(65532)
+			otelcol.Spec.PodSecurityContext.FSGroup = &defaultFSGroup
+		}
+	}
+
 	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && otelcol.Spec.NetworkPolicy.Enabled == nil {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
