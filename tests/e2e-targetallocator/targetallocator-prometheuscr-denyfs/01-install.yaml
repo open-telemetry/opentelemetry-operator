@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          value: user
+        - name: BASIC_AUTH_PASSWORD
+          value: pass
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+  labels:
+    app: metrics-app
+spec:
+  ports:
+  - name: metrics
+    port: 9123
+    targetPort: 9123
+    protocol: TCP
+  - name: safe-metrics
+    port: 9124
+    targetPort: 9123
+    protocol: TCP
+  selector:
+    app: metrics-app
+  type: ClusterIP
+---
+# A ServiceMonitor with one unsafe endpoint (bearerTokenFile, references the
+# Collector's mounted service account token) and one safe endpoint (no file
+# references). With denyFSAccessThroughSMs enabled, only the safe endpoint
+# should appear in the Target Allocator's scrape configs.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+  labels:
+    app: metrics-app
+spec:
+  selector:
+    matchLabels:
+      app: metrics-app
+  endpoints:
+  - port: metrics
+    interval: 10s
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - port: safe-metrics
+    interval: 10s
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-denyfs-filtering
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-config
+          image: mirror.gcr.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              CONFIG=$(curl -fs http://prometheus-cr-denyfs-targetallocator/scrape_configs)
+              echo "$CONFIG"
+              # The safe endpoint (port safe-metrics) must remain.
+              echo "$CONFIG" | grep -q "safe-metrics"
+              # The unsafe endpoint (bearerTokenFile) must be dropped: neither
+              # the credentials_file path nor the unsafe port should be present.
+              if echo "$CONFIG" | grep -q "credentials_file"; then
+                echo "credentials_file should have been dropped"
+                exit 1
+              fi
+              if echo "$CONFIG" | grep -q "/var/run/secrets/kubernetes.io/serviceaccount/token"; then
+                echo "service account token path should have been dropped"
+                exit 1
+              fi

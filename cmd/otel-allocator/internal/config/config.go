@@ -92,6 +92,16 @@ type PrometheusCRConfig struct {
 	EvaluationInterval              model.Duration                `yaml:"evaluation_interval,omitempty"`
 	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
 	ScrapeClasses                   []monitoringv1.ScrapeClass    `yaml:"scrape_classes,omitempty"`
+	// DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+	// PodMonitor endpoints that reference arbitrary files on the file system. When
+	// true, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile, or
+	// tlsConfig.keyFile referencing paths outside an operator-owned mount are
+	// dropped from the produced scrape configuration while the remaining endpoints
+	// are kept. This prevents tenants from stealing the Collector's service account
+	// token. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from the
+	// Prometheus Operator.
+	// +optional
+	DenyFSAccessThroughSMs bool `yaml:"deny_fs_access_through_sms,omitempty"`
 }
 
 type HTTPSServerConfig struct {
