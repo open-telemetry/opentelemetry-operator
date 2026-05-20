@@ -69,5 +69,36 @@ for item in "${OPTIONAL_ITEMS[@]}"; do
   fi
 done
 
+# Validate output with omc
+OMC=/tmp/omc
+curl -sL -o "$OMC" https://github.com/gmeghnag/omc/releases/latest/download/omc_Linux_x86_64
+chmod +x "$OMC"
+
+OMC_ROOT=$(find "$MUST_GATHER_DIR" -maxdepth 1 -type d -name '*-must-gather-sha256-*' | head -1)
+if [ -z "$OMC_ROOT" ]; then
+  echo "omc: could not find must-gather subdirectory"
+  exit 1
+fi
+$OMC use "$OMC_ROOT"
+
+echo "--- omc validation ---"
+
+$OMC get opentelemetrycollectors -A | grep -q "stateful" || { echo "omc: opentelemetrycollectors not found"; exit 1; }
+echo "omc: opentelemetrycollectors OK"
+
+$OMC get deployments -A | grep -q "gather-collector" || { echo "omc: deployments not found"; exit 1; }
+echo "omc: deployments OK"
+
+$OMC get pods -A | grep -q "gather-collector" || { echo "omc: pods not found"; exit 1; }
+echo "omc: pods OK"
+
+GATHER_POD=$(find "$OMC_ROOT" -path "*/pods/gather-collector-*" -type d -maxdepth 5 | head -1 | xargs -I{} basename {})
+if [ -n "$GATHER_POD" ]; then
+  $OMC logs "$GATHER_POD" -c otc-container 2>/dev/null | head -1 | grep -q . || { echo "omc: logs empty for $GATHER_POD"; exit 1; }
+  echo "omc: logs OK"
+else
+  echo "omc: no gather-collector pod directory found, skipping log check"
+fi
+
 # Cleanup the must-gather directory
 rm -rf $MUST_GATHER_DIR
