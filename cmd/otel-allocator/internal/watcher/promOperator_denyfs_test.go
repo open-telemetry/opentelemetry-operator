@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newDenyFSWatcher(deny bool) *PrometheusCRWatcher {
+func newDenyFSWatcher() *PrometheusCRWatcher {
 	return &PrometheusCRWatcher{
-		denyFSAccessThroughSMs: deny,
+		denyFSAccessThroughSMs: true,
 		logger:                 slog.Default(),
 	}
 }
@@ -24,7 +24,7 @@ func newDenyFSWatcher(deny bool) *PrometheusCRWatcher {
 // TestFilterScrapeConfigsDropsCredentialsFile verifies that a scrape config
 // with authorization.credentials_file is dropped.
 func TestFilterScrapeConfigsDropsCredentialsFile(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -44,29 +44,6 @@ func TestFilterScrapeConfigsDropsCredentialsFile(t *testing.T) {
 	assert.Empty(t, cfg.ScrapeConfigs)
 }
 
-// TestFilterScrapeConfigsDisabled verifies that when the guard is disabled, no
-// scrape configs are dropped.
-func TestFilterScrapeConfigsDisabled(t *testing.T) {
-	tw := newDenyFSWatcher(false)
-
-	cfg := &promconfig.Config{
-		ScrapeConfigs: []*promconfig.ScrapeConfig{
-			{
-				JobName: "unsafe",
-				HTTPClientConfig: config.HTTPClientConfig{
-					Authorization: &config.Authorization{
-						Type:            "Bearer",
-						CredentialsFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-					},
-				},
-			},
-		},
-	}
-
-	tw.filterScrapeConfigs(cfg)
-	assert.Len(t, cfg.ScrapeConfigs, 1)
-}
-
 // TestFilterScrapeConfigsDropsTLSFiles verifies the guard drops scrape configs
 // that set tlsConfig.caFile / certFile / keyFile.
 func TestFilterScrapeConfigsDropsTLSFiles(t *testing.T) {
@@ -79,7 +56,7 @@ func TestFilterScrapeConfigsDropsTLSFiles(t *testing.T) {
 		{name: "key_file", tls: config.TLSConfig{KeyFile: "/path/to/key.key"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			tw := newDenyFSWatcher(true)
+			tw := newDenyFSWatcher()
 
 			cfg := &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -101,7 +78,7 @@ func TestFilterScrapeConfigsDropsTLSFiles(t *testing.T) {
 // TestFilterScrapeConfigsEmpty verifies that an empty scrape config list is a
 // no-op.
 func TestFilterScrapeConfigsEmpty(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
@@ -114,7 +91,7 @@ func TestFilterScrapeConfigsEmpty(t *testing.T) {
 // TestFilterScrapeConfigsKeepsSafeConfigs verifies that scrape configs without
 // file references are kept.
 func TestFilterScrapeConfigsKeepsSafeConfigs(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -141,7 +118,7 @@ func TestFilterScrapeConfigsKeepsSafeConfigs(t *testing.T) {
 // TestFilterScrapeConfigsKeepsSafeDropsUnsafe verifies that in a mixed list,
 // only the unsafe scrape configs are dropped.
 func TestFilterScrapeConfigsKeepsSafeDropsUnsafe(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -180,7 +157,7 @@ func TestFilterScrapeConfigsKeepsSafeDropsUnsafe(t *testing.T) {
 // TestFilterScrapeConfigsNilAuthorization verifies nil Authorization fields do
 // not cause panics or unintended drops.
 func TestFilterScrapeConfigsNilAuthorization(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -200,7 +177,7 @@ func TestFilterScrapeConfigsNilAuthorization(t *testing.T) {
 // TestFilterScrapeConfigsEmptyTLSConfig verifies an empty TLSConfig keeps the
 // scrape config.
 func TestFilterScrapeConfigsEmptyTLSConfig(t *testing.T) {
-	tw := newDenyFSWatcher(true)
+	tw := newDenyFSWatcher()
 
 	cfg := &promconfig.Config{
 		ScrapeConfigs: []*promconfig.ScrapeConfig{

@@ -681,9 +681,6 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 // certFile, keyFile). This is the equivalent guard from
 // ArbitraryFSAccessThroughSMs.Deny in the Prometheus Operator.
 func (w *PrometheusCRWatcher) filterScrapeConfigs(promCfg *promconfig.Config) {
-	if !w.denyFSAccessThroughSMs {
-		return
-	}
 	filtered := promCfg.ScrapeConfigs[:0]
 	for _, sc := range promCfg.ScrapeConfigs {
 		if reason := deniedFSAccessReason(sc); reason != "" {
