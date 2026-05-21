@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/operator-framework/operator-lib/proxy"
 )
 
 func ApplyEnvVars(cfg *Config) {
@@ -143,4 +145,5 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("WATCH_NAMESPACE"); ok {
 		cfg.WatchNamespace = v
 	}
+	cfg.ProxyEnvVars = proxy.ReadProxyVarsFromEnv()
 }

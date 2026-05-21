@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -120,7 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
-		Env:             getContainerEnvVars(otelcol, logger),
+		Env:             getContainerEnvVars(cfg, otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
@@ -300,8 +299,8 @@ func getSpecPorts(ports []v1beta1.PortsSpec, logger logr.Logger) []corev1.Contai
 // getContainerEnvVars returns the environment variables for the collector container.
 // It combines user-defined environment variables from the OpenTelemetryCollector spec
 // with automatically inferred environment variables, giving precedence to user-defined ones.
-func getContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
-	inferredEnvVars := getInferredContainerEnvVars(otelcol, logger)
+func getContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+	inferredEnvVars := getInferredContainerEnvVars(cfg, otelcol, logger)
 
 	envVars := []corev1.EnvVar{}
 	envVars = append(envVars, otelcol.Spec.Env...)
@@ -323,7 +322,7 @@ func getContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Log
 
 // getInferredContainerEnvVars returns environment variables that are automatically added to the collector container.
 // Those include parsing the collector config and adding the env vars derived from it.
-func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{}
 
 	envVars = append(envVars, corev1.EnvVar{
@@ -364,5 +363,5 @@ func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger 
 		envVars = append(envVars, configEnvVars...)
 	}
 
-	return append(envVars, proxy.ReadProxyVarsFromEnv()...)
+	return append(envVars, cfg.ProxyEnvVars...)
 }
