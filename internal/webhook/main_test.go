@@ -5,7 +5,6 @@ package webhook_test
 
 import (
 	"context"
-	"fmt"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -18,9 +17,10 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	ctrlenvtest "sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/testenv"
 )
 
 var k8sClient client.Client
@@ -30,34 +30,13 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(clientgoscheme.AddToScheme(sch))
 	utilruntime.Must(v1beta1.AddToScheme(sch))
 
-	binaryAssetsDir, err := envtest.SetupEnvtestDefaultBinaryAssetsDirectory()
-	if err != nil {
-		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v", err)
-	}
-
-	testEnv := &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		DownloadBinaryAssets:  true,
-		BinaryAssetsDirectory: binaryAssetsDir,
-	}
-
-	cfg, err := testEnv.Start()
-	if err != nil {
-		fmt.Printf("failed to start test environment: %v", err)
-		os.Exit(1)
-	}
-	k8sClient, err = client.New(cfg, client.Options{Scheme: sch})
-	if err != nil {
-		fmt.Printf("failed to setup a Kubernetes client: %v", err)
-		os.Exit(1)
-	}
+	tenv := testenv.Start(&ctrlenvtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+	}, sch)
+	k8sClient = tenv.Client
 
 	code := m.Run()
-
-	if err := testEnv.Stop(); err != nil {
-		fmt.Printf("failed to stop test environment: %v", err)
-		os.Exit(1)
-	}
+	tenv.Stop()
 	os.Exit(code)
 }
 
