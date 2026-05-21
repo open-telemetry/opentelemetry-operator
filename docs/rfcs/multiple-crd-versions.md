@@ -10,7 +10,7 @@ When graduating a CRD from `v1alpha1` to `v1beta1` (or `v1beta1` to `v1`), opera
 
 ### Storage Version
 
-Only one version can be the **storage version** — the version persisted in etcd. All other versions are converted to/from this version.
+Only one version can be the **storage version** - the version persisted in etcd. All other versions are converted to/from this version.
 
 ```yaml
 apiVersion: apiextensions.k8s.io/v1
@@ -36,7 +36,7 @@ The `served` field controls whether the API server accepts requests for that ver
 **When `served: false`:**
 - API server returns 404 for that version's endpoint
 - `kubectl get instrumentations.v1alpha1.opentelemetry.io` fails
-- Existing resources in etcd are still accessible via served versions — with `strategy: None`, the API server just swaps the `apiVersion` field (requires identical schemas)
+- Existing resources in etcd are still accessible via served versions - with `strategy: None`, the API server just swaps the `apiVersion` field (requires identical schemas)
 - New resources cannot be created using that version
 
 ### Conversion Strategies
@@ -51,8 +51,7 @@ If schemas differ and you use `None`, data won't map correctly between versions:
 - **Restructured fields**: `spec.exporter.endpoint` won't map to `spec.envConfig.exporter.endpoint`
 - **Removed fields**: Data preserved in etcd but invisible in new schema
 
-### How Controllers Handle Multiple Versions
-
+#### CRD conversions examples
 
 **Example: No conversion (identical schemas)**
 
