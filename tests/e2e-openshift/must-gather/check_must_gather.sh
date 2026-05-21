@@ -92,6 +92,8 @@ echo "omc: deployments OK"
 $OMC get pods -A | grep -q "gather-collector" || { echo "omc: pods not found"; exit 1; }
 echo "omc: pods OK"
 
+$OMC project chainsaw-must-gather >/dev/null
+
 GATHER_POD=$(find "$OMC_ROOT" -path "*/pods/gather-collector-*" -type d -maxdepth 5 | head -1 | xargs -I{} basename {})
 if [ -n "$GATHER_POD" ]; then
   $OMC logs "$GATHER_POD" -c otc-container 2>/dev/null | head -1 | grep -q . || { echo "omc: logs empty for $GATHER_POD"; exit 1; }
