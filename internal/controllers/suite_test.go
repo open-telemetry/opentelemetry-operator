@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	ctrlenvtest "sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -181,7 +180,7 @@ func TestMain(m *testing.M) {
 	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
+		WebhookInstallOptions: ctrlenvtest.WebhookInstallOptions{
 			Paths:                   []string{filepath.Join("..", "..", "config", "webhook")},
 			IgnoreSchemeConvertible: true,
 		},
