@@ -4,6 +4,7 @@
 package upgrade
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,16 +29,23 @@ var (
 func TestMain(m *testing.M) {
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 
-	tenv := testenv.Start(&ctrlenvtest.Environment{
+	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "config", "crd", "bases"),
 		},
 	}, testScheme)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	testEnv = tenv.Env
 	cfg = tenv.Config
 	k8sClient = tenv.Client
 
 	code := m.Run()
-	tenv.Stop()
+
+	if err := tenv.Stop(); err != nil {
+		fmt.Println(err)
+	}
 	os.Exit(code)
 }

@@ -177,18 +177,26 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 	utilruntime.Must(gatewayv1.Install(testScheme))
 
-	tenv := testenv.Start(&ctrlenvtest.Environment{
+	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
 		WebhookInstallOptions: ctrlenvtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
 	}, testScheme)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	testEnv = tenv.Env
 	restCfg = tenv.Config
 	k8sClient = tenv.Client
 
-	mgr := testenv.NewWebhookManager(restCfg, testScheme, &testEnv.WebhookInstallOptions)
+	mgr, err := testenv.NewWebhookManager(restCfg, testScheme, &testEnv.WebhookInstallOptions)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	clientset, clientErr := kubernetes.NewForConfig(restCfg)
 	if clientErr != nil {
@@ -216,10 +224,16 @@ func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 
-	testenv.RunWebhookServer(ctx, mgr, &testEnv.WebhookInstallOptions)
+	if err := testenv.RunWebhookServer(ctx, mgr, &testEnv.WebhookInstallOptions); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	code := m.Run()
-	tenv.Stop()
+
+	if err := tenv.Stop(); err != nil {
+		fmt.Println(err)
+	}
 	os.Exit(code)
 }
 

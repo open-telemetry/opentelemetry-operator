@@ -10,7 +10,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,10 +43,7 @@ type Environment struct {
 //   - BinaryAssetsDirectory is populated from SetupEnvtestDefaultBinaryAssetsDirectory.
 //   - The kube-apiserver advertise-address is set to 127.0.0.1 so that sandbox
 //     environments without a default network route work correctly.
-//
-// On any failure Start prints a message and calls os.Exit(1), matching
-// TestMain conventions.
-func Start(env *ctrlenvtest.Environment, scheme *runtime.Scheme) *Environment {
+func Start(env *ctrlenvtest.Environment, scheme *runtime.Scheme) (*Environment, error) {
 	binaryAssetsDir, err := ctrlenvtest.SetupEnvtestDefaultBinaryAssetsDirectory()
 	if err != nil {
 		fmt.Printf("failed to find setup-envtest assets directory, using a temporary one: %v\n", err)
@@ -60,38 +56,33 @@ func Start(env *ctrlenvtest.Environment, scheme *runtime.Scheme) *Environment {
 
 	cfg, err := env.Start()
 	if err != nil {
-		fmt.Printf("failed to start testEnv: %v\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to start testEnv: %w", err)
 	}
 
 	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme})
 	if err != nil {
-		fmt.Printf("failed to setup a Kubernetes client: %v\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to setup a Kubernetes client: %w", err)
 	}
 
 	return &Environment{
 		Env:    env,
 		Config: cfg,
 		Client: k8sClient,
-	}
+	}, nil
 }
 
-// Stop stops the test environment. On failure it prints a message and calls
-// os.Exit(1), matching TestMain conventions.
-func (e *Environment) Stop() {
+// Stop stops the test environment and returns any error.
+func (e *Environment) Stop() error {
 	if err := e.Env.Stop(); err != nil {
-		fmt.Printf("failed to stop testEnv: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to stop testEnv: %w", err)
 	}
+	return nil
 }
 
 // NewWebhookManager creates a controller-runtime Manager configured to serve
 // the webhook server described by opts. Metrics are disabled (BindAddress "0")
 // and leader election is turned off, which is appropriate for test environments.
-//
-// On failure it prints a message and calls os.Exit(1).
-func NewWebhookManager(cfg *rest.Config, scheme *runtime.Scheme, opts *ctrlenvtest.WebhookInstallOptions) ctrl.Manager {
+func NewWebhookManager(cfg *rest.Config, scheme *runtime.Scheme, opts *ctrlenvtest.WebhookInstallOptions) (ctrl.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:         scheme,
 		LeaderElection: false,
@@ -105,27 +96,24 @@ func NewWebhookManager(cfg *rest.Config, scheme *runtime.Scheme, opts *ctrlenvte
 		},
 	})
 	if err != nil {
-		fmt.Printf("failed to create webhook manager: %v\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to create webhook manager: %w", err)
 	}
-	return mgr
+	return mgr, nil
 }
 
 // RunWebhookServer starts mgr in a background goroutine and blocks until the
 // embedded webhook server is ready to accept TLS connections.
-// On any failure it prints a message and calls os.Exit(1).
-func RunWebhookServer(ctx context.Context, mgr ctrl.Manager, opts *ctrlenvtest.WebhookInstallOptions) {
+func RunWebhookServer(ctx context.Context, mgr ctrl.Manager, opts *ctrlenvtest.WebhookInstallOptions) error {
 	go func() {
 		if err := mgr.Start(ctx); err != nil {
 			fmt.Printf("failed to start manager: %v\n", err)
-			os.Exit(1)
 		}
 	}()
 
 	addrPort := fmt.Sprintf("%s:%d", opts.LocalServingHost, opts.LocalServingPort)
 	dialer := &net.Dialer{Timeout: time.Second}
 
-	err := retry.OnError(wait.Backoff{
+	return retry.OnError(wait.Backoff{
 		Steps:    20,
 		Duration: 10 * time.Millisecond,
 		Factor:   1.5,
@@ -145,8 +133,4 @@ func RunWebhookServer(ctx context.Context, mgr ctrl.Manager, opts *ctrlenvtest.W
 		_ = conn.Close()
 		return nil
 	})
-	if err != nil {
-		fmt.Printf("failed to wait for webhook server to be ready: %v\n", err)
-		os.Exit(1)
-	}
 }

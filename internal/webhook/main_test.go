@@ -5,6 +5,7 @@ package webhook_test
 
 import (
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -30,13 +31,20 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(clientgoscheme.AddToScheme(sch))
 	utilruntime.Must(v1beta1.AddToScheme(sch))
 
-	tenv := testenv.Start(&ctrlenvtest.Environment{
+	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}, sch)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	k8sClient = tenv.Client
 
 	code := m.Run()
-	tenv.Stop()
+
+	if err := tenv.Stop(); err != nil {
+		fmt.Println(err)
+	}
 	os.Exit(code)
 }
 
