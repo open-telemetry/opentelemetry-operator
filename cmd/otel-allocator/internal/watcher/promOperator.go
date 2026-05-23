@@ -150,6 +150,7 @@ func NewPrometheusCRWatcher(
 		resourceSelector:                resourceSelector,
 		store:                           store,
 		prometheusCR:                    prom,
+		denyFSAccessThroughSMs:          cfg.PrometheusCR.DenyFSAccessThroughSMs,
 	}, nil
 }
 
@@ -170,6 +171,7 @@ type PrometheusCRWatcher struct {
 	resourceSelector                *prometheus.ResourceSelector
 	store                           *assets.StoreBuilder
 	prometheusCR                    *monitoringv1.Prometheus
+	denyFSAccessThroughSMs          bool
 }
 
 func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
@@ -649,6 +651,13 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, unmarshalErr
 		}
 
+		// If denyFSAccessThroughSMs is enabled, drop scrape configs that reference
+		// arbitrary files on the file system. This prevents tenants from stealing
+		// the Collector's service account token.
+		if w.denyFSAccessThroughSMs {
+			w.filterScrapeConfigs(promCfg)
+		}
+
 		// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
 		// authentication even if running with a detected kubeconfig
 		for _, scrapeConfig := range promCfg.ScrapeConfigs {
@@ -663,6 +672,44 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	}
 	w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
 	return promCfg, nil
+}
+
+// filterScrapeConfigs drops scrape configs that reference arbitrary files on
+// the file system. This prevents tenants from stealing the Collector's service
+// account token via ServiceMonitor bearerTokenFile (via
+// authorization.credentials_file) or tlsConfig file references (caFile,
+// certFile, keyFile). This is the equivalent guard from
+// ArbitraryFSAccessThroughSMs.Deny in the Prometheus Operator.
+func (w *PrometheusCRWatcher) filterScrapeConfigs(promCfg *promconfig.Config) {
+	filtered := promCfg.ScrapeConfigs[:0]
+	for _, sc := range promCfg.ScrapeConfigs {
+		if reason := deniedFSAccessReason(sc); reason != "" {
+			w.logger.Warn("dropping scrape config that references arbitrary file path", "job", sc.JobName, "reason", reason)
+			continue
+		}
+		filtered = append(filtered, sc)
+	}
+	promCfg.ScrapeConfigs = filtered
+}
+
+// deniedFSAccessReason returns a non-empty reason if the scrape config
+// references arbitrary files via authorization or TLS config, or "" if the
+// config is allowed.
+func deniedFSAccessReason(sc *promconfig.ScrapeConfig) string {
+	if auth := sc.HTTPClientConfig.Authorization; auth != nil && auth.CredentialsFile != "" {
+		return fmt.Sprintf("authorization.credentials_file: %s", auth.CredentialsFile)
+	}
+	tls := &sc.HTTPClientConfig.TLSConfig
+	if tls.CAFile != "" {
+		return fmt.Sprintf("tls_config.ca_file: %s", tls.CAFile)
+	}
+	if tls.CertFile != "" {
+		return fmt.Sprintf("tls_config.cert_file: %s", tls.CertFile)
+	}
+	if tls.KeyFile != "" {
+		return fmt.Sprintf("tls_config.key_file: %s", tls.KeyFile)
+	}
+	return ""
 }
 
 // WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.

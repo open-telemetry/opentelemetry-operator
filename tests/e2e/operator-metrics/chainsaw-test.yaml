@@ -6,43 +6,24 @@ spec:
   steps:
     - name: Enable ServiceMonitor and assert operator metrics
       try:
-        # Get the operator namespace
-        - command:
-            entrypoint: kubectl
-            args:
-            - get
-            - pods
-            - -A
-            - -l app.kubernetes.io/name=opentelemetry-operator
-            - -o
-            - jsonpath={.items[0].metadata.namespace}
-            outputs:
-            - name: otelnamespace
-              value: ($stdout)
         # Enable ServiceMonitor creation for operator metrics
         - script:
             timeout: 2m
-            env:
-              - name: otelnamespace
-                value: ($otelnamespace)
             content: |
               #!/bin/bash
-              kubectl set env deployment/opentelemetry-operator-controller-manager -n $otelnamespace CREATE_SM_OPERATOR_METRICS=true
-              kubectl rollout status deployment/opentelemetry-operator-controller-manager -n $otelnamespace --timeout=120s
+              kubectl set env deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system CREATE_SM_OPERATOR_METRICS=true
+              kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=120s
         # Assert operator is running
         - assert:
             file: assert-operator.yaml
         # Get service name for metrics access
         - command:
-            env:
-              - name: otelnamespace
-                value: ($otelnamespace)
             entrypoint: kubectl
             args:
               - get
               - service
               - -n
-              - $otelnamespace
+              - opentelemetry-operator-system
               - -l
               - app.kubernetes.io/name=opentelemetry-operator
               - -o

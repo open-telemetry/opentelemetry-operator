@@ -1,0 +1,20 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: wait-for-telemetry
+spec:
+  try:
+    - script:
+        env:
+          - name: LABEL_SELECTOR
+            value: ($collectorLabelSelector)
+          - name: CONTAINER_NAME
+            value: ($containerName)
+          - name: RETRY_TIMEOUT
+            value: ($retryTimeout)
+          - name: RETRY_SLEEP
+            value: ($retrySleep)
+          - name: SEARCH_STRINGS_ENV
+            value: ($searchStrings)
+        timeout: 2m
+        content: ../../test-e2e-apps/scripts/check_pod_logs.sh
