@@ -56,7 +56,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			return nil, err
 		}
 	} else { // if there's no collector, just use what's in the TargetAllocator CR
-		collectorSelector = nil
+		collectorSelector = taSpec.CollectorSelector
 		globalConfig = taSpec.GlobalConfig.Object
 		scrapeConfigs = taSpec.ScrapeConfigs
 	}

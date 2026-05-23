@@ -1,0 +1,14 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta-selector
+spec:
+  collectorSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: my-collector
+  scrapeConfigs:
+    - job_name: prometheus
+      static_configs:
+      - targets: [ "localhost:9090" ]

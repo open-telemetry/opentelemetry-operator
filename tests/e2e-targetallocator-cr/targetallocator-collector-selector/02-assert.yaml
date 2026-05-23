@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+data:
+  targetallocator.yaml:
+    ( contains(@, 'collector_selector') ): true
+    ( contains(@, 'app.kubernetes.io/component: opentelemetry-collector') ): true
+    ( contains(@, 'app.kubernetes.io/instance') ): true
+    ( contains(@, 'collector-a') ): true
+    ( contains(@, 'collector-b') ): true
+    ( contains(@, 'matchexpressions') ): true
+kind: ConfigMap
+metadata:
+  name: ta-selector-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: ta-selector
