@@ -11,6 +11,7 @@ receivers:
     collection_interval: 30s
     auth_type: serviceAccount
     endpoint: "https://${env:K8S_NODE_NAME}:10250"
+    insecure_skip_verify: true
     metric_groups:
       - container
       - pod  
