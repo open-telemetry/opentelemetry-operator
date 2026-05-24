@@ -15,36 +15,20 @@ receivers:
     extra_metadata_labels:
       - container.id
     
-  # OpenShift uses CRI-O container runtime  
   filelog:
     include:
       - "/var/log/pods/*/*/*.log"
       - "/var/log/containers/*.log"
     exclude:
-      - "/var/log/pods/openshift-*/*/*.log"  # Skip OpenShift system logs
-      - "/var/log/pods/kube-*/*/*.log"       # Skip kube-system logs
+      - "/var/log/pods/openshift-*/*/*.log"
+      - "/var/log/pods/kube-*/*/*.log"
       - "/var/log/pods/*/otc-container/*.log"
     start_at: end
     include_file_path: true
     include_file_name: false
     operators:
-      - type: router
-        id: get-format
-        routes:
-          - output: parser-crio
-            expr: 'body matches "^[^ Z]+ "'
-          - output: parser-docker
-            expr: 'body matches "^\\{"'
-      - type: json_parser
-        id: parser-docker
-        if: 'attributes["log_type"] == "docker"'
-      - type: regex_parser
-        id: parser-crio
-        if: 'attributes["log_type"] == "crio"'
-        regex: '^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<message>.*)$'
-        timestamp:
-          parse_from: attributes.time
-          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      - type: container
+        id: container-parser
 
 processors:
   resourcedetection:
