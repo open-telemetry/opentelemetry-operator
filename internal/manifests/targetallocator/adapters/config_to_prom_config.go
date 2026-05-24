@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
@@ -81,6 +82,23 @@ func GetScrapeConfigsFromPromConfig(promReceiverConfig map[any]any) ([]map[strin
 	return scrapeConfigMaps, nil
 }
 
+// namedPrometheusReceivers returns the names of any "prometheus/<name>" receivers
+// present in the receivers config, sorted for stable output.
+func namedPrometheusReceivers(receivers map[any]any) []string {
+	var named []string
+	for key := range receivers {
+		keyStr, ok := key.(string)
+		if !ok {
+			continue
+		}
+		if strings.HasPrefix(keyStr, "prometheus/") {
+			named = append(named, keyStr)
+		}
+	}
+	slices.Sort(named)
+	return named
+}
+
 // ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
 func ConfigToPromConfig(cfg string) (map[any]any, error) {
 	config, err := adapters.ConfigFromString(cfg)
@@ -100,6 +118,9 @@ func ConfigToPromConfig(cfg string) (map[any]any, error) {
 
 	prometheusProperty, ok := receivers["prometheus"]
 	if !ok {
+		if named := namedPrometheusReceivers(receivers); len(named) > 0 {
+			return nil, fmt.Errorf("the target allocator requires a receiver named exactly \"prometheus\", but only named instances were found: %s; rename one of them to \"prometheus\"", strings.Join(named, ", "))
+		}
 		return nil, errorNoComponent("prometheus")
 	}
 
