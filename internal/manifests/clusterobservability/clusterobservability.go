@@ -175,8 +175,8 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						ReadOnly:  true,
 					},
 					{
-						Name:      "host-usr-lib-osrelease",
-						MountPath: "/hostfs/usr/lib/os-release",
+						Name:      "host-etc-osrelease",
+						MountPath: "/hostfs/etc/os-release",
 						ReadOnly:  true,
 					},
 					{
@@ -246,10 +246,10 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						},
 					},
 					{
-						Name: "host-usr-lib-osrelease",
+						Name: "host-etc-osrelease",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/usr/lib/os-release",
+								Path: "/etc/os-release",
 							},
 						},
 					},
