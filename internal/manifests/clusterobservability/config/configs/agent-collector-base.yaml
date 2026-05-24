@@ -1,6 +1,17 @@
 # Base configuration for agent collectors (DaemonSet) 
 # Collects kubelet stats, container logs, and OTLP data from auto-instrumentation
 receivers:
+  hostmetrics:
+    root_path: /hostfs
+    collection_interval: 30s
+    scrapers:
+      cpu: {}
+      memory: {}
+      disk: {}
+      filesystem: {}
+      load: {}
+      network: {}
+      paging: {}
   otlp:
     protocols:
       grpc:
