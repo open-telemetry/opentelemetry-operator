@@ -26,7 +26,7 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-telemetry/opamp-go v0.15.0
-	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
+	github.com/openshift/api v0.0.0-20260317165824-54a3998d81eb
 	github.com/operator-framework/api v0.42.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.91.0
@@ -215,7 +215,7 @@ require (
 )
 
 require (
-	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
+	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
 	sigs.k8s.io/e2e-framework v0.7.0
 )
 
@@ -266,7 +266,7 @@ require (
 	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/openshift/library-go v0.0.0-20260210145149-d0e860e8d752 // indirect
+	github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_golang/exp v0.0.0-20260325093428-d8591d0db856 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
