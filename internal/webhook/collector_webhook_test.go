@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -16,7 +17,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -31,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -1787,4 +1791,158 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 		return true, sar, nil
 	})
 	return rbac.NewReviewer(c)
+}
+
+// getReviewerDelta returns a Reviewer whose fake client responds differently to SA SARs
+// (identifiable by a "system:serviceaccount:" user prefix) vs user SARs. This is used
+// to test the delta logic in validateRBACPrivilegeEscalation: saAllowed controls whether
+// the SA is considered to already hold the permissions, and userAllowed controls whether
+// the requesting user holds those permissions.
+func getReviewerDelta(saAllowed, userAllowed bool) *rbac.Reviewer {
+	c := fake.NewClientset()
+	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
+		if !action.Matches("create", "subjectaccessreviews") {
+			return false, nil, errors.New("must be a create for a SAR")
+		}
+		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
+		if !ok || sar == nil {
+			return false, nil, errors.New("bad object")
+		}
+		isSA := strings.HasPrefix(sar.Spec.User, "system:serviceaccount:")
+		allowed := userAllowed
+		if isSA {
+			allowed = saAllowed
+		}
+		sar.Status = authv1.SubjectAccessReviewStatus{
+			Allowed: allowed,
+			Denied:  !allowed,
+		}
+		return true, sar, nil
+	})
+	return rbac.NewReviewer(c)
+}
+
+// requestContext injects an admission.Request carrying the given username and groups into ctx.
+func requestContext(ctx context.Context, username string, groups []string) context.Context {
+	return admission.NewContextWithRequest(ctx, admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			UserInfo: authenticationv1.UserInfo{
+				Username: username,
+				Groups:   groups,
+			},
+		},
+	})
+}
+
+// k8seventsCollector returns a minimal collector whose config contains the k8s_events
+// receiver — a receiver that requires RBAC rules (get/list/watch on events).
+func k8seventsCollector() v1beta1.OpenTelemetryCollector {
+	const cfgYAML = `
+receivers:
+  k8s_events: {}
+exporters:
+  debug: {}
+service:
+  pipelines:
+    logs:
+      receivers: [k8s_events]
+      exporters: [debug]
+`
+	var cfg v1beta1.Config
+	if err := go_yaml.Unmarshal([]byte(cfgYAML), &cfg); err != nil {
+		panic(err)
+	}
+	return v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-col", Namespace: "default"},
+		Spec:       v1beta1.OpenTelemetryCollectorSpec{Config: cfg},
+	}
+}
+
+func TestValidateRBACPrivilegeEscalation(t *testing.T) {
+	// A config that produces RBAC rules (k8s_events receiver requires get/list/watch on events).
+	col := k8seventsCollector()
+
+	tests := []struct {
+		name             string
+		createRBACPerms  autoRBAC.Availability
+		reviewer         *rbac.Reviewer
+		injectRequest    bool
+		username         string
+		groups           []string
+		expectedWarnings []string
+		expectedErr      string
+	}{
+		{
+			name:            "feature disabled — no check performed",
+			createRBACPerms: autoRBAC.NotAvailable,
+			reviewer:        getReviewerDelta(false, false), // would deny everything but never called
+			injectRequest:   true,
+			username:        "alice",
+		},
+		{
+			name:            "no admission request in context — check skipped",
+			createRBACPerms: autoRBAC.Available,
+			reviewer:        getReviewerDelta(false, false), // would deny everything but never called
+			injectRequest:   false,
+		},
+		{
+			name:            "SA already holds all required permissions — allowed regardless of user",
+			createRBACPerms: autoRBAC.Available,
+			reviewer:        getReviewerDelta(true, false), // SA allowed, user would be denied but delta is empty
+			injectRequest:   true,
+			username:        "alice",
+			groups:          []string{"platform"},
+		},
+		{
+			name:            "SA lacks permissions, user holds them — allowed",
+			createRBACPerms: autoRBAC.Available,
+			reviewer:        getReviewerDelta(false, true), // SA denied → delta = all rules; user allowed
+			injectRequest:   true,
+			username:        "alice",
+			groups:          []string{"platform"},
+		},
+		{
+			name:            "SA lacks permissions, user also lacks them — request rejected",
+			createRBACPerms: autoRBAC.Available,
+			reviewer:        getReviewerDelta(false, false), // SA denied → delta = all rules; user also denied
+			injectRequest:   true,
+			username:        "bob",
+			groups:          []string{"readonly"},
+			// k8s_events receiver requires get/list/watch on events (core group).
+			expectedErr: `user "bob" is not allowed to create a collector whose config would grant permissions they do not hold`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:        "default-collector",
+				TargetAllocatorImage:  "default-ta-allocator",
+				CreateRBACPermissions: tt.createRBACPerms,
+			}
+			cvw := webhook.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				cfg,
+				tt.reviewer,
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+
+			ctx := context.Background()
+			if tt.injectRequest {
+				ctx = requestContext(ctx, tt.username, tt.groups)
+			}
+
+			warnings, err := cvw.ValidateCreate(ctx, col.DeepCopy())
+			if tt.expectedErr != "" {
+				require.ErrorContains(t, err, tt.expectedErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tt.expectedWarnings, warnings)
+		})
+	}
 }
