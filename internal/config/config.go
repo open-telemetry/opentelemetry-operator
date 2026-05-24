@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/goccy/go-yaml"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
@@ -144,6 +145,10 @@ type Config struct {
 	Instrumentation v1alpha1.Instrumentation `yaml:"instrumentations"`
 	// EnableInstrumentationCRDs enables looking for instrumentation CRDs.
 	EnableInstrumentationCRDs bool `yaml:"enable-instrumentation-crds"`
+	// ProxyEnvVars holds the proxy environment variables (HTTP_PROXY, HTTPS_PROXY,
+	// NO_PROXY — upper and lower case) captured from the operator's environment at
+	// startup and propagated to all managed containers.
+	ProxyEnvVars []corev1.EnvVar `yaml:"-"`
 }
 
 // Internal contains configuration that is propagated and cannot be accessed from the operator configuration.

@@ -19,6 +19,7 @@ body:
       - auto-instrumentation
       - target allocator
       - opamp
+      - cluster observability
   - type: textarea
     attributes:
       label: What happened?
