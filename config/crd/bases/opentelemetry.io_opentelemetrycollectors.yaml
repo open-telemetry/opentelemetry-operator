@@ -8073,6 +8073,8 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  allowInsecureAuthSecrets:
+                    type: boolean
                   collectorNotReadyGracePeriod:
                     default: 30s
                     format: duration

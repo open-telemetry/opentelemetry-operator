@@ -120,6 +120,15 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>allowInsecureAuthSecrets</b></td>
+        <td>boolean</td>
+        <td>
+          AllowInsecureAuthSecrets controls whether auth secret values (e.g. basicAuth passwords)
+are served over plain HTTP without requiring mTLS. Only enable this when the target allocator
+endpoint is secured by a service mesh or equivalent transport-level security.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>args</b></td>
         <td>map[string]string</td>
         <td>

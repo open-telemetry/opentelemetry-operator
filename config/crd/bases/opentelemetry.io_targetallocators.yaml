@@ -1205,6 +1205,8 @@ spec:
                 - consistent-hashing
                 - per-node
                 type: string
+              allowInsecureAuthSecrets:
+                type: boolean
               args:
                 additionalProperties:
                   type: string

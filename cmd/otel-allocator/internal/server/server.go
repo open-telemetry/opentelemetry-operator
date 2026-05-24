@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
@@ -130,7 +129,8 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 	}
 
 	if s.allowInsecureAuthSecrets {
-		slog.New(logr.ToSlogHandler(s.logger)).Warn("allowInsecureAuthSecrets is enabled - auth secret values will be served over plain HTTP. " +
+		// TODO: Change to Warn level after migrating away from logr.
+		s.logger.Info("allowInsecureAuthSecrets is enabled - auth secret values will be served over plain HTTP. " +
 			"Only use this when the target allocator endpoint is secured by a service mesh or equivalent transport-level security.")
 	}
 

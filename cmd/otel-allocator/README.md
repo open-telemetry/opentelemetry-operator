@@ -426,23 +426,23 @@ Prerequisites:
 
 #### Alternative: allow insecure auth secrets
 
-If the connection between the target allocator and collectors is already secured by a service mesh (e.g. Istio, Linkerd) or equivalent transport-level security, you can skip mTLS setup and serve auth secret values over plain HTTP instead.
+If transport security is already handled by a service mesh or equivalent, you can skip the mTLS setup and serve auth secret values over plain HTTP.
 
-Set `allow_insecure_auth_secrets: true` in the target allocator config file, pass `--allow-insecure-auth-secrets` as a CLI flag, or set the `ALLOW_INSECURE_AUTH_SECRETS=true` environment variable.
-
-When using the `OpenTelemetryCollector` CR with an embedded target allocator, set it via the `env` field:
+**With the Operator (CRD):**
 
 ```yaml
 targetAllocator:
   enabled: true
-  env:
-    - name: ALLOW_INSECURE_AUTH_SECRETS
-      value: "true"
+  allowInsecureAuthSecrets: true
 ```
 
-> **Warning:** Only enable this when transport-level security is guaranteed by other means. Without mTLS or a service mesh, auth secrets will be transmitted in plaintext.
+This works on both the `OpenTelemetryCollector` CR (embedded target allocator) and the standalone `TargetAllocator` CR.
 
+**Standalone Target Allocator (without Operator):**
 
+Set `allow_insecure_auth_secrets: true` in the target allocator config file, or set the `ALLOW_INSECURE_AUTH_SECRETS=true` environment variable.
+
+> **Warning:** Only enable this when transport-level security is guaranteed by other means.
 
 # Design
 
