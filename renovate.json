@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "labels": ["dependencies"],
-  "enabledManagers": ["regex", "npm", "pip_requirements", "gomod"],
+  "enabledManagers": ["regex", "npm", "pip_requirements", "gomod", "github-actions", "dockerfile"],
   "customManagers": [
     {
       "customType": "regex",
@@ -164,6 +164,24 @@
       "matchManagers": ["gomod"],
       "matchPackageNames": ["go.opentelemetry.io/otel{,/**}"],
       "groupName": "opentelemetry"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackagePatterns": ["^docker/"],
+      "groupName": "docker GitHub Actions"
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": ["tests/test-e2e-apps/**"],
+      "enabled": false
     }
   ]
 }
