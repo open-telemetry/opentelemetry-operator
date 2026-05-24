@@ -106,6 +106,24 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
 }
 
+func TestExtractPromConfigFromNamedPrometheusReceivers(t *testing.T) {
+	configStr := `receivers:
+  prometheus/otelcol:
+    config:
+      scrape_configs: []
+  prometheus/loki:
+    config:
+      scrape_configs: []
+`
+
+	// test
+	promConfig, err := ta.ConfigToPromConfig(configStr)
+	assert.EqualError(t, err, `the target allocator requires a receiver named exactly "prometheus", but only named instances were found: prometheus/loki, prometheus/otelcol; rename one of them to "prometheus"`)
+
+	// verify
+	assert.True(t, reflect.ValueOf(promConfig).IsNil())
+}
+
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	testCases := []struct {
 		description string
