@@ -24,6 +24,21 @@ const (
 	// Collector name suffixes.
 	AgentCollectorSuffix   = "agent"
 	ClusterCollectorSuffix = "cluster"
+
+	// Host paths mounted into the agent collector for system telemetry.
+	hostPathDev           = "/dev"
+	hostPathEtc           = "/etc"
+	hostPathProc          = "/proc"
+	hostPathRunUdevData   = "/run/udev/data"
+	hostPathSys           = "/sys"
+	hostPathVarRunUtmp    = "/var/run/utmp"
+	hostPathVarLogPods    = "/var/log/pods"
+	hostPathDockerContain = "/var/lib/docker/containers"
+	// /etc/os-release is specified by the os-release spec as the primary path
+	// and exists on all Linux distributions. On some distros (e.g. OpenShift/RHCOS),
+	// /usr/lib/os-release is the vendor file and /etc/os-release is a symlink to it,
+	// but on others (e.g. Talos Linux) only /etc/os-release exists.
+	hostPathOSRelease = "/etc/os-release"
 )
 
 // getCollectorImage returns a sensible default collector image when build-time version is not set.
@@ -146,47 +161,47 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "host-dev",
-						MountPath: "/hostfs/dev",
+						MountPath: "/hostfs" + hostPathDev,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "host-etc",
-						MountPath: "/hostfs/etc",
+						MountPath: "/hostfs" + hostPathEtc,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "host-proc",
-						MountPath: "/hostfs/proc",
+						MountPath: "/hostfs" + hostPathProc,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "host-run-udev-data",
-						MountPath: "/hostfs/run/udev/data",
+						MountPath: "/hostfs" + hostPathRunUdevData,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "host-sys",
-						MountPath: "/hostfs/sys",
+						MountPath: "/hostfs" + hostPathSys,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "host-var-run-utmp",
-						MountPath: "/hostfs/var/run/utmp",
+						MountPath: "/hostfs" + hostPathVarRunUtmp,
 						ReadOnly:  true,
 					},
 					{
-						Name:      "host-usr-lib-osrelease",
-						MountPath: "/hostfs/usr/lib/os-release",
+						Name:      "host-etc-osrelease",
+						MountPath: "/hostfs" + hostPathOSRelease,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "var-log-pods",
-						MountPath: "/var/log/pods",
+						MountPath: hostPathVarLogPods,
 						ReadOnly:  true,
 					},
 					{
 						Name:      "var-lib-docker-containers",
-						MountPath: "/var/lib/docker/containers",
+						MountPath: hostPathDockerContain,
 						ReadOnly:  true,
 					},
 					// OpenShift kubelet CA certificate mount (direct file)
@@ -201,7 +216,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-dev",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/dev",
+								Path: hostPathDev,
 							},
 						},
 					},
@@ -209,7 +224,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-etc",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/etc",
+								Path: hostPathEtc,
 							},
 						},
 					},
@@ -217,7 +232,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-proc",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/proc",
+								Path: hostPathProc,
 							},
 						},
 					},
@@ -225,7 +240,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-run-udev-data",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/run/udev/data",
+								Path: hostPathRunUdevData,
 							},
 						},
 					},
@@ -233,7 +248,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-sys",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/sys",
+								Path: hostPathSys,
 							},
 						},
 					},
@@ -241,15 +256,15 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "host-var-run-utmp",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/var/run/utmp",
+								Path: hostPathVarRunUtmp,
 							},
 						},
 					},
 					{
-						Name: "host-usr-lib-osrelease",
+						Name: "host-etc-osrelease",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/usr/lib/os-release",
+								Path: hostPathOSRelease,
 							},
 						},
 					},
@@ -257,7 +272,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "var-log-pods",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/var/log/pods",
+								Path: hostPathVarLogPods,
 							},
 						},
 					},
@@ -265,7 +280,7 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						Name: "var-lib-docker-containers",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/var/lib/docker/containers",
+								Path: hostPathDockerContain,
 							},
 						},
 					},
