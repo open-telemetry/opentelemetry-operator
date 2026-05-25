@@ -66,9 +66,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
-				Annotations: map[string]string{
-					"opentelemetry.io/ta-mtls-enabled": "true",
-				},
+			},
+			Spec: v1alpha1.TargetAllocatorSpec{
+				Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true},
 			},
 		}
 		cfg := config.Config{
@@ -92,9 +92,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
-				Annotations: map[string]string{
-					"opentelemetry.io/ta-mtls-enabled": "true",
-				},
+			},
+			Spec: v1alpha1.TargetAllocatorSpec{
+				Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true},
 			},
 		}
 		cfg := config.Config{

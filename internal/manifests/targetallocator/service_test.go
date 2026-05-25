@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
@@ -35,9 +36,7 @@ func TestServicePorts(t *testing.T) {
 
 func TestServicePortsWithTargetAllocatorMTLS(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
-	targetAllocator.Annotations = map[string]string{
-		"opentelemetry.io/ta-mtls-enabled": "true",
-	}
+	targetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 	collector := collectorInstance()
 	cfg := config.Config{
 		CertManagerAvailability: certmanager.Available,

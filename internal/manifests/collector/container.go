@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -26,7 +27,7 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool, ta *v1alpha1.TargetAllocator) corev1.Container {
 	image := otelcol.Spec.Image
 	if image == "" {
 		image = cfg.CollectorImage
@@ -61,7 +62,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			})
 	}
 
-	if isTAMTLSEnabledWithCertManager(cfg, otelcol) {
+	if isTAMTLSEnabledWithCertManager(cfg, ta) {
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.TAClientCertificate(otelcol.Name),

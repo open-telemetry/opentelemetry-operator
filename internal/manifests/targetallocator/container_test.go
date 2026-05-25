@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -494,10 +493,8 @@ func TestArgs(t *testing.T) {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				"opentelemetry.io/ta-mtls-enabled": "true",
-			},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true},
 		},
 	}
 

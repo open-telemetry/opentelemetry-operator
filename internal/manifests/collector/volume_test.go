@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -18,22 +19,16 @@ import (
 )
 
 func TestVolumeNewDefault(t *testing.T) {
-	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{}
 	cfg := config.New()
 
-	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, nil)
 
-	// verify
 	assert.Len(t, volumes, 1)
-
-	// check that it's the otc-internal volume, with the config map
 	assert.Equal(t, naming.ConfigMapVolume(), volumes[0].Name)
 }
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
-	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -45,18 +40,13 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	}
 	cfg := config.New()
 
-	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, nil)
 
-	// verify
 	assert.Len(t, volumes, 2)
-
-	// check that it's the otc-internal volume, with the config map
 	assert.Equal(t, "my-volume", volumes[1].Name)
 }
 
 func TestVolumeWithMoreConfigMaps(t *testing.T) {
-	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1beta1.ConfigMapsSpec{{
@@ -70,13 +60,9 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	}
 	cfg := config.New()
 
-	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, nil)
 
-	// verify
 	assert.Len(t, volumes, 3)
-
-	// check if the volume with the configmap prefix is mounted after defining the config map.
 	assert.Equal(t, "configmap-configmap-test", volumes[1].Name)
 	assert.Equal(t, "configmap-configmap-test2", volumes[2].Name)
 }
@@ -92,10 +78,10 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		otelcol.Spec.TargetAllocator.Enabled = true
-		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
+		ta := &v1alpha1.TargetAllocator{}
+		ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-		volumes := Volumes(cfg, otelcol)
+		volumes := Volumes(cfg, otelcol, ta)
 
 		expectedVolume := corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
@@ -113,10 +99,11 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.NotAvailable,
 		}
-		otelcol.Spec.TargetAllocator.Enabled = true
-		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-		volumes := Volumes(cfg, otelcol)
+		ta := &v1alpha1.TargetAllocator{}
+		ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
+
+		volumes := Volumes(cfg, otelcol, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
 	})
 
@@ -125,20 +112,18 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-		otelcol.Spec.TargetAllocator.Enabled = true
 
-		volumes := Volumes(cfg, otelcol)
+		volumes := Volumes(cfg, otelcol, nil)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
 	})
 
-	t.Run("TargetAllocator mtls enabled but TargetAllocator disabled", func(t *testing.T) {
+	t.Run("Nil TargetAllocator", func(t *testing.T) {
 		otelcol := v1beta1.OpenTelemetryCollector{}
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-		otelcol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-		volumes := Volumes(cfg, otelcol)
+		volumes := Volumes(cfg, otelcol, nil)
 		unexpectedVolume := corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{

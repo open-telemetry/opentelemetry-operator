@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -158,7 +159,8 @@ service:
 		expectedLables["app.kubernetes.io/version"] = "latest"
 
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		param.OtelCol.Spec.TargetAllocator.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
+		param.TargetAllocator = &v1alpha1.TargetAllocator{}
+		param.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)

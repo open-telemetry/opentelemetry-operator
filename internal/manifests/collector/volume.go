@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -17,7 +18,7 @@ import (
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1.Volume {
+func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, ta *v1alpha1.TargetAllocator) []corev1.Volume {
 	collectorCfg := otelcol.Spec.Config.DeepCopy()
 	if cfg.Internal.OperandTLSProfile != nil {
 		_, _ = otelconfig.ApplyDefaults(collectorCfg, logr.Discard(), components.WithTLSProfile(cfg.Internal.OperandTLSProfile))
@@ -37,7 +38,7 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 		},
 	}}
 
-	if isTAMTLSEnabledWithCertManager(cfg, otelcol) {
+	if isTAMTLSEnabledWithCertManager(cfg, ta) {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{

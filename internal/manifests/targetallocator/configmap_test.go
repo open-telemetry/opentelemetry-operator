@@ -427,9 +427,7 @@ prometheus_cr:
 			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
-		testParams.TargetAllocator.Annotations = map[string]string{
-			"opentelemetry.io/ta-mtls-enabled": "true",
-		}
+		testParams.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
@@ -484,9 +482,7 @@ https:
 			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
-		testParams.TargetAllocator.Annotations = map[string]string{
-			"opentelemetry.io/ta-mtls-enabled": "true",
-		}
+		testParams.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing

@@ -1,8 +1,6 @@
 metadata:
   name: test
   namespace: test
-  annotations:
-    opentelemetry.io/ta-mtls-enabled: "true"
 spec:
   filterStrategy: relabel-config
   mtls:

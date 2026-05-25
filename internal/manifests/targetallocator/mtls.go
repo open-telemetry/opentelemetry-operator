@@ -10,13 +10,12 @@ import (
 )
 
 func isMTLSEnabled(cfg config.Config, ta v1alpha1.TargetAllocator) bool {
-	annotations := ta.GetAnnotations()
-	if annotations == nil {
+	if ta.Spec.Mtls == nil || !ta.Spec.Mtls.Enabled {
 		return false
 	}
-	if annotations["opentelemetry.io/ta-mtls-enabled"] != "true" {
-		return false
+	useCertManager := true
+	if ta.Spec.Mtls.UseCertManager != nil {
+		useCertManager = *ta.Spec.Mtls.UseCertManager
 	}
-	useCertManager := annotations["opentelemetry.io/ta-mtls-use-cert-manager"] != "false"
 	return cfg.CertManagerAvailability == certmanager.Available && useCertManager
 }

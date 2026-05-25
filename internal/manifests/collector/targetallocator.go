@@ -29,15 +29,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 	labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 
 	annotations := maps.Clone(params.OtelCol.Annotations)
-	if taSpec.Mtls != nil && taSpec.Mtls.Enabled {
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-		annotations["opentelemetry.io/ta-mtls-enabled"] = "true"
-		if taSpec.Mtls.UseCertManager != nil && !*taSpec.Mtls.UseCertManager {
-			annotations["opentelemetry.io/ta-mtls-use-cert-manager"] = "false"
-		}
-	}
 
 	return &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,6 +61,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			PrometheusCR:                 taSpec.PrometheusCR,
 			Observability:                taSpec.Observability,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
+			Mtls:                         taSpec.Mtls,
 		},
 	}, nil
 }

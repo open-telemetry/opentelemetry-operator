@@ -4,23 +4,20 @@
 package collector
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func isTAMTLSEnabledWithCertManager(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) bool {
-	if otelcol.Spec.TargetAllocator.Mtls == nil {
+func isTAMTLSEnabledWithCertManager(cfg config.Config, ta *v1alpha1.TargetAllocator) bool {
+	if ta == nil || ta.Spec.Mtls == nil || !ta.Spec.Mtls.Enabled {
 		return false
 	}
 
 	useCertManager := true
-	if otelcol.Spec.TargetAllocator.Mtls.UseCertManager != nil {
-		useCertManager = *otelcol.Spec.TargetAllocator.Mtls.UseCertManager
+	if ta.Spec.Mtls.UseCertManager != nil {
+		useCertManager = *ta.Spec.Mtls.UseCertManager
 	}
 
-	return otelcol.Spec.TargetAllocator.Enabled &&
-		otelcol.Spec.TargetAllocator.Mtls.Enabled &&
-		useCertManager &&
-		cfg.CertManagerAvailability == certmanager.Available
+	return useCertManager && cfg.CertManagerAvailability == certmanager.Available
 }
