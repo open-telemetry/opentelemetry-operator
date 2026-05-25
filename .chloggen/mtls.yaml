@@ -5,13 +5,14 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Added a configurable mTLS option to the Target Allocator, allowing users to enable or disable mutual TLS via CRD instead of relying on a feature flag."
+note: "mTLS between the Target Allocator and Collector can now be enabled per-CR via `spec.mtls.enabled`, replacing the global `operator.targetallocator.mtls` feature gate."
 
 # One or more tracking issues related to the change
-issues: [4915]
+issues: [5136]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Set `spec.mtls.useCertManager: false` to provide your own TLS secrets instead of having cert-manager provision them.
 
