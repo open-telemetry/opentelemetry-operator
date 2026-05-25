@@ -1,0 +1,50 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: standalone-mtls
+spec:
+  mtls:
+    enabled: true
+  prometheusCR:
+    enabled: true
+    serviceMonitorSelector: {}
+    podMonitorSelector: {}
+  scrapeConfigs:
+    - job_name: prometheus
+      static_configs:
+        - targets: ["localhost:9090"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-serving-over-https
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-ta
+          image: mirror.gcr.io/curlimages/curl:latest
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/tls
+              readOnly: true
+          args:
+            - /bin/sh
+            - -c
+            - |
+              for i in $(seq 30); do
+                if curl -s \
+                  --cert /etc/tls/tls.crt \
+                  --key /etc/tls/tls.key \
+                  --cacert /etc/tls/ca.crt \
+                  https://standalone-mtls-targetallocator:443; then
+                  exit 0
+                fi
+                sleep 5
+              done
+              exit 1
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: standalone-mtls-ta-client-cert
