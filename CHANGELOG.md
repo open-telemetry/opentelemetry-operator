@@ -24,6 +24,9 @@
 
 ### 💡 Enhancements 💡
 
+- `target allocator`: Improve the error message when the target allocator is enabled but the Prometheus receiver is not named exactly "prometheus". (#5017)
+  When only named instances such as "prometheus/otelcol" are present, the error now lists them and explains that a receiver named exactly "prometheus" is required.
+  
 - `target allocator`: Add support for dropping ServiceMonitor/PodMonitor endpoints that reference arbitrary files (#5104)
 - `auto-instrumentation`: Allow to run the mutating webhook using static configuration, without the need for CRDs. (#4201)
   With this change, you can deploy the manager as a mutating webhook without setting up a v1alpha1.Instrumentation custom resource
@@ -49,6 +52,14 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `collector`: Restrict automatic RBAC from users without the necessary permissions (#5105)
+  If the operator has permission to create ClusterRoles and ClusterRoleBindings, it sets up RBAC
+  for collectors automatically based on their configuration.
+  If a user tries to create an OpenTelemetryCollector whose permissions would be automatically
+  generated this way, and the user doesn't have the permissions themselves, it will be rejected.
+  If the collector tries to use an existing ServiceAccount, only the permissions missing from
+  that ServiceAccount are checked this way.
+  
 - `collector`: Remove unnecessary RBAC permissions from the events receiver. (#5073)
 - `collector`: Fix when configuring a gRPC port for the `jaeger_query` extension, the `collector-extension` Service only generates an HTTP port and is missing the gRPC port. (#4912)
 - `collector`: Explicitly set without_type_suffix, without_units, and without_scope_info to false on the operator-injected Prometheus telemetry reader. (#5075)
