@@ -23,7 +23,7 @@ func TestVolumeNewDefault(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	volumes := Volumes(cfg, otelcol, nil)
+	volumes := Volumes(cfg, otelcol)
 
 	// verify
 	assert.Len(t, volumes, 1)
@@ -55,7 +55,7 @@ func TestUserDefinedVolume(t *testing.T) {
 	}
 	cfg := config.New()
 
-	volumes := Volumes(cfg, ta, nil)
+	volumes := Volumes(cfg, ta)
 
 	assert.Len(t, volumes, 2)
 	assert.Contains(t, volumes, ta.Spec.Volumes[0])
@@ -75,7 +75,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta, nil)
+		volumes := Volumes(cfg, ta)
 
 		expectedVolume := corev1.Volume{
 			Name: naming.TAServerCertificate(ta.Name),
@@ -101,7 +101,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.NotAvailable,
 		}
 
-		volumes := Volumes(cfg, ta, nil)
+		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 
@@ -115,7 +115,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			CertManagerAvailability: certmanager.Available,
 		}
 
-		volumes := Volumes(cfg, ta, nil)
+		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
 }

@@ -31,7 +31,7 @@ func TestContainerNewDefault(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -51,7 +51,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -63,7 +63,7 @@ func TestContainerDefaultPorts(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Len(t, c.Ports, 1)
@@ -77,7 +77,7 @@ func TestContainerDefaultVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 1)
@@ -114,7 +114,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 		},
 	}
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 	resourcesValues := c.Resources
 
 	// verify
@@ -223,7 +223,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -252,7 +252,7 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	require.Len(t, c.Env, 6)
@@ -349,7 +349,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -368,7 +368,7 @@ func TestReadinessProbe(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
@@ -503,7 +503,7 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, targetAllocator, nil)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, "http", c.Ports[0].Name)
