@@ -922,7 +922,6 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
-
 }
 
 func TestDesiredConfigMapAllowInsecureAuthSecrets(t *testing.T) {

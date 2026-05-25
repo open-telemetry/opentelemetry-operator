@@ -1220,4 +1220,3 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
 	})
 }
-
