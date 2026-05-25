@@ -249,6 +249,17 @@ func (*mockOpampClient) SetPackageStatuses(*protobufs.PackageStatuses) error {
 	return nil
 }
 
+func (*mockOpampClient) SetAvailableComponents(*protobufs.AvailableComponents) error {
+	return nil
+}
+
+func (*mockOpampClient) SetFlags(protobufs.AgentToServerFlags) {
+}
+
+func (*mockOpampClient) SetCapabilities(*protobufs.AgentCapabilities) error {
+	return nil
+}
+
 func getFakeApplier(t *testing.T, conf *config.Config, lists ...runtimeClient.ObjectList) *operator.Client {
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
 		s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})

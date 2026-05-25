@@ -67,13 +67,13 @@ func (s *OpAMPProxy) Start() error {
 	settings := server.StartSettings{
 		Settings: server.Settings{
 			CustomCapabilities: []string{},
-			Callbacks: server.CallbacksStruct{
-				OnConnectingFunc: func(*http.Request) types.ConnectionResponse {
+			Callbacks: types.Callbacks{
+				OnConnecting: func(*http.Request) types.ConnectionResponse {
 					return types.ConnectionResponse{
 						Accept: true,
-						ConnectionCallbacks: server.ConnectionCallbacksStruct{
-							OnMessageFunc:         s.onMessage,
-							OnConnectionCloseFunc: s.onDisconnect,
+						ConnectionCallbacks: types.ConnectionCallbacks{
+							OnMessage:         s.onMessage,
+							OnConnectionClose: s.onDisconnect,
 						},
 					}
 				},
