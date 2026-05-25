@@ -106,6 +106,9 @@ func main() {
 		}
 		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
 	}
+	if cfg.AllowInsecureAuthSecrets {
+		httpOptions = append(httpOptions, server.WithInsecureAuthSecrets())
+	}
 	srv, serverErr := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	if serverErr != nil {
 		panic(serverErr)

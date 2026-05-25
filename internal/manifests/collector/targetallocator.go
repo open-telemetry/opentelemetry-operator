@@ -58,6 +58,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			FilterStrategy:               taSpec.FilterStrategy,
 			PrometheusCR:                 taSpec.PrometheusCR,
 			Observability:                taSpec.Observability,
+			AllowInsecureAuthSecrets:     taSpec.AllowInsecureAuthSecrets,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
 		},
 	}, nil

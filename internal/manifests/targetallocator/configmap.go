@@ -146,6 +146,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		}
 	}
 
+	if taSpec.AllowInsecureAuthSecrets {
+		taConfig["allow_insecure_auth_secrets"] = true
+	}
+
 	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}

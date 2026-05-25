@@ -794,6 +794,31 @@ func TestLoadFromEnv(t *testing.T) {
 	assert.Equal(t, namespace, cfg.CollectorNamespace)
 }
 
+func TestLoadFromEnvAllowInsecureAuthSecrets(t *testing.T) {
+	t.Run("not set defaults to false", func(t *testing.T) {
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to true", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "true")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.True(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to false", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "false")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
+}
+
 func TestValidateConfig(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -1002,6 +1027,7 @@ users:
 		assert.Equal(t, DefaultFilterStrategy, config.FilterStrategy)
 		assert.False(t, config.PrometheusCR.Enabled)
 		assert.False(t, config.HTTPS.Enabled)
+		assert.False(t, config.AllowInsecureAuthSecrets)
 	})
 
 	t.Run("command-line has priority over config file for boolean values", func(t *testing.T) {
@@ -1012,6 +1038,7 @@ prometheus_cr:
   enabled: false
 https:
   enabled: false
+allow_insecure_auth_secrets: false
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
 		err := os.WriteFile(configPath, []byte(configContent), 0o600)
@@ -1024,6 +1051,7 @@ https:
 			"--" + configFilePathFlagName + "=" + configPath,
 			"--" + prometheusCREnabledFlagName + "=true",
 			"--" + httpsEnabledFlagName + "=true",
+			"--" + allowInsecureAuthSecretsFlagName + "=true",
 			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
 		}
 
@@ -1034,6 +1062,7 @@ https:
 		// Assert CLI values override config file
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
 		assert.True(t, config.HTTPS.Enabled, "CLI should override config file for HTTPS enabled")
+		assert.True(t, config.AllowInsecureAuthSecrets, "CLI should override config file for allow insecure auth secrets")
 	})
 
 	t.Run("command-line has priority over config file for string values", func(t *testing.T) {
@@ -1094,6 +1123,7 @@ kube_config_file_path: "/config/kube.config"
 		configContent := `
 collector_namespace: config-file-namespace
 listen_addr: "` + configListenAddr + `"
+allow_insecure_auth_secrets: true
 prometheus_cr:
   enabled: true
 https:
@@ -1121,6 +1151,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.Equal(t, ":7443", config.HTTPS.ListenAddr, "Config file should override defaults for HTTPS listen address")
 		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "Config file should set kube config path")
 		assert.Equal(t, "config-file-namespace", config.CollectorNamespace, "Config file should set collector namespace")
+		assert.True(t, config.AllowInsecureAuthSecrets, "Config file should override defaults for allow insecure auth secrets")
 	})
 
 	t.Run("environment variables are applied", func(t *testing.T) {
