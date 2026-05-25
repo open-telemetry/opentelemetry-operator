@@ -13,6 +13,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -125,7 +126,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		}
 	}
 
-	if isMTLSEnabled(cfg, instance) {
+	if manifestutils.IsTAMTLSEnabled(cfg, &instance) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,

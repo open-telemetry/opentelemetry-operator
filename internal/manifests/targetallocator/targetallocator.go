@@ -13,6 +13,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -35,7 +36,7 @@ func Build(params Params) ([]client.Object, error) {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if isMTLSEnabled(params.Config, params.TargetAllocator) {
+	if manifestutils.IsTAMTLSEnabled(params.Config, &params.TargetAllocator) {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),

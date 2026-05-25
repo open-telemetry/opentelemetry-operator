@@ -8,6 +8,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -28,7 +29,7 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 		},
 	}}
 
-	if isMTLSEnabled(cfg, instance) {
+	if manifestutils.IsTAMTLSEnabled(cfg, &instance) {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAServerCertificate(instance.Name),
 			VolumeSource: corev1.VolumeSource{

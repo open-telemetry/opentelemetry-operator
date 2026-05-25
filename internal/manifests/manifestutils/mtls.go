@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package targetallocator
+package manifestutils
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -9,13 +9,15 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func isMTLSEnabled(cfg config.Config, ta v1alpha1.TargetAllocator) bool {
-	if ta.Spec.Mtls == nil || !ta.Spec.Mtls.Enabled {
+func IsTAMTLSEnabled(cfg config.Config, ta *v1alpha1.TargetAllocator) bool {
+	if ta == nil || ta.Spec.Mtls == nil || !ta.Spec.Mtls.Enabled {
 		return false
 	}
+
 	useCertManager := true
 	if ta.Spec.Mtls.UseCertManager != nil {
 		useCertManager = *ta.Spec.Mtls.UseCertManager
 	}
-	return cfg.CertManagerAvailability == certmanager.Available && useCertManager
+
+	return useCertManager && cfg.CertManagerAvailability == certmanager.Available
 }
