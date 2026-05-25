@@ -9,15 +9,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func IsTAMTLSEnabled(cfg config.Config, ta *v1alpha1.TargetAllocator) bool {
-	if ta == nil || ta.Spec.Mtls == nil || !ta.Spec.Mtls.Enabled {
+func IsTAMTLSEnabled(ta *v1alpha1.TargetAllocator) bool {
+	return ta != nil && ta.Spec.Mtls != nil && ta.Spec.Mtls.Enabled
+}
+
+func IsTAMTLSCertManagerEnabled(ta *v1alpha1.TargetAllocator, cfg config.Config) bool {
+	if !IsTAMTLSEnabled(ta) {
 		return false
 	}
-
-	useCertManager := true
-	if ta.Spec.Mtls.UseCertManager != nil {
-		useCertManager = *ta.Spec.Mtls.UseCertManager
+	if ta.Spec.Mtls.UseCertManager != nil && !*ta.Spec.Mtls.UseCertManager {
+		return false
 	}
-
-	return useCertManager && cfg.CertManagerAvailability == certmanager.Available
+	return cfg.CertManagerAvailability == certmanager.Available
 }

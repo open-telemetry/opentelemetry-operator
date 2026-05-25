@@ -126,7 +126,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		}
 	}
 
-	if manifestutils.IsTAMTLSEnabled(cfg, &instance) {
+	if manifestutils.IsTAMTLSEnabled(&instance) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,

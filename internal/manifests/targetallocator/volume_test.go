@@ -88,7 +88,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		assert.Contains(t, volumes, expectedVolume)
 	})
 
-	t.Run("CertManager not available", func(t *testing.T) {
+	t.Run("CertManager not available, mTLS volumes still present", func(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-targetallocator",
@@ -102,7 +102,15 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		}
 
 		volumes := Volumes(cfg, ta)
-		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
+		expectedVolume := corev1.Volume{
+			Name: naming.TAServerCertificate(ta.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: naming.TAServerCertificateSecretName(ta.Name),
+				},
+			},
+		}
+		assert.Contains(t, volumes, expectedVolume)
 	})
 
 	t.Run("targetAllocator mtls disabled", func(t *testing.T) {

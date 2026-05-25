@@ -36,7 +36,7 @@ func Build(params Params) ([]client.Object, error) {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if manifestutils.IsTAMTLSEnabled(params.Config, &params.TargetAllocator) {
+	if manifestutils.IsTAMTLSCertManagerEnabled(&params.TargetAllocator, params.Config) {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),

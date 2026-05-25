@@ -14,56 +14,81 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func TestIsTAMTLSEnabledDefaultsUseCertManagerToTrue(t *testing.T) {
+func TestIsTAMTLSEnabledTrue(t *testing.T) {
 	ta := &v1alpha1.TargetAllocator{}
 	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-	cfg := config.Config{CertManagerAvailability: certmanager.Available}
-
-	assert.True(t, IsTAMTLSEnabled(cfg, ta))
+	assert.True(t, IsTAMTLSEnabled(ta))
 }
 
-func TestIsTAMTLSEnabledDisabledWhenUseCertManagerFalse(t *testing.T) {
-	useCertManager := false
+func TestIsTAMTLSEnabledFalse(t *testing.T) {
 	ta := &v1alpha1.TargetAllocator{}
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
-		Enabled:        true,
-		UseCertManager: &useCertManager,
-	}
+	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: false}
 
-	cfg := config.Config{CertManagerAvailability: certmanager.Available}
-
-	assert.False(t, IsTAMTLSEnabled(cfg, ta))
+	assert.False(t, IsTAMTLSEnabled(ta))
 }
 
 func TestIsTAMTLSEnabledNilTA(t *testing.T) {
-	cfg := config.Config{CertManagerAvailability: certmanager.Available}
-
-	assert.False(t, IsTAMTLSEnabled(cfg, nil))
+	assert.False(t, IsTAMTLSEnabled(nil))
 }
 
 func TestIsTAMTLSEnabledNilMtls(t *testing.T) {
 	ta := &v1alpha1.TargetAllocator{}
 
-	cfg := config.Config{CertManagerAvailability: certmanager.Available}
-
-	assert.False(t, IsTAMTLSEnabled(cfg, ta))
+	assert.False(t, IsTAMTLSEnabled(ta))
 }
 
-func TestIsTAMTLSEnabledDisabledMtls(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: false}
+func TestIsTAMTLSCertManagerEnabled(t *testing.T) {
+	boolTrue := true
+	boolFalse := false
 
-	cfg := config.Config{CertManagerAvailability: certmanager.Available}
+	tests := []struct {
+		name     string
+		ta       *v1alpha1.TargetAllocator
+		cfg      config.Config
+		expected bool
+	}{
+		{
+			name:     "mTLS enabled, cert-manager available, UseCertManager defaulting to true",
+			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}}},
+			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
+			expected: true,
+		},
+		{
+			name:     "mTLS enabled, cert-manager available, UseCertManager explicitly true",
+			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolTrue}}},
+			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
+			expected: true,
+		},
+		{
+			name:     "mTLS enabled, cert-manager available, UseCertManager false",
+			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolFalse}}},
+			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
+			expected: false,
+		},
+		{
+			name:     "mTLS enabled, cert-manager not available",
+			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}}},
+			cfg:      config.Config{CertManagerAvailability: certmanager.NotAvailable},
+			expected: false,
+		},
+		{
+			name:     "mTLS disabled",
+			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: false}}},
+			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
+			expected: false,
+		},
+		{
+			name:     "nil TA",
+			ta:       nil,
+			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
+			expected: false,
+		},
+	}
 
-	assert.False(t, IsTAMTLSEnabled(cfg, ta))
-}
-
-func TestIsTAMTLSEnabledCertManagerUnavailable(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
-
-	cfg := config.Config{CertManagerAvailability: certmanager.NotAvailable}
-
-	assert.False(t, IsTAMTLSEnabled(cfg, ta))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsTAMTLSCertManagerEnabled(tt.ta, tt.cfg))
+		})
+	}
 }
