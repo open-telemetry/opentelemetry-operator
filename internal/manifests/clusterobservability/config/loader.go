@@ -273,7 +273,7 @@ func (*ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) ma
 		}
 		pipelines["logs"] = PipelineConfig{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"k8sattributes", "batch"},
+			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["traces"] = PipelineConfig{
