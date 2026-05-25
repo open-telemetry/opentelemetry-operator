@@ -204,12 +204,6 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 						MountPath: hostPathDockerContain,
 						ReadOnly:  true,
 					},
-					// OpenShift kubelet CA certificate mount (direct file)
-					{
-						Name:      "kubelet-serving-ca",
-						MountPath: "/etc/kubelet-serving-ca/ca-bundle.crt",
-						ReadOnly:  true,
-					},
 				},
 				Volumes: []corev1.Volume{
 					{
@@ -284,19 +278,26 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 							},
 						},
 					},
-					// OpenShift kubelet CA certificate volume via hostPath
-					{
-						Name: "kubelet-serving-ca",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/etc/kubernetes/kubelet-ca.crt",
-								Type: &[]corev1.HostPathType{corev1.HostPathFile}[0],
-							},
-						},
-					},
 				},
 			},
 		},
+	}
+
+	if isOpenShiftEnvironment(params) {
+		agentCollector.Spec.VolumeMounts = append(agentCollector.Spec.VolumeMounts, corev1.VolumeMount{
+			Name:      "kubelet-serving-ca",
+			MountPath: "/etc/kubelet-serving-ca/ca-bundle.crt",
+			ReadOnly:  true,
+		})
+		agentCollector.Spec.Volumes = append(agentCollector.Spec.Volumes, corev1.Volume{
+			Name: "kubelet-serving-ca",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/etc/kubernetes/kubelet-ca.crt",
+					Type: &[]corev1.HostPathType{corev1.HostPathFile}[0],
+				},
+			},
+		})
 	}
 
 	return agentCollector, nil
