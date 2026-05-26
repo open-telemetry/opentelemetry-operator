@@ -129,6 +129,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
+          UPLOAD: ${{ startsWith(github.ref, 'refs/tags/v') && 'true' || 'false' }}
         run: |
-          make cosign-sign IMAGE="${GHCR_IMAGE}" DIGEST="${DIGEST}"
-          make cosign-sign IMAGE="${DOCKERHUB_IMAGE}" DIGEST="${DIGEST}"
+          make cosign-sign IMAGE="${GHCR_IMAGE}" DIGEST="${DIGEST}" UPLOAD="${UPLOAD}"
+          make cosign-sign IMAGE="${DOCKERHUB_IMAGE}" DIGEST="${DIGEST}" UPLOAD="${UPLOAD}"
