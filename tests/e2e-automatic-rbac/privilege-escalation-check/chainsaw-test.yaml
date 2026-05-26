@@ -23,6 +23,19 @@ spec:
     try:
     - apply:
         file: 01-install.yaml
+  - name: wait-for-rbac-propagation
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          for i in $(seq 1 30); do
+            if kubectl auth can-i get events --as=permitted-user -A 2>/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "RBAC propagation timed out"
+          exit 1
   - name: limited-user-request-is-rejected
     try:
     - script:
