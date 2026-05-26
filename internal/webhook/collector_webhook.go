@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
@@ -18,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -302,6 +304,13 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 		}
 	}
 
+	// validate that the requesting user holds every permission the operator would auto-grant
+	if c.reviewer != nil {
+		if err := c.validateRBACPrivilegeEscalation(ctx, r); err != nil {
+			return warnings, err
+		}
+	}
+
 	return warnings, nil
 }
 
@@ -349,6 +358,87 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	}
 
 	return nil, nil
+}
+
+// validateRBACPrivilegeEscalation checks that the requesting user holds every permission
+// that the operator would newly grant to the collector's ServiceAccount via auto-RBAC.
+//
+// Without this check a user who has CREATE on OpenTelemetryCollector but no direct RBAC write
+// access could craft a collector config that causes the operator to grant the collector's
+// ServiceAccount permissions the requesting user does not themselves hold — a privilege
+// escalation path equivalent to the one Kubernetes guards against with the "escalate" verb.
+//
+// The check uses a delta approach to avoid false rejections:
+//  1. Determine what RBAC rules the collector config requires.
+//  2. Check what the collector's ServiceAccount already holds.
+//  3. Compute the delta — rules the SA does not yet hold and that reconciliation would grant.
+//  4. Check the requesting user against the delta only.
+//
+// If the SA already holds all required permissions (delta is empty), no new grants will
+// occur and the check passes regardless of the requesting user's permissions.
+//
+// The check is skipped when:
+//   - CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
+//   - the collector config requires no extra RBAC rules, or
+//   - no admission.Request is present in the context (direct calls from tests / internal code).
+func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r *v1beta1.OpenTelemetryCollector) error {
+	if c.cfg.CreateRBACPermissions != autoRBAC.Available {
+		return nil
+	}
+
+	rules, err := otelconfig.GetAllRbacRules(&r.Spec.Config, c.logger)
+	if err != nil {
+		return fmt.Errorf("unable to determine RBAC rules for collector config: %w", err)
+	}
+	if len(rules) == 0 {
+		return nil
+	}
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		// No admission request in context (e.g. called directly in unit tests or internal
+		// reconciliation); skip the check rather than blocking legitimate uses.
+		return nil
+	}
+
+	rulePtrs := make([]*rbacv1.PolicyRule, len(rules))
+	for i := range rules {
+		rulePtrs[i] = &rules[i]
+	}
+
+	// Determine the ServiceAccount name the operator will manage RBAC for.
+	saName := r.Spec.ServiceAccount
+	if saName == "" {
+		saName = naming.ServiceAccount(r.Name)
+	}
+
+	// Step 2: check what the SA already holds.
+	saSARs, err := c.reviewer.CheckPolicyRules(ctx, saName, r.Namespace, rulePtrs...)
+	if err != nil {
+		return fmt.Errorf("unable to check existing SA RBAC permissions: %w", err)
+	}
+
+	// Step 3: compute the delta — permissions the SA does not yet hold.
+	_, delta := rbac.AllSubjectAccessReviewsAllowed(saSARs)
+	if len(delta) == 0 {
+		// SA already holds all required permissions; reconciliation won't grant anything new.
+		return nil
+	}
+
+	// Step 4: check the requesting user against the delta only.
+	username := req.UserInfo.Username
+	groups := req.UserInfo.Groups
+
+	userSARs, err := c.reviewer.CheckSARsForUser(ctx, username, groups, delta)
+	if err != nil {
+		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", username, err)
+	}
+
+	if allowed, denied := rbac.AllSubjectAccessReviewsAllowed(userSARs); !allowed {
+		missing := strings.Join(rbac.WarningsGroupedByResource(denied), "; ")
+		return fmt.Errorf("user %q is not allowed to create a collector whose config would grant permissions they do not hold: %s", username, missing)
+	}
+	return nil
 }
 
 func ValidatePorts(ports []v1beta1.PortsSpec) error {

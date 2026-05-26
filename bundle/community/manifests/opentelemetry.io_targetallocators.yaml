@@ -1207,6 +1207,8 @@ spec:
                 - consistent-hashing
                 - per-node
                 type: string
+              allowInsecureAuthSecrets:
+                type: boolean
               args:
                 additionalProperties:
                   type: string
@@ -2480,6 +2482,8 @@ spec:
                     items:
                       type: string
                     type: array
+                  denyFSAccessThroughSMs:
+                    type: boolean
                   denyNamespaces:
                     items:
                       type: string

@@ -267,13 +267,13 @@ func (*ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) ma
 	case AgentCollectorType:
 		// Agent collector: metrics, logs, traces
 		pipelines["metrics"] = PipelineConfig{
-			Receivers:  []string{"otlp", "kubeletstats"},
+			Receivers:  []string{"otlp", "hostmetrics", "kubeletstats"},
 			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["logs"] = PipelineConfig{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"k8sattributes", "batch"},
+			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["traces"] = PipelineConfig{

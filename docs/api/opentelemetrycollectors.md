@@ -13979,6 +13979,20 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>denyFSAccessThroughSMs</b></td>
+        <td>boolean</td>
+        <td>
+          DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+PodMonitor endpoints that reference arbitrary files on the file system. When
+enabled, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile,
+or tlsConfig.keyFile are dropped from the produced scrape configuration while
+the remaining endpoints are kept. This prevents tenants from stealing the
+Collector's service account token via ServiceMonitor bearerTokenFile
+references. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from
+the Prometheus Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
@@ -32203,6 +32217,15 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>allowInsecureAuthSecrets</b></td>
+        <td>boolean</td>
+        <td>
+          AllowInsecureAuthSecrets controls whether auth secret values (e.g. basicAuth passwords)
+are served over plain HTTP without requiring mTLS. Only enable this when the target allocator
+endpoint is secured by a service mesh or equivalent transport-level security.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>collectorNotReadyGracePeriod</b></td>
         <td>string</td>
         <td>
@@ -34864,6 +34887,20 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>[]string</td>
         <td>
           AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyFSAccessThroughSMs</b></td>
+        <td>boolean</td>
+        <td>
+          DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+PodMonitor endpoints that reference arbitrary files on the file system. When
+enabled, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile,
+or tlsConfig.keyFile are dropped from the produced scrape configuration while
+the remaining endpoints are kept. This prevents tenants from stealing the
+Collector's service account token via ServiceMonitor bearerTokenFile
+references. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from
+the Prometheus Operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>

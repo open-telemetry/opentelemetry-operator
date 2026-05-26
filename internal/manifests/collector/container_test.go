@@ -566,12 +566,15 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 }
 
 func TestContainerProxyEnvVars(t *testing.T) {
-	t.Setenv("NO_PROXY", "localhost")
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New()
+	cfg.ProxyEnvVars = []corev1.EnvVar{
+		{Name: "NO_PROXY", Value: "localhost"},
+		{Name: "no_proxy", Value: "localhost"},
+	}
 
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
@@ -956,9 +959,9 @@ func TestGetEnvironmentVariables(t *testing.T) {
 	tests := []struct {
 		name                 string
 		otelcol              v1beta1.OpenTelemetryCollector
+		cfg                  config.Config
 		enableSetGolangFlags bool
 		expectedEnvVars      []corev1.EnvVar
-		before               func(t *testing.T)
 	}{
 		{
 			name: "default environment variables",
@@ -1143,9 +1146,13 @@ func TestGetEnvironmentVariables(t *testing.T) {
 				{Name: "NO_PROXY", Value: "localhost"},
 				{Name: "no_proxy", Value: "localhost"},
 			},
-			before: func(t *testing.T) {
-				t.Setenv("HTTP_PROXY", "http://proxy.example.com")
-				t.Setenv("NO_PROXY", "localhost")
+			cfg: config.Config{
+				ProxyEnvVars: []corev1.EnvVar{
+					{Name: "HTTP_PROXY", Value: "http://proxy.example.com"},
+					{Name: "http_proxy", Value: "http://proxy.example.com"},
+					{Name: "NO_PROXY", Value: "localhost"},
+					{Name: "no_proxy", Value: "localhost"},
+				},
 			},
 		},
 		{
@@ -1282,11 +1289,7 @@ service:
 				})
 			}
 
-			if test.before != nil {
-				test.before(t)
-			}
-
-			envVars := getContainerEnvVars(test.otelcol, testLogger)
+			envVars := getContainerEnvVars(test.cfg, test.otelcol, testLogger)
 			assert.ElementsMatch(t, test.expectedEnvVars, envVars)
 		})
 	}

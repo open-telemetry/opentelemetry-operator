@@ -117,6 +117,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["secret_namespaces"] = taSpec.PrometheusCR.SecretNamespaces
 		}
 
+		if taSpec.PrometheusCR.DenyFSAccessThroughSMs {
+			prometheusCRConfig["deny_fs_access_through_sms"] = true
+		}
+
 		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
@@ -140,6 +144,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+	}
+
+	if taSpec.AllowInsecureAuthSecrets {
+		taConfig["allow_insecure_auth_secrets"] = true
 	}
 
 	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {

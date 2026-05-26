@@ -923,3 +923,97 @@ filter_strategy: relabel-config
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
 }
+
+func TestDesiredConfigMapAllowInsecureAuthSecrets(t *testing.T) {
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	_ = flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
+
+	expectedData := map[string]string{
+		targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+allow_insecure_auth_secrets: true
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+	}
+	ta := targetAllocatorInstance()
+	ta.Spec.AllowInsecureAuthSecrets = true
+	testParams := Params{
+		Collector:       collectorInstance(),
+		TargetAllocator: ta,
+	}
+	actual, err := ConfigMap(testParams)
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-instance-targetallocator", actual.Name)
+	assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+}
+
+func TestDesiredConfigMapWithDenyFSAccessThroughSMs(t *testing.T) {
+	t.Run("should return expected target allocator config map with denyFSAccessThroughSMs", func(t *testing.T) {
+		require.NoError(t, colfg.GlobalRegistry().Set("operator.targetallocator.fallbackstrategy", true))
+		t.Cleanup(func() {
+			require.NoError(t, colfg.GlobalRegistry().Set("operator.targetallocator.fallbackstrategy", false))
+		})
+
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+prometheus_cr:
+  deny_fs_access_through_sms: true
+  enabled: true
+  pod_monitor_namespace_selector: null
+  pod_monitor_selector: null
+  probe_namespace_selector: null
+  probe_selector: null
+  scrape_config_namespace_selector: null
+  scrape_config_selector: null
+  service_monitor_namespace_selector: null
+  service_monitor_selector: null
+`,
+		}
+
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
+		targetAllocator.Spec.PrometheusCR.DenyFSAccessThroughSMs = true
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+}

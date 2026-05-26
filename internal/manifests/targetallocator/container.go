@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -139,7 +138,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		})
 	}
 
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
+	envVars = append(envVars, cfg.ProxyEnvVars...)
 	return corev1.Container{
 		Name:            naming.TAContainer(),
 		Image:           image,

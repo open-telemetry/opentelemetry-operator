@@ -1,0 +1,71 @@
+---
+# ServiceMonitor that references the scrapeClass defined in step 02.
+# Verifies that scrapeClass tlsConfig is applied to ServiceMonitors,
+# not just Probes (which was the only CR type tested previously).
+apiVersion: v1
+kind: Service
+metadata:
+  name: scrapeclass-svc
+  labels:
+    app: scrapeclass-test
+spec:
+  selector:
+    app: scrapeclass-test
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: scrapeclass-smon
+spec:
+  selector:
+    matchLabels:
+      app: scrapeclass-test
+  endpoints:
+    - port: metrics
+      interval: 10s
+  scrapeClass: tls-config
+---
+# Check ServiceMonitor appears in TA scrape_configs
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-smon-scrapeclass-config
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-config
+          image: mirror.gcr.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon"
+---
+# Check scrapeClass TLS caFile is applied specifically to the ServiceMonitor's scrape config,
+# not just to the Probe which also uses the same scrapeClass.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-smon-scrapeclass-tls
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-tls
+          image: mirror.gcr.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon.*scrapeclass-ca.pem"

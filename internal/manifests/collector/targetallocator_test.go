@@ -173,6 +173,7 @@ func TestTargetAllocator(t *testing.T) {
 								EnableMetrics: true,
 							},
 						},
+						AllowInsecureAuthSecrets: true,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
 							MaxUnavailable: &intstr.IntOrString{
 								Type:   intstr.Int,
@@ -280,6 +281,7 @@ func TestTargetAllocator(t *testing.T) {
 							EnableMetrics: true,
 						},
 					},
+					AllowInsecureAuthSecrets: true,
 				},
 			},
 		},

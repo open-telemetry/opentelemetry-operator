@@ -1,0 +1,15 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: privilege-test
+spec:
+  config:
+    receivers:
+      k8s_events: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        logs:
+          receivers: [k8s_events]
+          exporters: [debug]
