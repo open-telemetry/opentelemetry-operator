@@ -12,6 +12,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -35,6 +36,13 @@ func Build(params Params) ([]client.Object, error) {
 
 	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
+	}
+
+	if params.Config.CreateRBACPermissions == autoRBAC.Available {
+		resourceFactories = append(resourceFactories,
+			manifests.FactoryWithoutError(ClusterRole),
+			manifests.FactoryWithoutError(ClusterRoleBinding),
+		)
 	}
 
 	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
