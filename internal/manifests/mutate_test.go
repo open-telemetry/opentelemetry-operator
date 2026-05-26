@@ -40,6 +40,43 @@ func TestMutateServiceAccount(t *testing.T) {
 	}, existing)
 }
 
+func TestMutateService(t *testing.T) {
+	preferClose := "PreferClose"
+	preferSameZone := "PreferSameZone"
+	trafficLocal := corev1.ServiceInternalTrafficPolicyLocal
+
+	t.Run("copies desired spec and preserves ClusterIP", func(t *testing.T) {
+		existing := corev1.Service{
+			Spec: corev1.ServiceSpec{
+				Ports:               []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+				Selector:            map[string]string{"app": "collector"},
+				ClusterIP:           "10.96.0.42",
+				ClusterIPs:          []string{"10.96.0.42"},
+				TrafficDistribution: &preferClose,
+			},
+		}
+		desired := corev1.Service{
+			Spec: corev1.ServiceSpec{
+				Ports:                 []corev1.ServicePort{{Name: "otlp", Port: 4317}, {Name: "metrics", Port: 8888}},
+				Selector:              map[string]string{"app": "collector", "version": "v2"},
+				InternalTrafficPolicy: &trafficLocal,
+				TrafficDistribution:   &preferSameZone,
+			},
+		}
+
+		mutateFn := MutateFuncFor(&existing, &desired)
+		err := mutateFn()
+		require.NoError(t, err)
+
+		assert.Equal(t, desired.Spec.Ports, existing.Spec.Ports)
+		assert.Equal(t, desired.Spec.Selector, existing.Spec.Selector)
+		assert.Equal(t, desired.Spec.InternalTrafficPolicy, existing.Spec.InternalTrafficPolicy)
+		assert.Equal(t, desired.Spec.TrafficDistribution, existing.Spec.TrafficDistribution)
+		assert.Equal(t, "10.96.0.42", existing.Spec.ClusterIP)
+		assert.Equal(t, []string{"10.96.0.42"}, existing.Spec.ClusterIPs)
+	})
+}
+
 func TestMutateDaemonsetAdditionalContainers(t *testing.T) {
 	tests := []struct {
 		name     string
