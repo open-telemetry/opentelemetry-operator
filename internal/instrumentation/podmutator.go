@@ -29,6 +29,7 @@ var (
 
 type instPodMutator struct {
 	Client      client.Client
+	APIReader   client.Reader
 	sdkInjector *sdkInjector
 	Logger      logr.Logger
 	Recorder    events.EventRecorder
@@ -194,10 +195,14 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder events.EventRecorder, cfg config.Config) podmutation.PodMutator {
+// NewMutator builds an instrumentation pod mutator. apiReader is an uncached
+// reader used for lookups of user-owned ConfigMaps referenced by Instrumentation
+// resources, which would otherwise miss the label-filtered cache.
+func NewMutator(logger logr.Logger, client client.Client, apiReader client.Reader, recorder events.EventRecorder, cfg config.Config) podmutation.PodMutator {
 	return &instPodMutator{
-		Logger: logger,
-		Client: client,
+		Logger:    logger,
+		Client:    client,
+		APIReader: apiReader,
 		sdkInjector: &sdkInjector{
 			logger: logger,
 			client: client,
@@ -434,7 +439,9 @@ func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *v1a
 		}
 		if inst.Spec.TLS.ConfigMapName != "" {
 			nsn := types.NamespacedName{Name: inst.Spec.TLS.ConfigMapName, Namespace: podNamespace}
-			if err := pm.Client.Get(ctx, nsn, &corev1.ConfigMap{}); apierrors.IsNotFound(err) {
+			// The ConfigMap cache is filtered to operator-managed objects, so look
+			// up the user's CA ConfigMap directly via the uncached reader.
+			if err := pm.APIReader.Get(ctx, nsn, &corev1.ConfigMap{}); apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("configmap %s with CA certificate does not exists: %w", nsn.String(), err))
 			}
 		}

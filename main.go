@@ -25,8 +25,13 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -49,6 +54,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -144,6 +150,61 @@ func main() {
 
 	restConfig := ctrl.GetConfigOrDie()
 
+	// Create the clientset, reviewer, and run autodetect BEFORE the manager so
+	// that we can size the informer caches based on which optional API groups
+	// (Gateway API, Prometheus, OpenShift Routes, cert-manager) are actually
+	// installed. cache.Options.ByObject resolves a REST mapping for every
+	// configured GVK at manager-construction time, so including a type whose
+	// CRDs aren't installed would crash NewManager.
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		setupLog.Error(err, "failed to create kubernetes clientset")
+		os.Exit(1)
+	}
+
+	// Apply feature gates from Config if set (could be from file or env vars).
+	// Must run before any IsEnabled() check below or in autodetect-driven
+	// scheme additions.
+	if cfg.FeatureGates != "" {
+		configLog.Info("Applying feature gates from configuration", "gates", cfg.FeatureGates)
+		if err = featuregate.ApplyFeatureGateOverrides(cfg.FeatureGates); err != nil {
+			setupLog.Error(err, "failed to apply feature gate overrides")
+			os.Exit(1)
+		}
+	}
+
+	reviewer := rbac.NewReviewer(clientset)
+
+	// builds the operator's configuration
+	ad, err := autodetect.New(restConfig, reviewer)
+	if err != nil {
+		setupLog.Error(err, "failed to setup auto-detect routine")
+		os.Exit(1)
+	}
+	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
+		setupLog.Error(err, "failed to autodetect config variables")
+	}
+
+	// Only add these to the scheme if they are available.
+	if cfg.PrometheusCRAvailability == prometheus.Available {
+		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
+		utilruntime.Must(routev1.Install(scheme))
+	} else {
+		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.CertManagerAvailability == certmanager.Available {
+		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
+		utilruntime.Must(cmv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
+	}
+
 	var namespaces map[string]cache.Config
 	if cfg.WatchNamespace != "" {
 		setupLog.Info("watching namespace(s)", "namespaces", cfg.WatchNamespace)
@@ -217,6 +278,50 @@ func main() {
 		}
 	}
 
+	// Restrict the informer caches for operator-created resources to only objects
+	// labeled with managed-by=opentelemetry-operator. Without this filter, owning
+	// these GVKs causes a cluster-wide LIST+WATCH for every ConfigMap/Service/etc.
+	// in the cluster, which dominates startup memory.
+	//
+	// ServiceAccount, ClusterRole, and ClusterRoleBinding are deliberately NOT
+	// filtered: those follow an adoption pattern where users may pre-create the
+	// resource (with bindings) and the operator then attaches owner refs/labels.
+	// A label-filtered cache would hide the pre-created object, causing the
+	// CreateOrUpdate Get to NotFound and the subsequent Create to AlreadyExists.
+	operatorManagedSelector := labels.SelectorFromSet(labels.Set{
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	})
+	managedByByObject := cache.ByObject{Label: operatorManagedSelector}
+	byObject := map[client.Object]cache.ByObject{
+		&corev1.ConfigMap{}:                      managedByByObject,
+		&corev1.Service{}:                        managedByByObject,
+		&appsv1.Deployment{}:                     managedByByObject,
+		&appsv1.DaemonSet{}:                      managedByByObject,
+		&appsv1.StatefulSet{}:                    managedByByObject,
+		&networkingv1.Ingress{}:                  managedByByObject,
+		&networkingv1.NetworkPolicy{}:            managedByByObject,
+		&autoscalingv2.HorizontalPodAutoscaler{}: managedByByObject,
+		&policyv1.PodDisruptionBudget{}:          managedByByObject,
+	}
+	// Conditionally filter caches for types whose CRDs may be absent. Including
+	// these in ByObject when the API group isn't installed would crash
+	// NewManager during REST mapping. The check on autodetect availability
+	// matches the conditional Owns() in the controllers.
+	if cfg.GatewayAPIsAvailability == gatewayapi.ApiAvailable {
+		byObject[&gatewayv1.HTTPRoute{}] = managedByByObject
+	}
+	if cfg.PrometheusCRAvailability == prometheus.Available {
+		byObject[&monitoringv1.ServiceMonitor{}] = managedByByObject
+		byObject[&monitoringv1.PodMonitor{}] = managedByByObject
+	}
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		byObject[&routev1.Route{}] = managedByByObject
+	}
+	if cfg.CertManagerAvailability == certmanager.Available {
+		byObject[&cmv1.Certificate{}] = managedByByObject
+		byObject[&cmv1.Issuer{}] = managedByByObject
+	}
+
 	mgrOptions := ctrl.Options{
 		Scheme:                        scheme,
 		Metrics:                       metricsOptions,
@@ -234,6 +339,19 @@ func main() {
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
+			ByObject:          byObject,
+		},
+		// Secret and ReplicaSet are only read on-demand by the pod-mutating
+		// webhook (TLS validation, owner-chain walk). No controller Owns these,
+		// so route reads through the API server instead of standing up
+		// cluster-wide informers for them.
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Secret{},
+					&appsv1.ReplicaSet{},
+				},
+			},
 		},
 	}
 
@@ -241,11 +359,6 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
-	}
-
-	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		setupLog.Error(err, "failed to create kubernetes clientset")
 	}
 
 	// Discover Kubernetes API server info from EndpointSlices for network policies
@@ -281,16 +394,6 @@ func main() {
 		}
 	}
 
-	// Apply feature gates from Config if set (could be from file or env vars)
-	// This must be done before checking feature gates like EnableOperatorNetworkPolicy
-	if cfg.FeatureGates != "" {
-		configLog.Info("Applying feature gates from configuration", "gates", cfg.FeatureGates)
-		if err = featuregate.ApplyFeatureGateOverrides(cfg.FeatureGates); err != nil {
-			setupLog.Error(err, "failed to apply feature gate overrides")
-			os.Exit(1)
-		}
-	}
-
 	if cfg.OpenshiftCreateDashboard {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
 		if dashErr != nil {
@@ -303,38 +406,6 @@ func main() {
 			setupLog.Error(errNetworkPolicy, "failed to create the Operator network policies")
 			os.Exit(1)
 		}
-	}
-
-	reviewer := rbac.NewReviewer(clientset)
-
-	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig, reviewer)
-	if err != nil {
-		setupLog.Error(err, "failed to setup auto-detect routine")
-		os.Exit(1)
-	}
-
-	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
-		setupLog.Error(err, "failed to autodetect config variables")
-	}
-	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability == prometheus.Available {
-		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
-		utilruntime.Must(monitoringv1.AddToScheme(scheme))
-	} else {
-		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
-	}
-	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
-		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
-		utilruntime.Must(routev1.Install(scheme))
-	} else {
-		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
-	}
-	if cfg.CertManagerAvailability == certmanager.Available {
-		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
-		utilruntime.Must(cmv1.AddToScheme(scheme))
-	} else {
-		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
 	if cfg.CollectorAvailability == collector.Available {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
@@ -504,11 +575,12 @@ func main() {
 			os.Exit(1)
 		}
 		decoder := admission.NewDecoder(mgr.GetScheme())
+		apiReader := mgr.GetAPIReader()
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
+					sidecar.NewMutator(logger, cfg, mgr.GetClient(), apiReader),
+					instrumentation.NewMutator(logger, mgr.GetClient(), apiReader, mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 				}),
 		})
 

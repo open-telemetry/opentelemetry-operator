@@ -4974,7 +4974,7 @@ func TestMutatePod(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mutator := NewMutator(logr.Discard(), k8sClient, events.NewFakeRecorder(100), test.config)
+			mutator := NewMutator(logr.Discard(), k8sClient, k8sClient, events.NewFakeRecorder(100), test.config)
 			require.NotNil(t, mutator)
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
@@ -5288,7 +5288,7 @@ func TestInitContainerInstrumentation(t *testing.T) {
 		},
 	}
 
-	mutator := NewMutator(logr.Discard(), k8sClient, nil, config.New())
+	mutator := NewMutator(logr.Discard(), k8sClient, k8sClient, nil, config.New())
 
 	result, err := mutator.Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
@@ -5369,7 +5369,7 @@ func TestInitContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)
@@ -5410,7 +5410,7 @@ func TestRegularContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)
@@ -5448,7 +5448,7 @@ func TestInitContainerInstrumentationNilSecurityContext(t *testing.T) {
 		},
 	}
 
-	result, err := NewMutator(logr.Discard(), k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
+	result, err := NewMutator(logr.Discard(), k8sClient, k8sClient, nil, config.New()).Mutate(t.Context(), ns, pod)
 	require.NoError(t, err)
 
 	injected := findContainerByName(pythonInitContainerName, &result)

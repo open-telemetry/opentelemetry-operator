@@ -27,18 +27,23 @@ var (
 )
 
 type sidecarPodMutator struct {
-	client client.Client
-	logger logr.Logger
-	config config.Config
+	client    client.Client
+	apiReader client.Reader
+	logger    logr.Logger
+	config    config.Config
 }
 
 var _ podmutation.PodMutator = (*sidecarPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator {
+// NewMutator builds a sidecar pod mutator. apiReader is an uncached reader used
+// for lookups of user-owned resources (Deployment) that would otherwise miss
+// the label-filtered cache.
+func NewMutator(logger logr.Logger, config config.Config, client client.Client, apiReader client.Reader) *sidecarPodMutator {
 	return &sidecarPodMutator{
-		config: config,
-		logger: logger,
-		client: client,
+		config:    config,
+		logger:    logger,
+		client:    client,
+		apiReader: apiReader,
 	}
 }
 
@@ -170,7 +175,9 @@ func (p *sidecarPodMutator) getDeploymentReference(ctx context.Context, replicaS
 	deploymentName := findOwnerReferenceKind(replicaSet.OwnerReferences, "Deployment")
 	if deploymentName != "" {
 		deployment := &appsv1.Deployment{}
-		err := p.client.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: replicaSet.Namespace}, deployment)
+		// The Deployment cache is filtered to operator-managed objects, so look
+		// up the user's owning Deployment directly via the uncached reader.
+		err := p.apiReader.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: replicaSet.Namespace}, deployment)
 		if err == nil {
 			return deployment
 		}
