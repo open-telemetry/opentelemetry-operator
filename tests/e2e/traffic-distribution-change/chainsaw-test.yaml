@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: traffic-distribution-change
+spec:
+  bindings:
+    - name: version
+      value: (x_k8s_server_version($config))
+    - name: minorVersion
+      value: (to_number($version.minor))
+  steps:
+    - name: step-00
+      description: deploy collector with trafficDistribution PreferClose
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+        - script:
+            content: kubectl get svc traffic-dist-collector -n $NAMESPACE -o jsonpath='{.spec.trafficDistribution}' || echo ""
+            outputs:
+              - name: trafficDistribution
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `31` && $trafficDistribution == 'PreferClose') || ($minorVersion < `31` && $trafficDistribution == '')): true
+    - name: step-01
+      description: update collector trafficDistribution to PreferSameZone
+      try:
+        - update:
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
+        - script:
+            content: kubectl get svc traffic-dist-collector -n $NAMESPACE -o jsonpath='{.spec.trafficDistribution}' || echo ""
+            outputs:
+              - name: trafficDistribution
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `31` && $trafficDistribution == 'PreferSameZone') || ($minorVersion < `31` && $trafficDistribution == '')): true

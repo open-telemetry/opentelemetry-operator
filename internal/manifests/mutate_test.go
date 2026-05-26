@@ -40,6 +40,127 @@ func TestMutateServiceAccount(t *testing.T) {
 	}, existing)
 }
 
+func TestMutateService(t *testing.T) {
+	trafficLocal := corev1.ServiceInternalTrafficPolicyLocal
+	trafficCluster := corev1.ServiceInternalTrafficPolicyCluster
+	ipFamilyPolicySingleStack := corev1.IPFamilyPolicySingleStack
+	ipFamilyPolicyDualStack := corev1.IPFamilyPolicyRequireDualStack
+	preferClose := "PreferClose"
+	preferSameZone := "PreferSameZone"
+
+	tests := []struct {
+		name     string
+		existing corev1.Service
+		desired  corev1.Service
+	}{
+		{
+			name: "update trafficDistribution",
+			existing: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:               []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:            map[string]string{"app": "collector"},
+					TrafficDistribution: &preferClose,
+				},
+			},
+			desired: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:               []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:            map[string]string{"app": "collector"},
+					TrafficDistribution: &preferSameZone,
+				},
+			},
+		},
+		{
+			name: "update internalTrafficPolicy",
+			existing: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:                 []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:              map[string]string{"app": "collector"},
+					InternalTrafficPolicy: &trafficCluster,
+				},
+			},
+			desired: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:                 []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:              map[string]string{"app": "collector"},
+					InternalTrafficPolicy: &trafficLocal,
+				},
+			},
+		},
+		{
+			name: "update ipFamilies and ipFamilyPolicy",
+			existing: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:          []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:       map[string]string{"app": "collector"},
+					IPFamilies:     []corev1.IPFamily{corev1.IPv4Protocol},
+					IPFamilyPolicy: &ipFamilyPolicySingleStack,
+				},
+			},
+			desired: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:          []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:       map[string]string{"app": "collector"},
+					IPFamilies:     []corev1.IPFamily{corev1.IPv4Protocol, corev1.IPv6Protocol},
+					IPFamilyPolicy: &ipFamilyPolicyDualStack,
+				},
+			},
+		},
+		{
+			name: "update all service fields",
+			existing: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:                 []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:              map[string]string{"app": "collector"},
+					InternalTrafficPolicy: &trafficCluster,
+					IPFamilies:            []corev1.IPFamily{corev1.IPv4Protocol},
+					IPFamilyPolicy:        &ipFamilyPolicySingleStack,
+					TrafficDistribution:   &preferClose,
+				},
+			},
+			desired: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:                 []corev1.ServicePort{{Name: "otlp", Port: 4317}, {Name: "metrics", Port: 8888}},
+					Selector:              map[string]string{"app": "collector", "version": "v2"},
+					InternalTrafficPolicy: &trafficLocal,
+					IPFamilies:            []corev1.IPFamily{corev1.IPv4Protocol, corev1.IPv6Protocol},
+					IPFamilyPolicy:        &ipFamilyPolicyDualStack,
+					TrafficDistribution:   &preferSameZone,
+				},
+			},
+		},
+		{
+			name: "remove trafficDistribution",
+			existing: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:               []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector:            map[string]string{"app": "collector"},
+					TrafficDistribution: &preferClose,
+				},
+			},
+			desired: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports:    []corev1.ServicePort{{Name: "otlp", Port: 4317}},
+					Selector: map[string]string{"app": "collector"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
+			err := mutateFn()
+			require.NoError(t, err)
+			assert.Equal(t, tt.desired.Spec.Ports, tt.existing.Spec.Ports)
+			assert.Equal(t, tt.desired.Spec.Selector, tt.existing.Spec.Selector)
+			assert.Equal(t, tt.desired.Spec.InternalTrafficPolicy, tt.existing.Spec.InternalTrafficPolicy)
+			assert.Equal(t, tt.desired.Spec.IPFamilies, tt.existing.Spec.IPFamilies)
+			assert.Equal(t, tt.desired.Spec.IPFamilyPolicy, tt.existing.Spec.IPFamilyPolicy)
+			assert.Equal(t, tt.desired.Spec.TrafficDistribution, tt.existing.Spec.TrafficDistribution)
+		})
+	}
+}
+
 func TestMutateDaemonsetAdditionalContainers(t *testing.T) {
 	tests := []struct {
 		name     string

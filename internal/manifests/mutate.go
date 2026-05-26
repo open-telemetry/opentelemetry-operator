@@ -301,6 +301,10 @@ func mutateTargetAllocator(existing, desired *v1alpha1.TargetAllocator) {
 func mutateService(existing, desired *corev1.Service) {
 	existing.Spec.Ports = desired.Spec.Ports
 	existing.Spec.Selector = desired.Spec.Selector
+	existing.Spec.InternalTrafficPolicy = desired.Spec.InternalTrafficPolicy
+	existing.Spec.IPFamilies = desired.Spec.IPFamilies
+	existing.Spec.IPFamilyPolicy = desired.Spec.IPFamilyPolicy
+	existing.Spec.TrafficDistribution = desired.Spec.TrafficDistribution
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {

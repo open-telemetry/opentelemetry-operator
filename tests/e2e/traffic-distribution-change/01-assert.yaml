@@ -1,0 +1,6 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-dist-collector
+status:
+  readyReplicas: 1
