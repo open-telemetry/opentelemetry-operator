@@ -26,7 +26,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
@@ -38,8 +37,8 @@ var (
 		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
 			return openshift.RoutesAvailable, nil
 		},
-		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
-			return prometheus.Available, nil
+		PrometheusCRsAvailabilityFunc: func() ([]string, error) {
+			return []string{"servicemonitors", "podmonitors"}, nil
 		},
 		RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
 			return rbac.Available, nil

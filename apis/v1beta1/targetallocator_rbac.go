@@ -15,10 +15,6 @@ import (
 // targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
 var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	{
-		APIGroups: []string{"monitoring.coreos.com"},
-		Resources: []string{"servicemonitors", "podmonitors"},
-		Verbs:     []string{"*"},
-	}, {
 		APIGroups: []string{""},
 		Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
 		Verbs:     []string{"get", "list", "watch"},
@@ -46,14 +42,25 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 func CheckTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
+	availableCRDs []string,
 	namespace string,
 	serviceAccountName string,
 ) (warnings []string, err error) {
+	rules := targetAllocatorCRPolicyRules
+
+	if len(availableCRDs) > 0 {
+		rules = append(rules, &rbacv1.PolicyRule{
+			APIGroups: []string{"monitoring.coreos.com"},
+			Resources: availableCRDs,
+			Verbs:     []string{"get", "list", "watch"},
+		})
+	}
+
 	subjectAccessReviews, err := reviewer.CheckPolicyRules(
 		ctx,
 		serviceAccountName,
 		namespace,
-		targetAllocatorCRPolicyRules...,
+		rules...,
 	)
 	if err != nil {
 		return []string{}, fmt.Errorf("unable to check rbac rules %w", err)
