@@ -40,7 +40,7 @@ jobs:
         with:
           images: |
             otel/autoinstrumentation-nodejs
-            ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs
+            ghcr.io/${{ github.repository_owner }}/opentelemetry-operator/autoinstrumentation-nodejs
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
