@@ -62,5 +62,5 @@ jobs:
           platforms: ${{ inputs.platforms }}
           build-args: ${{ inputs.build-args }}
           push: ${{ github.event_name == 'push' }}
-          cache-from: type=gha,scope=${{ github.workflow }}-${{ inputs.path }}${{ inputs.tag-suffix }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}-${{ inputs.path }}${{ inputs.tag-suffix }}
+          cache-from: type=gha,scope=publish-e2e-${{ inputs.path }}${{ inputs.tag-suffix }}
+          cache-to: type=gha,mode=max,scope=publish-e2e-${{ inputs.path }}${{ inputs.tag-suffix }}

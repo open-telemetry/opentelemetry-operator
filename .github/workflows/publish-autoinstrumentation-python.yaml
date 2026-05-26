@@ -74,5 +74,5 @@ jobs:
           build-args: version=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ github.workflow }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+          cache-from: type=gha,scope=publish-autoinstrumentation-python
+          cache-to: type=gha,mode=max,scope=publish-autoinstrumentation-python
