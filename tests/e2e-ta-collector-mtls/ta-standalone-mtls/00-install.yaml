@@ -3,6 +3,7 @@ kind: TargetAllocator
 metadata:
   name: standalone-mtls
 spec:
+  serviceAccount: ta
   mtls:
     enabled: true
   prometheusCR:
