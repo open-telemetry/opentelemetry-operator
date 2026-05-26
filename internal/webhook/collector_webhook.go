@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
@@ -18,10 +19,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -45,7 +49,7 @@ type CollectorWebhook struct {
 	cfg      config.Config
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
-	metrics  *v1beta1.Metrics
+	metrics  *metrics.Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
 	recorder events.EventRecorder
@@ -103,7 +107,7 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	// TLS defaults are applied at reconciliation time (ConfigMap generation) so that
 	// existing collectors automatically get updated TLS settings when the operator
 	// restarts after a cluster TLS profile change.
-	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	events, err := otelconfig.ApplyDefaults(&otelcol.Spec.Config, c.logger)
 	if err != nil {
 		return err
 	}
@@ -166,7 +170,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *v1beta1.O
 func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
-	nullObjects := r.Spec.Config.NullObjects()
+	nullObjects := otelconfig.NullObjects(&r.Spec.Config)
 	if len(nullObjects) > 0 {
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
@@ -219,7 +223,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
 	}
-	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	ports, errPorts := otelconfig.GetAllPorts(&r.Spec.Config, c.logger)
 	if errPorts != nil {
 		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
 	}
@@ -294,9 +298,16 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 	}
 
 	if c.fips != nil {
-		components := r.Spec.Config.GetEnabledComponents()
+		components := otelconfig.GetEnabledComponents(&r.Spec.Config)
 		if notAllowedComponents := c.fips.DisabledComponents(components[v1beta1.KindReceiver], components[v1beta1.KindExporter], components[v1beta1.KindProcessor], components[v1beta1.KindExtension]); notAllowedComponents != nil {
 			return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
+		}
+	}
+
+	// validate that the requesting user holds every permission the operator would auto-grant
+	if c.reviewer != nil {
+		if err := c.validateRBACPrivilegeEscalation(ctx, r); err != nil {
+			return warnings, err
 		}
 	}
 
@@ -316,7 +327,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.ModeDaemonSet)
 	}
 
-	cfgYaml, err := r.Spec.Config.Yaml()
+	cfgYaml, err := otelconfig.Yaml(&r.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -347,6 +358,87 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	}
 
 	return nil, nil
+}
+
+// validateRBACPrivilegeEscalation checks that the requesting user holds every permission
+// that the operator would newly grant to the collector's ServiceAccount via auto-RBAC.
+//
+// Without this check a user who has CREATE on OpenTelemetryCollector but no direct RBAC write
+// access could craft a collector config that causes the operator to grant the collector's
+// ServiceAccount permissions the requesting user does not themselves hold — a privilege
+// escalation path equivalent to the one Kubernetes guards against with the "escalate" verb.
+//
+// The check uses a delta approach to avoid false rejections:
+//  1. Determine what RBAC rules the collector config requires.
+//  2. Check what the collector's ServiceAccount already holds.
+//  3. Compute the delta — rules the SA does not yet hold and that reconciliation would grant.
+//  4. Check the requesting user against the delta only.
+//
+// If the SA already holds all required permissions (delta is empty), no new grants will
+// occur and the check passes regardless of the requesting user's permissions.
+//
+// The check is skipped when:
+//   - CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
+//   - the collector config requires no extra RBAC rules, or
+//   - no admission.Request is present in the context (direct calls from tests / internal code).
+func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r *v1beta1.OpenTelemetryCollector) error {
+	if c.cfg.CreateRBACPermissions != autoRBAC.Available {
+		return nil
+	}
+
+	rules, err := otelconfig.GetAllRbacRules(&r.Spec.Config, c.logger)
+	if err != nil {
+		return fmt.Errorf("unable to determine RBAC rules for collector config: %w", err)
+	}
+	if len(rules) == 0 {
+		return nil
+	}
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		// No admission request in context (e.g. called directly in unit tests or internal
+		// reconciliation); skip the check rather than blocking legitimate uses.
+		return nil
+	}
+
+	rulePtrs := make([]*rbacv1.PolicyRule, len(rules))
+	for i := range rules {
+		rulePtrs[i] = &rules[i]
+	}
+
+	// Determine the ServiceAccount name the operator will manage RBAC for.
+	saName := r.Spec.ServiceAccount
+	if saName == "" {
+		saName = naming.ServiceAccount(r.Name)
+	}
+
+	// Step 2: check what the SA already holds.
+	saSARs, err := c.reviewer.CheckPolicyRules(ctx, saName, r.Namespace, rulePtrs...)
+	if err != nil {
+		return fmt.Errorf("unable to check existing SA RBAC permissions: %w", err)
+	}
+
+	// Step 3: compute the delta — permissions the SA does not yet hold.
+	_, delta := rbac.AllSubjectAccessReviewsAllowed(saSARs)
+	if len(delta) == 0 {
+		// SA already holds all required permissions; reconciliation won't grant anything new.
+		return nil
+	}
+
+	// Step 4: check the requesting user against the delta only.
+	username := req.UserInfo.Username
+	groups := req.UserInfo.Groups
+
+	userSARs, err := c.reviewer.CheckSARsForUser(ctx, username, groups, delta)
+	if err != nil {
+		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", username, err)
+	}
+
+	if allowed, denied := rbac.AllSubjectAccessReviewsAllowed(userSARs); !allowed {
+		missing := strings.Join(rbac.WarningsGroupedByResource(denied), "; ")
+		return fmt.Errorf("user %q is not allowed to create a collector whose config would grant permissions they do not hold: %s", username, missing)
+	}
+	return nil
 }
 
 func ValidatePorts(ports []v1beta1.PortsSpec) error {
@@ -407,7 +499,7 @@ func NewCollectorWebhook(
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
 	recorder events.EventRecorder,
-	metrics *v1beta1.Metrics,
+	metrics *metrics.Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
 ) *CollectorWebhook {
@@ -423,7 +515,7 @@ func NewCollectorWebhook(
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *v1beta1.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *metrics.Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
 	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorder("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr, &v1beta1.OpenTelemetryCollector{}).
 		WithValidator(cvw).

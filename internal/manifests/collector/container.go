@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -93,19 +93,19 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		}
 	}
 
-	livenessProbe, livenessProbeErr := otelcol.Spec.Config.GetLivenessProbe(logger)
+	livenessProbe, livenessProbeErr := otelconfig.GetLivenessProbe(&otelcol.Spec.Config, logger)
 	if livenessProbeErr != nil {
 		logger.Error(livenessProbeErr, "cannot create liveness probe.")
 	} else {
 		defaultProbeSettings(livenessProbe, otelcol.Spec.LivenessProbe)
 	}
-	readinessProbe, readinessProbeErr := otelcol.Spec.Config.GetReadinessProbe(logger)
+	readinessProbe, readinessProbeErr := otelconfig.GetReadinessProbe(&otelcol.Spec.Config, logger)
 	if readinessProbeErr != nil {
 		logger.Error(readinessProbeErr, "cannot create readiness probe.")
 	} else {
 		defaultProbeSettings(readinessProbe, otelcol.Spec.ReadinessProbe)
 	}
-	startupProbe, startupProbeErr := otelcol.Spec.Config.GetStartupProbe(logger)
+	startupProbe, startupProbeErr := otelconfig.GetStartupProbe(&otelcol.Spec.Config, logger)
 	if startupProbeErr != nil {
 		logger.Error(startupProbeErr, "cannot create startup probe.")
 	} else {
@@ -119,7 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
-		Env:             getContainerEnvVars(otelcol, logger),
+		Env:             getContainerEnvVars(cfg, otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
@@ -132,7 +132,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 
 func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.ContainerPort, error) {
 	ports := []corev1.ContainerPort{}
-	ps, err := conf.GetAllPorts(logger)
+	ps, err := otelconfig.GetAllPorts(&conf, logger)
 	if err != nil {
 		return ports, err
 	}
@@ -158,7 +158,7 @@ func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.
 		}
 	}
 
-	_, metricsPort, err := conf.Service.MetricsEndpoint(logger)
+	_, metricsPort, err := otelconfig.MetricsEndpoint(&conf.Service, logger)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
@@ -299,8 +299,8 @@ func getSpecPorts(ports []v1beta1.PortsSpec, logger logr.Logger) []corev1.Contai
 // getContainerEnvVars returns the environment variables for the collector container.
 // It combines user-defined environment variables from the OpenTelemetryCollector spec
 // with automatically inferred environment variables, giving precedence to user-defined ones.
-func getContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
-	inferredEnvVars := getInferredContainerEnvVars(otelcol, logger)
+func getContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+	inferredEnvVars := getInferredContainerEnvVars(cfg, otelcol, logger)
 
 	envVars := []corev1.EnvVar{}
 	envVars = append(envVars, otelcol.Spec.Env...)
@@ -322,7 +322,7 @@ func getContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Log
 
 // getInferredContainerEnvVars returns environment variables that are automatically added to the collector container.
 // Those include parsing the collector config and adding the env vars derived from it.
-func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{}
 
 	envVars = append(envVars, corev1.EnvVar{
@@ -357,11 +357,11 @@ func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger 
 		)
 	}
 
-	if configEnvVars, err := otelcol.Spec.Config.GetEnvironmentVariables(logger); err != nil {
+	if configEnvVars, err := otelconfig.GetEnvironmentVariables(&otelcol.Spec.Config, logger); err != nil {
 		logger.Error(err, "could not get the environment variables from the config")
 	} else {
 		envVars = append(envVars, configEnvVars...)
 	}
 
-	return append(envVars, proxy.ReadProxyVarsFromEnv()...)
+	return append(envVars, cfg.ProxyEnvVars...)
 }

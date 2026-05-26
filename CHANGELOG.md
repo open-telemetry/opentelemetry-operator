@@ -2,6 +2,144 @@
 
 <!-- next version -->
 
+## 0.152.0
+
+### 🛑 Breaking changes 🛑
+
+- `api`: Move config parsing and CRD metrics from apis to internal package (#4362)
+  - Methods on `*Config` (package `apis/v1beta1`) converted to standalone functions in `internal/otelconfig`, now taking `*v1beta1.Config` as the first parameter:
+      - GetEnabledComponents, GetReceiverPorts, GetExporterPorts, GetExtensionPorts, GetReceiverAndExporterPorts, GetAllPorts, GetEnvironmentVariables, GetAllRbacRules, ApplyDefaults, GetLivenessProbe, GetReadinessProbe, GetStartupProbe, Yaml, NullObjects
+  - Methods on `*Service` converted to functions in `internal/otelconfig`:
+      - MetricsEndpoint, GetTelemetry
+      - ApplyDefaults → renamed to ServiceApplyDefaults
+  - Method on `*Telemetry` converted to function:
+      - ToAnyConfig → renamed to TelemetryToAnyConfig
+  -  Functions moved from `apis/v1beta1` to `internal/metrics` with renames:
+      - BootstrapMetrics → Bootstrap
+      - NewMetrics(prv, ctx, cl) → New(ctx, prv, cl) (parameter reorder: ctx now first)
+  - Types moved out of `apis/v1beta1`:
+      - MetricsConfig, Telemetry → internal/otelconfig
+      - Metrics → internal/metrics
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add support for dropping ServiceMonitor/PodMonitor endpoints that reference arbitrary files (#5104)
+- `auto-instrumentation`: Allow to run the mutating webhook using static configuration, without the need for CRDs. (#4201)
+  
+  With this change, you can deploy the manager as a mutating webhook without setting up a v1alpha1.Instrumentation custom resource
+  or the v1alpha1.Instrumentation CRD.
+  
+  Instead, you can now set up instrumentation by configuring the manager via its config file with these settings:
+  ```yaml
+    ignore-missing-collector-crds: true 
+    enable-instrumentation-crds: false # Ignore that the CRD is not registered.
+    enable-multi-instrumentation: false
+    instrumentations: # Static configuration for our instrumentation
+      spec:
+        exporter:
+          endpoint: http://collector.default.svc:4318
+        propagators:
+          - tracecontext
+          - baggage
+          - b3
+        java:
+          image: "java-autoinstrumentation:dev"
+  ```
+  
+- `target allocator`: Improve the error message when the target allocator is enabled but the Prometheus receiver is not named exactly "prometheus". (#5017)
+  
+  When only named instances such as "prometheus/otelcol" are present, the error now lists them and explains that a receiver named exactly "prometheus" is required.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Remove unnecessary RBAC permissions from the events receiver. (#5073)
+- `collector`: Fix when configuring a gRPC port for the `jaeger_query` extension, the `collector-extension` Service only generates an HTTP port and is missing the gRPC port. (#4912)
+- `collector`: Explicitly set without_type_suffix, without_units, and without_scope_info to false on the operator-injected Prometheus telemetry reader. (#5075)
+  
+  Preserves historical metric names. Without this, users upgrading to a collector containing open-telemetry/opentelemetry-collector#15027 would see operator-managed collector metric names silently change shape. Added alpha feature gate operator.collector.usedefaulttelemetryshape (off by default) to opt into collector defaults instead. The gate will be promoted to beta (on by default) in a future release.
+  
+- `target allocator`: Fix scrapeClass tlsConfig fields being silently dropped in target allocator config. (#5101)
+  
+  scrapeClasses with tlsConfig like the following had their TLS fields silently dropped
+  when passed to the target allocator:
+    scrapeClasses:
+      - name: tls-config
+        tlsConfig:
+          caFile: /scrapeclass-ca.pem
+          insecureSkipVerify: true
+  
+- `collector`: Restrict automatic RBAC from users without the necessary permissions (#5105)
+  
+  If the operator has permission to create ClusterRoles and ClusterRoleBindings, it sets up RBAC
+  for collectors automatically based on their configuration.
+  If a user tries to create an OpenTelemetryCollector whose permissions would be automatically
+  generated this way, and the user doesn't have the permissions themselves, it will be rejected.
+  If the collector tries to use an existing ServiceAccount, only the permissions missing from
+  that ServiceAccount are checked this way.
+  
+- `collector`: Skip provisioning Services, Ingress, NetworkPolicy, and HPA for sidecar mode collectors since the operator does not control the Pod lifecycle in that mode. PodMonitors are still provisioned when metrics are enabled. (#4934)
+
+### Components
+
+* [OpenTelemetry Collector - v0.152.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.0)
+* [OpenTelemetry Contrib - v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0)
+* [Java auto-instrumentation - v2.28.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.28.1)
+* [.NET auto-instrumentation - v1.15.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0)
+* [Node.JS - v0.76.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.76.0)
+* [Python - v0.63b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.63b1)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.151.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update default Java auto-instrumentation version from 1.33.6 to 2.27.0 (#4996)
+  This is a breaking change due to HTTP semantic convention changes between versions.
+  Existing Instrumentation CRs using a 1.x.x version will NOT be automatically upgraded.
+  To upgrade, manually update the image in your Instrumentation CR after reviewing the migration guide.
+  See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for details.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add `secretNamespaces` field to PrometheusCR configuration to make the namespaces watched for secrets configurable instead of hardcoding to the collector namespace. (#4999)
+  Previously, the Target Allocator always watched the collector namespace for secrets used in
+  ServiceMonitor/PodMonitor basicAuth and other secret references. Now, the namespaces to watch
+  for secrets can be explicitly configured via `spec.prometheusCR.secretNamespaces`.
+  If not configured, no namespaces are watched for secrets.
+  
+- `operator`: Split kubebuilder RBAC markers and restrict pod permissions to get/list/watch only (#3156)
+  The operator does not create, update, patch, or delete Pod objects directly;
+  pods are managed by Deployment, DaemonSet, and StatefulSet controllers.
+  Also reduced targetallocators/finalizers to only the `update` verb.
+  
+- `target allocator`: Introduce kustomizaton manifests for standalone deployment (#4945)
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Validate `spec.apacheHttpd.configPath` and `spec.nginx.configFile` more strictly for Instrumentations (#4925)
+  Values from `Instrumentation.spec.apacheHttpd.configPath` and `Instrumentation.spec.nginx.configFile`
+  are now passed to init container scripts as positional arguments instead of being concatenated into
+  the shell command string, so they are no longer parsed by the shell. They're also restricted to usual Unix
+  path characters and limited to 256 characters.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.151.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.151.0)
+* [OpenTelemetry Contrib - v0.151.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.151.0)
+* [Java auto-instrumentation - v2.27.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.27.0)
+* [.NET auto-instrumentation - v1.15.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0)
+* [Node.JS - v0.75.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.75.0)
+* [Python - v0.62b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.62b1)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.150.0
 
 ### 🛑 Breaking changes 🛑

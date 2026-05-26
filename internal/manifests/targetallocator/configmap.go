@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -112,6 +113,14 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
 		}
 
+		if taSpec.PrometheusCR.SecretNamespaces != nil {
+			prometheusCRConfig["secret_namespaces"] = taSpec.PrometheusCR.SecretNamespaces
+		}
+
+		if taSpec.PrometheusCR.DenyFSAccessThroughSMs {
+			prometheusCRConfig["deny_fs_access_through_sms"] = true
+		}
+
 		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
@@ -135,6 +144,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+	}
+
+	if taSpec.AllowInsecureAuthSecrets {
+		taConfig["allow_insecure_auth_secrets"] = true
 	}
 
 	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
@@ -180,7 +193,7 @@ func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1bet
 		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
 	}
 
-	configStr, err := collectorConfig.Yaml()
+	configStr, err := otelconfig.Yaml(&collectorConfig)
 	if err != nil {
 		return nil, err
 	}

@@ -18,6 +18,20 @@ type TargetAllocatorPrometheusCR struct {
 	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
 	// +optional
 	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
+	// SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
+	// If not configured, defaults to the target allocator's own namespace.
+	// +optional
+	SecretNamespaces []string `json:"secretNamespaces,omitempty"`
+	// DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+	// PodMonitor endpoints that reference arbitrary files on the file system. When
+	// enabled, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile,
+	// or tlsConfig.keyFile are dropped from the produced scrape configuration while
+	// the remaining endpoints are kept. This prevents tenants from stealing the
+	// Collector's service account token via ServiceMonitor bearerTokenFile
+	// references. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from
+	// the Prometheus Operator.
+	// +optional
+	DenyFSAccessThroughSMs bool `json:"denyFSAccessThroughSMs,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//
 	// Default: "30s"

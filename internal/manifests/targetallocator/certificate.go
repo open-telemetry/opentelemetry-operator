@@ -57,7 +57,7 @@ func CACertificate(params Params) *cmv1.Certificate {
 				OrganizationalUnits: []string{"opentelemetry-operator"},
 			},
 			SecretName: naming.CACertificate(params.TargetAllocator.Name),
-			IssuerRef: cmmeta.ObjectReference{
+			IssuerRef: cmmeta.IssuerReference{
 				Name: naming.SelfSignedIssuer(params.TargetAllocator.Name),
 				Kind: "Issuer",
 			},
@@ -83,7 +83,7 @@ func ServingCertificate(params Params) *cmv1.Certificate {
 				fmt.Sprintf("%s.%s.svc", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 				fmt.Sprintf("%s.%s.svc.cluster.local", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 			},
-			IssuerRef: cmmeta.ObjectReference{
+			IssuerRef: cmmeta.IssuerReference{
 				Kind: "Issuer",
 				Name: naming.CAIssuer(params.TargetAllocator.Name),
 			},
@@ -117,7 +117,7 @@ func ClientCertificate(params Params) *cmv1.Certificate {
 				fmt.Sprintf("%s.%s.svc", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 				fmt.Sprintf("%s.%s.svc.cluster.local", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 			},
-			IssuerRef: cmmeta.ObjectReference{
+			IssuerRef: cmmeta.IssuerReference{
 				Kind: "Issuer",
 				Name: naming.CAIssuer(params.TargetAllocator.Name),
 			},

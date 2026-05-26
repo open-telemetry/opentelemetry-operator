@@ -9,7 +9,7 @@
 # - Grant the necessary access to `/autoinstrumentation{,-musl}` directory. `chmod -R go+r /autoinstrumentation`
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be available in the image.
-FROM python:3.11 AS build
+FROM python:3.14 AS build
 
 WORKDIR /operator-build
 
@@ -17,7 +17,7 @@ ADD requirements.txt .
 
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
-FROM python:3.11-alpine AS build-musl
+FROM python:3.14-alpine AS build-musl
 
 WORKDIR /operator-build
 

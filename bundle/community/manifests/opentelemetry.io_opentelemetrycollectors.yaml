@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.21.0
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -3363,6 +3363,8 @@ spec:
                     type: object
                   prometheusCR:
                     properties:
+                      denyFSAccessThroughSMs:
+                        type: boolean
                       enabled:
                         type: boolean
                       podMonitorSelector:
@@ -8085,6 +8087,8 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  allowInsecureAuthSecrets:
+                    type: boolean
                   collectorNotReadyGracePeriod:
                     default: 30s
                     format: duration
@@ -8302,6 +8306,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      denyFSAccessThroughSMs:
+                        type: boolean
                       denyNamespaces:
                         items:
                           type: string
@@ -8482,6 +8488,10 @@ spec:
                         format: duration
                         type: string
                       scrapeProtocols:
+                        items:
+                          type: string
+                        type: array
+                      secretNamespaces:
                         items:
                           type: string
                         type: array

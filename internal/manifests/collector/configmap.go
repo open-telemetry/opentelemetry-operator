@@ -15,6 +15,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -27,7 +28,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	// This ensures collectors get updated TLS settings when the operator restarts
 	// after a cluster TLS profile change, without requiring CR updates.
 	if params.Config.Internal.OperandTLSProfile != nil {
-		_, err := otelCol.Spec.Config.ApplyDefaults(params.Log, components.WithTLSProfile(params.Config.Internal.OperandTLSProfile))
+		_, err := otelconfig.ApplyDefaults(&otelCol.Spec.Config, params.Log, components.WithTLSProfile(params.Config.Internal.OperandTLSProfile))
 		if err != nil {
 			params.Log.Error(err, "failed to apply TLS defaults to collector config")
 			return nil, err

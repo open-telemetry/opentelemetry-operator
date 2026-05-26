@@ -30,3 +30,14 @@ func TestSomeChanges(t *testing.T) {
 	assert.Equal(t, "foobar:1", actual.AutoInstrumentationGoImage)
 	assert.Equal(t, "bar:1", actual.AutoInstrumentationApacheHttpdImage)
 }
+
+func TestInstrumentationInConfigFile(t *testing.T) {
+	f, err := os.ReadFile("testdata/config_instrumentation.yaml")
+	require.NoError(t, err)
+	actual := Config{}
+	require.NoError(t, yaml.Unmarshal(f, &actual))
+	assert.Equal(t, "foo:1", actual.AutoInstrumentationDotNetImage)
+	assert.Equal(t, "foobar:1", actual.AutoInstrumentationGoImage)
+	assert.Equal(t, "bar:1", actual.AutoInstrumentationApacheHttpdImage)
+	assert.Equal(t, "myjavainstrumentation:latest", actual.Instrumentation.Spec.Java.Image)
+}

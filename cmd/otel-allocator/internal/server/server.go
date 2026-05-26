@@ -61,6 +61,7 @@ type Server struct {
 	scrapeConfigResponse                 []byte
 	ScrapeConfigMarshalledSecretResponse []byte
 	httpDuration                         metric.Float64Histogram
+	allowInsecureAuthSecrets             bool
 }
 
 type Option func(*Server)
@@ -73,6 +74,12 @@ func WithTLSConfig(tlsConfig *tls.Config, httpsListenAddr string) Option {
 		s.setRouter(httpsRouter)
 
 		s.httpsServer = &http.Server{Addr: httpsListenAddr, Handler: httpsRouter, ReadHeaderTimeout: 90 * time.Second, TLSConfig: tlsConfig}
+	}
+}
+
+func WithInsecureAuthSecrets() Option {
+	return func(s *Server) {
+		s.allowInsecureAuthSecrets = true
 	}
 }
 
@@ -119,6 +126,12 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 
 	for _, opt := range options {
 		opt(s)
+	}
+
+	if s.allowInsecureAuthSecrets {
+		// TODO: Change to Warn level after migrating away from logr.
+		s.logger.Info("allowInsecureAuthSecrets is enabled - auth secret values will be served over plain HTTP. " +
+			"Only use this when the target allocator endpoint is secured by a service mesh or equivalent transport-level security.")
 	}
 
 	return s, nil
@@ -241,7 +254,7 @@ func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	}
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
-	if c.Request.TLS != nil {
+	if c.Request.TLS != nil || s.allowInsecureAuthSecrets {
 		result = s.ScrapeConfigMarshalledSecretResponse
 	}
 	s.mtx.RUnlock()

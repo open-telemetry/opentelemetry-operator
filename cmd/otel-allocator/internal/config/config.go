@@ -33,6 +33,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	sigsyaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -72,12 +73,14 @@ type Config struct {
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
+	AllowInsecureAuthSecrets     bool                  `yaml:"allow_insecure_auth_secrets,omitempty"`
 }
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                          `yaml:"enabled,omitempty"`
 	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`
 	DenyNamespaces                  []string                      `yaml:"deny_namespaces,omitempty"`
+	SecretNamespaces                []string                      `yaml:"secret_namespaces,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector         `yaml:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector         `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector         `yaml:"service_monitor_selector,omitempty"`
@@ -90,6 +93,16 @@ type PrometheusCRConfig struct {
 	EvaluationInterval              model.Duration                `yaml:"evaluation_interval,omitempty"`
 	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
 	ScrapeClasses                   []monitoringv1.ScrapeClass    `yaml:"scrape_classes,omitempty"`
+	// DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
+	// PodMonitor endpoints that reference arbitrary files on the file system. When
+	// true, endpoints with bearerTokenFile, tlsConfig.caFile, tlsConfig.certFile, or
+	// tlsConfig.keyFile referencing paths outside an operator-owned mount are
+	// dropped from the produced scrape configuration while the remaining endpoints
+	// are kept. This prevents tenants from stealing the Collector's service account
+	// token. This is the equivalent of ArbitraryFSAccessThroughSMs.Deny from the
+	// Prometheus Operator.
+	// +optional
+	DenyFSAccessThroughSMs bool `yaml:"deny_fs_access_through_sms,omitempty"`
 }
 
 type HTTPSServerConfig struct {
@@ -149,6 +162,42 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 			return nil, err
 		}
 		return pConfig, nil
+	}
+}
+
+const monitoringV1PkgPath = "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
+// MapToMonitoringV1 handles prom-operator types that use json:",inline" for embedded structs.
+// mapstructure with TagName:"yaml" can't squash these, so we round-trip through sigs.k8s.io/yaml
+// which converts YAML → JSON → json.Unmarshal, correctly handling json:",inline".
+func MapToMonitoringV1() mapstructure.DecodeHookFuncType {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data any,
+	) (any, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+		target := t
+		if t.Kind() == reflect.Pointer {
+			target = t.Elem()
+		}
+		if target.PkgPath() != monitoringV1PkgPath {
+			return data, nil
+		}
+		yamlBytes, err := yaml.Marshal(data)
+		if err != nil {
+			return data, err
+		}
+		result := reflect.New(target)
+		if err := sigsyaml.Unmarshal(yamlBytes, result.Interface()); err != nil {
+			return data, err
+		}
+		if t.Kind() == reflect.Pointer {
+			return result.Interface(), nil
+		}
+		return result.Elem().Interface(), nil
 	}
 }
 
@@ -267,6 +316,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
 	}
 
+	if allowInsecureAuthSecrets, changed, err := getAllowInsecureAuthSecrets(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.AllowInsecureAuthSecrets = allowInsecureAuthSecrets
+	}
+
 	return nil
 }
 
@@ -274,6 +329,9 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 func LoadFromEnv(target *Config) error {
 	if ns, ok := os.LookupEnv("OTELCOL_NAMESPACE"); ok {
 		target.CollectorNamespace = ns
+	}
+	if val, ok := os.LookupEnv("ALLOW_INSECURE_AUTH_SECRETS"); ok && val == "true" {
+		target.AllowInsecureAuthSecrets = true
 	}
 	return nil
 }
@@ -301,6 +359,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			StringToModelOrTimeDurationHookFunc(),
 			MapToPromConfig(),
+			MapToMonitoringV1(),
 			MapToLabelSelector(),
 		),
 	}
@@ -441,8 +500,21 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 	return tlsConfig, certWatcher, nil
 }
 
-// GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
-// If the deny list is empty, it defaults to an empty map.
+// GetSecretsAllowList returns the namespaces to watch for secrets as a map.
+// If SecretNamespaces is explicitly configured, those namespaces are used.
+// Otherwise, it defaults to the collectorNamespace (the target allocator's own namespace).
+func (c PrometheusCRConfig) GetSecretsAllowList(collectorNamespace string) map[string]struct{} {
+	secretsAllowList := make(map[string]struct{})
+	if len(c.SecretNamespaces) > 0 {
+		for _, ns := range c.SecretNamespaces {
+			secretsAllowList[ns] = struct{}{}
+		}
+	} else if collectorNamespace != "" {
+		secretsAllowList[collectorNamespace] = struct{}{}
+	}
+	return secretsAllowList
+}
+
 func (c PrometheusCRConfig) GetAllowDenyLists() (allowList, denyList map[string]struct{}) {
 	allowList = map[string]struct{}{}
 	if len(c.AllowNamespaces) != 0 {

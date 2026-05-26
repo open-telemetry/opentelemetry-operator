@@ -11,12 +11,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1alpha1.TargetAllocator, options ...ta.TAOption) (string, error) {
 	collectorSpec := otelcol.Spec
 	taEnabled := targetAllocator != nil
-	cfgStr, err := collectorSpec.Config.Yaml()
+	cfgStr, err := otelconfig.Yaml(&collectorSpec.Config)
 	if err != nil {
 		return "", err
 	}

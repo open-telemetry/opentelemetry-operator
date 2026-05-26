@@ -232,8 +232,6 @@ func TestContainerHasEnvVars(t *testing.T) {
 }
 
 func TestContainerHasProxyEnvVars(t *testing.T) {
-	t.Setenv("NO_PROXY", "localhost")
-
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
 		Spec: v1alpha1.TargetAllocatorSpec{
@@ -249,6 +247,10 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	}
 	cfg := config.Config{
 		TargetAllocatorImage: "default-image",
+		ProxyEnvVars: []corev1.EnvVar{
+			{Name: "NO_PROXY", Value: "localhost"},
+			{Name: "no_proxy", Value: "localhost"},
+		},
 	}
 
 	// test

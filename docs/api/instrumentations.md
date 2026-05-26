@@ -237,7 +237,7 @@ Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp
         <td>string</td>
         <td>
           Location of Apache HTTPD server configuration.
-Needed only if different from default "/usr/local/apache2/conf"<br/>
+Needed only if different from default "/usr/local/apache2/conf".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5708,7 +5708,7 @@ Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp
         <td>string</td>
         <td>
           Location of Nginx configuration file.
-Needed only if different from default "/etx/nginx/nginx.conf"<br/>
+Needed only if different from default "/etx/nginx/nginx.conf".<br/>
         </td>
         <td>false</td>
       </tr><tr>

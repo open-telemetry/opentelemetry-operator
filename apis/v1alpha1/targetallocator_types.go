@@ -86,6 +86,11 @@ type TargetAllocatorSpec struct {
 	// NetworkPolicy defines the network policy to be applied to the Target Allocator pods.
 	// +optional
 	NetworkPolicy v1beta1.NetworkPolicy `json:"networkPolicy,omitempty"`
+	// AllowInsecureAuthSecrets controls whether auth secret values (e.g. basicAuth passwords)
+	// are served over plain HTTP without requiring mTLS. Only enable this when the target allocator
+	// endpoint is secured by a service mesh or equivalent transport-level security.
+	// +optional
+	AllowInsecureAuthSecrets bool `json:"allowInsecureAuthSecrets,omitempty"`
 	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
 	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//

@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package otelconfig
 
 import (
 	"fmt"
@@ -10,6 +10,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+)
+
+const (
+	defaultServicePort int32 = 8888
+	defaultServiceHost       = "0.0.0.0"
 )
 
 // parseAddressEndpoint parses the address and returns the host and port.

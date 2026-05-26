@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: opentelemetry-operator
     control-plane: controller-manager
-  namespace: ($OTEL_NAMESPACE)
+  namespace: opentelemetry-operator-system
 status:
   containerStatuses:
   - name: manager
