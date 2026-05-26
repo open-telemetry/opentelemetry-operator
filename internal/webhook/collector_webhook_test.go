@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -1444,6 +1445,107 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			}
 			assert.Equal(t, len(test.expectedWarnings), len(warnings))
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
+func TestCollectorMTLSValidation(t *testing.T) {
+	cfg := v1beta1.Config{}
+	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name                 string
+		otelcol              v1beta1.OpenTelemetryCollector
+		certManagerAvailable bool
+		expectedErr          string
+	}{
+		{
+			name: "mTLS with useCertManager true and cert-manager not available",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled: true,
+						Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: ptr.To(true)},
+					},
+					Config: cfg,
+				},
+			},
+			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
+		},
+		{
+			name: "mTLS with useCertManager defaulted and cert-manager not available",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled: true,
+						Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true},
+					},
+					Config: cfg,
+				},
+			},
+			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
+		},
+		{
+			name: "mTLS with useCertManager false and cert-manager not available",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled: true,
+						Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: ptr.To(false)},
+					},
+					Config: cfg,
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager true and cert-manager available",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled:      true,
+						Mtls:         &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: ptr.To(true)},
+						PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{Enabled: true},
+					},
+					Config: cfg,
+				},
+			},
+			certManagerAvailable: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cmAvailability := certmanager.NotAvailable
+			if test.certManagerAvailable {
+				cmAvailability = certmanager.Available
+			}
+			cfg := config.Config{
+				CollectorImage:          "default-collector",
+				TargetAllocatorImage:    "default-ta-allocator",
+				CertManagerAvailability: cmAvailability,
+			}
+			cvw := webhook.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				cfg,
+				getReviewer(false),
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			ctx := context.Background()
+			_, err := cvw.Validate(ctx, &test.otelcol)
+			if test.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.expectedErr)
+			}
 		})
 	}
 }

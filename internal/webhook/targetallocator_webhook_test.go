@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 	kubeTesting "k8s.io/client-go/testing"
-
 	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
