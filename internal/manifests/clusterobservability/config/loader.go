@@ -288,6 +288,11 @@ func (*ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) ma
 			Processors: []string{"resourcedetection", "batch"},
 			Exporters:  []string{exporterName},
 		}
+		pipelines["metrics/prometheus"] = PipelineConfig{
+			Receivers:  []string{"prometheus"},
+			Processors: []string{"batch"},
+			Exporters:  []string{exporterName},
+		}
 		pipelines["logs"] = PipelineConfig{
 			Receivers:  []string{"k8s_events"},
 			Processors: []string{"batch"},
