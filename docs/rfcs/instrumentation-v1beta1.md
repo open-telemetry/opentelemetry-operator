@@ -2,6 +2,8 @@
 
 This document outlines the next version of the Instrumentation CRD - `v1beta1`.
 
+See also: [CRD Version Graduation Strategies](crd-version-graduation-strategies.md) for background on CRD versioning approaches.
+
 ## Motivation
 
 The current `v1alpha1` Instrumentation CRD has been widely adopted in production environments despite its `v1alpha1` version. Promoting to `v1beta1` signals API stability and provides an opportunity to address accumulated design issues. The `v1beta1` version should be a breaking change from `v1alpha1` that:
