@@ -15,7 +15,9 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -94,6 +96,13 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 	// validate port config
 	if err := ValidatePorts(ta.Spec.Ports); err != nil {
 		return warnings, err
+	}
+
+	// validate that cert-manager is available when mTLS requires it
+	if manifestutils.IsTAMTLSEnabled(ta) &&
+		(ta.Spec.Mtls.UseCertManager == nil || *ta.Spec.Mtls.UseCertManager) &&
+		w.cfg.CertManagerAvailability != certmanager.Available {
+		return warnings, errors.New("mTLS is enabled with useCertManager but cert-manager is not available; install cert-manager and restart the operator, or set useCertManager to false")
 	}
 
 	// if the prometheusCR is enabled, it needs a suite of permissions to function

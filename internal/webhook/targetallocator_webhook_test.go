@@ -19,9 +19,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 	kubeTesting "k8s.io/client-go/testing"
+	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
@@ -176,11 +178,12 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	three := int32(3)
 
 	tests := []struct {
-		name             string
-		targetallocator  v1alpha1.TargetAllocator
-		expectedErr      string
-		expectedWarnings []string
-		shouldFailSar    bool
+		name                 string
+		targetallocator      v1alpha1.TargetAllocator
+		expectedErr          string
+		expectedWarnings     []string
+		shouldFailSar        bool
+		certManagerAvailable bool
 	}{
 		{
 			name:            "valid empty spec",
@@ -308,6 +311,52 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
 		{
+			name: "mTLS with useCertManager true and cert-manager not available",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: ptr.To(true),
+					},
+				},
+			},
+			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
+		},
+		{
+			name: "mTLS with useCertManager defaulted and cert-manager not available",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
+		},
+		{
+			name: "mTLS with useCertManager false and cert-manager not available",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: ptr.To(false),
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager true and cert-manager available",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: ptr.To(true),
+					},
+				},
+			},
+			certManagerAvailable: true,
+		},
+		{
 			name: "allowNamespaces and denyNamespaces can't both be set",
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{
@@ -324,9 +373,14 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			cmAvailability := certmanager.NotAvailable
+			if test.certManagerAvailable {
+				cmAvailability = certmanager.Available
+			}
 			cfg := config.Config{
-				CollectorImage:       "targetallocator:v0.0.0",
-				TargetAllocatorImage: "ta:v0.0.0",
+				CollectorImage:          "targetallocator:v0.0.0",
+				TargetAllocatorImage:    "ta:v0.0.0",
+				CertManagerAvailability: cmAvailability,
 			}
 			cvw := &TargetAllocatorWebhook{
 				logger:   logr.Discard(),

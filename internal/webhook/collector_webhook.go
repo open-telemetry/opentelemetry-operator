@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
@@ -344,6 +345,14 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	if err != nil {
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}
+	// validate that cert-manager is available when mTLS requires it
+	taSpec := r.Spec.TargetAllocator
+	if taSpec.Mtls != nil && taSpec.Mtls.Enabled &&
+		(taSpec.Mtls.UseCertManager == nil || *taSpec.Mtls.UseCertManager) &&
+		c.cfg.CertManagerAvailability != certmanager.Available {
+		return nil, errors.New("mTLS is enabled with useCertManager but cert-manager is not available; install cert-manager and restart the operator, or set useCertManager to false")
+	}
+
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
 		saname := r.Spec.TargetAllocator.ServiceAccount

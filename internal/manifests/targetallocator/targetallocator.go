@@ -11,10 +11,9 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -37,7 +36,7 @@ func Build(params Params) ([]client.Object, error) {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if manifestutils.IsTAMTLSCertManagerEnabled(&params.TargetAllocator, params.Config) {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),
