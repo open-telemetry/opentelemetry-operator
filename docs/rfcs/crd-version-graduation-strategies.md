@@ -1,6 +1,6 @@
-# Multiple CRD Versions
+# CRD Version Graduation Strategies
 
-This document outlines how Kubernetes handles multiple CRD versions, strategies for operator maintainers, and lessons learned from other projects.
+This is a supporting document for the [Instrumentation v1beta1 RFC](instrumentation-v1beta1.md). It outlines how Kubernetes handles multiple CRD versions, strategies for operator maintainers, and lessons learned from other projects.
 
 ## Background
 
@@ -112,6 +112,8 @@ The OpenTelemetry Operator implemented a conversion webhook for OpenTelemetryCol
 ## Strategy 2: Identical Schemas
 
 Make all breaking changes while still in alpha, then graduate with identical schemas.
+
+Prometheus Operator chose this approach for ScrapeConfig graduation after experiencing pain with conversion webhooks for AlertmanagerConfig. See [ScrapeConfig Graduation Proposal](https://prometheus-operator.dev/docs/proposals/accepted/scrapeconfig-graduation/#path-for-graduation).
 
 When using `strategy: None`, no separate controllers are needed per version:
 
