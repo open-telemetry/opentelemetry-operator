@@ -220,9 +220,123 @@ kubectl get instrumentations -A -o yaml | kubectl apply -f -
 
 See [Kubernetes docs: Upgrade existing objects to a new stored version](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version).
 
+## Removing an Old CRD Version
+
+Removing an old API version from a CRD is a multi-step process that requires careful coordination. Premature removal can make stored objects unreadable.
+
+### Prerequisites
+
+Before removing a version, ensure:
+
+1. **Storage migration complete** — no objects stored in the old version
+2. **No clients using the old version** — all tools, controllers, and users migrated
+3. **ManagedFields cleaned up** — old version references removed from field ownership tracking
+
+### Step-by-Step Process
+
+#### 1. Stop serving the old version
+
+Set `served: false` for the version being removed. The API server will return 404 for requests to that version:
+
+```yaml
+spec:
+  versions:
+    - name: v1alpha1
+      served: false   # Stop accepting requests
+      storage: false
+    - name: v1beta1
+      served: true
+      storage: true
+```
+
+At this point:
+- New requests to `v1alpha1` fail with 404
+- Existing objects are still accessible via `v1beta1`
+- Objects stored as `v1alpha1` in etcd are converted on read (requires conversion webhook if schemas differ)
+
+#### 2. Communicate deprecation and provide migration time
+
+For OSS operators, maintainers don't have access to users' clusters. Instead:
+
+- **Deprecation warnings** — log warnings when the operator processes resources using deprecated versions
+- **Documentation** — clearly document the deprecation timeline and migration steps
+- **Release cadence** — keep deprecated versions served for multiple releases (e.g., 2-3 minor versions)
+- **Migration guides** — provide kubectl commands users can run to check their own clusters:
+
+```bash
+# Users can check if any manifests reference the old version
+kubectl get instrumentations -A -o jsonpath='{range .items[*]}{.apiVersion}{"\n"}{end}' | sort | uniq -c
+
+# Check if old version is still in storedVersions
+kubectl get crd instrumentations.opentelemetry.io -o jsonpath='{.status.storedVersions}'
+```
+
+Users are responsible for migrating their own resources before upgrading to a release that removes the old version.
+
+#### 3. Run storage version migration
+
+Ensure all objects are re-written in the new storage version:
+
+```bash
+# Option A: Manual migration
+kubectl get instrumentations -A -o name | xargs -I {} kubectl patch {} -p '{}'
+
+# Option B: StorageVersionMigration resource (Kubernetes 1.30+, beta in 1.35)
+kubectl apply -f - <<EOF
+apiVersion: storagemigration.k8s.io/v1beta1
+kind: StorageVersionMigration
+metadata:
+  name: instrumentation-migration
+spec:
+  resource:
+    group: opentelemetry.io
+    resource: instrumentations
+EOF
+
+kubectl wait --for=condition=Succeeded storageversionmigration/instrumentation-migration
+```
+
+#### 4. Verify storedVersions
+
+Confirm the old version is no longer in `status.storedVersions`:
+
+```bash
+kubectl get crd instrumentations.opentelemetry.io -o jsonpath='{.status.storedVersions}'
+# Should show: ["v1beta1"]
+```
+
+If the old version still appears, patch the status subresource:
+
+```bash
+kubectl patch crd instrumentations.opentelemetry.io \
+  --subresource='status' \
+  --type='merge' \
+  -p '{"status":{"storedVersions":["v1beta1"]}}'
+```
+
+**Warning:** Only patch `storedVersions` after confirming all objects have been migrated. Incorrectly removing a version from `storedVersions` can make objects unreadable.
+
+#### 6. Remove the version from the CRD
+
+Once storage migration is complete:
+
+```yaml
+spec:
+  versions:
+    - name: v1beta1   # Only the new version remains
+      served: true
+      storage: true
+```
+
+#### 7. Remove conversion webhook support
+
+If using a conversion webhook, remove the code handling the old version. This reduces maintenance burden and potential bugs.
+
 ## References
 
 - [Kubernetes CRD Versioning](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/)
+- [Kubernetes Storage Version Migration](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/storage-version-migration/)
+- [Cluster API: Removal of old apiVersions in CRDs](https://github.com/kubernetes-sigs/cluster-api/issues/11894)
 - [Prometheus Operator ScrapeConfig Graduation](https://prometheus-operator.dev/docs/proposals/accepted/scrapeconfig-graduation/)
 - [Prometheus Operator AlertmanagerConfig v1beta1 Issue](https://github.com/prometheus-operator/prometheus-operator/issues/4677)
 - [Helm Charts v1beta1 Missing Issue](https://github.com/prometheus-community/helm-charts/issues/5168)
