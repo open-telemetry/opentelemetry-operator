@@ -188,6 +188,38 @@ The tool:
 - [Upgrading from v0.16 to v1.0](https://cert-manager.io/docs/installation/upgrading/upgrading-0.16-1.0/) — major version upgrade guide
 - [Issue #4686: Make cmctl upgrade old API versions](https://github.com/cert-manager/cert-manager/issues/4686) — discussion on migration tooling
 
+## Storage Version Migration
+
+When the storage version changes, existing resources in etcd remain in the old format until updated. The CRD's `status.storedVersions` tracks which versions still have objects in etcd:
+
+```bash
+kubectl get crd instrumentations.opentelemetry.io -o jsonpath='{.status.storedVersions}'
+# Output: ["v1alpha1","v1beta1"]
+```
+
+You cannot remove a version from the CRD while it still appears in `storedVersions`.
+
+### Migration Options
+
+**Manual migration:**
+```bash
+# Empty patch forces read→convert→write cycle
+kubectl get instrumentations -A -o name | xargs -I {} kubectl patch {} -p '{}'
+
+# Or use get + apply
+kubectl get instrumentations -A -o yaml | kubectl apply -f -
+```
+
+**Automated options:**
+
+| Approach | Description |
+|----------|-------------|
+| [cmctl upgrade migrate-api-version](https://cert-manager.io/docs/reference/cmctl/) | Cert-manager CLI command; some Helm charts run this in CRD install jobs |
+| [kube-storage-version-migrator](https://github.com/kubernetes-sigs/kube-storage-version-migrator) | Kubernetes SIG project; auto-detects storage version changes and migrates |
+| [OpenShift migrator operator](https://github.com/openshift/cluster-kube-storage-version-migrator-operator) | Built into OpenShift; requires manual migration request creation |
+
+See [Kubernetes docs: Upgrade existing objects to a new stored version](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version).
+
 ## References
 
 - [Kubernetes CRD Versioning](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/)
