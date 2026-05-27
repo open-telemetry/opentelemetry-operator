@@ -1,0 +1,14 @@
+change_type: enhancement
+
+component: auto-instrumentation
+
+note: Add command auto-instrumentation to be able to run only the webhook
+
+issues: [5010]
+
+subtext: |
+  The auto-instrumentation webhook can now be deployed separately from the operator
+  controller using the `auto-instrumentation` sub-command. This enables scaling
+  the webhook independently without requiring leader election.
+
+  Usage: `./manager auto-instrumentation [flags]` with the standard operator image.

@@ -23,6 +23,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/spf13/cobra"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,6 +91,57 @@ func init() {
 }
 
 func main() {
+	rootCmd := &cobra.Command{
+		Use:   "manager",
+		Short: "OpenTelemetry Operator",
+		Long:  "OpenTelemetry Operator manages OpenTelemetry Collectors and auto-instrumentation",
+		Run: func(_ *cobra.Command, _ []string) {
+			runOperator()
+		},
+	}
+
+	// Create the auto-instrumentation sub-command with its own flag set
+	autoInstrumentationCmd := newAutoInstrumentationCmd()
+
+	rootCmd.AddCommand(autoInstrumentationCmd)
+
+	// Disable Cobra's default completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func newAutoInstrumentationCmd() *cobra.Command {
+	cfg := config.New()
+	cliFlags := config.CreateCLIParser(cfg)
+
+	opts := zap.Options{}
+	var zapFlagSet flag.FlagSet
+	opts.BindFlags(&zapFlagSet)
+	cliFlags.AddGoFlagSet(&zapFlagSet)
+
+	var configFile string
+	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
+
+	cmd := &cobra.Command{
+		Use:   "auto-instrumentation",
+		Short: "Run only the auto-instrumentation webhook",
+		Long: `Run only the auto-instrumentation webhook without the controllers.
+This enables High Availability (HA) deployment where the webhook can be scaled independently
+without requiring leader election.`,
+		Run: func(_ *cobra.Command, _ []string) {
+			runAutoInstrumentationWebhook(cfg, configFile, opts)
+		},
+	}
+
+	cmd.Flags().AddFlagSet(cliFlags)
+
+	return cmd
+}
+
+func runOperator() {
 	cfg := config.New()
 
 	cliFlags := config.CreateCLIParser(cfg)
@@ -108,26 +161,8 @@ func main() {
 		panic(err)
 	}
 
-	err := cfg.Apply(configFile)
-	if err != nil {
-		fmt.Printf("configuration error: %v\n", err)
-		os.Exit(1)
-	}
-
-	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
-		ec.MessageKey = cfg.Zap.MessageKey
-		ec.LevelKey = cfg.Zap.LevelKey
-		ec.TimeKey = cfg.Zap.TimeKey
-		if cfg.Zap.LevelFormat == "lowercase" {
-			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
-		} else {
-			ec.EncodeLevel = zapcore.CapitalLevelEncoder
-		}
-	})
-
-	logger := zap.New(zap.UseFlagOptions(&opts))
-	ctrl.SetLogger(logger)
-
+	applyConfigAndSetupLogger(&cfg, configFile, opts)
+	logger := ctrl.Log
 	configLog := ctrl.Log.WithName("config")
 
 	v := version.Get()
@@ -144,56 +179,14 @@ func main() {
 
 	restConfig := ctrl.GetConfigOrDie()
 
-	var namespaces map[string]cache.Config
-	if cfg.WatchNamespace != "" {
-		setupLog.Info("watching namespace(s)", "namespaces", cfg.WatchNamespace)
-		namespaces = map[string]cache.Config{}
-		for ns := range strings.SplitSeq(cfg.WatchNamespace, ",") {
-			namespaces[ns] = cache.Config{}
-		}
-	} else {
-		setupLog.Info("watching all namespaces")
-	}
+	namespaces := parseWatchNamespaces(cfg.WatchNamespace)
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
 	leaseDuration := time.Second * 137
 	renewDeadline := time.Second * 107
 	retryPeriod := time.Second * 26
 
-	optionsTlSOptsFuncs := []func(*tls.Config){
-		func(config *tls.Config) {
-			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
-				setupLog.Error(err, "error setting up TLS")
-			}
-		},
-	}
-	var initialTLSProfileSpec configv1.TLSProfileSpec
-	// Fetch TLS profile from the cluster if enabled
-	if cfg.TLS.UseClusterProfile {
-		// Create a temporary client for TLS profile fetch (before the manager is created).
-		// The TLS profile should be set before the manager starts.
-		tempClient, errClient := client.New(restConfig, client.Options{Scheme: scheme})
-		if errClient != nil {
-			setupLog.Error(errClient, "unable to create temporary client for TLS profile fetch")
-			os.Exit(1)
-		}
-
-		// Fetch initial TLS profile using controller-runtime-common
-		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(context.Background(), tempClient)
-		if err != nil {
-			setupLog.Error(err, "unable to get TLS profile from cluster")
-			os.Exit(1)
-		}
-
-		// Convert to TLS options function for operator's own TLS (webhooks, metrics)
-		tlsConfigFunc, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(initialTLSProfileSpec)
-		if len(unsupportedCiphers) > 0 {
-			setupLog.Info("some TLS ciphers from cluster profile are not supported by Go", "unsupportedCiphers", unsupportedCiphers)
-		}
-
-		// Add cluster profile to the TLS funcs, it will override the statically provided config.
-		optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, tlsConfigFunc)
-	}
+	optionsTlSOptsFuncs, initialTLSProfileSpec := buildTLSOptions(cfg, restConfig)
 	if cfg.TLS.ConfigureOperands {
 		tlsCfg := &tls.Config{}
 		for _, t := range optionsTlSOptsFuncs {
@@ -202,20 +195,7 @@ func main() {
 		cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites)
 	}
 
-	// Configure metrics server options
-	metricsOptions := metricsserver.Options{
-		BindAddress: cfg.MetricsAddr,
-	}
-	if cfg.MetricsSecure {
-		metricsOptions.SecureServing = true
-		metricsOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
-		metricsOptions.TLSOpts = optionsTlSOptsFuncs
-		if cfg.MetricsTLSCertFile != "" && cfg.MetricsTLSKeyFile != "" {
-			metricsOptions.CertDir = filepath.Dir(cfg.MetricsTLSCertFile)
-			metricsOptions.CertName = filepath.Base(cfg.MetricsTLSCertFile)
-			metricsOptions.KeyName = filepath.Base(cfg.MetricsTLSKeyFile)
-		}
-	}
+	metricsOptions := buildMetricsOptions(cfg, optionsTlSOptsFuncs)
 
 	mgrOptions := ctrl.Options{
 		Scheme:                        scheme,
@@ -348,23 +328,7 @@ func main() {
 
 	setupLog.Info("Native sidecar", "enabled", cfg.Internal.NativeSidecarSupport)
 
-	if cfg.AnnotationsFilter != nil {
-		for _, basePattern := range cfg.AnnotationsFilter {
-			_, compileErr := regexp.Compile(basePattern)
-			if compileErr != nil {
-				setupLog.Error(compileErr, "could not compile the regexp pattern for Annotations filter")
-			}
-		}
-	}
-
-	if cfg.LabelsFilter != nil {
-		for _, basePattern := range cfg.LabelsFilter {
-			_, compileErr := regexp.Compile(basePattern)
-			if compileErr != nil {
-				setupLog.Error(compileErr, "could not compile the regexp pattern for Labels filter")
-			}
-		}
-	}
+	validateFilterPatterns(cfg)
 
 	if cfg.EnableInstrumentationCRDs {
 		err = addInstrumentationUpgrader(ctx, mgr, cfg)
@@ -523,20 +487,7 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
-	if cfg.EnableWebhooks {
-		if err := mgr.AddReadyzCheck("webhook", mgr.GetWebhookServer().StartedChecker()); err != nil {
-			setupLog.Error(err, "unable to set up webhook ready check")
-			os.Exit(1)
-		}
-	}
+	addHealthChecks(mgr, cfg.EnableWebhooks)
 
 	setupLog.Info("starting manager")
 	// NOTE: We enable LeaderElectionReleaseOnCancel, and to be safe we need to exit right after the manager does
@@ -674,4 +625,224 @@ func parseFipsFlag(fipsFlag string) (receivers, exporters, processors, extension
 		}
 	}
 	return receivers, exporters, processors, extensions
+}
+
+func applyConfigAndSetupLogger(cfg *config.Config, configFile string, opts zap.Options) {
+	err := cfg.Apply(configFile)
+	if err != nil {
+		fmt.Printf("configuration error: %v\n", err)
+		os.Exit(1)
+	}
+
+	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
+		ec.MessageKey = cfg.Zap.MessageKey
+		ec.LevelKey = cfg.Zap.LevelKey
+		ec.TimeKey = cfg.Zap.TimeKey
+		if cfg.Zap.LevelFormat == "lowercase" {
+			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
+		} else {
+			ec.EncodeLevel = zapcore.CapitalLevelEncoder
+		}
+	})
+
+	logger := zap.New(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(logger)
+}
+
+func parseWatchNamespaces(watchNamespace string) map[string]cache.Config {
+	if watchNamespace != "" {
+		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+		namespaces := map[string]cache.Config{}
+		for ns := range strings.SplitSeq(watchNamespace, ",") {
+			namespaces[ns] = cache.Config{}
+		}
+		return namespaces
+	}
+	setupLog.Info("watching all namespaces")
+	return nil
+}
+
+func buildTLSOptions(cfg config.Config, restCfg *rest.Config) ([]func(*tls.Config), configv1.TLSProfileSpec) {
+	optionsTlSOptsFuncs := []func(*tls.Config){
+		func(c *tls.Config) {
+			if tlsErr := cfg.TLS.ApplyTLSConfig(c); tlsErr != nil {
+				setupLog.Error(tlsErr, "error setting up TLS")
+			}
+		},
+	}
+
+	var initialTLSProfileSpec configv1.TLSProfileSpec
+	if cfg.TLS.UseClusterProfile {
+		tempClient, errClient := client.New(restCfg, client.Options{Scheme: scheme})
+		if errClient != nil {
+			setupLog.Error(errClient, "unable to create temporary client for TLS profile fetch")
+			os.Exit(1)
+		}
+
+		var err error
+		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(context.Background(), tempClient)
+		if err != nil {
+			setupLog.Error(err, "unable to get TLS profile from cluster")
+			os.Exit(1)
+		}
+
+		tlsConfigFunc, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(initialTLSProfileSpec)
+		if len(unsupportedCiphers) > 0 {
+			setupLog.Info("some TLS ciphers from cluster profile are not supported by Go", "unsupportedCiphers", unsupportedCiphers)
+		}
+
+		optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, tlsConfigFunc)
+	}
+
+	return optionsTlSOptsFuncs, initialTLSProfileSpec
+}
+
+func buildMetricsOptions(cfg config.Config, tlsOpts []func(*tls.Config)) metricsserver.Options {
+	metricsOptions := metricsserver.Options{
+		BindAddress: cfg.MetricsAddr,
+	}
+	if cfg.MetricsSecure {
+		metricsOptions.SecureServing = true
+		metricsOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+		metricsOptions.TLSOpts = tlsOpts
+		if cfg.MetricsTLSCertFile != "" && cfg.MetricsTLSKeyFile != "" {
+			metricsOptions.CertDir = filepath.Dir(cfg.MetricsTLSCertFile)
+			metricsOptions.CertName = filepath.Base(cfg.MetricsTLSCertFile)
+			metricsOptions.KeyName = filepath.Base(cfg.MetricsTLSKeyFile)
+		}
+	}
+	return metricsOptions
+}
+
+func validateFilterPatterns(cfg config.Config) {
+	if cfg.AnnotationsFilter != nil {
+		for _, basePattern := range cfg.AnnotationsFilter {
+			_, compileErr := regexp.Compile(basePattern)
+			if compileErr != nil {
+				setupLog.Error(compileErr, "could not compile the regexp pattern for Annotations filter")
+			}
+		}
+	}
+	if cfg.LabelsFilter != nil {
+		for _, basePattern := range cfg.LabelsFilter {
+			_, compileErr := regexp.Compile(basePattern)
+			if compileErr != nil {
+				setupLog.Error(compileErr, "could not compile the regexp pattern for Labels filter")
+			}
+		}
+	}
+}
+
+func addHealthChecks(mgr ctrl.Manager, includeWebhook bool) {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+	if includeWebhook {
+		if err := mgr.AddReadyzCheck("webhook", mgr.GetWebhookServer().StartedChecker()); err != nil {
+			setupLog.Error(err, "unable to set up webhook ready check")
+			os.Exit(1)
+		}
+	}
+}
+
+// runAutoInstrumentationWebhook runs only the auto-instrumentation webhook without the controllers.
+// This enables High Availability (HA) deployment where the webhook can be scaled independently.
+func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts zap.Options) {
+	applyConfigAndSetupLogger(&cfg, configFile, opts)
+	logger := ctrl.Log
+
+	configLog := ctrl.Log.WithName("config")
+
+	v := version.Get()
+
+	logger.Info("Starting the OpenTelemetry Auto-Instrumentation Webhook",
+		"opentelemetry-operator", v.Operator,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
+		"go-arch", runtime.GOARCH,
+		"go-os", runtime.GOOS,
+		"config", cfg.ToStringMap(),
+	)
+
+	restConfig := ctrl.GetConfigOrDie()
+
+	namespaces := parseWatchNamespaces(cfg.WatchNamespace)
+	optionsTlSOptsFuncs, _ := buildTLSOptions(cfg, restConfig)
+	metricsOptions := buildMetricsOptions(cfg, optionsTlSOptsFuncs)
+
+	// Webhooks do not require leader election - multiple instances can serve webhook requests
+	mgrOptions := ctrl.Options{
+		Scheme:                 scheme,
+		Metrics:                metricsOptions,
+		HealthProbeBindAddress: cfg.ProbeAddr,
+		LeaderElection:         false, // Webhooks can run without leader election
+		PprofBindAddress:       cfg.PprofAddr,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    cfg.WebhookPort,
+			TLSOpts: optionsTlSOptsFuncs,
+		}),
+		Cache: cache.Options{
+			DefaultNamespaces: namespaces,
+		},
+	}
+
+	mgr, err := ctrl.NewManager(restConfig, mgrOptions)
+	if err != nil {
+		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "failed to create kubernetes clientset")
+	}
+
+	reviewer := rbac.NewReviewer(clientset)
+
+	// Autodetect configuration
+	ad, err := autodetect.New(restConfig, reviewer)
+	if err != nil {
+		setupLog.Error(err, "failed to setup auto-detect routine")
+		os.Exit(1)
+	}
+
+	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
+		setupLog.Error(err, "failed to autodetect config variables")
+	}
+
+	setupLog.Info("Native sidecar", "enabled", cfg.Internal.NativeSidecarSupport)
+
+	validateFilterPatterns(cfg)
+
+	// Register the Instrumentation webhook for validation
+	if err = wh.SetupInstrumentationWebhook(mgr, cfg); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
+		os.Exit(1)
+	}
+
+	// Register the pod mutation webhook with only the instrumentation mutator
+	decoder := admission.NewDecoder(mgr.GetScheme())
+
+	podMutators := []podmutation.PodMutator{
+		instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
+	}
+
+	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
+		Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(), podMutators),
+	})
+
+	addHealthChecks(mgr, true)
+
+	ctx := ctrl.SetupSignalHandler()
+
+	setupLog.Info("starting auto-instrumentation webhook")
+	if err := mgr.Start(ctx); err != nil {
+		setupLog.Error(err, "problem running manager")
+		os.Exit(1)
+	}
 }
