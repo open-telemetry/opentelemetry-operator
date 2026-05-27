@@ -17,10 +17,10 @@ The current `v1alpha1` Instrumentation CRD has been widely adopted in production
 2. Add explicit OTLP exporter protocol field to avoid ambiguity between HTTP and gRPC endpoints ([#3658](https://github.com/open-telemetry/opentelemetry-operator/issues/3658))
 3. Normalize per-language resource fields — remove deprecated [`volumeLimitSize`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L178) and unify inconsistent JSON tags ([`json:"resources"`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L188) vs [`json:"resourceRequirements"`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L228))
 4. Consolidate `Resource` and `Defaults` into a single top-level `spec.resource` field for operator-level resource attribute configuration
+5. Migrate injection control from annotations to labels, enabling webhook filtering via `objectSelector` and easier pod querying ([#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821), [#4445](https://github.com/open-telemetry/opentelemetry-operator/issues/4445))
 
 ## Non-Goals (for initial v1beta1)
 
-* Label selectors for targeting workloads ([#2744](https://github.com/open-telemetry/opentelemetry-operator/issues/2744), [#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821)) - additive feature, can be added later without breaking changes
 * Webhook architecture separation ([#5010](https://github.com/open-telemetry/opentelemetry-operator/issues/5010), [#4115](https://github.com/open-telemetry/opentelemetry-operator/issues/4115)) - operational concern, not CRD spec
 * Windows node support ([#642](https://github.com/open-telemetry/opentelemetry-operator/issues/642)) - can be added without breaking changes
 * New language support - can be added incrementally
@@ -232,6 +232,79 @@ The operator handles this differently depending on the active config mode:
 
 In both cases, user-defined attributes from `spec.resource.attributes` are included with the lowest precedence, followed by K8s metadata, then pod annotations (`resource.opentelemetry.io/*`).
 
+### 5. Migrate Injection Control from Annotations to Labels
+
+**Issues:** [#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821), [#4445](https://github.com/open-telemetry/opentelemetry-operator/issues/4445)
+
+The current v1alpha1 uses pod/namespace annotations to control injection:
+
+```yaml
+# Current v1alpha1 approach: annotations
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "true"
+    instrumentation.opentelemetry.io/inject-java: "my-instrumentation"
+```
+
+This has limitations:
+
+1. **No webhook filtering** — every pod in the cluster passes through the mutation webhook, even if instrumentation is not requested. Labels allow using Kubernetes [objectSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector) to pre-filter at the API server level.
+2. **Harder to query** — finding all instrumented pods requires checking multiple annotation keys (`inject-java`, `inject-python`, etc.).
+
+#### Proposed design
+
+Migrate injection control from annotations to labels with the same semantics:
+
+```yaml
+# v1beta1 approach: labels (same values as annotations)
+metadata:
+  labels:
+    instrumentation.opentelemetry.io/inject-java: "true"
+    # or reference a specific Instrumentation CR
+    instrumentation.opentelemetry.io/inject-java: "my-instrumentation"
+```
+
+The behavior remains identical — only the metadata type changes from annotation to label. All existing value semantics are preserved:
+- `"true"` — use the default Instrumentation CR in the namespace
+- `"false"` — explicitly opt out
+- `"<name>"` — use a specific Instrumentation CR
+
+#### Coexistence with annotations
+
+During the transition period, both mechanisms work:
+
+| Label | Annotation | Behavior |
+|-------|------------|----------|
+| Not set | Present | Annotation controls injection (v1alpha1 compatibility) |
+| Present | Not set | Label controls injection (v1beta1 approach) |
+| Present | Present | Label takes precedence |
+| Not set | Not set | No injection |
+
+This allows gradual migration: users can switch to labels at their own pace while existing annotation-based configurations continue to work.
+
+#### Deprecation path
+
+1. **v1beta1**: Both labels and annotations supported. Annotations deprecated but functional.
+2. **v1alpha1 removal**: Annotations no longer documented, labels become the primary mechanism. Annotations support is eventually dropped.
+
+#### Webhook optimization
+
+With labels, the operator can configure the MutatingWebhookConfiguration with an `objectSelector`:
+
+```yaml
+webhooks:
+  - name: mpod.kb.io
+    objectSelector:
+      matchExpressions:
+        - key: instrumentation.opentelemetry.io/inject-java
+          operator: Exists
+        - key: instrumentation.opentelemetry.io/inject-python
+          operator: Exists
+        # ... other languages
+```
+
+This reduces webhook invocations to only pods that have opted in via labels, improving cluster performance. Pods using legacy annotations will still pass through the webhook (no `objectSelector` match), maintaining backwards compatibility.
+
 ## CRD Spec
 
 Full proposed v1beta1 `InstrumentationSpec`:
@@ -401,6 +474,7 @@ The `EnvConfig` types (`Exporter`, `Sampler`, `Propagator`) are the same as v1al
 | Resource attributes | `spec.resource.resourceAttributes`, `spec.resource.addK8sUIDAttributes`, `spec.defaults.useLabelsForResourceAttributes` | Consolidated into `spec.resource.attributes`, `spec.resource.k8sMetadata`, and `spec.resource.serviceMetadata` | Rename `resourceAttributes` to `attributes`, use `k8sMetadata` for k8s.* attributes, use `serviceMetadata` for service.* derivation |
 | Per-language resources JSON tag | Mixed (`resources` / `resourceRequirements`) | `resources` (all) | Rename in YAML for NodeJS, Python, DotNet, Go, ApacheHttpd, Nginx |
 | Volume size limit | `volumeLimitSize` (deprecated) | Removed | Use `volumeClaimTemplate` |
+| Injection control | Pod/namespace annotations | Labels (same keys, same values) with annotation fallback | Optionally migrate annotations to labels; annotations continue to work |
 
 ## Migration Strategy
 
@@ -412,7 +486,7 @@ The `EnvConfig` types (`Exporter`, `Sampler`, `Propagator`) are the same as v1al
 
 | Category | Issues |
 |----------|--------|
-| Label selectors (future) | [#2744](https://github.com/open-telemetry/opentelemetry-operator/issues/2744), [#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821), [#4445](https://github.com/open-telemetry/opentelemetry-operator/issues/4445) |
+| Injection labels | [#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821), [#4445](https://github.com/open-telemetry/opentelemetry-operator/issues/4445) |
 | Declarative config | [#4093](https://github.com/open-telemetry/opentelemetry-operator/issues/4093), [#4607](https://github.com/open-telemetry/opentelemetry-operator/issues/4607) |
 | Exporter improvements | [#3658](https://github.com/open-telemetry/opentelemetry-operator/issues/3658), [#3390](https://github.com/open-telemetry/opentelemetry-operator/issues/3390), [#2180](https://github.com/open-telemetry/opentelemetry-operator/issues/2180) |
 | Env handling | [#3022](https://github.com/open-telemetry/opentelemetry-operator/issues/3022), [#3775](https://github.com/open-telemetry/opentelemetry-operator/issues/3775), [#4559](https://github.com/open-telemetry/opentelemetry-operator/issues/4559) |
