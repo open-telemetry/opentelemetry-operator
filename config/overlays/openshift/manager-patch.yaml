@@ -68,3 +68,18 @@
   value:
     name: TLS_CONFIGURE_OPERANDS
     value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ENABLE_STANDALONE_WEBHOOK
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: STANDALONE_WEBHOOK_REPLICAS
+    value: "1"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: RELATED_IMAGE_OPERATOR
+    value: "PLACEHOLDER"

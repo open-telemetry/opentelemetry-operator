@@ -137,6 +137,15 @@ type Config struct {
 	// FeatureGates is a comma-separated list of feature gates to enable/disable.
 	// Format: "gate1,gate2,-gate3" where - prefix disables the gate.
 	FeatureGates string `yaml:"feature-gates"`
+	// EnableStandaloneWebhook controls whether the operator creates a standalone webhook Deployment
+	// for pod mutation instead of handling it internally. When true, the operator creates a separate
+	// Deployment running the auto-instrumentation sub-command with the replica count from StandaloneWebhookReplicas.
+	EnableStandaloneWebhook bool `yaml:"enable-standalone-webhook"`
+	// StandaloneWebhookReplicas is the number of replicas for the standalone webhook deployment.
+	// Only used when EnableStandaloneWebhook is true. Defaults to 1.
+	StandaloneWebhookReplicas int32 `yaml:"standalone-webhook-replicas"`
+	// OperatorImage is the operator container image. Used for the standalone webhook deployment.
+	OperatorImage string `yaml:"operator-image"`
 	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
 	Internal Internal `yaml:"-"`
 }

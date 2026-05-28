@@ -143,4 +143,16 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("WATCH_NAMESPACE"); ok {
 		cfg.WatchNamespace = v
 	}
+	if v, ok := os.LookupEnv("ENABLE_STANDALONE_WEBHOOK"); ok {
+		cfg.EnableStandaloneWebhook, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("STANDALONE_WEBHOOK_REPLICAS"); ok {
+		replicas, err := strconv.ParseInt(v, 10, 32)
+		if err == nil {
+			cfg.StandaloneWebhookReplicas = int32(replicas)
+		}
+	}
+	if v, ok := os.LookupEnv("RELATED_IMAGE_OPERATOR"); ok {
+		cfg.OperatorImage = v
+	}
 }

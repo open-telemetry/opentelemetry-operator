@@ -69,6 +69,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	wh "github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhookdeployment"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
@@ -90,14 +91,32 @@ func init() {
 }
 
 func main() {
+	// Create config and flags for the root command (operator mode)
+	cfg := config.New()
+	cliFlags := config.CreateCLIParser(cfg)
+
+	opts := zap.Options{}
+	var zapFlagSet flag.FlagSet
+	opts.BindFlags(&zapFlagSet)
+	cliFlags.AddGoFlagSet(&zapFlagSet)
+
+	featureGates := featuregate.Flags(colfeaturegate.GlobalRegistry())
+	cliFlags.AddGoFlagSet(featureGates)
+
+	var configFile string
+	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
+
 	rootCmd := &cobra.Command{
 		Use:   "manager",
 		Short: "OpenTelemetry Operator",
 		Long:  "OpenTelemetry Operator manages OpenTelemetry Collectors and auto-instrumentation",
 		Run: func(_ *cobra.Command, _ []string) {
-			runOperator()
+			runOperator(cfg, configFile, opts, featureGates)
 		},
 	}
+
+	// Add flags to root command so cobra can parse them
+	rootCmd.Flags().AddFlagSet(cliFlags)
 
 	// Create the auto-instrumentation sub-command with its own flag set
 	autoInstrumentationCmd := newAutoInstrumentationCmd()
@@ -140,26 +159,7 @@ without requiring leader election.`,
 	return cmd
 }
 
-func runOperator() {
-	cfg := config.New()
-
-	cliFlags := config.CreateCLIParser(cfg)
-
-	// registers any flags that underlying libraries might use
-	opts := zap.Options{}
-	var zapFlagSet flag.FlagSet
-	opts.BindFlags(&zapFlagSet)
-	cliFlags.AddGoFlagSet(&zapFlagSet)
-
-	featureGates := featuregate.Flags(colfeaturegate.GlobalRegistry())
-	cliFlags.AddGoFlagSet(featureGates)
-
-	var configFile string
-	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
-	if err := cliFlags.Parse(os.Args[1:]); err != nil {
-		panic(err)
-	}
-
+func runOperator(cfg config.Config, configFile string, opts zap.Options, featureGates *flag.FlagSet) {
 	applyConfigAndSetupLogger(&cfg, configFile, opts)
 	logger := ctrl.Log
 	configLog := ctrl.Log.WithName("config")
@@ -468,14 +468,18 @@ func runOperator() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
-		decoder := admission.NewDecoder(mgr.GetScheme())
-		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
-				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
-				}),
-		})
+		if !cfg.EnableStandaloneWebhook {
+			decoder := admission.NewDecoder(mgr.GetScheme())
+			mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
+				Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
+					[]podmutation.PodMutator{
+						sidecar.NewMutator(logger, cfg, mgr.GetClient()),
+						instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
+					}),
+			})
+		} else {
+			ctrl.Log.Info("Pod mutation webhook handled by standalone deployment", "replicas", cfg.StandaloneWebhookReplicas)
+		}
 
 		if cfg.OpAmpBridgeAvailability == opampbridge.Available {
 			if err = wh.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
@@ -489,6 +493,21 @@ func runOperator() {
 	// +kubebuilder:scaffold:builder
 
 	addHealthChecks(mgr, cfg.EnableWebhooks)
+
+	// When standalone webhook is enabled, create the webhook deployment
+	if cfg.EnableStandaloneWebhook {
+		if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+			params, err := webhookdeployment.NewParams(mgr.GetClient(), cfg)
+			if err != nil {
+				setupLog.Error(err, "failed to create webhook deployment params")
+				return err
+			}
+			return webhookdeployment.Reconcile(ctx, params)
+		})); err != nil {
+			setupLog.Error(err, "unable to add webhook deployment reconciler")
+			os.Exit(1)
+		}
+	}
 
 	setupLog.Info("starting manager")
 	// NOTE: We enable LeaderElectionReleaseOnCancel, and to be safe we need to exit right after the manager does
@@ -830,6 +849,7 @@ func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts za
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	podMutators := []podmutation.PodMutator{
+		sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 		instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 	}
 

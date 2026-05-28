@@ -62,6 +62,9 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
 	f.String("watch-namespace", cfg.WatchNamespace, "Comma-separated list of namespaces the operator should watch for CustomResources. Empty means watch all namespaces.")
+	f.Bool("enable-standalone-webhook", cfg.EnableStandaloneWebhook, "Create a standalone webhook Deployment for pod mutation instead of handling it in the operator. When enabled, the operator creates and manages a separate Deployment.")
+	f.Int32("standalone-webhook-replicas", cfg.StandaloneWebhookReplicas, "Number of replicas for the standalone webhook deployment. Only used when --enable-standalone-webhook is true. Defaults to 1.")
+	f.String("operator-image", cfg.OperatorImage, "The operator container image. Used for the standalone webhook deployment when --enable-standalone-webhook is true.")
 
 	return f
 }
@@ -162,6 +165,12 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
 			case "watch-namespace":
 				cfg.WatchNamespace, _ = f.GetString("watch-namespace")
+			case "enable-standalone-webhook":
+				cfg.EnableStandaloneWebhook, _ = f.GetBool("enable-standalone-webhook")
+			case "standalone-webhook-replicas":
+				cfg.StandaloneWebhookReplicas, _ = f.GetInt32("standalone-webhook-replicas")
+			case "operator-image":
+				cfg.OperatorImage, _ = f.GetString("operator-image")
 			case "create-rbac-permissions":
 				val, _ := f.GetBool("create-rbac-permissions")
 				if val {
