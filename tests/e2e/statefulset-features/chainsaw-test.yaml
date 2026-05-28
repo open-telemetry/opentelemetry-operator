@@ -14,14 +14,7 @@ spec:
         file: 00-assert.yaml
   - name: step-01
     try:
-    - script:
-        timeout: 30s
-        content: |
-          kubectl exec stateful-collector-0 -n $NAMESPACE -c otc-container -- \
-            touch /usr/share/testvolume/test-file
-  - name: step-02
-    try:
     - apply:
-        file: 02-update-volume-claim-templates.yaml
+        file: 01-update-volume-claim-templates.yaml
     - assert:
-        file: 02-assert.yaml
+        file: 01-assert.yaml
