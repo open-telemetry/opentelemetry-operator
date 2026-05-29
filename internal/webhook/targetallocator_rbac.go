@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package webhook
 
 import (
 	"context"
@@ -43,7 +43,7 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	},
 }
 
-func CheckTargetAllocatorPrometheusCRPolicyRules(
+func checkTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
 	namespace string,

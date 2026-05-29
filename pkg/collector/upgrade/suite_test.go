@@ -45,7 +45,8 @@ func TestMain(m *testing.M) {
 	tenv, err := testenv.Start(&ctrlenvtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		WebhookInstallOptions: ctrlenvtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			Paths:                   []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			IgnoreSchemeConvertible: true,
 		},
 	}, testScheme)
 	if err != nil {
