@@ -995,6 +995,7 @@ catalog-push: ## Push a catalog image.
 # renovate: datasource=github-releases depName=sigstore/cosign
 COSIGN_VERSION ?= v2.6.3
 COSIGN ?= $(LOCALBIN)/cosign
+UPLOAD ?= true
 
 
 # Download cosign locally if necessary
@@ -1019,7 +1020,7 @@ endif
 ifndef DIGEST
 	$(error DIGEST is not set. Usage: make cosign-sign IMAGE=<image> DIGEST=<digest>)
 endif
-	$(COSIGN) sign --yes "$(IMAGE)@$(DIGEST)"
+	$(COSIGN) sign --yes --upload=$(UPLOAD) "$(IMAGE)@$(DIGEST)"
 
 ##@ Release
 
