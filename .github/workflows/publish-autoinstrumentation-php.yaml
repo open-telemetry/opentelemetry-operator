@@ -30,6 +30,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Read version
         run: echo "VERSION=$(cat autoinstrumentation/php/version.txt)" >> $GITHUB_ENV
@@ -55,7 +57,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare files for docker image
-        run: pushd ./autoinstrumentation/php ; ./prepare_files_for_docker_image.sh --ext-ver ${{ env.VERSION }} --dest-dir ${PWD}/files_for_docker_image ; popd
+        run: pushd ./autoinstrumentation/php ; ./prepare_files_for_docker_image.sh --ext-ver $VERSION --dest-dir ${PWD}/files_for_docker_image ; popd
 
       - name: Build and push
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
