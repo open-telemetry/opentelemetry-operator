@@ -1,6 +1,6 @@
 name: E2E Junit Report
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] only reads artifacts and event metadata from the triggering run, never executes untrusted code
     workflows: [ "End-to-end tests" ]
     types: [ completed ]
   workflow_dispatch:
