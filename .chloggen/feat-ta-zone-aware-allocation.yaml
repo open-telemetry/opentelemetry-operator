@@ -1,0 +1,26 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add zone-aware target allocation for consistent-hashing and least-weighted strategies, with optional maxSkew-based spillover
+
+# One or more tracking issues related to the change
+issues: [5156]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Adds a topology config section that, when zone_aware is enabled, makes the consistent-hashing
+  and least-weighted allocation strategies prefer assigning targets to collectors in the same
+  availability zone. Reduces cross-AZ scrape traffic and the associated cloud egress costs.
+  Falls back to the global collector pool when a target's zone has no collectors, and supports
+  an optional max_skew threshold to spill targets cross-zone when same-zone load would otherwise
+  exceed the limit. Exposes a /zones HTTP endpoint and per-zone metrics
+  (opentelemetry_allocator_collectors_per_zone, opentelemetry_allocator_targets_per_zone,
+  opentelemetry_allocator_uncovered_zones, opentelemetry_allocator_zone_spillover). Strictly
+  additive: when topology.zone_aware is unset or false, behavior is byte-for-byte identical to
+  previous releases.

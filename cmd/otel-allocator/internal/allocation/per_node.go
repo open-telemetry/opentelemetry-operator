@@ -58,3 +58,14 @@ func (s *perNodeStrategy) SetCollectors(collectors map[string]*Collector) {
 		s.fallbackStrategy.SetCollectors(collectors)
 	}
 }
+
+// SetZoneAwareness is a no-op for per-node allocation. The strategy already
+// pins targets to the exact node, which transitively pins them to that node's
+// zone, so an additional zone-affinity layer would only restrict the fallback
+// strategy. We propagate the setting to the fallback so that it can apply
+// zone awareness for targets that miss the node-pinning path.
+func (s *perNodeStrategy) SetZoneAwareness(zt *ZoneTopology, maxSkew int) {
+	if s.fallbackStrategy != nil {
+		s.fallbackStrategy.SetZoneAwareness(zt, maxSkew)
+	}
+}

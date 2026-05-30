@@ -78,6 +78,98 @@ to use it with a collector running as a DaemonSet.
 > The per-node strategy ignores targets not assigned to a Node, like for example control plane components.
 
 [consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
+
+### Zone-aware allocation
+
+The `consistent-hashing` and `least-weighted` strategies can be made **availability-zone aware**. When enabled,
+the allocator prefers assigning targets to collectors that run in the same topology zone as the target. This
+collapses cross-AZ scrape traffic to near-zero under normal operation, which directly reduces cloud egress
+costs (AWS / GCP / Azure all charge for inter-AZ data transfer within a region) and improves scrape latency.
+
+Previously the only way to keep scrape traffic same-zone was the `per-node` strategy, which forces a DaemonSet
+deployment of collectors and provides no load balancing across collectors within a zone. Zone-aware allocation
+gives the same locality benefit without those constraints: collectors can run as a normal Deployment or
+StatefulSet, scaled independently of node count, and `consistent-hashing` or `least-weighted` distributes load
+across the collectors that share each zone.
+
+#### Configuration
+
+```yaml
+allocation_strategy: "least-weighted"   # or "consistent-hashing"
+topology:
+  zone_aware: true
+  # Optional knobs (defaults shown):
+  zone_label: "topology.kubernetes.io/zone"
+  target_zone_label: "__meta_kubernetes_endpointslice_endpoint_zone"
+  max_skew: 0
+  node_sync_interval: 5m
+```
+
+- `zone_aware` — master switch. When `false` (the default), every other field in this section is ignored
+  and allocation behavior is identical to releases without this feature.
+- `zone_label` — the node label used to look up the zone each collector pod runs in. The standard label
+  `topology.kubernetes.io/zone` is set automatically by kubelets on all major cloud providers. The legacy
+  `failure-domain.beta.kubernetes.io/zone` label is used as a fallback.
+- `target_zone_label` — the Prometheus service discovery meta-label used to extract a target's desired zone.
+  Defaults to `__meta_kubernetes_endpointslice_endpoint_zone`, which is populated automatically when scraping
+  EndpointSlice resources. Other SD mechanisms can be used by setting this to the appropriate label
+  (`__meta_ec2_availability_zone` for EC2 SD, `__meta_gce_zone` for GCE SD, etc.).
+- `max_skew` — controls cross-zone "spillover". When the same-zone allocation would push the global skew
+  (max collector NumTargets − min collector NumTargets) above this value, the target spills to the globally
+  least-loaded collector instead. `0` disables the check entirely (pure zone affinity, recommended when zones
+  are reasonably balanced). Values of 5–20 are practical for production setups with uneven workloads.
+- `node_sync_interval` — how often the allocator re-reads node zone labels from the Kubernetes API.
+  Nodes added or relabeled after startup are picked up at this cadence. The collector pod informer (running
+  its own ~30s resync) then applies the updated zone to any collectors that land on those nodes, so
+  worst-case staleness is roughly `node_sync_interval` + 30s. Defaults to 5 minutes. Set to `0` to disable
+  the periodic re-sync (sync only once at startup); minimum valid value is 30s.
+
+#### Allocation flow per target
+
+1. If the target has no zone metadata (no `target_zone_label`), assign via the global path (same as
+   non-zone-aware mode).
+2. If the target's desired zone has at least one collector, pick a collector in that zone using the configured
+   strategy (`consistent-hashing` uses a per-zone hash ring; `least-weighted` picks the least-loaded
+   in-zone collector).
+3. If `max_skew > 0` and step 2's candidate would push the global skew above `max_skew`, fall back to the
+   globally least-loaded collector ("spillover"). This is recorded by the `opentelemetry_allocator_zone_spillover`
+   metric with `from_zone` and `to_zone` labels.
+4. If the target's desired zone has no collectors at all ("failover"), assign via the global pool. The zone
+   is reported via the `/zones` API and the `opentelemetry_allocator_uncovered_zones` metric.
+
+#### Observability
+
+When zone-aware allocation is enabled, the allocator publishes additional metrics:
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `opentelemetry_allocator_collectors_per_zone` | Gauge | `zone` | Number of collectors observed in each zone. |
+| `opentelemetry_allocator_targets_per_zone` | Gauge | `zone` | Number of targets that desire each zone (regardless of final assignment). |
+| `opentelemetry_allocator_uncovered_zones` | Gauge | — | Count of zones that have targets but no collectors. |
+| `opentelemetry_allocator_zone_spillover` | Counter | `from_zone`, `to_zone` | Cross-zone assignments caused by failover or `max_skew`. |
+
+A read-only `/zones` HTTP endpoint exposes a JSON snapshot of the same state for dashboards and tooling:
+
+```json
+{
+  "enabled": true,
+  "zones": [
+    {"zone": "us-east-1a", "collectors": ["collector-0", "collector-1"], "targetsDesired": 42, "covered": true},
+    {"zone": "us-east-1b", "collectors": ["collector-2"], "targetsDesired": 38, "covered": true},
+    {"zone": "us-east-1c", "collectors": [], "targetsDesired": 5, "covered": false}
+  ],
+  "uncoveredZones": ["us-east-1c"]
+}
+```
+
+The endpoint always returns HTTP 200. When `zone_aware` is disabled, the payload is `{"enabled": false, ...}` —
+clients can detect zone-aware setups without reading the allocator config.
+
+#### Backward compatibility
+
+Zone-aware allocation is strictly opt-in. When `topology.zone_aware` is unset or `false`, the allocator behaves
+exactly as before: same hash-ring construction, same least-weighted selection, no new metrics emitted, no
+behavior change for existing deployments. A dedicated backward-compat test suite enforces this contract.
 ## Discovery of Prometheus Custom Resources
 
 The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://prometheus-operator.dev/docs/getting-started/design/), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 

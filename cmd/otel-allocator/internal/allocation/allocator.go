@@ -99,6 +99,14 @@ type allocator struct {
 	timeToAssign          metric.Float64Histogram
 	targetsRemaining      metric.Int64Gauge
 	targetsUnassigned     metric.Int64Gauge
+
+	// zoneTopology, when non-nil, mirrors the per-zone collector/target
+	// state so it can be queried by the /zones API endpoint and zone-aware
+	// strategies, and so per-zone metrics get emitted on every change.
+	zoneTopology *ZoneTopology
+	// maxSkew is propagated to the strategy alongside zoneTopology so the
+	// strategy can decide when to spill targets cross-zone.
+	maxSkew int
 }
 
 // SetFilter sets the filtering hook to use.
@@ -109,6 +117,49 @@ func (a *allocator) SetFilter(filter Filter) {
 // SetFallbackStrategy sets the fallback strategy to use.
 func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
+}
+
+// SetZoneTopology attaches a ZoneTopology tracker to the allocator. When set,
+// the allocator updates the topology on every collector/target change so that
+// per-zone metrics, the /zones API endpoint, and zone-aware strategies see a
+// consistent view of the world. Passing nil disables zone tracking. The
+// strategy is notified so it can switch between zone-aware and global
+// behavior accordingly.
+func (a *allocator) SetZoneTopology(zt *ZoneTopology) {
+	a.m.Lock()
+	defer a.m.Unlock()
+	a.zoneTopology = zt
+	a.strategy.SetZoneAwareness(zt, a.maxSkew)
+	if zt == nil {
+		return
+	}
+	// Rebuild the topology from the current allocator state so callers can
+	// attach a topology after collectors/targets are already loaded without
+	// losing track of zone state.
+	zt.SetCollectors(a.collectors)
+	for _, item := range a.targetItems {
+		zt.IncrementTargetCount(zt.GetTargetZone(item))
+	}
+}
+
+// ZoneTopology returns the attached ZoneTopology, or nil if zone awareness
+// is disabled. Callers must not assume the returned pointer remains attached
+// across SetZoneTopology calls.
+func (a *allocator) ZoneTopology() *ZoneTopology {
+	a.m.RLock()
+	defer a.m.RUnlock()
+	return a.zoneTopology
+}
+
+// SetMaxSkew updates the cross-zone spillover threshold and propagates it
+// to the strategy. A value of 0 disables skew-based spillover; values >0
+// cause same-zone assignments that would push the global target-count skew
+// above this limit to fall back to the globally least-loaded collector.
+func (a *allocator) SetMaxSkew(maxSkew int) {
+	a.m.Lock()
+	defer a.m.Unlock()
+	a.maxSkew = maxSkew
+	a.strategy.SetZoneAwareness(a.zoneTopology, maxSkew)
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -238,7 +289,13 @@ func (a *allocator) handleTargets(diff diff.Changes[target.ItemHash, *target.Ite
 }
 
 func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
+	_, alreadyTracked := a.targetItems[tg.Hash()]
 	a.targetItems[tg.Hash()] = tg
+	// First insertion of this target: bump the per-zone target count. Reassignments
+	// (when the target was already tracked) keep the same desired-zone bucket.
+	if !alreadyTracked && a.zoneTopology != nil {
+		a.zoneTopology.IncrementTargetCount(a.zoneTopology.GetTargetZone(tg))
+	}
 	if len(a.collectors) == 0 {
 		return nil
 	}
@@ -290,6 +347,11 @@ func (a *allocator) unassignTargetItem(item *target.Item) {
 func (a *allocator) removeTargetItem(item *target.Item) {
 	a.unassignTargetItem(item)
 	delete(a.targetItems, item.Hash())
+	// Drop this target from its desired-zone bucket; the topology now reflects
+	// one fewer target wanting that zone.
+	if a.zoneTopology != nil {
+		a.zoneTopology.DecrementTargetCount(a.zoneTopology.GetTargetZone(item))
+	}
 }
 
 // removeCollector removes a Collector from the allocator.
@@ -328,11 +390,18 @@ func (a *allocator) handleCollectors(diff diff.Changes[string, *Collector]) {
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
-		a.collectors[i.Name] = NewCollector(i.Name, i.NodeName)
+		a.collectors[i.Name] = NewCollector(i.Name, i.NodeName, i.Zone)
 	}
 
 	// Set collectors on the strategy
 	a.strategy.SetCollectors(a.collectors)
+	// Mirror the new collector set into the zone topology so per-zone metrics
+	// and the /zones API see the same state the strategy is using. We do this
+	// after the strategy update so a misbehaving strategy panic does not leave
+	// the topology in an inconsistent state.
+	if a.zoneTopology != nil {
+		a.zoneTopology.SetCollectors(a.collectors)
+	}
 
 	// Re-Allocate all targets
 	var assignmentErrors []error

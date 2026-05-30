@@ -43,9 +43,29 @@ func MakeNCollectors(n, startingIndex int) map[string]*Collector {
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", i)
 		toReturn[collector] = &Collector{
-			Name:       collector,
-			NumTargets: 0,
-			NodeName:   fmt.Sprintf("node-%d", i),
+			Name:          collector,
+			NumTargets:    0,
+			NodeName:      fmt.Sprintf("node-%d", i),
+			TargetsPerJob: make(map[string]int),
+		}
+	}
+	return toReturn
+}
+
+func MakeNCollectorsWithZones(n, startingIndex int, zones map[int]string) map[string]*Collector {
+	toReturn := map[string]*Collector{}
+	for i := startingIndex; i < n+startingIndex; i++ {
+		collector := fmt.Sprintf("collector-%d", i)
+		zone := ""
+		if zones != nil {
+			zone = zones[i]
+		}
+		toReturn[collector] = &Collector{
+			Name:          collector,
+			NumTargets:    0,
+			NodeName:      fmt.Sprintf("node-%d", i),
+			Zone:          zone,
+			TargetsPerJob: make(map[string]int),
 		}
 	}
 	return toReturn

@@ -68,6 +68,13 @@ func TestLoadFromFile(t *testing.T) {
 					TLSCertFilePath: "/path/to/cert.pem",
 					TLSKeyFilePath:  "/path/to/key.pem",
 				},
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
@@ -163,6 +170,13 @@ func TestLoadFromFile(t *testing.T) {
 					CAFilePath:      "/path/to/ca.pem",
 					TLSCertFilePath: "/path/to/cert.pem",
 					TLSKeyFilePath:  "/path/to/key.pem",
+				},
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -328,6 +342,13 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -425,6 +446,13 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -546,6 +574,13 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -648,6 +683,13 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -769,6 +811,13 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
+				Topology: TopologyConfig{
+					ZoneAware:        false,
+					ZoneLabel:        DefaultZoneLabel,
+					TargetZoneLabel:  DefaultTargetZoneLabel,
+					MaxSkew:          0,
+					NodeSyncInterval: DefaultNodeSyncInterval,
+				},
 			},
 			wantErr: assert.NoError,
 		},
@@ -873,6 +922,69 @@ func TestValidateConfig(t *testing.T) {
 				CollectorNamespace: "default",
 			},
 			expectedErr: errors.New("only one of allowNamespaces or denyNamespaces can be set"),
+		},
+		{
+			name: "negative max_skew",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, MaxSkew: -1},
+			},
+			expectedErr: errors.New("topology.max_skew must be >= 0 (0 disables skew limiting)"),
+		},
+		{
+			name: "max_skew without zone_aware",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: false, MaxSkew: 5},
+			},
+			expectedErr: errors.New("topology.max_skew requires topology.zone_aware to be enabled"),
+		},
+		{
+			name: "valid max_skew with zone_aware",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, MaxSkew: 10},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "zone_aware with max_skew zero (disabled)",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, MaxSkew: 0},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "node_sync_interval too short",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, NodeSyncInterval: 5 * time.Second},
+			},
+			expectedErr: errors.New("topology.node_sync_interval must be at least 30s to avoid excessive load on the Kubernetes API"),
+		},
+		{
+			name: "node_sync_interval zero is allowed (disables periodic sync)",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, NodeSyncInterval: 0},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "node_sync_interval at lower bound (30s) is allowed",
+			fileConfig: Config{
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
+				Topology:           TopologyConfig{ZoneAware: true, NodeSyncInterval: 30 * time.Second},
+			},
+			expectedErr: nil,
 		},
 	}
 

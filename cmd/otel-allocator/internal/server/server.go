@@ -100,6 +100,7 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobsHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
+	router.GET("/zones", s.ZonesHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.GET("/livez", s.LivenessProbeHandler)
 	router.GET("/readyz", s.ReadinessProbeHandler)
@@ -140,6 +141,13 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 func (s *Server) Start() error {
 	s.logger.Info("Starting server...")
 	return s.server.ListenAndServe()
+}
+
+// Handler returns the underlying HTTP handler for the plain (non-TLS)
+// server. Useful for tests and for embedding the allocator's HTTP API
+// inside another process without binding to a real port.
+func (s *Server) Handler() http.Handler {
+	return s.server.Handler
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {

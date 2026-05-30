@@ -45,6 +45,9 @@ const (
 	DefaultAllocationStrategy                          = "consistent-hashing"
 	DefaultFilterStrategy                              = "relabel-config"
 	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
+	DefaultZoneLabel                                   = "topology.kubernetes.io/zone"
+	DefaultTargetZoneLabel                             = "__meta_kubernetes_endpointslice_endpoint_zone"
+	DefaultNodeSyncInterval                            = 5 * time.Minute
 )
 
 var DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -74,6 +77,79 @@ type Config struct {
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 	AllowInsecureAuthSecrets     bool                  `yaml:"allow_insecure_auth_secrets,omitempty"`
+	Topology                     TopologyConfig        `yaml:"topology,omitempty"`
+}
+
+// TopologyConfig configures zone-aware target allocation.
+//
+// When ZoneAware is true, the allocator prefers assigning scrape targets to
+// collectors running in the same availability zone. This reduces cross-AZ
+// network traffic costs (which cloud providers typically charge for) and
+// improves scrape reliability by keeping traffic zone-local.
+//
+// Zone resolution works as follows:
+//   - Collector zones are determined by reading the ZoneLabel from the
+//     Kubernetes node where each collector pod runs. The standard label
+//     "topology.kubernetes.io/zone" is set automatically by kubelets on
+//     all major cloud providers (AWS, GCP, Azure). The legacy label
+//     "failure-domain.beta.kubernetes.io/zone" is used as a fallback.
+//   - Target zones are determined from Prometheus service discovery metadata.
+//     The default label "__meta_kubernetes_endpointslice_endpoint_zone" is
+//     populated by the Kubernetes SD when scraping EndpointSlice resources.
+//     Other SD mechanisms provide their own zone labels (e.g.,
+//     "__meta_ec2_availability_zone" for EC2 SD, "__meta_gce_zone" for GCE SD).
+//
+// Allocation behavior with zone awareness:
+//   - Target has a zone AND same-zone collectors exist: assigned to a same-zone
+//     collector using the configured allocation strategy (consistent-hashing or
+//     least-weighted) scoped to that zone's collectors.
+//   - Target has a zone BUT no same-zone collectors exist (failover): assigned
+//     globally across all collectors using the configured strategy. A metric
+//     and log warning indicate the uncovered zone.
+//   - Target has no zone metadata: assigned globally, same as without zone
+//     awareness.
+//
+// MaxSkew controls the maximum allowed difference in target count between the
+// most-loaded and least-loaded collector across all zones. This prevents severe
+// load imbalance when target distribution across zones is uneven. When
+// assigning a target to a same-zone collector would cause the global skew to
+// exceed MaxSkew, the target "spills" to the globally least-loaded collector
+// instead. This trades some cross-zone traffic for balanced collector load.
+// Spillover events are tracked by the "opentelemetry_allocator_zone_spillover"
+// metric with from_zone and to_zone labels.
+//
+//   - MaxSkew=0 (default): disabled — pure zone affinity, no skew limit.
+//     Targets always stay in-zone when possible, regardless of load imbalance.
+//   - MaxSkew=1: near-uniform distribution across all collectors, zone
+//     affinity has minimal effect.
+//   - MaxSkew=5-20: practical range for most deployments — keeps collectors
+//     within a reasonable load band while still preferring same-zone assignment.
+//
+// NodeSyncInterval controls how often the allocator re-reads node zone
+// labels from the Kubernetes API. The node-zone map is populated once at
+// startup and refreshed at this cadence so that nodes added or relabeled
+// after startup get picked up without restarting the allocator. The
+// collector pod informer (running its own ~30s resync) then picks up the
+// updated zone for any collectors that land on those nodes. Combined
+// worst-case staleness is therefore roughly NodeSyncInterval + 30s.
+//
+// Default: 5 minutes — a reasonable balance between freshness and API
+// load. Values below 30 seconds are rejected to avoid hammering the API.
+//
+// Example configuration:
+//
+//	topology:
+//	  zone_aware: true
+//	  max_skew: 10         # spill cross-zone when any collector has 10+ more targets than the least-loaded
+//	  zone_label: "topology.kubernetes.io/zone"                        # default, usually no need to set
+//	  target_zone_label: "__meta_kubernetes_endpointslice_endpoint_zone" # default for K8s SD
+//	  node_sync_interval: 5m                                             # default; re-read node zones from the API
+type TopologyConfig struct {
+	ZoneAware        bool          `yaml:"zone_aware,omitempty"`
+	ZoneLabel        string        `yaml:"zone_label,omitempty"`
+	TargetZoneLabel  string        `yaml:"target_zone_label,omitempty"`
+	MaxSkew          int           `yaml:"max_skew,omitempty"`
+	NodeSyncInterval time.Duration `yaml:"node_sync_interval,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -390,6 +466,12 @@ func CreateDefaultConfig() Config {
 			ScrapeProtocols:                 defaultScrapeProtocolsCR,
 		},
 		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
+		Topology: TopologyConfig{
+			ZoneAware:        false,
+			ZoneLabel:        DefaultZoneLabel,
+			TargetZoneLabel:  DefaultTargetZoneLabel,
+			NodeSyncInterval: DefaultNodeSyncInterval,
+		},
 	}
 }
 
@@ -438,6 +520,15 @@ func ValidateConfig(config *Config) error {
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
 		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
+	}
+	if config.Topology.MaxSkew < 0 {
+		return errors.New("topology.max_skew must be >= 0 (0 disables skew limiting)")
+	}
+	if config.Topology.MaxSkew > 0 && !config.Topology.ZoneAware {
+		return errors.New("topology.max_skew requires topology.zone_aware to be enabled")
+	}
+	if config.Topology.ZoneAware && config.Topology.NodeSyncInterval > 0 && config.Topology.NodeSyncInterval < 30*time.Second {
+		return errors.New("topology.node_sync_interval must be at least 30s to avoid excessive load on the Kubernetes API")
 	}
 	return nil
 }

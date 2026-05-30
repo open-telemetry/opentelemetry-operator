@@ -30,9 +30,10 @@ type Watcher struct {
 	minUpdateInterval            time.Duration
 	collectorNotReadyGracePeriod time.Duration
 	collectorsDiscovered         metric.Int64Gauge
+	zoneResolver                 *allocation.NodeZoneResolver
 }
 
-func NewCollectorWatcher(logger logr.Logger, client kubernetes.Interface, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
+func NewCollectorWatcher(logger logr.Logger, client kubernetes.Interface, collectorNotReadyGracePeriod time.Duration, zoneResolver *allocation.NodeZoneResolver) (*Watcher, error) {
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	collectorsDiscovered, err := meter.Int64Gauge("opentelemetry_allocator_collectors_discovered", metric.WithDescription("Number of collectors discovered."))
 	if err != nil {
@@ -45,6 +46,7 @@ func NewCollectorWatcher(logger logr.Logger, client kubernetes.Interface, collec
 		minUpdateInterval:            defaultMinUpdateInterval,
 		collectorNotReadyGracePeriod: collectorNotReadyGracePeriod,
 		collectorsDiscovered:         collectorsDiscovered,
+		zoneResolver:                 zoneResolver,
 	}, nil
 }
 
@@ -127,7 +129,11 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 			continue
 		}
 
-		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
+		zone := ""
+		if k.zoneResolver != nil {
+			zone = k.zoneResolver.GetZone(pod.Spec.NodeName)
+		}
+		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName, zone)
 	}
 	k.collectorsDiscovered.Record(context.Background(), int64(len(collectorMap)))
 	fn(collectorMap)

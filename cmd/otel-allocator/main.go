@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/oklog/run"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -89,7 +90,36 @@ func main() {
 	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+
+	// When zone-aware allocation is enabled we build a ZoneTopology that
+	// tracks per-zone collector/target distribution. This drives the
+	// /zones API endpoint, the per-zone metrics, and the zone-aware
+	// allocation strategies. It is created before the allocator so it can
+	// be passed in as an option.
+	var zoneTopology *allocation.ZoneTopology
+	if cfg.Topology.ZoneAware {
+		var ztErr error
+		zoneTopology, ztErr = allocation.NewZoneTopology(log, cfg.Topology.TargetZoneLabel)
+		if ztErr != nil {
+			setupLog.Error(ztErr, "Unable to initialize zone topology tracker")
+			os.Exit(1)
+		}
+	}
+
+	allocatorOpts := []allocation.Option{
+		allocation.WithFilter(allocatorPrehook),
+		allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy),
+	}
+	if zoneTopology != nil {
+		// Order matters: the strategy reads maxSkew from the allocator at
+		// the moment WithZoneTopology fires (it triggers SetZoneAwareness),
+		// so install maxSkew first.
+		allocatorOpts = append(allocatorOpts,
+			allocation.WithMaxSkew(cfg.Topology.MaxSkew),
+			allocation.WithZoneTopology(zoneTopology),
+		)
+	}
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocatorOpts...)
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -127,7 +157,14 @@ func main() {
 	if targetErr != nil {
 		panic(targetErr)
 	}
-	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, k8sClient, cfg.CollectorNotReadyGracePeriod)
+	var zoneResolver *allocation.NodeZoneResolver
+	if cfg.Topology.ZoneAware {
+		zoneResolver = allocation.NewNodeZoneResolver(log, k8sClient, cfg.Topology.ZoneLabel)
+		if syncErr := zoneResolver.SyncNodes(ctx); syncErr != nil {
+			setupLog.Error(syncErr, "Failed to sync node zones on startup, zone-aware allocation may be degraded")
+		}
+	}
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, k8sClient, cfg.CollectorNotReadyGracePeriod, zoneResolver)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -249,6 +286,40 @@ func main() {
 				certWatcherCancel()
 			})
 	}
+	// Periodic node-zone re-sync. The collector pod informer already re-syncs
+	// at its own cadence (~30s) and applies the latest resolver state when
+	// pods are listed, so the worst-case staleness an operator sees is
+	// roughly NodeSyncInterval + the pod informer resync. A NodeSyncInterval
+	// of 0 disables the periodic re-sync entirely (kept for tests and for
+	// operators who prefer to manage cluster topology out-of-band).
+	if zoneResolver != nil && cfg.Topology.NodeSyncInterval > 0 {
+		nodeSyncCtx, nodeSyncCancel := context.WithCancel(ctx)
+		defer nodeSyncCancel()
+		runGroup.Add(
+			func() error {
+				ticker := time.NewTicker(cfg.Topology.NodeSyncInterval)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-ticker.C:
+						if syncErr := zoneResolver.SyncNodes(nodeSyncCtx); syncErr != nil {
+							// We log and continue: a transient API error here
+							// keeps the previous (still-valid) zone map in
+							// place rather than wiping it. The next tick
+							// retries.
+							setupLog.Error(syncErr, "Periodic node zone re-sync failed; using previously cached zone map")
+						}
+					case <-nodeSyncCtx.Done():
+						return nil
+					}
+				}
+			},
+			func(_ error) {
+				setupLog.Info("Closing node zone re-syncer")
+				nodeSyncCancel()
+			})
+	}
+
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	eventsMetric, err := meter.Int64Counter("opentelemetry_allocator_events", metric.WithDescription("Number of events in the channel."))
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -284,7 +285,7 @@ func TestGetRegisteredAllocatorNames(t *testing.T) {
 }
 
 func TestNewCollector(t *testing.T) {
-	col := NewCollector("my-collector", "node-1")
+	col := NewCollector("my-collector", "node-1", "")
 	assert.Equal(t, "my-collector", col.Name)
 	assert.Equal(t, "node-1", col.NodeName)
 	assert.Equal(t, 0, col.NumTargets)
@@ -371,4 +372,83 @@ func TestMultiJobAllocation(t *testing.T) {
 		assert.True(t, assignedCount == 0 || assignedCount == 6,
 			"expected all targets assigned or none, got %d/6", assignedCount)
 	})
+}
+
+func TestZoneTopologyMirroredFromAllocator(t *testing.T) {
+	// Verifies the integration contract: when a ZoneTopology is attached, the
+	// allocator must mirror collector/target lifecycle events into it so that
+	// the topology stays consistent with the allocator's internal state.
+	// We don't pick a specific strategy here — the wiring must work for all
+	// registered allocation strategies.
+	RunForAllStrategies(t, func(t *testing.T, a Allocator) {
+		zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+		require.NoError(t, err)
+		a.SetZoneTopology(zt)
+		require.Same(t, zt, a.ZoneTopology(), "ZoneTopology getter must return the attached instance")
+
+		// Step 1: collectors in two zones.
+		cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+			0: "us-east-1a",
+			1: "us-east-1a",
+			2: "us-east-1b",
+		})
+		a.SetCollectors(cols)
+		assert.ElementsMatch(t, []string{"us-east-1a", "us-east-1b"}, zt.Zones())
+		assert.Equal(t, []string{"collector-0", "collector-1"}, zt.CollectorsInZone("us-east-1a"))
+
+		// Step 2: targets with zone labels — including one in an uncovered zone.
+		items := []*target.Item{
+			newTargetWithZone("job-1", "10.0.0.1", "us-east-1a"),
+			newTargetWithZone("job-1", "10.0.0.2", "us-east-1b"),
+			newTargetWithZone("job-1", "10.0.0.3", "us-east-1c"),
+		}
+		a.SetTargets(items)
+		snap := snapshotByZone(zt.Snapshot())
+		assert.Equal(t, 1, snap["us-east-1a"].TargetsDesired)
+		assert.Equal(t, 1, snap["us-east-1b"].TargetsDesired)
+		assert.Equal(t, 1, snap["us-east-1c"].TargetsDesired)
+		assert.Equal(t, []string{"us-east-1c"}, zt.UncoveredZones(),
+			"the target wanting zone-c has no collector and must be reported uncovered")
+
+		// Step 3: a new collector covers zone-c — the uncovered set must clear.
+		cols["collector-3"] = NewCollector("collector-3", "node-3", "us-east-1c")
+		a.SetCollectors(cols)
+		assert.Empty(t, zt.UncoveredZones())
+
+		// Step 4: removing targets must decrement the per-zone counts. Zones
+		// that still have collectors remain in the snapshot with TargetsDesired=0
+		// so the API/UI can surface "covered but currently empty" zones.
+		a.SetTargets(items[:1])
+		snap = snapshotByZone(zt.Snapshot())
+		assert.Equal(t, 1, snap["us-east-1a"].TargetsDesired)
+		assert.Equal(t, 0, snap["us-east-1b"].TargetsDesired, "zone-b should drop to zero desiring targets")
+		assert.Equal(t, 0, snap["us-east-1c"].TargetsDesired, "zone-c should drop to zero desiring targets")
+	})
+}
+
+func TestZoneTopologyAttachedAfterStateLoaded(t *testing.T) {
+	// Attaching a topology mid-flight must hydrate it from the allocator's
+	// current state instead of starting empty. This makes ZoneTopology safe
+	// to enable via reconfigure without losing visibility on already-loaded
+	// collectors and targets.
+	a, err := New("consistent-hashing", logger)
+	require.NoError(t, err)
+	cols := MakeNCollectorsWithZones(2, 0, map[int]string{
+		0: "us-east-1a",
+		1: "us-east-1b",
+	})
+	a.SetCollectors(cols)
+	a.SetTargets([]*target.Item{
+		newTargetWithZone("job-1", "10.0.0.1", "us-east-1a"),
+		newTargetWithZone("job-1", "10.0.0.2", "us-east-1b"),
+	})
+
+	zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+	require.NoError(t, err)
+	a.SetZoneTopology(zt)
+
+	assert.ElementsMatch(t, []string{"us-east-1a", "us-east-1b"}, zt.Zones())
+	snap := snapshotByZone(zt.Snapshot())
+	assert.Equal(t, 1, snap["us-east-1a"].TargetsDesired)
+	assert.Equal(t, 1, snap["us-east-1b"].TargetsDesired)
 }

@@ -1,0 +1,378 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
+package allocation
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+)
+
+// zoneAwareStrategies lists the strategies that support zone-aware
+// allocation. per-node intentionally does not (the node pin transitively
+// pins the zone), so it's excluded from these tests.
+var zoneAwareStrategies = []string{
+	consistentHashingStrategyName,
+	leastWeightedStrategyName,
+}
+
+// makeZoneAwareAllocator builds an allocator with a ZoneTopology attached,
+// using the given strategy name and maxSkew. The returned topology shares
+// state with the allocator so tests can inspect per-zone counts and
+// spillover side effects.
+func makeZoneAwareAllocator(t *testing.T, strategyName string, maxSkew int) (Allocator, *ZoneTopology) {
+	t.Helper()
+	zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+	require.NoError(t, err)
+	a, err := New(strategyName, logger, WithMaxSkew(maxSkew), WithZoneTopology(zt))
+	require.NoError(t, err)
+	return a, zt
+}
+
+// uniqueURL generates per-test target URLs so consistent-hashing tests
+// don't accidentally hit the same hash key across subcases.
+func uniqueURL(prefix string, i int) string {
+	return fmt.Sprintf("%s-%d.example.local:9100", prefix, i)
+}
+
+func TestZoneAware_SameZoneAffinity(t *testing.T) {
+	// With zone awareness on and maxSkew=0, every target with a known zone
+	// must be assigned to a collector in that zone — regardless of strategy.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, _ := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(6, 0, map[int]string{
+				0: "zone-a", 1: "zone-a",
+				2: "zone-b", 3: "zone-b",
+				4: "zone-c", 5: "zone-c",
+			})
+			a.SetCollectors(cols)
+
+			var items []*target.Item
+			for i := range 30 {
+				zone := []string{"zone-a", "zone-b", "zone-c"}[i%3]
+				items = append(items, newTargetWithZone("scrape", uniqueURL("svc", i), zone))
+			}
+			a.SetTargets(items)
+
+			tracked := a.TargetItems()
+			require.Len(t, tracked, 30)
+			collectorsNow := a.Collectors()
+			for _, it := range tracked {
+				wantZone := it.Labels.Get(testTargetZoneLabel)
+				gotCollector, ok := collectorsNow[it.CollectorName]
+				require.True(t, ok, "assigned collector %q must exist", it.CollectorName)
+				assert.Equal(t, wantZone, gotCollector.Zone,
+					"target wanting %q ended up on %q which is in %q",
+					wantZone, gotCollector.Name, gotCollector.Zone)
+			}
+		})
+	}
+}
+
+func TestZoneAware_FailoverToGlobalWhenZoneEmpty(t *testing.T) {
+	// When a target's desired zone has no collectors, the allocator must
+	// fall back to the global pool. The spillover counter records the
+	// origin (the uncovered zone) — we verify the topology side-effect
+	// via the public UncoveredZones() helper instead of counter values.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, zt := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+			})
+			a.SetCollectors(cols)
+
+			// All targets want zone-c, which has no collectors.
+			var items []*target.Item
+			for i := range 6 {
+				items = append(items, newTargetWithZone("scrape", uniqueURL("orphan", i), "zone-c"))
+			}
+			a.SetTargets(items)
+
+			assert.Equal(t, []string{"zone-c"}, zt.UncoveredZones(),
+				"zone-c has 6 desiring targets but no collectors — must be reported uncovered")
+
+			// Every target must still be assigned (failover succeeded).
+			for _, it := range a.TargetItems() {
+				assert.NotEmpty(t, it.CollectorName,
+					"failover path must still produce a valid assignment")
+			}
+		})
+	}
+}
+
+func TestZoneAware_MaxSkewZero_NoSpillover(t *testing.T) {
+	// With maxSkew=0, the strategy must never spill cross-zone purely for
+	// load reasons. We construct a skewed setup (lots of targets wanting
+	// zone-a, only one collector in zone-a; zone-b has plenty of capacity)
+	// and verify that every zone-a target stays on the zone-a collector.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, _ := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+				2: "zone-b",
+			})
+			a.SetCollectors(cols)
+
+			var items []*target.Item
+			for i := range 50 {
+				items = append(items, newTargetWithZone("scrape", uniqueURL("hot-a", i), "zone-a"))
+			}
+			a.SetTargets(items)
+
+			collectorsNow := a.Collectors()
+			zoneACollector := collectorsNow["collector-0"]
+			require.NotNil(t, zoneACollector)
+			assert.Equal(t, 50, zoneACollector.NumTargets,
+				"with maxSkew=0 every zone-a target must stay on the zone-a collector")
+		})
+	}
+}
+
+func TestZoneAware_MaxSkewTriggersSpillover(t *testing.T) {
+	// With maxSkew > 0, severe load imbalance must cause spillover so the
+	// global collectors don't sit idle while one collector drowns.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			const maxSkew = 5
+			a, _ := makeZoneAwareAllocator(t, s, maxSkew)
+			cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a", // sole collector for the hot zone
+				1: "zone-b",
+				2: "zone-b",
+			})
+			a.SetCollectors(cols)
+
+			var items []*target.Item
+			for i := range 50 {
+				items = append(items, newTargetWithZone("scrape", uniqueURL("hot-skew", i), "zone-a"))
+			}
+			a.SetTargets(items)
+
+			collectorsNow := a.Collectors()
+			counts := make(map[string]int, len(collectorsNow))
+			for name, c := range collectorsNow {
+				counts[name] = c.NumTargets
+			}
+			minLoad := counts["collector-0"]
+			maxLoad := counts["collector-0"]
+			for _, n := range counts {
+				if n < minLoad {
+					minLoad = n
+				}
+				if n > maxLoad {
+					maxLoad = n
+				}
+			}
+
+			// The post-assignment skew must respect the configured limit.
+			// We allow skew == maxSkew (boundary OK) but not skew > maxSkew.
+			assert.LessOrEqual(t, maxLoad-minLoad, maxSkew,
+				"observed skew (%d-%d=%d) exceeded maxSkew=%d",
+				maxLoad, minLoad, maxLoad-minLoad, maxSkew)
+			// The zone-b collectors must have picked up real work from
+			// spillover — otherwise the skew would still be 50.
+			assert.Greater(t, counts["collector-1"]+counts["collector-2"], 0,
+				"spillover must have placed some targets on zone-b collectors")
+		})
+	}
+}
+
+func TestZoneAware_ZonelessTargetUsesGlobalPool(t *testing.T) {
+	// Targets that don't carry the zone label must still be assigned; they
+	// are zone-agnostic and travel through the global path.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, _ := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+				2: "zone-c",
+			})
+			a.SetCollectors(cols)
+
+			items := []*target.Item{
+				target.NewItem("scrape", "no-zone-1:9100",
+					labels.New(labels.Label{Name: "instance", Value: "x1"}), ""),
+				target.NewItem("scrape", "no-zone-2:9100",
+					labels.New(labels.Label{Name: "instance", Value: "x2"}), ""),
+			}
+			a.SetTargets(items)
+
+			for _, it := range a.TargetItems() {
+				assert.NotEmpty(t, it.CollectorName,
+					"zone-less targets must be assigned via the global pool")
+			}
+		})
+	}
+}
+
+func TestZoneAwareConsistentHashing_DeterministicWithinZone(t *testing.T) {
+	// Determinism guarantee: with the same collector set and target, a
+	// consistent-hashing strategy must always pick the same collector.
+	// This protects against accidental non-determinism in the per-zone
+	// ring construction.
+	a1, _ := makeZoneAwareAllocator(t, consistentHashingStrategyName, 0)
+	a2, _ := makeZoneAwareAllocator(t, consistentHashingStrategyName, 0)
+	cols := MakeNCollectorsWithZones(4, 0, map[int]string{
+		0: "zone-a", 1: "zone-a",
+		2: "zone-b", 3: "zone-b",
+	})
+	a1.SetCollectors(cols)
+	a2.SetCollectors(cols)
+
+	items := []*target.Item{
+		newTargetWithZone("scrape", "deterministic-1:9100", "zone-a"),
+		newTargetWithZone("scrape", "deterministic-2:9100", "zone-a"),
+		newTargetWithZone("scrape", "deterministic-3:9100", "zone-b"),
+	}
+	a1.SetTargets(items)
+	a2.SetTargets(items)
+
+	t1 := a1.TargetItems()
+	t2 := a2.TargetItems()
+	require.Equal(t, len(t1), len(t2))
+	for hash, item := range t1 {
+		other, ok := t2[hash]
+		require.True(t, ok)
+		assert.Equal(t, item.CollectorName, other.CollectorName,
+			"target %s assigned to %s in run 1 vs %s in run 2",
+			item.TargetURL, item.CollectorName, other.CollectorName)
+	}
+}
+
+func TestZoneAwareConsistentHashing_ToggleZoneAwarenessRebuildsRings(t *testing.T) {
+	// Verify SetZoneAwareness can flip the strategy in both directions
+	// without leaving stale per-zone rings around. We exercise both
+	// transitions and check that allocation still succeeds afterwards.
+	a, err := New(consistentHashingStrategyName, logger)
+	require.NoError(t, err)
+	cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+		0: "zone-a",
+		1: "zone-b",
+		2: "zone-c",
+	})
+	a.SetCollectors(cols)
+	a.SetTargets([]*target.Item{
+		newTargetWithZone("scrape", "toggle-1:9100", "zone-a"),
+	})
+	for _, it := range a.TargetItems() {
+		require.NotEmpty(t, it.CollectorName, "global mode must assign targets")
+	}
+
+	// Enable zone awareness — the next assignment must respect zones.
+	zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+	require.NoError(t, err)
+	a.SetZoneTopology(zt)
+	a.SetTargets([]*target.Item{
+		newTargetWithZone("scrape", "toggle-2:9100", "zone-b"),
+	})
+	collectorsNow := a.Collectors()
+	for _, it := range a.TargetItems() {
+		c := collectorsNow[it.CollectorName]
+		assert.Equal(t, it.Labels.Get(testTargetZoneLabel), c.Zone,
+			"after enabling zone awareness, target must land in its zone")
+	}
+
+	// Disable again — strategy should drop the per-zone rings and still work.
+	a.SetZoneTopology(nil)
+	a.SetTargets([]*target.Item{
+		newTargetWithZone("scrape", "toggle-3:9100", "zone-c"),
+	})
+	for _, it := range a.TargetItems() {
+		assert.NotEmpty(t, it.CollectorName,
+			"after disabling zone awareness, allocation must continue to work")
+	}
+}
+
+func TestZoneAware_RecordsSpilloverOnFailover(t *testing.T) {
+	// The ZoneTopology snapshot doesn't expose spillover counts directly
+	// (those go to the metric), but failover by definition produces an
+	// uncovered zone — verify that's visible.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, zt := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-a",
+			})
+			a.SetCollectors(cols)
+			a.SetTargets([]*target.Item{
+				newTargetWithZone("scrape", uniqueURL("failover", 1), "zone-d"),
+			})
+			assert.Contains(t, zt.UncoveredZones(), "zone-d",
+				"a target for an uncovered zone must mark that zone uncovered")
+		})
+	}
+}
+
+func TestZoneAwareLeastWeighted_HonorsReassignmentFastPath(t *testing.T) {
+	// The fast-path in leastWeighted's GetCollectorForTarget keeps an
+	// already-assigned target on its existing collector when that
+	// collector is still alive. This is essential for stability across
+	// reconciles. Verify zone-awareness doesn't accidentally break it.
+	a, _ := makeZoneAwareAllocator(t, leastWeightedStrategyName, 0)
+	cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+		0: "zone-a",
+		1: "zone-a",
+		2: "zone-b",
+	})
+	a.SetCollectors(cols)
+	items := []*target.Item{
+		newTargetWithZone("scrape", "sticky:9100", "zone-a"),
+	}
+	a.SetTargets(items)
+
+	firstAssign := ""
+	for _, it := range a.TargetItems() {
+		firstAssign = it.CollectorName
+	}
+	require.NotEmpty(t, firstAssign)
+
+	// Re-applying the same target set must not move the target around.
+	a.SetTargets(items)
+	for _, it := range a.TargetItems() {
+		assert.Equal(t, firstAssign, it.CollectorName,
+			"reassignment fast-path must keep stable assignment across SetTargets calls")
+	}
+}
+
+func TestZoneAware_TopologyTargetCountsTrackDesiredZone(t *testing.T) {
+	// Even when targets spill cross-zone (via failover or maxSkew), the
+	// topology must continue to attribute them to their *desired* zone,
+	// not their assigned collector's zone. This keeps the /zones API
+	// honest about what the workload wants vs what it got.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, zt := makeZoneAwareAllocator(t, s, 0)
+			cols := MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+			})
+			a.SetCollectors(cols)
+
+			items := []*target.Item{
+				newTargetWithZone("scrape", uniqueURL("desired-a", 1), "zone-a"),
+				newTargetWithZone("scrape", uniqueURL("desired-c", 1), "zone-c"), // failover
+				newTargetWithZone("scrape", uniqueURL("desired-c", 2), "zone-c"), // failover
+			}
+			a.SetTargets(items)
+
+			snap := snapshotByZone(zt.Snapshot())
+			assert.Equal(t, 1, snap["zone-a"].TargetsDesired)
+			assert.Equal(t, 2, snap["zone-c"].TargetsDesired,
+				"desired-zone counting must include targets that ended up spilled")
+			assert.False(t, snap["zone-c"].Covered)
+		})
+	}
+}
