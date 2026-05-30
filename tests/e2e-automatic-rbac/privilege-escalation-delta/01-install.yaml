@@ -33,7 +33,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ($namespace)-events-reader
+  name: (join('-', [$namespace, 'events-reader']))
 rules:
 - apiGroups: [""]
   resources: ["events"]
@@ -45,11 +45,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: ($namespace)-sa-events
+  name: (join('-', [$namespace, 'sa-events']))
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: ($namespace)-events-reader
+  name: (join('-', [$namespace, 'events-reader']))
 subjects:
 - kind: ServiceAccount
   name: privilege-delta-test-collector
