@@ -123,3 +123,126 @@ func TestZonesHandler_AlwaysOKEvenWhenDisabled(t *testing.T) {
 	resp, _ := doZonesRequest(t, s)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
+
+// htmlGet drives a GET against the server's HTTP handler and returns the
+// response + body. Centralizes the HTML test boilerplate so each test
+// case stays focused on its assertions.
+func htmlGet(t *testing.T, s *Server, path string) (*http.Response, string) {
+	t.Helper()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, http.NoBody)
+	w := httptest.NewRecorder()
+	s.server.Handler.ServeHTTP(w, req)
+	resp := w.Result()
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.NoError(t, resp.Body.Close())
+	return resp, string(body)
+}
+
+func newZoneAwareServerWithFixture(t *testing.T) *Server {
+	t.Helper()
+	zt, err := allocation.NewZoneTopology(logger, zonesEndpointTargetZoneLabel)
+	require.NoError(t, err)
+	a, err := allocation.New("least-weighted", logger, allocation.WithZoneTopology(zt))
+	require.NoError(t, err)
+	a.SetCollectors(map[string]*allocation.Collector{
+		"collector-a-1": allocation.NewCollector("collector-a-1", "node-a-1", "us-east-1a"),
+		"collector-a-2": allocation.NewCollector("collector-a-2", "node-a-2", "us-east-1a"),
+		"collector-b-1": allocation.NewCollector("collector-b-1", "node-b-1", "us-east-1b"),
+	})
+	a.SetTargets([]*target.Item{
+		target.NewItem("node-exporter", "10.0.1.1:9100",
+			labels.New(labels.Label{Name: zonesEndpointTargetZoneLabel, Value: "us-east-1a"}), ""),
+		target.NewItem("node-exporter", "10.0.2.1:9100",
+			labels.New(labels.Label{Name: zonesEndpointTargetZoneLabel, Value: "us-east-1b"}), ""),
+		// Uncovered zone target — should appear in /debug/zone?zone_id=us-east-1c.
+		target.NewItem("cadvisor", "10.0.3.1:4194",
+			labels.New(labels.Label{Name: zonesEndpointTargetZoneLabel, Value: "us-east-1c"}), ""),
+	})
+	s, err := NewServer(logger, a, "")
+	require.NoError(t, err)
+	return s
+}
+
+func TestZonesHTMLHandler_RendersTopologyAndUncoveredCallout(t *testing.T) {
+	// The HTML view at /debug/zones must mirror the same picture the JSON
+	// API exposes, plus a dedicated uncovered-zones callout at the
+	// bottom. Zone names must be clickable so operators can drill into
+	// each zone without manually editing the URL.
+	s := newZoneAwareServerWithFixture(t)
+	resp, body := htmlGet(t, s, "/debug/zones")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// Zone rows: each zone has a clickable link to /debug/zone.
+	assert.Contains(t, body, `href="/debug/zone?zone_id=us-east-1a"`)
+	assert.Contains(t, body, `href="/debug/zone?zone_id=us-east-1b"`)
+	assert.Contains(t, body, `href="/debug/zone?zone_id=us-east-1c"`)
+	// Status text — case-sensitive UNCOVERED so operators can grep for it.
+	assert.Contains(t, body, "UNCOVERED")
+	// Uncovered callout at the bottom must list the uncovered zone.
+	assert.Contains(t, body, "Uncovered Zones")
+}
+
+func TestZonesHTMLHandler_DisabledRendersEmptyBody(t *testing.T) {
+	// With zone-aware off, /debug/zones must still return 200 (so the
+	// nav link never 404s) but render no body content beyond the header
+	// + footer chrome. This is the documented "empty" state.
+	a, err := allocation.New("consistent-hashing", logger)
+	require.NoError(t, err)
+	s, err := NewServer(logger, a, "")
+	require.NoError(t, err)
+	resp, body := htmlGet(t, s, "/debug/zones")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// No data tables, no notice — just chrome.
+	assert.NotContains(t, body, "Targets Desired")
+	assert.NotContains(t, body, "Uncovered Zones")
+}
+
+func TestZoneHTMLHandler_CoveredZoneShowsCollectorsTable(t *testing.T) {
+	// /debug/zone?zone_id=<covered> must show a Summary block + a
+	// collectors-in-zone table with the same columns the global view
+	// uses (Collector / Zone / Job Count / Target Count).
+	s := newZoneAwareServerWithFixture(t)
+	resp, body := htmlGet(t, s, "/debug/zone?zone_id=us-east-1a")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, body, "Zone: us-east-1a")
+	assert.Contains(t, body, "Targets Desired")
+	assert.Contains(t, body, "Job Count")
+	assert.Contains(t, body, "collector-a-1")
+	assert.Contains(t, body, "collector-a-2")
+	assert.NotContains(t, body, "Failover Collector",
+		"covered zones must not render the failover-targets table")
+}
+
+func TestZoneHTMLHandler_UncoveredZoneShowsTargetsTable(t *testing.T) {
+	// For an uncovered zone, the page must replace the empty collectors
+	// table with a list of targets that desired this zone, including
+	// the collector each one was failed over to. This is the actual
+	// operator value the user explicitly asked for.
+	s := newZoneAwareServerWithFixture(t)
+	resp, body := htmlGet(t, s, "/debug/zone?zone_id=us-east-1c")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, body, "Zone: us-east-1c")
+	assert.Contains(t, body, "UNCOVERED")
+	// Failover targets table — name, columns, and target URL all present.
+	assert.Contains(t, body, "Failover Collector")
+	assert.Contains(t, body, "cadvisor")
+	assert.Contains(t, body, "10.0.3.1:4194")
+}
+
+func TestZoneHTMLHandler_UnknownZoneReturns404(t *testing.T) {
+	// Typos in the URL must not return an empty page — that would look
+	// like a working zone with no data. Return a proper 404 instead.
+	s := newZoneAwareServerWithFixture(t)
+	resp, _ := htmlGet(t, s, "/debug/zone?zone_id=nonexistent")
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func TestZoneHTMLHandler_MissingZoneIDReturns400(t *testing.T) {
+	// Reaching /debug/zone without a zone_id is a programmer error
+	// (every link from /debug/zones includes one), but we still want a
+	// clean 400 with the example URL so it's obvious what went wrong.
+	s := newZoneAwareServerWithFixture(t)
+	resp, body := htmlGet(t, s, "/debug/zone")
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Contains(t, body, "zone_id")
+}

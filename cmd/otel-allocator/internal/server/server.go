@@ -96,6 +96,8 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/debug/targets", s.TargetsHTMLHandler)
 	router.GET("/debug/scrape_configs", s.ScrapeConfigsHTMLHandler)
 	router.GET("/debug/jobs", s.JobsHTMLHandler)
+	router.GET("/debug/zones", s.ZonesHTMLHandler)
+	router.GET("/debug/zone", s.ZoneHTMLHandler)
 
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobsHandler)
@@ -313,38 +315,64 @@ func (s *Server) PrometheusMiddleware(c *gin.Context) {
 // IndexHandler displays the main page of the allocator. It shows the number of jobs and targets.
 // It also displays a table with the collectors and the number of jobs and targets for each collector.
 // The collector names are links to the respective pages. The table is sorted by collector name.
+// When zone-aware allocation is enabled the Category panel exposes Zones and Uncovered Zones counters
+// (each linking to the dedicated zone pages), and the Collectors table grows a Zone column so
+// operators can see collector→zone mapping at a glance. The full per-zone breakdown lives at
+// /debug/zones to keep the index page focused on the global picture.
 func (s *Server) IndexHandler(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/html")
 	WriteHTMLPageHeader(c.Writer, HeaderData{
 		Title: "OpenTelemetry Target Allocator",
 	})
 
+	zt := s.allocator.ZoneTopology()
+
+	categoryRows := [][]Cell{
+		{scrapeConfigAnchorLink(), Text(strconv.Itoa(s.getScrapeConfigCount()))},
+		{jobsAnchorLink(), Text(strconv.Itoa(s.getJobCount()))},
+		{targetsAnchorLink(), Text(strconv.Itoa(len(s.allocator.TargetItems())))},
+	}
+	if zt != nil {
+		// Only expose the Zones counter on the index. Uncovered zones get
+		// their own section on /debug/zones — surfacing the count here
+		// would clutter the global picture, and operators who care look at
+		// the dedicated page anyway.
+		categoryRows = append(categoryRows,
+			[]Cell{zonesAnchorLink(), Text(strconv.Itoa(len(zt.Zones())))},
+		)
+	}
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Category", "Count"},
-		Rows: [][]Cell{
-			{scrapeConfigAnchorLink(), Text(strconv.Itoa(s.getScrapeConfigCount()))},
-			{jobsAnchorLink(), Text(strconv.Itoa(s.getJobCount()))},
-			{targetsAnchorLink(), Text(strconv.Itoa(len(s.allocator.TargetItems())))},
-		},
+		Rows:    categoryRows,
 	})
-	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
-		Headers: []string{"Collector", "Job Count", "Target Count"},
-		Rows: func() [][]Cell {
-			var rows [][]Cell
-			collectorNames := []string{}
-			for k := range s.allocator.Collectors() {
-				collectorNames = append(collectorNames, k)
-			}
-			slices.Sort(collectorNames)
 
-			for _, colName := range collectorNames {
-				jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
-				targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
-				rows = append(rows, []Cell{collectorAnchorLink(colName), NewCell(jobCount), NewCell(targetCount)})
-			}
-			return rows
-		}(),
-	})
+	// Collectors table. Kept on the index only when zone-aware is OFF —
+	// pre-feature deployments still need a quick global collector view.
+	// When zone-aware is ON, operators reach collectors via the Zones
+	// drill-down (/debug/zones -> /debug/zone?zone_id=...), so the
+	// global Collectors table on / becomes a duplicate and is omitted
+	// to keep the page focused.
+	if zt == nil {
+		WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+			Headers: []string{"Collector", "Job Count", "Target Count"},
+			Rows: func() [][]Cell {
+				var rows [][]Cell
+				collectorNames := []string{}
+				for k := range s.allocator.Collectors() {
+					collectorNames = append(collectorNames, k)
+				}
+				slices.Sort(collectorNames)
+
+				for _, colName := range collectorNames {
+					jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
+					targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
+					rows = append(rows, []Cell{collectorAnchorLink(colName), NewCell(jobCount), NewCell(targetCount)})
+				}
+				return rows
+			}(),
+		})
+	}
+
 	WriteHTMLPageFooter(c.Writer)
 }
 
@@ -352,6 +380,20 @@ func targetsAnchorLink() Cell {
 	return Cell{
 		Link: "/debug/targets",
 		Text: "Targets",
+	}
+}
+
+func zonesAnchorLink() Cell {
+	return Cell{
+		Link: "/debug/zones",
+		Text: "Zones",
+	}
+}
+
+func zoneAnchorLink(zoneID string) Cell {
+	return Cell{
+		Link: fmt.Sprintf("/debug/zone?zone_id=%s", url.QueryEscape(zoneID)),
+		Text: zoneID,
 	}
 }
 
