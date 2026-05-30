@@ -152,6 +152,32 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
+	// Forward the zone-aware allocation block to the runtime allocator
+	// config. Only fields the operator actually saw on the CR are
+	// emitted so the generated config stays minimal — the allocator
+	// applies its own defaults for anything not set here, and the
+	// `topology` key itself is only added when zone-aware is enabled,
+	// preserving byte-for-byte parity with pre-feature generators when
+	// the CR doesn't opt in.
+	if taSpec.Topology != nil && taSpec.Topology.ZoneAware {
+		topologyConfig := map[string]any{
+			"zone_aware": true,
+		}
+		if taSpec.Topology.ZoneLabel != "" {
+			topologyConfig["zone_label"] = taSpec.Topology.ZoneLabel
+		}
+		if taSpec.Topology.TargetZoneLabel != "" {
+			topologyConfig["target_zone_label"] = taSpec.Topology.TargetZoneLabel
+		}
+		if taSpec.Topology.MaxSkew > 0 {
+			topologyConfig["max_skew"] = taSpec.Topology.MaxSkew
+		}
+		if taSpec.Topology.NodeSyncInterval.Size() > 0 {
+			topologyConfig["node_sync_interval"] = taSpec.Topology.NodeSyncInterval.Duration
+		}
+		taConfig["topology"] = topologyConfig
+	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return &corev1.ConfigMap{}, err

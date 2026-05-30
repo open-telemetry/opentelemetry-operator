@@ -2950,6 +2950,22 @@ spec:
                       type: string
                   type: object
                 type: array
+              topology:
+                properties:
+                  maxSkew:
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  nodeSyncInterval:
+                    format: duration
+                    type: string
+                  targetZoneLabel:
+                    type: string
+                  zoneAware:
+                    type: boolean
+                  zoneLabel:
+                    type: string
+                type: object
               topologySpreadConstraints:
                 items:
                   properties:

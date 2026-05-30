@@ -125,6 +125,11 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // consistent view of the world. Passing nil disables zone tracking. The
 // strategy is notified so it can switch between zone-aware and global
 // behavior accordingly.
+//
+// Repeated calls with the same (non-nil) topology are safe: the topology is
+// reset before hydrating so target counts are not double-counted. This makes
+// the method idempotent and lets callers re-attach after config reloads
+// without leaking per-zone counters.
 func (a *allocator) SetZoneTopology(zt *ZoneTopology) {
 	a.m.Lock()
 	defer a.m.Unlock()
@@ -133,6 +138,10 @@ func (a *allocator) SetZoneTopology(zt *ZoneTopology) {
 	if zt == nil {
 		return
 	}
+	// Wipe any prior per-zone state before re-hydrating so multiple
+	// SetZoneTopology calls with the same topology don't accumulate
+	// IncrementTargetCount calls.
+	zt.Reset()
 	// Rebuild the topology from the current allocator state so callers can
 	// attach a topology after collectors/targets are already loaded without
 	// losing track of zone state.
@@ -208,8 +217,46 @@ func (a *allocator) SetCollectors(collectors map[string]*Collector) {
 
 	// Check for collector changes
 	collectorsDiff := diff.Maps(a.collectors, collectors)
-	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
+	// diff.Maps only flags key additions/removals — it can't see field-level
+	// changes (e.g. an existing collector's zone changing because its node
+	// got relabeled, or because the periodic node-zone re-sync resolved a
+	// previously-unknown zone). When zone-aware allocation is active, scan
+	// for in-place zone changes too so they trigger a strategy + topology
+	// refresh. Skipped entirely when zone-aware is off, preserving exact
+	// pre-feature behavior for deployments that haven't opted in.
+	zoneChanged := false
+	if a.zoneTopology != nil {
+		for name, newCol := range collectors {
+			if oldCol, ok := a.collectors[name]; ok && oldCol.Zone != newCol.Zone {
+				oldCol.Zone = newCol.Zone
+				zoneChanged = true
+			}
+		}
+	}
+	switch {
+	case len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0:
 		a.handleCollectors(collectorsDiff)
+	case zoneChanged:
+		// No additions or removals but a zone moved underneath us — push
+		// the updated collector set through the strategy + topology and
+		// re-evaluate every target's assignment. This is what enables
+		// StatefulSet reschedules and node-zone re-syncs to take effect
+		// without restarting the allocator.
+		a.strategy.SetCollectors(a.collectors)
+		if a.zoneTopology != nil {
+			a.zoneTopology.SetCollectors(a.collectors)
+		}
+		var assignmentErrors []error
+		for _, item := range a.targetItems {
+			if err := a.addTargetToTargetItems(item); err != nil {
+				assignmentErrors = append(assignmentErrors, err)
+			}
+		}
+		if len(assignmentErrors) > 0 {
+			a.log.Info("Could not re-assign targets after zone update",
+				"errors", len(assignmentErrors))
+			a.targetsUnassigned.Record(context.Background(), int64(len(assignmentErrors)))
+		}
 	}
 }
 
@@ -248,6 +295,31 @@ func (a *allocator) Collectors() map[string]*Collector {
 	collectorsCopy := make(map[string]*Collector)
 	maps.Copy(collectorsCopy, a.collectors)
 	return collectorsCopy
+}
+
+// CollectorsSnapshot returns a map of CollectorSnapshot values capturing
+// every collector's state at the moment the call is made. Unlike
+// Collectors() (which returns shallow-copied pointers whose NumTargets
+// and TargetsPerJob fields can race with the allocator's write path),
+// these snapshots are deep-copied and safe to read outside the allocator
+// lock — they are what HTTP handlers should use to render concurrent
+// requests.
+func (a *allocator) CollectorsSnapshot() map[string]CollectorSnapshot {
+	a.m.RLock()
+	defer a.m.RUnlock()
+	out := make(map[string]CollectorSnapshot, len(a.collectors))
+	for name, c := range a.collectors {
+		jobs := make(map[string]int, len(c.TargetsPerJob))
+		maps.Copy(jobs, c.TargetsPerJob)
+		out[name] = CollectorSnapshot{
+			Name:          c.Name,
+			NodeName:      c.NodeName,
+			Zone:          c.Zone,
+			NumTargets:    c.NumTargets,
+			TargetsPerJob: jobs,
+		}
+	}
+	return out
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.

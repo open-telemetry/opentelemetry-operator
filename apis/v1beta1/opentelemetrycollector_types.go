@@ -246,6 +246,15 @@ type TargetAllocatorEmbedded struct {
 	// Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
 	// +optional
 	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
+
+	// Topology configures availability-zone aware target allocation.
+	// When zoneAware is true the consistent-hashing and least-weighted
+	// strategies prefer collectors in the same AZ as each target,
+	// reducing cross-AZ scrape traffic. Defaults preserve pre-feature
+	// behavior — leaving this field unset is byte-for-byte identical to
+	// not having it.
+	// +optional
+	Topology *TargetAllocatorTopology `json:"topology,omitempty"`
 }
 
 type TargetAllocatorMTLS struct {

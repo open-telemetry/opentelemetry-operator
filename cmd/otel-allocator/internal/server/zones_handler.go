@@ -224,8 +224,13 @@ func (s *Server) ZoneHTMLHandler(c *gin.Context) {
 	if snapshot.Covered {
 		// Covered zone — show the collectors that live here, with the
 		// same shape the index page uses for the global collectors
-		// table so operators see a familiar layout.
-		collectors := s.allocator.Collectors()
+		// table so operators see a familiar layout. We pull the
+		// collectors via CollectorsSnapshot rather than Collectors() so
+		// the read is lock-free and race-free against concurrent
+		// SetTargets / SetCollectors calls — the alternative would
+		// expose Collector.NumTargets and Collector.TargetsPerJob to
+		// torn reads.
+		collectors := s.allocator.CollectorsSnapshot()
 		WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 			Headers: []string{"Collector", "Zone", "Job Count", "Target Count"},
 			Rows: func() [][]Cell {
@@ -252,8 +257,8 @@ func (s *Server) ZoneHTMLHandler(c *gin.Context) {
 					rows = append(rows, []Cell{
 						collectorAnchorLink(colName),
 						NewCell(zoneCell),
-						NewCell(strconv.Itoa(s.getJobCountForCollector(colName))),
-						NewCell(strconv.Itoa(s.getTargetCountForCollector(colName))),
+						NewCell(strconv.Itoa(len(col.TargetsPerJob))),
+						NewCell(strconv.Itoa(col.NumTargets)),
 					})
 				}
 				return rows

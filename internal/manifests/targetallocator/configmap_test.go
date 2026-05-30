@@ -15,6 +15,7 @@ import (
 	colfg "go.opentelemetry.io/collector/featuregate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -920,6 +921,55 @@ filter_strategy: relabel-config
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
+}
+
+func TestDesiredConfigMapZoneAware(t *testing.T) {
+	// The CRD-driven path: when the operator user enables zone-aware
+	// allocation via spec.topology, the generated ConfigMap must emit
+	// the corresponding allocator-side `topology` block so the runtime
+	// allocator actually opts in. Without this test the previous PR
+	// could ship the field as decoration that the runtime never sees.
+	t.Run("topology section emitted only when zoneAware is true", func(t *testing.T) {
+		ta := targetAllocatorInstance()
+		ta.Spec.Topology = &v1beta1.TargetAllocatorTopology{
+			ZoneAware:        true,
+			ZoneLabel:        "topology.kubernetes.io/zone",
+			TargetZoneLabel:  "__meta_kubernetes_endpointslice_endpoint_zone",
+			MaxSkew:          10,
+			NodeSyncInterval: &metav1.Duration{Duration: 5 * time.Minute},
+		}
+		testParams := Params{Collector: collectorInstance(), TargetAllocator: ta}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+		got := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, got, "topology:\n")
+		assert.Contains(t, got, "zone_aware: true")
+		assert.Contains(t, got, "zone_label: topology.kubernetes.io/zone")
+		assert.Contains(t, got, "target_zone_label: __meta_kubernetes_endpointslice_endpoint_zone")
+		assert.Contains(t, got, "max_skew: 10")
+		assert.Contains(t, got, "node_sync_interval: 5m0s")
+	})
+
+	t.Run("topology absent when zoneAware is false or unset", func(t *testing.T) {
+		// Backward-compat contract: omitting the field, or setting
+		// zoneAware: false, must produce a ConfigMap that's
+		// indistinguishable from a pre-feature release.
+		for name, ta := range map[string]v1alpha1.TargetAllocator{
+			"unset": targetAllocatorInstance(),
+			"zoneAware false": func() v1alpha1.TargetAllocator {
+				t := targetAllocatorInstance()
+				t.Spec.Topology = &v1beta1.TargetAllocatorTopology{ZoneAware: false, MaxSkew: 0}
+				return t
+			}(),
+		} {
+			t.Run(name, func(t *testing.T) {
+				testParams := Params{Collector: collectorInstance(), TargetAllocator: ta}
+				actual, err := ConfigMap(testParams)
+				require.NoError(t, err)
+				assert.NotContains(t, actual.Data[targetAllocatorFilename], "topology:")
+			})
+		}
 	})
 }
 

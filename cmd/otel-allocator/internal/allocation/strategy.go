@@ -86,11 +86,31 @@ func GetRegisteredAllocatorNames() []string {
 	return names
 }
 
+// CollectorSnapshot is a frozen, lock-free view of a single collector's
+// state at the moment of capture. It exists so HTTP handlers (and any
+// other reader that runs outside the allocator's mutex) can render
+// consistent data without holding the allocator lock across I/O.
+//
+// Callers must treat the fields as read-only.
+type CollectorSnapshot struct {
+	Name          string
+	NodeName      string
+	Zone          string
+	NumTargets    int
+	TargetsPerJob map[string]int
+}
+
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
 	SetTargets(targets []*target.Item)
 	TargetItems() map[target.ItemHash]*target.Item
 	Collectors() map[string]*Collector
+	// CollectorsSnapshot returns deep-copied, lock-free snapshots of every
+	// currently-known collector. Use this from readers that run outside
+	// the allocator's mutex (HTTP handlers, dashboards, exporters) so
+	// fields like NumTargets and TargetsPerJob can be read without
+	// racing the allocator's write path.
+	CollectorsSnapshot() map[string]CollectorSnapshot
 	GetTargetsForCollectorAndJob(collector, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)

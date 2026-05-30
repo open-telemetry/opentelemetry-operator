@@ -32363,6 +32363,18 @@ controls how pods can be scheduled with matching taints<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatortopology">topology</a></b></td>
+        <td>object</td>
+        <td>
+          Topology configures availability-zone aware target allocation.
+When zoneAware is true the consistent-hashing and least-weighted
+strategies prefer collectors in the same AZ as each target,
+reducing cross-AZ scrape traffic. Defaults preserve pre-feature
+behavior — leaving this field unset is byte-for-byte identical to
+not having it.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindex-1">topologySpreadConstraints</a></b></td>
         <td>[]object</td>
         <td>
@@ -36311,6 +36323,92 @@ negative values will be treated as 0 (evict immediately) by the system.<br/>
         <td>
           Value is the taint value the toleration matches to.
 If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.topology
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator-1)</sup></sup>
+
+
+
+Topology configures availability-zone aware target allocation.
+When zoneAware is true the consistent-hashing and least-weighted
+strategies prefer collectors in the same AZ as each target,
+reducing cross-AZ scrape traffic. Defaults preserve pre-feature
+behavior — leaving this field unset is byte-for-byte identical to
+not having it.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSkew</b></td>
+        <td>integer</td>
+        <td>
+          MaxSkew controls cross-zone "spillover". When a same-zone
+assignment would push the global target-count skew (max minus min
+across all collectors) above this value, the target is assigned
+to the globally least-loaded collector instead. 0 (the default)
+disables the check entirely — pure zone affinity. Values of 5–20
+are practical for production setups with uneven workloads.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeSyncInterval</b></td>
+        <td>string</td>
+        <td>
+          NodeSyncInterval controls how often the allocator re-reads node
+zone labels from the Kubernetes API so new or relabeled nodes are
+picked up without restarting the allocator. Defaults to 5m. Set
+to 0 to disable periodic re-sync (sync only on startup); minimum
+valid non-zero value is 30s.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>targetZoneLabel</b></td>
+        <td>string</td>
+        <td>
+          TargetZoneLabel is the Prometheus service-discovery meta-label
+used to read a target's desired zone. Defaults to
+"__meta_kubernetes_endpointslice_endpoint_zone" which is populated
+automatically when scraping EndpointSlice resources. For EC2 SD
+use "__meta_ec2_availability_zone", for GCE SD use
+"__meta_gce_zone".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>zoneAware</b></td>
+        <td>boolean</td>
+        <td>
+          ZoneAware enables zone-aware allocation for the consistent-hashing
+and least-weighted strategies. Targets are preferentially assigned
+to collectors running in the same topology zone, reducing
+cross-AZ scrape traffic and the associated cloud egress costs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>zoneLabel</b></td>
+        <td>string</td>
+        <td>
+          ZoneLabel is the node label used to look up the zone each
+collector pod runs in. Defaults to the standard
+"topology.kubernetes.io/zone" set by kubelets on every major cloud
+provider. The legacy "failure-domain.beta.kubernetes.io/zone"
+label is used automatically as a fallback.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

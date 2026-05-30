@@ -17,8 +17,21 @@ var _ Strategy = &leastWeightedStrategy{}
 // the search is restricted to collectors in the target's desired zone
 // (when at least one exists) and a global maxSkew check decides whether
 // to spill cross-zone.
+//
+// Performance: SetCollectors caches the collector set partitioned by
+// zone (collectorsByZone). GetCollectorForTarget then reads the cached
+// per-zone view directly instead of rescanning every collector per
+// target. At 100k targets across N collectors this turns each
+// assignment from O(N) scan + map allocation into O(N_zone) scan with
+// zero per-target allocation.
 type leastWeightedStrategy struct {
 	zoneAwareState
+
+	// collectorsByZone is rebuilt on every SetCollectors call. It maps
+	// zone -> collector-name -> collector pointer. Read access from
+	// GetCollectorForTarget runs under the allocator's read lock so no
+	// per-strategy lock is needed.
+	collectorsByZone map[string]map[string]*Collector
 }
 
 func newleastWeightedStrategy() Strategy {
@@ -30,13 +43,33 @@ func (*leastWeightedStrategy) GetName() string {
 }
 
 func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
-	// Reassignment fast-path: if the target already names a collector and
-	// that collector still exists, keep the assignment. This matches the
-	// pre-zone-aware behavior and avoids needlessly thrashing assignments
-	// on cluster reconciles.
+	// Reassignment fast-path: keep an existing assignment when it is still
+	// valid, but with zone awareness on we must guard against "stuck
+	// failover" — when a target was previously placed cross-zone (because
+	// its desired zone had no collectors) and a same-zone collector has
+	// since arrived, returning the old assignment unchanged would silently
+	// leave the target on the wrong zone forever. So we keep the fast-path
+	// for the common cases (zone awareness off, target zone-less, target
+	// already on a correct-zone collector, or the desired zone is still
+	// uncovered) and fall through to the full evaluation otherwise.
 	if item.CollectorName != "" {
 		if col, ok := collectors[item.CollectorName]; ok {
-			return col, nil
+			if !s.enabled() {
+				return col, nil
+			}
+			desiredZone := s.targetZone(item)
+			switch {
+			case desiredZone == "":
+				return col, nil
+			case col.Zone == desiredZone:
+				return col, nil
+			case len(s.collectorsByZone[desiredZone]) == 0:
+				// Desired zone still uncovered — current cross-zone
+				// assignment is the only option.
+				return col, nil
+			}
+			// Otherwise the target is cross-zone but its zone now has
+			// collectors. Fall through to re-evaluate.
 		}
 	}
 
@@ -52,8 +85,8 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 		return pickLeastLoaded(collectors, item.JobName), nil
 	}
 
-	zoneSubset := subsetForZone(collectors, desiredZone)
-	if zoneSubset == nil {
+	zoneSubset := s.collectorsByZone[desiredZone]
+	if len(zoneSubset) == 0 {
 		// Failover: zone has no collectors. Pick globally and tell the
 		// topology so operators can see the gap.
 		chosen := pickLeastLoaded(collectors, item.JobName)
@@ -97,10 +130,37 @@ func pickLeastLoaded(collectors map[string]*Collector, jobName string) *Collecto
 	return col
 }
 
-func (*leastWeightedStrategy) SetCollectors(map[string]*Collector) {}
+// SetCollectors rebuilds the per-zone collector index so
+// GetCollectorForTarget does not have to rescan and allocate on every
+// target assignment. The cache is only built when zone-aware allocation
+// is active — pre-feature deployments pay zero cost here, preserving
+// the existing no-op contract for the legacy code path.
+func (s *leastWeightedStrategy) SetCollectors(collectors map[string]*Collector) {
+	if !s.enabled() || len(collectors) == 0 {
+		s.collectorsByZone = nil
+		return
+	}
+	byZone := make(map[string]map[string]*Collector)
+	for name, c := range collectors {
+		if c.Zone == "" {
+			continue
+		}
+		if byZone[c.Zone] == nil {
+			byZone[c.Zone] = make(map[string]*Collector)
+		}
+		byZone[c.Zone][name] = c
+	}
+	s.collectorsByZone = byZone
+}
 
 func (*leastWeightedStrategy) SetFallbackStrategy(Strategy) {}
 
+// SetZoneAwareness toggles zone-aware allocation and invalidates the
+// per-zone cache so the next SetCollectors rebuilds it (or, on disable,
+// leaves it empty).
 func (s *leastWeightedStrategy) SetZoneAwareness(zt *ZoneTopology, maxSkew int) {
 	s.setZoneAwareness(zt, maxSkew)
+	if !s.enabled() {
+		s.collectorsByZone = nil
+	}
 }

@@ -84,6 +84,92 @@ func TestZoneTopology_GetTargetZone(t *testing.T) {
 	}
 }
 
+// stubNodeZoneLookup is a deterministic in-memory zone resolver used in the
+// node-fallback unit tests. It implements the nodeZoneLookup interface
+// without pulling in the K8s fake client.
+type stubNodeZoneLookup map[string]string
+
+func (s stubNodeZoneLookup) GetZone(nodeName string) string {
+	return s[nodeName]
+}
+
+func TestZoneTopology_GetTargetZone_FallbackToNodeResolver(t *testing.T) {
+	// The two-stage lookup contract: target zone label wins when present;
+	// otherwise the node-name resolver fills in. This is the path that
+	// keeps zone-aware allocation working for Pod SD, classic Endpoints
+	// SD, and static configs that emit a node label but no zone label.
+	resolver := stubNodeZoneLookup{
+		"node-a": "us-east-1a",
+		"node-b": "us-east-1b",
+	}
+	zt, err := NewZoneTopology(logf.Log.WithName("test"), testTargetZoneLabel)
+	require.NoError(t, err)
+	zt.WithNodeZoneResolver(resolver)
+
+	tests := []struct {
+		name   string
+		labels []labels.Label
+		want   string
+	}{
+		{
+			name: "explicit zone label wins over node fallback",
+			labels: []labels.Label{
+				{Name: testTargetZoneLabel, Value: "us-east-1c"},
+				{Name: "__meta_kubernetes_pod_node_name", Value: "node-a"},
+			},
+			want: "us-east-1c",
+		},
+		{
+			name: "no zone label, node fallback resolves",
+			labels: []labels.Label{
+				{Name: "__meta_kubernetes_pod_node_name", Value: "node-b"},
+			},
+			want: "us-east-1b",
+		},
+		{
+			name: "no zone label and unknown node returns empty",
+			labels: []labels.Label{
+				{Name: "__meta_kubernetes_pod_node_name", Value: "node-unknown"},
+			},
+			want: "",
+		},
+		{
+			name: "no zone label and no node name returns empty",
+			labels: []labels.Label{
+				{Name: "instance", Value: "x"},
+			},
+			want: "",
+		},
+		{
+			name: "endpointslice node-kind fallback also resolves",
+			labels: []labels.Label{
+				{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+				{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-a"},
+			},
+			want: "us-east-1a",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			item := target.NewItem("scrape", "10.0.0.1:9100", labels.New(tc.labels...), "")
+			assert.Equal(t, tc.want, zt.GetTargetZone(item))
+		})
+	}
+}
+
+func TestZoneTopology_GetTargetZone_NoResolverFallsThrough(t *testing.T) {
+	// Without a node resolver attached, the topology behaves as if the
+	// node fallback didn't exist: label-only extraction, no implicit
+	// cluster knowledge. This preserves the documented label-only mode.
+	zt, err := NewZoneTopology(logf.Log.WithName("test"), testTargetZoneLabel)
+	require.NoError(t, err)
+	item := target.NewItem("scrape", "10.0.0.1:9100", labels.New(
+		labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-a"},
+	), "")
+	assert.Equal(t, "", zt.GetTargetZone(item),
+		"node fallback must not run when no resolver is attached")
+}
+
 func TestZoneTopology_SetCollectors_BuildsPerZoneIndex(t *testing.T) {
 	zt := newTestZoneTopology(t)
 

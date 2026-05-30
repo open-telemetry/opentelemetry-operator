@@ -108,4 +108,13 @@ type TargetAllocatorSpec struct {
 	// ReadinessProbe defines the readiness probe configuration for the Target Allocator container.
 	// +optional
 	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
+
+	// Topology configures availability-zone aware target allocation.
+	// When zoneAware is true the consistent-hashing and least-weighted
+	// strategies prefer collectors in the same AZ as each target,
+	// reducing cross-AZ scrape traffic. Defaults preserve pre-feature
+	// behavior — leaving this field unset is byte-for-byte identical to
+	// not having it.
+	// +optional
+	Topology *v1beta1.TargetAllocatorTopology `json:"topology,omitempty"`
 }

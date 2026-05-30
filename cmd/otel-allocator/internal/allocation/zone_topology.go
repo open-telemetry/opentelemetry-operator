@@ -16,6 +16,15 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
+// nodeZoneLookup resolves a Kubernetes node name to its topology zone.
+// ZoneTopology accepts an interface (not the concrete *NodeZoneResolver)
+// so tests can stub the lookup and so future callers can plug in
+// alternative resolution paths (cloud SDK, static map, etc.) without
+// taking a hard dependency on the K8s client wiring.
+type nodeZoneLookup interface {
+	GetZone(nodeName string) string
+}
+
 // ZoneTopology maintains a per-zone view of the allocator state for
 // observability and zone-aware allocation queries.
 //
@@ -35,8 +44,15 @@ type ZoneTopology struct {
 
 	// targetZoneLabel is the Prometheus SD meta-label used to extract a
 	// target's desired zone (e.g. "__meta_kubernetes_endpointslice_endpoint_zone").
-	// Empty string disables target zone extraction.
+	// Empty string disables direct label extraction; the node fallback
+	// (see nodeResolver) still applies.
 	targetZoneLabel string
+	// nodeResolver, when non-nil, is consulted whenever the target zone
+	// label is missing or empty. The target's node name (via
+	// target.Item.GetNodeName) is looked up in the resolver to find the
+	// zone. This covers Pod SD, Endpoints SD, static configs, and other
+	// non-EndpointSlice paths that emit a node label but not a zone label.
+	nodeResolver nodeZoneLookup
 
 	// collectorsByZone maps zone name -> set of collector names in that zone.
 	// The empty-string zone ("") aggregates collectors whose zone could not
@@ -54,13 +70,39 @@ type ZoneTopology struct {
 	targetsPerZone      metric.Int64Gauge
 	uncoveredZonesGauge metric.Int64Gauge
 	spilloverCounter    metric.Int64Counter
+
+	// distinctZoneHighWatermark is the largest number of distinct zones
+	// the topology has observed across collectors and target labels in
+	// its lifetime. We use it as a tripwire for accidental
+	// high-cardinality misconfiguration (e.g. operator points
+	// target_zone_label at an instance-id label by mistake): the field is
+	// monotonic, so a single warning log is emitted the first time the
+	// count crosses the configured threshold.
+	distinctZoneHighWatermark int
+	cardinalityWarningEmitted bool
 }
+
+// cardinalityWarnThreshold is the number of distinct zones at which the
+// topology emits a one-time WARN log pointing operators at the
+// target_zone_label config. Real cloud topologies have a handful of
+// zones per region (AWS up to 6, GCP/Azure typically 3); 64 is well
+// above that ceiling and well below any plausible high-cardinality
+// label (instance IDs, pod IPs, etc.) which would explode into
+// thousands. The threshold is a constant — operators can't tune it
+// because the only correct response to crossing it is reading the warning.
+const cardinalityWarnThreshold = 64
 
 // NewZoneTopology constructs a ZoneTopology. The targetZoneLabel argument is
 // the Prometheus SD meta-label name used to read a target's zone (typically
 // "__meta_kubernetes_endpointslice_endpoint_zone"). Pass "" to disable target
 // zone extraction; in that mode the topology still tracks collectors per
-// zone but every target is treated as zone-less.
+// zone but every target is treated as zone-less unless a node-zone resolver
+// is attached.
+//
+// Use WithNodeZoneResolver to plug in the node-zone fallback path so the
+// topology can resolve a zone from the target's node name when the SD
+// pipeline does not emit a zone meta-label (Pod SD, Endpoints SD without
+// EndpointSlice, etc.).
 func NewZoneTopology(log logr.Logger, targetZoneLabel string) (*ZoneTopology, error) {
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	collectorsPerZone, err := meter.Int64Gauge(
@@ -104,14 +146,67 @@ func NewZoneTopology(log logr.Logger, targetZoneLabel string) (*ZoneTopology, er
 	}, nil
 }
 
-// GetTargetZone returns the desired zone for the given target by reading the
-// configured targetZoneLabel from the target's labels. Returns "" if the
-// target has no zone metadata or if target zone extraction is disabled.
+// WithNodeZoneResolver attaches a node-name -> zone resolver so the topology
+// can fall back to the target's node zone when the SD-supplied zone label
+// is missing. nil clears the resolver (label-only mode).
+func (zt *ZoneTopology) WithNodeZoneResolver(r nodeZoneLookup) *ZoneTopology {
+	zt.mu.Lock()
+	defer zt.mu.Unlock()
+	zt.nodeResolver = r
+	return zt
+}
+
+// GetTargetZone returns the desired zone for the given target. The lookup
+// is two-stage:
+//  1. Read the configured targetZoneLabel from the target's labels. This
+//     is the fast path used by Kubernetes EndpointSlice SD, EC2 SD, GCE
+//     SD, etc., where the SD pipeline already populates a zone meta-label.
+//  2. If the label is empty (or extraction is disabled) and a node-zone
+//     resolver is attached, look up the target's node name via
+//     target.Item.GetNodeName() and resolve that node's zone. This covers
+//     Pod SD, classic Endpoints SD, and static configs that carry a node
+//     label but no zone label, so zone awareness keeps working on those
+//     paths instead of silently falling back to global allocation.
+//
+// Returns "" if neither stage produces a zone.
 func (zt *ZoneTopology) GetTargetZone(item *target.Item) string {
-	if item == nil || zt.targetZoneLabel == "" {
+	if item == nil {
 		return ""
 	}
-	return item.Labels.Get(zt.targetZoneLabel)
+	if zt.targetZoneLabel != "" {
+		if z := item.Labels.Get(zt.targetZoneLabel); z != "" {
+			return z
+		}
+	}
+	zt.mu.RLock()
+	resolver := zt.nodeResolver
+	zt.mu.RUnlock()
+	if resolver == nil {
+		return ""
+	}
+	nodeName := item.GetNodeName()
+	if nodeName == "" {
+		return ""
+	}
+	return resolver.GetZone(nodeName)
+}
+
+// Reset wipes the per-zone target counts and clears any per-zone gauges the
+// previous state had emitted. It intentionally leaves the collector index
+// alone — callers driving Reset (notably the allocator's SetZoneTopology
+// hydration path) follow it with SetCollectors anyway. Reset exists so a
+// caller can safely re-hydrate target counts without double-counting.
+func (zt *ZoneTopology) Reset() {
+	zt.mu.Lock()
+	defer zt.mu.Unlock()
+	// Zero out the gauge for every zone we had targets in so existing
+	// scrapers see the reset rather than stale values.
+	for zone := range zt.targetsByZone {
+		zt.targetsPerZone.Record(context.Background(), 0,
+			metric.WithAttributes(attribute.String("zone", zone)))
+	}
+	zt.targetsByZone = make(map[string]int)
+	zt.uncoveredZonesGauge.Record(context.Background(), 0)
 }
 
 // SetCollectors rebuilds the per-zone collector index from scratch using the
@@ -149,6 +244,7 @@ func (zt *ZoneTopology) IncrementTargetCount(zone string) {
 	zt.targetsByZone[zone]++
 	zt.recordTargetsForZoneLocked(zone)
 	zt.recordUncoveredZonesLocked()
+	zt.maybeWarnHighCardinalityLocked()
 }
 
 // DecrementTargetCount records that one target no longer desires the given
@@ -322,6 +418,31 @@ func (zt *ZoneTopology) recordUncoveredZonesLocked() {
 		zt.log.V(1).Info("Detected zones with targets but no collectors; targets in these zones will be served cross-zone",
 			"uncoveredZones", uncovered)
 	}
+}
+
+// maybeWarnHighCardinalityLocked emits a one-time log warning the first
+// time the count of distinct zones (collectors + targets) crosses
+// cardinalityWarnThreshold. The intent is to catch
+// `target_zone_label` misconfiguration that points at a high-cardinality
+// label (pod IP, instance ID) before it explodes the targets_by_zone map
+// and the Prometheus series count. The check runs under zt.mu.
+func (zt *ZoneTopology) maybeWarnHighCardinalityLocked() {
+	if zt.cardinalityWarningEmitted {
+		return
+	}
+	distinct := len(zt.targetsByZone)
+	if distinct > zt.distinctZoneHighWatermark {
+		zt.distinctZoneHighWatermark = distinct
+	}
+	if zt.distinctZoneHighWatermark < cardinalityWarnThreshold {
+		return
+	}
+	zt.cardinalityWarningEmitted = true
+	zt.log.Info(
+		"observed unusually high zone cardinality — verify topology.target_zone_label points at a low-cardinality SD label (zone names), not an instance or pod identifier",
+		"distinctZones", zt.distinctZoneHighWatermark,
+		"threshold", cardinalityWarnThreshold,
+	)
 }
 
 // uncoveredZonesLocked computes the set of zones that have targets but no

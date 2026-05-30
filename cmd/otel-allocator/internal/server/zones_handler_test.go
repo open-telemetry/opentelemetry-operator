@@ -127,16 +127,16 @@ func TestZonesHandler_AlwaysOKEvenWhenDisabled(t *testing.T) {
 // htmlGet drives a GET against the server's HTTP handler and returns the
 // response + body. Centralizes the HTML test boilerplate so each test
 // case stays focused on its assertions.
-func htmlGet(t *testing.T, s *Server, path string) (*http.Response, string) {
+func htmlGet(t *testing.T, s *Server, path string) (resp *http.Response, body string) {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, http.NoBody)
 	w := httptest.NewRecorder()
 	s.server.Handler.ServeHTTP(w, req)
-	resp := w.Result()
-	body, err := io.ReadAll(resp.Body)
+	resp = w.Result()
+	raw, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.NoError(t, resp.Body.Close())
-	return resp, string(body)
+	return resp, string(raw)
 }
 
 func newZoneAwareServerWithFixture(t *testing.T) *Server {

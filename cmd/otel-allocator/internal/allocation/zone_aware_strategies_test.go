@@ -347,6 +347,119 @@ func TestZoneAwareLeastWeighted_HonorsReassignmentFastPath(t *testing.T) {
 	}
 }
 
+func TestZoneAware_FailedOverTargetsRecoverWhenZoneCollectorAppears(t *testing.T) {
+	// Regression for the "stuck failover" bug: when a target's desired zone
+	// initially has no collectors it lands cross-zone via the global pool.
+	// If a same-zone collector subsequently spins up, the next
+	// reconciliation must re-evaluate the assignment instead of letting
+	// least-weighted's sticky fast-path keep the target cross-zone.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, zt := makeZoneAwareAllocator(t, s, 0)
+			// Start with no collectors in the target's desired zone.
+			a.SetCollectors(MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+			}))
+			items := []*target.Item{
+				newTargetWithZone("scrape", "stuck-failover:9100", "zone-c"),
+			}
+			a.SetTargets(items)
+			require.Contains(t, zt.UncoveredZones(), "zone-c",
+				"precondition: zone-c must report uncovered before the collector arrives")
+
+			// A collector now spins up in zone-c. The previously-failed-over
+			// target must move back home.
+			a.SetCollectors(MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+				2: "zone-c",
+			}))
+			assert.Empty(t, zt.UncoveredZones(), "uncovered set must clear once zone-c has a collector")
+			collectorsNow := a.Collectors()
+			for _, it := range a.TargetItems() {
+				assignedZone := collectorsNow[it.CollectorName].Zone
+				assert.Equal(t, "zone-c", assignedZone,
+					"target wanting zone-c must recover to the new zone-c collector after the previous failover, got %q",
+					assignedZone)
+			}
+		})
+	}
+}
+
+func TestZoneAware_CollectorZoneChangeReshufflesAssignments(t *testing.T) {
+	// Regression for diff.Maps blindness: when a Collector's Zone field
+	// changes but its name stays the same (e.g. StatefulSet pod
+	// rescheduled onto a node in a different AZ, or node-zone resolver
+	// finally learns the zone of a previously-unknown node), the
+	// allocator must propagate the update so targets land on the new
+	// zone, not the old one.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, _ := makeZoneAwareAllocator(t, s, 0)
+			a.SetCollectors(MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+			}))
+			a.SetTargets([]*target.Item{
+				newTargetWithZone("scrape", "a-target:9100", "zone-a"),
+				newTargetWithZone("scrape", "b-target:9100", "zone-b"),
+			})
+
+			// Flip collector-1 from zone-b to zone-c (same name, new zone).
+			// This is the "zone-only change" case that diff.Maps misses.
+			a.SetCollectors(MakeNCollectorsWithZones(2, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-c",
+			}))
+			collectorsNow := a.Collectors()
+			for _, it := range a.TargetItems() {
+				desired := it.Labels.Get(testTargetZoneLabel)
+				assignedZone := collectorsNow[it.CollectorName].Zone
+				switch desired {
+				case "zone-a":
+					assert.Equal(t, "zone-a", assignedZone,
+						"zone-a target must stay on the zone-a collector")
+				case "zone-b":
+					// zone-b is no longer covered — must failover via global pool.
+					assert.NotEqual(t, "", assignedZone,
+						"failed-over zone-b target must still be assigned somewhere")
+				}
+			}
+		})
+	}
+}
+
+func TestZoneAware_SetZoneTopologyRepeatedHydrationDoesNotDoubleCount(t *testing.T) {
+	// Repeatedly attaching the same ZoneTopology (e.g. on config reload)
+	// must not accumulate per-zone target counts. The hydration path is
+	// expected to Reset() the topology before re-counting.
+	zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+	require.NoError(t, err)
+	a, err := New(leastWeightedStrategyName, logger, WithZoneTopology(zt))
+	require.NoError(t, err)
+	a.SetCollectors(MakeNCollectorsWithZones(2, 0, map[int]string{
+		0: "zone-a",
+		1: "zone-b",
+	}))
+	a.SetTargets([]*target.Item{
+		newTargetWithZone("scrape", "first:9100", "zone-a"),
+		newTargetWithZone("scrape", "second:9100", "zone-b"),
+	})
+
+	// Re-attach the same topology a few times. The post-rehydrate target
+	// counts must match a single hydration, not multiples.
+	a.SetZoneTopology(zt)
+	a.SetZoneTopology(zt)
+	a.SetZoneTopology(zt)
+
+	snap := snapshotByZone(zt.Snapshot())
+	assert.Equal(t, 1, snap["zone-a"].TargetsDesired,
+		"zone-a count must stay at 1 across repeated SetZoneTopology calls (got %d)", snap["zone-a"].TargetsDesired)
+	assert.Equal(t, 1, snap["zone-b"].TargetsDesired,
+		"zone-b count must stay at 1 across repeated SetZoneTopology calls (got %d)", snap["zone-b"].TargetsDesired)
+}
+
 func TestZoneAware_TopologyTargetCountsTrackDesiredZone(t *testing.T) {
 	// Even when targets spill cross-zone (via failover or maxSkew), the
 	// topology must continue to attribute them to their *desired* zone,

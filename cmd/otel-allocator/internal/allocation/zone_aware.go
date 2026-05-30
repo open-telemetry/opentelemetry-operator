@@ -50,25 +50,6 @@ func (z *zoneAwareState) targetZone(item *target.Item) string {
 	return z.zt.GetTargetZone(item)
 }
 
-// subsetForZone returns the subset of the input collectors that live in the
-// requested zone. The returned map shares pointers with the input — it is a
-// view, not a deep copy. Returns nil if the zone has no collectors.
-func subsetForZone(allCollectors map[string]*Collector, zone string) map[string]*Collector {
-	if zone == "" {
-		return nil
-	}
-	out := make(map[string]*Collector)
-	for name, c := range allCollectors {
-		if c.Zone == zone {
-			out[name] = c
-		}
-	}
-	if len(out) == 0 {
-		return nil
-	}
-	return out
-}
-
 // exceedsMaxSkew reports whether assigning one additional target to
 // `candidate` would push the global load skew over `maxSkew`. Skew is
 // defined as max(NumTargets) - min(NumTargets) across all collectors. A

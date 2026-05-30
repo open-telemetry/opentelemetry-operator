@@ -163,6 +163,12 @@ func main() {
 		if syncErr := zoneResolver.SyncNodes(ctx); syncErr != nil {
 			setupLog.Error(syncErr, "Failed to sync node zones on startup, zone-aware allocation may be degraded")
 		}
+		// Plug the resolver into the topology so SD paths that emit a node
+		// label but no zone label (Pod SD, classic Endpoints SD, static
+		// configs) still resolve a target zone.
+		if zoneTopology != nil {
+			zoneTopology.WithNodeZoneResolver(zoneResolver)
+		}
 	}
 	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, k8sClient, cfg.CollectorNotReadyGracePeriod, zoneResolver)
 	if collectorWatcherErr != nil {
