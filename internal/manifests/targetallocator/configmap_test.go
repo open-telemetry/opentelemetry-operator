@@ -951,6 +951,38 @@ func TestDesiredConfigMapZoneAware(t *testing.T) {
 		assert.Contains(t, got, "node_sync_interval: 5m0s")
 	})
 
+	t.Run("explicit nodeSyncInterval=0 flows through (disables periodic sync)", func(t *testing.T) {
+		// Regression for the silent-drop bug: a CR that explicitly sets
+		// nodeSyncInterval to 0s must emit `node_sync_interval: 0s` in
+		// the runtime config, not omit the field (which would let the
+		// runtime default of 5m re-enable periodic sync against the
+		// operator's intent).
+		ta := targetAllocatorInstance()
+		ta.Spec.Topology = &v1beta1.TargetAllocatorTopology{
+			ZoneAware:        true,
+			NodeSyncInterval: &metav1.Duration{Duration: 0},
+		}
+		testParams := Params{Collector: collectorInstance(), TargetAllocator: ta}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+		got := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, got, "node_sync_interval: 0s",
+			"explicit zero must be forwarded so the runtime disables periodic sync")
+	})
+
+	t.Run("nil nodeSyncInterval omits the field (runtime applies default)", func(t *testing.T) {
+		ta := targetAllocatorInstance()
+		ta.Spec.Topology = &v1beta1.TargetAllocatorTopology{
+			ZoneAware:        true,
+			NodeSyncInterval: nil, // explicitly nil — pointer absent
+		}
+		testParams := Params{Collector: collectorInstance(), TargetAllocator: ta}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+		assert.NotContains(t, actual.Data[targetAllocatorFilename], "node_sync_interval:",
+			"nil pointer must NOT emit the field — runtime supplies the default")
+	})
+
 	t.Run("topology absent when zoneAware is false or unset", func(t *testing.T) {
 		// Backward-compat contract: omitting the field, or setting
 		// zoneAware: false, must produce a ConfigMap that's

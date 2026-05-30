@@ -297,6 +297,33 @@ func (a *allocator) Collectors() map[string]*Collector {
 	return collectorsCopy
 }
 
+// TargetItemsSnapshot returns lock-free TargetItemSnapshot values for every
+// currently-known target. Each snapshot captures the target's hash,
+// labels-derived fields, CollectorName at the moment of capture, and the
+// resolved desired zone (so the reader doesn't have to call back into
+// ZoneTopology — which would acquire the topology lock again). Use this
+// instead of TargetItems() from concurrent readers (HTTP handlers,
+// dashboards) so the strategy's mutation of CollectorName during
+// reallocation does not race the read.
+func (a *allocator) TargetItemsSnapshot() map[target.ItemHash]TargetItemSnapshot {
+	a.m.RLock()
+	defer a.m.RUnlock()
+	out := make(map[target.ItemHash]TargetItemSnapshot, len(a.targetItems))
+	for hash, item := range a.targetItems {
+		snap := TargetItemSnapshot{
+			Hash:          hash,
+			JobName:       item.JobName,
+			TargetURL:     item.TargetURL,
+			CollectorName: item.CollectorName,
+		}
+		if a.zoneTopology != nil {
+			snap.DesiredZone = a.zoneTopology.GetTargetZone(item)
+		}
+		out[hash] = snap
+	}
+	return out
+}
+
 // CollectorsSnapshot returns a map of CollectorSnapshot values capturing
 // every collector's state at the moment the call is made. Unlike
 // Collectors() (which returns shallow-copied pointers whose NumTargets

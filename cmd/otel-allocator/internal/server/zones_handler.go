@@ -269,11 +269,15 @@ func (s *Server) ZoneHTMLHandler(c *gin.Context) {
 		// Instead, show the actual targets that desired this zone so
 		// the operator can see who's affected by the missing-zone
 		// failover (and which global collector is now scraping them).
+		// Use TargetItemsSnapshot rather than TargetItems(): the live
+		// pointers race the strategy's reassignment writes
+		// (item.CollectorName is mutated under the allocator's write
+		// lock), while snapshots are deep-copied and lock-free.
 		WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 			Headers: []string{"Job", "Target", "Failover Collector"},
 			Rows: func() [][]Cell {
 				var rows [][]Cell
-				items := s.allocator.TargetItems()
+				items := s.allocator.TargetItemsSnapshot()
 				// Stable sort by job then URL so the page doesn't shuffle
 				// between refreshes.
 				keys := make([]target.ItemHash, 0, len(items))
@@ -289,7 +293,7 @@ func (s *Server) ZoneHTMLHandler(c *gin.Context) {
 				})
 				for _, k := range keys {
 					item := items[k]
-					if zt.GetTargetZone(item) != lookupKey {
+					if item.DesiredZone != lookupKey {
 						continue
 					}
 					failoverCell := NewCell("(unassigned)")
@@ -298,7 +302,7 @@ func (s *Server) ZoneHTMLHandler(c *gin.Context) {
 					}
 					rows = append(rows, []Cell{
 						jobAnchorLink(item.JobName),
-						targetAnchorLink(item),
+						targetSnapshotAnchorLink(item),
 						failoverCell,
 					})
 				}

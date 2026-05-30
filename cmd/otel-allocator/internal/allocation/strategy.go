@@ -100,6 +100,28 @@ type CollectorSnapshot struct {
 	TargetsPerJob map[string]int
 }
 
+// TargetItemSnapshot is the matching frozen view for a single target.
+// The allocator mutates target.Item.CollectorName under its write lock
+// during reallocation; any reader that holds a *target.Item pointer
+// outside the lock would race that write. TargetItemSnapshot captures
+// the fields HTTP handlers and other concurrent readers actually need,
+// including a pre-resolved DesiredZone so the reader doesn't have to
+// reach back into the (locked) ZoneTopology to recompute it.
+//
+// Like CollectorSnapshot, the fields are read-only — callers must not
+// mutate the snapshot.
+type TargetItemSnapshot struct {
+	Hash          target.ItemHash
+	JobName       string
+	TargetURL     string
+	CollectorName string
+	// DesiredZone is the zone the target wants, resolved through the
+	// attached ZoneTopology (label first, node fallback second) at the
+	// moment of snapshot. Empty string when zone awareness is off or
+	// the target has no zone metadata.
+	DesiredZone string
+}
+
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
 	SetTargets(targets []*target.Item)
@@ -111,6 +133,12 @@ type Allocator interface {
 	// fields like NumTargets and TargetsPerJob can be read without
 	// racing the allocator's write path.
 	CollectorsSnapshot() map[string]CollectorSnapshot
+	// TargetItemsSnapshot is the same idea for target items: a frozen,
+	// per-item value copy plus the resolved desired zone. Required for
+	// any reader that wants to display item.CollectorName outside the
+	// allocator lock — the live pointer would race the strategy's
+	// reassignment writes.
+	TargetItemsSnapshot() map[target.ItemHash]TargetItemSnapshot
 	GetTargetsForCollectorAndJob(collector, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)

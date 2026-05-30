@@ -114,6 +114,14 @@ topology:
   Defaults to `__meta_kubernetes_endpointslice_endpoint_zone`, which is populated automatically when scraping
   EndpointSlice resources. Other SD mechanisms can be used by setting this to the appropriate label
   (`__meta_ec2_availability_zone` for EC2 SD, `__meta_gce_zone` for GCE SD, etc.).
+
+  > **Cardinality matters.** The allocator stores a per-distinct-zone entry in memory and emits one
+  > Prometheus series per zone in `opentelemetry_allocator_targets_per_zone`,
+  > `opentelemetry_allocator_collectors_per_zone`, and `opentelemetry_allocator_zone_spillover`. Pointing this
+  > at a high-cardinality label (instance ID, pod name, IP) will grow memory and series count linearly with
+  > target count. A one-time WARN log fires the first time distinct-zone cardinality crosses 64 — well above
+  > any real cloud topology and well below an identifier label — to surface misconfiguration. The allocator
+  > does not impose a hard cap; picking a sensible label is the operator's responsibility.
 - `max_skew` — controls cross-zone "spillover". When the same-zone allocation would push the global skew
   (max collector NumTargets − min collector NumTargets) above this value, the target spills to the globally
   least-loaded collector instead. `0` disables the check entirely (pure zone affinity, recommended when zones

@@ -251,6 +251,52 @@ func TestZoneAwareConsistentHashing_DeterministicWithinZone(t *testing.T) {
 	}
 }
 
+func TestZoneAware_LateTopologyAttachRebuildsZoneCache(t *testing.T) {
+	// Regression for the "late attach" bug: when SetZoneTopology is
+	// called after SetCollectors has already populated the strategy,
+	// the strategy must rebuild its per-zone state on the toggle.
+	// Without this, least-weighted's collectorsByZone would still be
+	// nil and zone-targeted assignments would silently fall through
+	// to the failover path until the next collector reconcile.
+	// Exercises both zone-aware strategies because each maintains its
+	// own per-zone cache (rings for CH, map for LW).
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, err := New(s, logger)
+			require.NoError(t, err)
+			// Collectors arrive first, zone-aware is OFF at this point.
+			cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+				2: "zone-c",
+			})
+			a.SetCollectors(cols)
+
+			// Now attach a topology AFTER collectors are already loaded.
+			zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+			require.NoError(t, err)
+			a.SetZoneTopology(zt)
+
+			// Targets must reach their desired zone — the per-zone cache
+			// must have been rebuilt by SetZoneAwareness even though
+			// SetCollectors was never re-invoked.
+			a.SetTargets([]*target.Item{
+				newTargetWithZone("scrape", "late-a:9100", "zone-a"),
+				newTargetWithZone("scrape", "late-b:9100", "zone-b"),
+				newTargetWithZone("scrape", "late-c:9100", "zone-c"),
+			})
+			collectorsNow := a.Collectors()
+			for _, it := range a.TargetItems() {
+				desired := it.Labels.Get(testTargetZoneLabel)
+				assigned := collectorsNow[it.CollectorName].Zone
+				assert.Equal(t, desired, assigned,
+					"target %q wants zone %q but landed in %q — late SetZoneTopology did not rebuild the per-zone cache",
+					it.TargetURL, desired, assigned)
+			}
+		})
+	}
+}
+
 func TestZoneAwareConsistentHashing_ToggleZoneAwarenessRebuildsRings(t *testing.T) {
 	// Verify SetZoneAwareness can flip the strategy in both directions
 	// without leaving stale per-zone rings around. We exercise both

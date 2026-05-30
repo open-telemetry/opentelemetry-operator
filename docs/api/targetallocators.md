@@ -12206,7 +12206,18 @@ used to read a target's desired zone. Defaults to
 "__meta_kubernetes_endpointslice_endpoint_zone" which is populated
 automatically when scraping EndpointSlice resources. For EC2 SD
 use "__meta_ec2_availability_zone", for GCE SD use
-"__meta_gce_zone".<br/>
+"__meta_gce_zone".
+
+IMPORTANT: this label MUST be low-cardinality. The allocator keeps
+an in-memory map and a Prometheus metric label per distinct value
+it sees, so pointing this at a high-cardinality label (instance
+IDs, pod names, IP addresses) will grow memory and the
+`opentelemetry_allocator_*_zone*` series count linearly with
+target count. Real cloud topologies have a handful of zones per
+region. The allocator emits a one-time warning when distinct-zone
+cardinality crosses 64 to surface misconfiguration, but it does
+not enforce a hard cap — picking a sensible label is the
+operator's responsibility.<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -172,7 +172,13 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		if taSpec.Topology.MaxSkew > 0 {
 			topologyConfig["max_skew"] = taSpec.Topology.MaxSkew
 		}
-		if taSpec.Topology.NodeSyncInterval.Size() > 0 {
+		// Check pointer presence rather than .Size() so an explicit
+		// `nodeSyncInterval: 0s` in the CR flows through as 0 instead of
+		// being silently dropped (which would let the runtime default
+		// of 5m re-enable periodic sync). Nil = field absent in the CR
+		// → runtime applies its default; explicit 0 = operator wants
+		// periodic sync disabled.
+		if taSpec.Topology.NodeSyncInterval != nil {
 			topologyConfig["node_sync_interval"] = taSpec.Topology.NodeSyncInterval.Duration
 		}
 		taConfig["topology"] = topologyConfig

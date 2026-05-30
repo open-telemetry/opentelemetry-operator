@@ -24,14 +24,27 @@ var _ Strategy = &leastWeightedStrategy{}
 // target. At 100k targets across N collectors this turns each
 // assignment from O(N) scan + map allocation into O(N_zone) scan with
 // zero per-target allocation.
+//
+// lastCollectors retains the most recent collector set so SetZoneAwareness
+// (called when an operator attaches a topology after collectors are
+// already loaded) can rebuild collectorsByZone without waiting for the
+// next SetCollectors call. Without this, late topology activation would
+// leave the cache nil and quietly degrade in-zone selection to the
+// failover path until the next collector reconcile.
 type leastWeightedStrategy struct {
 	zoneAwareState
 
-	// collectorsByZone is rebuilt on every SetCollectors call. It maps
-	// zone -> collector-name -> collector pointer. Read access from
-	// GetCollectorForTarget runs under the allocator's read lock so no
-	// per-strategy lock is needed.
+	// collectorsByZone is rebuilt on every SetCollectors call and on
+	// SetZoneAwareness toggles. It maps zone -> collector-name ->
+	// collector pointer. Read access from GetCollectorForTarget runs
+	// under the allocator's read lock so no per-strategy lock is
+	// needed.
 	collectorsByZone map[string]map[string]*Collector
+	// lastCollectors mirrors what consistent-hashing keeps under the
+	// same name: the most recently seen collector set, used to rebuild
+	// the per-zone cache when SetZoneAwareness flips zone awareness on
+	// or off without a fresh SetCollectors call.
+	lastCollectors map[string]*Collector
 }
 
 func newleastWeightedStrategy() Strategy {
@@ -134,14 +147,26 @@ func pickLeastLoaded(collectors map[string]*Collector, jobName string) *Collecto
 // GetCollectorForTarget does not have to rescan and allocate on every
 // target assignment. The cache is only built when zone-aware allocation
 // is active — pre-feature deployments pay zero cost here, preserving
-// the existing no-op contract for the legacy code path.
+// the existing no-op contract for the legacy code path. The collector
+// set is also stashed in lastCollectors so SetZoneAwareness can rebuild
+// the cache on a later toggle without requiring a fresh
+// SetCollectors call.
 func (s *leastWeightedStrategy) SetCollectors(collectors map[string]*Collector) {
-	if !s.enabled() || len(collectors) == 0 {
+	s.lastCollectors = collectors
+	s.rebuildCacheFromLastCollectors()
+}
+
+// rebuildCacheFromLastCollectors recomputes collectorsByZone from
+// lastCollectors. It is the single source of "how do we build the per-
+// zone view" and is shared between SetCollectors (normal path) and
+// SetZoneAwareness (late toggle path).
+func (s *leastWeightedStrategy) rebuildCacheFromLastCollectors() {
+	if !s.enabled() || len(s.lastCollectors) == 0 {
 		s.collectorsByZone = nil
 		return
 	}
 	byZone := make(map[string]map[string]*Collector)
-	for name, c := range collectors {
+	for name, c := range s.lastCollectors {
 		if c.Zone == "" {
 			continue
 		}
@@ -155,12 +180,15 @@ func (s *leastWeightedStrategy) SetCollectors(collectors map[string]*Collector) 
 
 func (*leastWeightedStrategy) SetFallbackStrategy(Strategy) {}
 
-// SetZoneAwareness toggles zone-aware allocation and invalidates the
-// per-zone cache so the next SetCollectors rebuilds it (or, on disable,
-// leaves it empty).
+// SetZoneAwareness toggles zone-aware allocation. When zone awareness
+// is being enabled after collectors already exist (a late-attach
+// scenario the allocator API explicitly supports via SetZoneTopology),
+// the per-zone cache must be rebuilt from the previously seen
+// collector set — otherwise the next GetCollectorForTarget call would
+// see an empty cache and incorrectly route same-zone targets through
+// the failover path until the next collector reconcile. Disabling
+// zone awareness clears the cache symmetrically.
 func (s *leastWeightedStrategy) SetZoneAwareness(zt *ZoneTopology, maxSkew int) {
 	s.setZoneAwareness(zt, maxSkew)
-	if !s.enabled() {
-		s.collectorsByZone = nil
-	}
+	s.rebuildCacheFromLastCollectors()
 }

@@ -433,6 +433,19 @@ func targetAnchorLink(t *target.Item) Cell {
 	}
 }
 
+// targetSnapshotAnchorLink mirrors targetAnchorLink but reads from a
+// TargetItemSnapshot. The snapshot path is used by callers that ran
+// outside the allocator's lock and got value-copy data instead of live
+// *target.Item pointers; a separate helper keeps the call sites
+// type-safe (no implicit *Item construction) and the source of the
+// underlying data explicit.
+func targetSnapshotAnchorLink(t allocation.TargetItemSnapshot) Cell {
+	return Cell{
+		Link: fmt.Sprintf("/debug/target?target_hash=%v", t.Hash),
+		Text: t.TargetURL,
+	}
+}
+
 // TargetHTMLHandler displays information about a target in a table format.
 // There are two tables: one for high-level target information and another for the target's labels.
 func (s *Server) TargetHTMLHandler(c *gin.Context) {
