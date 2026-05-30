@@ -96,7 +96,17 @@ func HashFromBuilder(builder *labels.Builder, jobName string) ItemHash {
 }
 
 func (t *Item) GetNodeName() string {
-	relevantLabels := t.Labels.MatchLabels(true, relevantLabelNames...)
+	return NodeNameFromLabels(t.Labels)
+}
+
+// NodeNameFromLabels extracts the node name a target lives on, using the
+// same label precedence rules Item.GetNodeName applies. Exposed as a
+// package-level function so consumers that only have a labels.Labels
+// snapshot (e.g. allocation.TargetItemSnapshot used by concurrent HTTP
+// handlers) can reuse the canonical extraction logic without
+// constructing a fake *Item.
+func NodeNameFromLabels(ls labels.Labels) string {
+	relevantLabels := ls.MatchLabels(true, relevantLabelNames...)
 	for _, label := range nodeLabels {
 		if val := relevantLabels.Get(label); val != "" {
 			return val
@@ -113,7 +123,14 @@ func (t *Item) GetNodeName() string {
 // GetEndpointSliceName returns the name of the EndpointSlice that the target is part of.
 // If the target is not part of an EndpointSlice, it returns an empty string.
 func (t *Item) GetEndpointSliceName() string {
-	return t.Labels.Get(endpointSliceName)
+	return EndpointSliceNameFromLabels(t.Labels)
+}
+
+// EndpointSliceNameFromLabels mirrors Item.GetEndpointSliceName for
+// consumers that hold only a labels.Labels (see NodeNameFromLabels for
+// the same pattern).
+func EndpointSliceNameFromLabels(ls labels.Labels) string {
+	return ls.Get(endpointSliceName)
 }
 
 // NewItem Creates a new target item.

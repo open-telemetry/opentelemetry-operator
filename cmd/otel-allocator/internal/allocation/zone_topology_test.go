@@ -4,6 +4,7 @@
 package allocation
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
@@ -91,6 +92,28 @@ type stubNodeZoneLookup map[string]string
 
 func (s stubNodeZoneLookup) GetZone(nodeName string) string {
 	return s[nodeName]
+}
+
+func TestZoneTopology_HighCardinality_CountsCollectorsToo(t *testing.T) {
+	// Regression for the "warning only checks targets" gap: a bad
+	// zoneLabel (node-side) blows up collectors_per_zone series just
+	// like a bad target_zone_label blows up targets_per_zone. The
+	// guard must union both sides so either misconfiguration trips
+	// the one-time WARN. The test injects 64 distinct collector zones
+	// (no target zones) and asserts the warning fires.
+	zt := newTestZoneTopology(t)
+	collectors := make(map[string]*Collector, cardinalityWarnThreshold+1)
+	for i := 0; i <= cardinalityWarnThreshold; i++ {
+		name := fmt.Sprintf("collector-%d", i)
+		zone := fmt.Sprintf("syntheticzone-%d", i)
+		collectors[name] = NewCollector(name, fmt.Sprintf("node-%d", i), zone)
+	}
+	zt.SetCollectors(collectors)
+
+	zt.mu.RLock()
+	defer zt.mu.RUnlock()
+	assert.True(t, zt.cardinalityWarningEmitted,
+		"collector-side cardinality crossing the threshold must trip the warning, not just target-side")
 }
 
 func TestZoneTopology_GetTargetZone_FallbackToNodeResolver(t *testing.T) {

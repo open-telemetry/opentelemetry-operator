@@ -130,9 +130,16 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // reset before hydrating so target counts are not double-counted. This makes
 // the method idempotent and lets callers re-attach after config reloads
 // without leaking per-zone counters.
+//
+// Late attach: if collectors and targets are already loaded when zone
+// awareness is enabled, every existing target's assignment is re-evaluated
+// against the freshly active zone-aware logic. Without this step, targets
+// placed before zone awareness was on would keep their pre-feature
+// cross-zone assignment until the next discovery cycle.
 func (a *allocator) SetZoneTopology(zt *ZoneTopology) {
 	a.m.Lock()
 	defer a.m.Unlock()
+	previousZt := a.zoneTopology
 	a.zoneTopology = zt
 	a.strategy.SetZoneAwareness(zt, a.maxSkew)
 	if zt == nil {
@@ -148,6 +155,24 @@ func (a *allocator) SetZoneTopology(zt *ZoneTopology) {
 	zt.SetCollectors(a.collectors)
 	for _, item := range a.targetItems {
 		zt.IncrementTargetCount(zt.GetTargetZone(item))
+	}
+	// Re-evaluate every existing target's assignment so a topology
+	// attached after SetTargets / SetCollectors actually relocates the
+	// targets into their desired zones. The first attach (previousZt
+	// was nil) is the common late-enable case; subsequent attaches
+	// also benefit when the topology configuration changes.
+	if previousZt == nil {
+		var assignmentErrors []error
+		for _, item := range a.targetItems {
+			if err := a.addTargetToTargetItems(item); err != nil {
+				assignmentErrors = append(assignmentErrors, err)
+			}
+		}
+		if len(assignmentErrors) > 0 {
+			a.log.Info("Could not re-assign some targets after enabling zone topology",
+				"errors", len(assignmentErrors))
+			a.targetsUnassigned.Record(context.Background(), int64(len(assignmentErrors)))
+		}
 	}
 }
 
@@ -314,6 +339,7 @@ func (a *allocator) TargetItemsSnapshot() map[target.ItemHash]TargetItemSnapshot
 			Hash:          hash,
 			JobName:       item.JobName,
 			TargetURL:     item.TargetURL,
+			Labels:        item.Labels,
 			CollectorName: item.CollectorName,
 		}
 		if a.zoneTopology != nil {

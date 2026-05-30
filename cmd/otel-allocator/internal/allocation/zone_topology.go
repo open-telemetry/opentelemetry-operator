@@ -233,6 +233,11 @@ func (zt *ZoneTopology) SetCollectors(collectors map[string]*Collector) {
 
 	zt.recordCollectorsPerZoneLocked(previousZones)
 	zt.recordUncoveredZonesLocked()
+	// Collector zone updates can also explode cardinality (e.g. operator
+	// misconfigured zoneLabel pointing at an instance identifier on node
+	// labels), so the same one-time warning fires when distinct zones
+	// across collectors + targets cross the threshold.
+	zt.maybeWarnHighCardinalityLocked()
 }
 
 // IncrementTargetCount records that one additional target now desires the
@@ -421,16 +426,34 @@ func (zt *ZoneTopology) recordUncoveredZonesLocked() {
 }
 
 // maybeWarnHighCardinalityLocked emits a one-time log warning the first
-// time the count of distinct zones (collectors + targets) crosses
-// cardinalityWarnThreshold. The intent is to catch
-// `target_zone_label` misconfiguration that points at a high-cardinality
-// label (pod IP, instance ID) before it explodes the targets_by_zone map
-// and the Prometheus series count. The check runs under zt.mu.
+// time the union of distinct zones — across both collectorsByZone and
+// targetsByZone — crosses cardinalityWarnThreshold. Catches misconfigured
+// label pointers on either side (`zoneLabel` pointing at a high-cardinality
+// node label, or `target_zone_label` pointing at an instance / pod
+// identifier) before they explode the in-memory maps and the Prometheus
+// `*_zone*` series count. The check runs under zt.mu.
 func (zt *ZoneTopology) maybeWarnHighCardinalityLocked() {
 	if zt.cardinalityWarningEmitted {
 		return
 	}
-	distinct := len(zt.targetsByZone)
+	// Union the zone sets so each side is independently tracked: a bad
+	// `zoneLabel` (collectors) and a bad `target_zone_label` (targets)
+	// are different misconfigurations but both manifest as runaway
+	// cardinality, and both produce series in the same metric family.
+	seen := make(map[string]struct{}, len(zt.collectorsByZone)+len(zt.targetsByZone))
+	for z := range zt.collectorsByZone {
+		if z == "" {
+			continue
+		}
+		seen[z] = struct{}{}
+	}
+	for z := range zt.targetsByZone {
+		if z == "" {
+			continue
+		}
+		seen[z] = struct{}{}
+	}
+	distinct := len(seen)
 	if distinct > zt.distinctZoneHighWatermark {
 		zt.distinctZoneHighWatermark = distinct
 	}
@@ -439,7 +462,7 @@ func (zt *ZoneTopology) maybeWarnHighCardinalityLocked() {
 	}
 	zt.cardinalityWarningEmitted = true
 	zt.log.Info(
-		"observed unusually high zone cardinality — verify topology.target_zone_label points at a low-cardinality SD label (zone names), not an instance or pod identifier",
+		"observed unusually high zone cardinality across collectors and/or targets — verify topology.zoneLabel (node side) and topology.target_zone_label (target side) point at low-cardinality labels (zone names), not instance/pod identifiers",
 		"distinctZones", zt.distinctZoneHighWatermark,
 		"threshold", cardinalityWarnThreshold,
 	)

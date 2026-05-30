@@ -8,6 +8,7 @@ import (
 
 	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -108,18 +109,39 @@ type CollectorSnapshot struct {
 // including a pre-resolved DesiredZone so the reader doesn't have to
 // reach back into the (locked) ZoneTopology to recompute it.
 //
+// Labels are shared by value because labels.Labels is immutable after
+// the target is constructed — no copy is required for safety. CollectorName
+// is the one field that the allocator mutates, and it is captured here as
+// a string value (not a pointer) at the moment of snapshot.
+//
 // Like CollectorSnapshot, the fields are read-only — callers must not
 // mutate the snapshot.
 type TargetItemSnapshot struct {
 	Hash          target.ItemHash
 	JobName       string
 	TargetURL     string
+	Labels        labels.Labels
 	CollectorName string
 	// DesiredZone is the zone the target wants, resolved through the
 	// attached ZoneTopology (label first, node fallback second) at the
 	// moment of snapshot. Empty string when zone awareness is off or
 	// the target has no zone metadata.
 	DesiredZone string
+}
+
+// GetNodeName returns the target's node name using the same precedence
+// rules target.Item.GetNodeName applies. Exposed on the snapshot so
+// HTTP handlers can render node information without dereferencing the
+// live target pointer.
+func (s TargetItemSnapshot) GetNodeName() string {
+	return target.NodeNameFromLabels(s.Labels)
+}
+
+// GetEndpointSliceName returns the EndpointSlice name carried on the
+// target's labels, or "" if the target was not discovered via
+// EndpointSlice SD. Matches target.Item.GetEndpointSliceName.
+func (s TargetItemSnapshot) GetEndpointSliceName() string {
+	return target.EndpointSliceNameFromLabels(s.Labels)
 }
 
 type Allocator interface {

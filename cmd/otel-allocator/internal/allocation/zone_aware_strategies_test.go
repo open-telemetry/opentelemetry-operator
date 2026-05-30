@@ -251,6 +251,51 @@ func TestZoneAwareConsistentHashing_DeterministicWithinZone(t *testing.T) {
 	}
 }
 
+func TestZoneAware_LateTopologyAttachReassignsExistingTargets(t *testing.T) {
+	// Regression for the "stuck cross-zone" bug: when targets are
+	// loaded BEFORE zone awareness is enabled, they get placed by the
+	// pre-feature global path and end up cross-zone. Attaching a
+	// topology afterwards must re-run the assignment so those targets
+	// move into their desired zones — without this step the targets
+	// stay cross-zone until the next discovery cycle, silently
+	// breaking the egress-cost guarantee operators expect from
+	// zone-aware allocation.
+	for _, s := range zoneAwareStrategies {
+		t.Run(s, func(t *testing.T) {
+			a, err := New(s, logger)
+			require.NoError(t, err)
+			// Collectors AND targets arrive while zone-aware is off.
+			cols := MakeNCollectorsWithZones(3, 0, map[int]string{
+				0: "zone-a",
+				1: "zone-b",
+				2: "zone-c",
+			})
+			a.SetCollectors(cols)
+			a.SetTargets([]*target.Item{
+				newTargetWithZone("scrape", "preloaded-a:9100", "zone-a"),
+				newTargetWithZone("scrape", "preloaded-b:9100", "zone-b"),
+				newTargetWithZone("scrape", "preloaded-c:9100", "zone-c"),
+			})
+
+			// Every target now sits on some collector via the global
+			// path. Attach the topology — they must move to their
+			// desired zones.
+			zt, err := NewZoneTopology(logger, testTargetZoneLabel)
+			require.NoError(t, err)
+			a.SetZoneTopology(zt)
+
+			collectorsNow := a.Collectors()
+			for _, it := range a.TargetItems() {
+				desired := it.Labels.Get(testTargetZoneLabel)
+				assigned := collectorsNow[it.CollectorName].Zone
+				assert.Equal(t, desired, assigned,
+					"target %q wants zone %q but stayed on %q — late topology attach did not re-run assignment",
+					it.TargetURL, desired, assigned)
+			}
+		})
+	}
+}
+
 func TestZoneAware_LateTopologyAttachRebuildsZoneCache(t *testing.T) {
 	// Regression for the "late attach" bug: when SetZoneTopology is
 	// called after SetCollectors has already populated the strategy,
