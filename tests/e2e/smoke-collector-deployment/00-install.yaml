@@ -1,0 +1,63 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+  annotations:
+    regular-annotation: regular-value
+spec:
+  mode: deployment
+  # pinned image so we can assert the version label is derived from it
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.121.0
+  # scheduling: nodeSelector + affinity
+  nodeSelector:
+    kubernetes.io/os: linux
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+  # pod-spec extras
+  podAnnotations:
+    pod-annotation1: value1
+    pod-annotation2: value2
+  shareProcessNamespace: true
+  podDnsConfig:
+    nameservers:
+      - 8.8.8.8
+    searches:
+      - my.dns.search.suffix
+  initContainers:
+    - name: init-test-echo
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'echo "init done"']
+  additionalContainers:
+    - name: alpine
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'while true; do sleep 30; done']
+  # service / networking
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  trafficDistribution: PreferClose
+  ports:
+    - name: extra-port
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

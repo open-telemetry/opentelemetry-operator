@@ -1,0 +1,47 @@
+# Asserts the daemonset-mode collector propagates host-level and pod-spec fields
+# onto the reconciled DaemonSet.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smoke-collector-collector
+  annotations:
+    regular-annotation: regular-value
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      annotations:
+        pod-annotation1: value1
+        pod-annotation2: value2
+    spec:
+      hostNetwork: true
+      hostPID: true
+      terminationGracePeriodSeconds: 600
+      nodeSelector:
+        kubernetes.io/os: linux
+      (affinity != null): true
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+        searches:
+          - my.dns.search.suffix
+      initContainers:
+        - name: init-test-echo
+      (length(containers[?name == 'alpine'])): 1
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+status:
+  (image != ''): true
+  (version != ''): true
+  scale:
+    (replicas >= `1`): true
+    (statusReplicas != ''): true
