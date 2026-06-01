@@ -33,7 +33,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.91.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.91.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/prometheus/common v0.67.5
+	github.com/prometheus/common v0.68.0
 	github.com/prometheus/prometheus v0.311.3
 	github.com/shirou/gopsutil/v4 v4.26.4
 	github.com/spf13/pflag v1.0.10
