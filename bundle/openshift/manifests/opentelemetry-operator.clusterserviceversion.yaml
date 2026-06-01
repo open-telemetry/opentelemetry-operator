@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-05-28T13:14:10Z"
+    createdAt: "2026-06-01T12:36:33Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -497,6 +497,14 @@ spec:
           - patch
           - update
         - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets
@@ -608,8 +616,8 @@ spec:
                 - name: STANDALONE_WEBHOOK_REPLICAS
                   value: "1"
                 - name: RELATED_IMAGE_OPERATOR
-                  value: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.140.0-380-g87e3b142
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.140.0-380-g87e3b142
+                  value: ghcr.io/pavolloffay/opentelemetry-operator:latest
+                image: ghcr.io/pavolloffay/opentelemetry-operator:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -702,7 +710,7 @@ spec:
   provider:
     name: OpenTelemetry Community
   relatedImages:
-  - image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.140.0-380-g87e3b142
+  - image: ghcr.io/pavolloffay/opentelemetry-operator:latest
     name: operator
   version: 0.150.0
   webhookdefinitions:

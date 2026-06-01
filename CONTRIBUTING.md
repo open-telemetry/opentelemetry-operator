@@ -343,6 +343,7 @@ operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:l
 The operator can be uninstalled by deleting `subscriptions.operators.coreos.com` and `clusterserviceversion.operators.coreos.com` objects from the current namespace.
 
 ```bash
+kubectl delete catalogsources.operators.coreos.com --all
 kubectl delete clusterserviceversion.operators.coreos.com --all
 kubectl delete subscriptions.operators.coreos.com --all
 ```

@@ -2,16 +2,28 @@ change_type: enhancement
 
 component: auto-instrumentation
 
-note: Add standalone pod mutation webhook deployment for High Availability
+note: Add standalone pod webhook deployment for High Availability
 
 issues: [5010]
 
 subtext: |
-  The pod mutation webhook (auto-instrumentation and sidecar injection) can now be deployed
+  The pod webhook (auto-instrumentation and sidecar injection) can now be deployed
   as a standalone Deployment, enabling independent scaling without leader election.
 
-  On Kubernetes (make deploy), the webhook continues to run as part of the operator deployment.
+  **OpenShift with OLM (operator-managed):**
+  When `ENABLE_STANDALONE_WEBHOOK=true`, the operator automatically creates and manages
+  a standalone pod webhook Deployment. TLS certificates are provisioned via OpenShift
+  service serving certificates (service-ca operator).
 
-  On OpenShift (OLM), the operator automatically creates and manages a standalone webhook
-  Deployment. To scale the webhook, set `STANDALONE_WEBHOOK_REPLICAS=N` via
-  Subscription.spec.config.env (default: 1 replica).
+  Configure via Subscription.spec.config.env:
+  - `ENABLE_STANDALONE_WEBHOOK=true` - Enable standalone webhook deployment
+  - `STANDALONE_WEBHOOK_REPLICAS=N` - Number of webhook replicas (default: 1)
+  - `RELATED_IMAGE_OPERATOR` - Operator image used for the webhook deployment
+
+  **Kubernetes with cert-manager (user-managed):**
+  On Kubernetes, the standalone webhook is NOT operator-managed. Users must deploy
+  the webhook manually using the provided kustomize overlays:
+  `kustomize build config/overlays/standalone-webhook | kubectl apply -f -`
+
+  **Kubernetes without cert-manager:**
+  The webhook continues to run as part of the operator deployment (default behavior).

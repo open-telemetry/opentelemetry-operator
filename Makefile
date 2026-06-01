@@ -325,7 +325,8 @@ add-rbac-permissions-to-operator: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: install-gateway-api-crds set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default > out.yaml
+	#$(KUSTOMIZE) build config/default | kubectl apply -f -
 	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config

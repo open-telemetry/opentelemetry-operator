@@ -19,6 +19,7 @@ import (
 	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
@@ -306,6 +307,8 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
+		// OLM types needed for standalone webhook deployment owner references
+		utilruntime.Must(operatorsv1alpha1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
@@ -859,7 +862,41 @@ func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts za
 
 	addHealthChecks(mgr, true)
 
-	ctx := ctrl.SetupSignalHandler()
+	// Create a cancellable context for graceful shutdown on TLS profile change
+	signalCtx := ctrl.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(signalCtx)
+	defer cancel()
+
+	// Setup TLS profile watcher for graceful restart on TLS profile change (OpenShift only).
+	// When the cluster's TLS security profile changes, the watcher detects this and
+	// cancels the context, triggering a graceful shutdown. The webhook pod will restart
+	// and apply the new TLS settings.
+	if cfg.TLS.UseClusterProfile {
+		tempClient, errClient := client.New(restConfig, client.Options{Scheme: scheme})
+		if errClient != nil {
+			setupLog.Error(errClient, "unable to create temporary client for TLS profile fetch")
+			os.Exit(1)
+		}
+
+		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(context.Background(), tempClient)
+		if err != nil {
+			setupLog.Error(err, "unable to get initial TLS profile from cluster")
+			os.Exit(1)
+		}
+
+		watcher := &openshifttls.SecurityProfileWatcher{
+			Client:                mgr.GetClient(),
+			InitialTLSProfileSpec: initialTLSProfileSpec,
+			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
+				setupLog.Info("TLS security profile changed, triggering graceful restart")
+				cancel()
+			},
+		}
+		if err = watcher.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to setup TLS profile watcher")
+			os.Exit(1)
+		}
+	}
 
 	setupLog.Info("starting auto-instrumentation webhook")
 	if err := mgr.Start(ctx); err != nil {

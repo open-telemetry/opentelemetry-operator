@@ -1,17 +1,19 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// Package webhookdeployment manages the standalone auto-instrumentation webhook deployment.
+// Package webhookdeployment manages the standalone pod webhook deployment.
 // When EnableStandaloneWebhook is set, the operator creates a separate Deployment, Service, and
 // MutatingWebhookConfiguration for pod mutation, allowing independent scaling of the webhook.
 package webhookdeployment
 
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list;watch
 
 import (
 	"context"
 	"fmt"
 
+	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,15 +25,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 const (
 	// Resource names.
-	webhookName = "opentelemetry-operator-auto-instrumentation-webhook"
+	webhookName = "opentelemetry-operator-pod-webhook"
 
 	// Label values.
-	componentWebhook = "auto-instrumentation-webhook"
+	componentWebhook = "pod-webhook"
 	managedByValue   = "opentelemetry-operator"
 
 	// Ports.
@@ -43,6 +46,12 @@ const (
 
 	// Operator's MutatingWebhookConfiguration name (set by kustomize).
 	operatorWebhookConfigName = "opentelemetry-operator-mutating-webhook-configuration"
+
+	// Operator resource names for owner references.
+	operatorDeploymentName = "opentelemetry-operator-controller-manager"
+
+	// Certificate secret name (provisioned by OpenShift service-ca).
+	certSecretName = webhookName + "-cert"
 )
 
 // Params holds the parameters for creating webhook deployment resources.
@@ -70,7 +79,14 @@ func NewParams(c client.Client, cfg config.Config) (Params, error) {
 	}, nil
 }
 
+// isOpenShift returns true if the operator is running on OpenShift.
+func isOpenShift(cfg config.Config) bool {
+	return cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable
+}
+
 // Reconcile creates or updates the webhook Deployment, Service, and MutatingWebhookConfiguration.
+// This function only manages the standalone webhook on OpenShift with OLM. On Kubernetes with
+// cert-manager, users must deploy the webhook manually using kustomize overlays.
 func Reconcile(ctx context.Context, params Params) error {
 	logger := log.FromContext(ctx)
 
@@ -78,19 +94,39 @@ func Reconcile(ctx context.Context, params Params) error {
 		return nil
 	}
 
-	logger.Info("Reconciling auto-instrumentation webhook deployment",
+	// Only OpenShift is supported for operator-managed standalone webhook.
+	// On Kubernetes with cert-manager, users deploy the webhook manually via kustomize.
+	if !isOpenShift(params.Config) {
+		logger.Info("Standalone webhook is only operator-managed on OpenShift. On Kubernetes, deploy the webhook manually using kustomize overlays (config/overlays/standalone-webhook).")
+		return nil
+	}
+
+	logger.Info("Reconciling pod webhook deployment",
 		"replicas", params.Config.StandaloneWebhookReplicas,
 		"namespace", params.Namespace)
 
-	if err := reconcileService(ctx, params); err != nil {
+	// Get the operator Deployment for owner reference (namespace-scoped resources)
+	operatorDeployment := &appsv1.Deployment{}
+	if err := params.Client.Get(ctx, client.ObjectKey{Name: operatorDeploymentName, Namespace: params.Namespace}, operatorDeployment); err != nil {
+		return fmt.Errorf("failed to get operator deployment for owner reference: %w", err)
+	}
+
+	// Find the CSV that owns the operator deployment (for cluster-scoped owner reference).
+	// OLM generates dynamic names for ClusterRoleBindings, so we use the CSV instead.
+	csv, err := findOwnerCSV(ctx, params, operatorDeployment)
+	if err != nil {
+		return fmt.Errorf("failed to find owner CSV for cluster-scoped resources: %w", err)
+	}
+
+	if err := reconcileService(ctx, params, operatorDeployment); err != nil {
 		return fmt.Errorf("failed to reconcile webhook service: %w", err)
 	}
 
-	if err := reconcileDeployment(ctx, params); err != nil {
+	if err := reconcileDeployment(ctx, params, operatorDeployment); err != nil {
 		return fmt.Errorf("failed to reconcile webhook deployment: %w", err)
 	}
 
-	if err := reconcileMutatingWebhookConfiguration(ctx, params); err != nil {
+	if err := reconcileMutatingWebhookConfiguration(ctx, params, csv); err != nil {
 		return fmt.Errorf("failed to reconcile mutating webhook configuration: %w", err)
 	}
 
@@ -121,17 +157,63 @@ func selectorLabels() map[string]string {
 	}
 }
 
-func reconcileService(ctx context.Context, params Params) error {
+// findOwnerCSV finds the ClusterServiceVersion that owns the operator deployment.
+// This is used for setting owner references on cluster-scoped resources (MutatingWebhookConfiguration).
+// OLM generates dynamic names for ClusterRoleBindings with hashes, so we use the CSV instead.
+func findOwnerCSV(ctx context.Context, params Params, deployment *appsv1.Deployment) (*operatorsv1alpha1.ClusterServiceVersion, error) {
+	// The operator deployment is owned by the CSV via owner references
+	for _, ownerRef := range deployment.OwnerReferences {
+		if ownerRef.Kind == "ClusterServiceVersion" && ownerRef.APIVersion == "operators.coreos.com/v1alpha1" {
+			csv := &operatorsv1alpha1.ClusterServiceVersion{}
+			if err := params.Client.Get(ctx, client.ObjectKey{Name: ownerRef.Name, Namespace: params.Namespace}, csv); err != nil {
+				return nil, fmt.Errorf("failed to get CSV %s: %w", ownerRef.Name, err)
+			}
+			return csv, nil
+		}
+	}
+
+	// Fallback: list CSVs in the namespace and find the one that manages this deployment
+	csvList := &operatorsv1alpha1.ClusterServiceVersionList{}
+	if err := params.Client.List(ctx, csvList, client.InNamespace(params.Namespace)); err != nil {
+		return nil, fmt.Errorf("failed to list CSVs: %w", err)
+	}
+
+	for i := range csvList.Items {
+		csv := &csvList.Items[i]
+		// Check if the CSV's deployment spec matches our deployment name
+		for _, dep := range csv.Spec.InstallStrategy.StrategySpec.DeploymentSpecs {
+			if dep.Name == deployment.Name {
+				return csv, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no CSV found that owns deployment %s", deployment.Name)
+}
+
+func reconcileService(ctx context.Context, params Params, owner *appsv1.Deployment) error {
 	logger := log.FromContext(ctx)
+
+	// OpenShift service serving certificates - auto-provisions TLS certs
+	annotations := map[string]string{
+		"service.beta.openshift.io/serving-cert-secret-name": certSecretName,
+	}
 
 	desired := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      webhookName,
-			Namespace: params.Namespace,
-			Labels:    labels(),
-			Annotations: map[string]string{
-				// OpenShift service serving certificates - auto-provisions TLS certs
-				"service.beta.openshift.io/serving-cert-secret-name": webhookName + "-cert",
+			Name:        webhookName,
+			Namespace:   params.Namespace,
+			Labels:      labels(),
+			Annotations: annotations,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "apps/v1",
+					Kind:               "Deployment",
+					Name:               owner.Name,
+					UID:                owner.UID,
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -166,20 +248,29 @@ func reconcileService(ctx context.Context, params Params) error {
 	return params.Client.Update(ctx, existing)
 }
 
-func reconcileDeployment(ctx context.Context, params Params) error {
+func reconcileDeployment(ctx context.Context, params Params, owner *appsv1.Deployment) error {
 	logger := log.FromContext(ctx)
 
 	replicas := params.Config.StandaloneWebhookReplicas
 	if replicas == 0 {
 		replicas = 1
 	}
-	certSecretName := webhookName + "-cert"
 
 	desired := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      webhookName,
 			Namespace: params.Namespace,
 			Labels:    labels(),
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "apps/v1",
+					Kind:               "Deployment",
+					Name:               owner.Name,
+					UID:                owner.UID,
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -285,18 +376,30 @@ func reconcileDeployment(ctx context.Context, params Params) error {
 	return params.Client.Update(ctx, existing)
 }
 
-func reconcileMutatingWebhookConfiguration(ctx context.Context, params Params) error {
+func reconcileMutatingWebhookConfiguration(ctx context.Context, params Params, owner *operatorsv1alpha1.ClusterServiceVersion) error {
 	logger := log.FromContext(ctx)
 
 	scope := admissionregistrationv1.AllScopes
 
+	// OpenShift injects the CA bundle from the service serving cert
+	annotations := map[string]string{
+		"service.beta.openshift.io/inject-cabundle": "true",
+	}
+
 	desired := &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   webhookName,
-			Labels: labels(),
-			Annotations: map[string]string{
-				// OpenShift injects the CA bundle from the service serving cert
-				"service.beta.openshift.io/inject-cabundle": "true",
+			Name:        webhookName,
+			Labels:      labels(),
+			Annotations: annotations,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "operators.coreos.com/v1alpha1",
+					Kind:               "ClusterServiceVersion",
+					Name:               owner.Name,
+					UID:                owner.UID,
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(false),
+				},
 			},
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
