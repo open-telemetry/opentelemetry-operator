@@ -285,7 +285,7 @@ This allows gradual migration: users can switch to labels at their own pace whil
 #### Deprecation path
 
 1. **v1beta1**: Both labels and annotations supported. Annotations deprecated but functional.
-2. **v1alpha1 removal**: Annotations no longer documented, labels become the primary mechanism. Annotations support is eventually dropped.
+2. **v1alpha1 removal**: Labels become the primary mechanism. Annotations support is dropped.
 
 #### Webhook optimization
 
