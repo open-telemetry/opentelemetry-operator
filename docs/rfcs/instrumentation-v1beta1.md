@@ -284,12 +284,20 @@ This allows gradual migration: users can switch to labels at their own pace whil
 
 #### Deprecation path
 
-1. **v1beta1**: Both labels and annotations supported. Annotations deprecated but functional.
-2. **v1alpha1 removal**: Labels become the primary mechanism. Annotations support is dropped.
+**Phase 1 — v1beta1 (transition period):**
+- Both labels and annotations supported
+- No `objectSelector` on webhook — all pods still pass through (required for annotation backwards compatibility)
+- Annotations deprecated in documentation
+- Operator logs deprecation warnings when annotations are used
 
-#### Webhook optimization
+**Phase 2 — v1alpha1 removal:**
+- Annotations support dropped
+- `objectSelector` enabled on webhook — only pods with labels are processed
+- Significant performance improvement for large clusters
 
-With labels, the operator can configure the MutatingWebhookConfiguration with an `objectSelector`:
+##### Webhook optimization (Phase 2)
+
+Once annotation support is removed, the operator can configure the MutatingWebhookConfiguration with an `objectSelector`:
 
 ```yaml
 webhooks:
@@ -303,7 +311,7 @@ webhooks:
         # ... other languages
 ```
 
-This reduces webhook invocations to only pods that have opted in via labels, improving cluster performance. Pods using legacy annotations will still pass through the webhook (no `objectSelector` match), maintaining backwards compatibility.
+This reduces webhook invocations to only pods that have opted in via labels, improving cluster performance. This optimization is only possible after annotations are no longer supported, since `objectSelector` cannot match annotations.
 
 ## CRD Spec
 
