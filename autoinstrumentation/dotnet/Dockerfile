@@ -1,8 +1,8 @@
 # To build one auto-instrumentation image for dotnet, please:
-#  - Download your dotnet auto-instrumentation artefacts to `/autoinstrumentation` directory. This is required as when instrumenting the pod,
+#  - Download your dotnet auto-instrumentation artifacts to the `/autoinstrumentation` directory. This is required as when instrumenting the pod,
 #    one init container will be created to copy the files to your app's container.
 #  - Grant the necessary access to the files in the `/autoinstrumentation` directory.
-#  - Following environment variables are injected to the application container to enable the auto-instrumentation.
+#  - Following environment variables are injected to the application container to enable the .NET auto-instrumentation.
 #    CORECLR_ENABLE_PROFILING=1
 #    CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
 #    CORECLR_PROFILER_PATH=%InstallationLocation%/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so # for glibc based images
@@ -14,7 +14,7 @@
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
 
-FROM busybox AS downloader
+FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
 
 ARG version
 
@@ -28,6 +28,7 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip &&\
     rm opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip opentelemetry-dotnet-instrumentation-linux-musl-x64.zip &&\
     chmod -R go+r .
 
-FROM busybox
+FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+
 
 COPY --from=downloader /autoinstrumentation /autoinstrumentation
