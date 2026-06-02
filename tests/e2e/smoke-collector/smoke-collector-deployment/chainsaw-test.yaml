@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-collector-deployment
+# Consolidated smoke test for the OpenTelemetryCollector "deployment" mode.
+# Verifies that the pod-spec / service fields set on the CR are propagated to the
+# reconciled Deployment and Service, and that the collector becomes healthy.
+# Replaces the per-attribute tests: affinity-collector, additional-containers-collector,
+# node-selector-collector, smoke-init-containers, smoke-dns-config,
+# smoke-pod-annotations, smoke-pod-labels, smoke-shareprocessnamespace,
+# smoke-ports, smoke-ip-families and smoke-simplest(-v1beta1).
+#
+# Note: spec.args is intentionally NOT exercised here. The operator renders it as
+# "--<key>=<value>" collector flags, so any user-provided arg is by definition one
+# the collector binary does not recognise and crashes on startup - which is
+# incompatible with asserting that the pod becomes ready. Arg propagation is
+# covered by the unit test in internal/manifests/collector/container_test.go.
+# The update/prune reconcile path is covered by annotation-change-collector and
+# label-change-collector.
+spec:
+  bindings:
+    - name: version
+      value: (x_k8s_server_version($config))
+    - name: minorVersion
+      value: (to_number($version.minor))
+  steps:
+    - name: install
+      description: install a collector with all propagatable fields set
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+        # trafficDistribution is only honoured on k8s >= 1.31; on older API
+        # servers the field is pruned. Gate the assertion on the server version.
+        - script:
+            content: kubectl get svc smoke-collector-collector -n $NAMESPACE -o jsonpath='{.spec.trafficDistribution}' || echo ""
+            outputs:
+              - name: trafficDistribution
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `31` && $trafficDistribution == 'PreferClose') || ($minorVersion < `31` && $trafficDistribution == '')): true
