@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-app
+  template:
+    metadata:
+      name: java-app
+      labels:
+        app: java-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: tomcat:latest
+          name: java-app
+          imagePullPolicy: IfNotPresent
