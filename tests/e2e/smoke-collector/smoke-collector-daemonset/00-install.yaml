@@ -1,0 +1,61 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+  annotations:
+    regular-annotation: regular-value
+spec:
+  mode: daemonset
+  # daemonset-specific fields
+  hostNetwork: true
+  hostPID: true
+  terminationGracePeriodSeconds: 600
+  daemonSetUpdateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  # NOTE: shareProcessNamespace is intentionally NOT set here: the Kubernetes API
+  # rejects a pod that sets both shareProcessNamespace and hostPID. It is covered
+  # in the deployment and statefulset smoke tests instead.
+  nodeSelector:
+    kubernetes.io/os: linux
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+  podAnnotations:
+    pod-annotation1: value1
+    pod-annotation2: value2
+  podDnsConfig:
+    nameservers:
+      - 8.8.8.8
+    searches:
+      - my.dns.search.suffix
+  initContainers:
+    - name: init-test-echo
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'echo "init done"']
+  additionalContainers:
+    - name: alpine
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'while true; do sleep 30; done']
+  # Keep the receiver config minimal: with hostNetwork=true every container port
+  # binds a node port, so we avoid declaring extra ports that could collide with
+  # other tests running in parallel.
+  config:
+    receivers:
+      jaeger:
+        protocols:
+          grpc: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]

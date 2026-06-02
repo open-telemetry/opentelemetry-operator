@@ -348,6 +348,10 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
+		// Skip collectors pending deletion
+		if instance.GetDeletionTimestamp() != nil {
+			continue
+		}
 		col := instance
 		marshaled, err := yaml.Marshal(&col)
 		if err != nil {
