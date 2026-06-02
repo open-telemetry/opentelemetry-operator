@@ -238,6 +238,7 @@ type MySpec struct {
 3. Run `make update` - generates manifests, bundles, docs
 4. Run `make precommit` - ensures everything is valid
 5. Verify CRD changes: `git diff config/crd/bases/`
+6. Add your field to one of the [smoke tests](tests/e2e/smoke-collector/)
 
 **CRITICAL:** Always run `make update` after API changes. CI will fail with "ensure-update-is-noop" if you forget.
 

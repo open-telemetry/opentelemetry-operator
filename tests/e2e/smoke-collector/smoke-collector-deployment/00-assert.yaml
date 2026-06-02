@@ -1,0 +1,59 @@
+# Asserts that every collector spec field set in 00-install.yaml is propagated
+# to the reconciled Deployment, its pod template, and the Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smoke-collector-collector
+  annotations:
+    regular-annotation: regular-value
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: smoke-collector-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: 0.121.0
+spec:
+  template:
+    metadata:
+      annotations:
+        pod-annotation1: value1
+        pod-annotation2: value2
+    spec:
+      shareProcessNamespace: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      (affinity != null): true
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+        searches:
+          - my.dns.search.suffix
+      initContainers:
+        - name: init-test-echo
+      # additionalContainers landed
+      (length(containers[?name == 'alpine'])): 1
+status:
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smoke-collector-collector
+spec:
+  # NOTE: trafficDistribution is a k8s >= 1.31 Service field; older API servers
+  # prune it. It is asserted with a version gate in chainsaw-test.yaml instead.
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4
+  (length(ports[?name == 'extra-port'])): 1
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+status:
+  (image != ''): true
+  (version != ''): true
+  scale:
+    replicas: 1
+    statusReplicas: "1/1"
