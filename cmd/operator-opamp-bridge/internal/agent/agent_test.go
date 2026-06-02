@@ -580,6 +580,55 @@ func TestAgent_getHealth(t *testing.T) {
 	}
 }
 
+func TestAgent_getEffectiveConfig(t *testing.T) {
+	t.Run("skip terminating", func(t *testing.T) {
+		mockClient := &mockOpampClient{}
+		conf := config.NewConfig(logr.Discard())
+		loadErr := config.LoadFromFile(conf, agentTestFileName)
+		require.NoError(t, loadErr, "should be able to load config")
+
+		now := metav1.Now()
+		aliveCollector := v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testCollectorName,
+				Namespace: testNamespace,
+				Labels: map[string]string{
+					operator.ManagedLabelKey: "true",
+				},
+			},
+		}
+		terminatingCollector := v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      otherCollectorName,
+				Namespace: testNamespace,
+				Labels: map[string]string{
+					operator.ManagedLabelKey: "true",
+				},
+				// Required at least one finalizer when DeletionTimestamp is set
+				Finalizers:        []string{"opentelemetrycollector.opentelemetry.io/finalizer-test"},
+				DeletionTimestamp: &now,
+			},
+		}
+		collectorList := &v1beta1.OpenTelemetryCollectorList{
+			Items: []v1beta1.OpenTelemetryCollector{aliveCollector, terminatingCollector},
+		}
+
+		applier := getFakeApplier(t, conf, collectorList)
+		mp := newMockProxy(nil, nil, nil)
+		agent := NewAgent(l, applier, conf, mockClient, mp)
+		err := agent.Start()
+		defer agent.Shutdown()
+		require.NoError(t, err, "should be able to start agent")
+
+		effectiveConfig, err := agent.getEffectiveConfig(t.Context())
+		require.NoError(t, err, "should be able to get effective config")
+
+		cfgMap := effectiveConfig.GetConfigMap().GetConfigMap()
+		assert.Contains(t, cfgMap, testCollectorKey, "alive collector must be reported as effective")
+		assert.NotContains(t, cfgMap, otherCollectorKey, "terminating collector must not be reported as effective")
+	})
+}
+
 func TestAgent_onMessage(t *testing.T) {
 	mockInstanceId := uuid.New()
 	type fields struct {
