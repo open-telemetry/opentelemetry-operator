@@ -2431,7 +2431,7 @@ func TestParentResourceLabels(t *testing.T) {
 						},
 					},
 					Spec: batchv1.JobSpec{
-						Suspend: ptr.To[bool](true),
+						Suspend: new(true),
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								RestartPolicy: corev1.RestartPolicyNever,

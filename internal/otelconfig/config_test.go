@@ -18,7 +18,6 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -814,7 +813,7 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 				{
 					Name:        "otlp-http",
 					Protocol:    "",
-					AppProtocol: ptr.To("http"),
+					AppProtocol: new("http"),
 					Port:        4318,
 					TargetPort:  intstr.FromInt32(4318),
 				},
@@ -839,7 +838,7 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 				{
 					Name:        "otlp-grpc",
 					Protocol:    "",
-					AppProtocol: ptr.To("grpc"),
+					AppProtocol: new("grpc"),
 					Port:        4317,
 					TargetPort:  intstr.FromInt32(4317),
 				},
@@ -852,7 +851,7 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 				{
 					Name:        "otlp-grpc",
 					Protocol:    "",
-					AppProtocol: ptr.To("grpc"),
+					AppProtocol: new("grpc"),
 					Port:        4317,
 					TargetPort:  intstr.FromInt32(4317),
 				},

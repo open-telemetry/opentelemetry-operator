@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 	kubeTesting "k8s.io/client-go/testing"
-	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -316,7 +315,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
 						Enabled:        true,
-						UseCertManager: ptr.To(true),
+						UseCertManager: new(true),
 					},
 				},
 			},
@@ -339,7 +338,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
 						Enabled:        true,
-						UseCertManager: ptr.To(false),
+						UseCertManager: new(false),
 					},
 				},
 			},
@@ -350,7 +349,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
 						Enabled:        true,
-						UseCertManager: ptr.To(true),
+						UseCertManager: new(true),
 					},
 				},
 			},
