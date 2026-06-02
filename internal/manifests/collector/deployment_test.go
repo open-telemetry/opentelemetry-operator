@@ -893,71 +893,71 @@ func TestGetDesiredReplicas(t *testing.T) {
 			otelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: int32Ptr(5),
+						Replicas: new(int32(5)),
 					},
 				},
 			},
-			expected: int32Ptr(5),
+			expected: new(int32(5)),
 		},
 		{
 			name: "autoscaler-without-minReplicas-spec-replicas",
 			otelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: int32Ptr(3),
+						Replicas: new(int32(3)),
 					},
 					Autoscaler: &v1beta1.AutoscalerSpec{
-						MaxReplicas: int32Ptr(10),
+						MaxReplicas: new(int32(10)),
 						// MinReplicas is nil
 					},
 				},
 			},
-			expected: int32Ptr(3),
+			expected: new(int32(3)),
 		},
 		{
 			name: "autoscaler-with-minReplicas",
 			otelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: int32Ptr(2),
+						Replicas: new(int32(2)),
 					},
 					Autoscaler: &v1beta1.AutoscalerSpec{
-						MinReplicas: int32Ptr(4),
-						MaxReplicas: int32Ptr(10),
+						MinReplicas: new(int32(4)),
+						MaxReplicas: new(int32(10)),
 					},
 				},
 			},
-			expected: int32Ptr(4),
+			expected: new(int32(4)),
 		},
 		{
 			name: "autoscaler-with-minReplicas-diff-spec-replicas",
 			otelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: int32Ptr(1),
+						Replicas: new(int32(1)),
 					},
 					Autoscaler: &v1beta1.AutoscalerSpec{
-						MinReplicas: int32Ptr(6),
-						MaxReplicas: int32Ptr(20),
+						MinReplicas: new(int32(6)),
+						MaxReplicas: new(int32(20)),
 					},
 				},
 			},
-			expected: int32Ptr(6),
+			expected: new(int32(6)),
 		},
 		{
 			name: "autoscaler-with-minReplicas-spec-replicas-greater",
 			otelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Replicas: int32Ptr(5),
+						Replicas: new(int32(5)),
 					},
 					Autoscaler: &v1beta1.AutoscalerSpec{
-						MinReplicas: int32Ptr(3),
-						MaxReplicas: int32Ptr(10),
+						MinReplicas: new(int32(3)),
+						MaxReplicas: new(int32(10)),
 					},
 				},
 			},
-			expected: int32Ptr(5),
+			expected: new(int32(5)),
 		},
 	}
 
@@ -972,10 +972,6 @@ func TestGetDesiredReplicas(t *testing.T) {
 			}
 		})
 	}
-}
-
-func int32Ptr(i int32) *int32 {
-	return &i
 }
 
 func TestDeploymentHostPIDCanBeSet(t *testing.T) {
