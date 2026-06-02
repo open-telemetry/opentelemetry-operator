@@ -76,6 +76,17 @@
       "matchStrings": [
         "image: kindest/node:(?<currentValue>v[\\d\\.]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update BASE_IMAGE build-arg in test e2e publish workflow",
+      "datasourceTemplate": "docker",
+      "fileMatch": [
+        "(^|/)\\.github/workflows/publish-test-e2e-images\\.yaml$"
+      ],
+      "matchStrings": [
+        "build-args:\\s*['\"]BASE_IMAGE=(?<depName>[^:@'\"\\s]+):(?<currentValue>[^@'\"\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})['\"]"
+      ]
     }
   ],
   "packageRules": [
@@ -180,8 +191,15 @@
     },
     {
       "matchManagers": ["dockerfile"],
-      "matchFileNames": ["tests/test-e2e-apps/**"],
-      "enabled": false
+      "matchFileNames": ["Dockerfile", "cmd/**/Dockerfile", "autoinstrumentation/**/Dockerfile"],
+      "groupName": "production base images"
+    },
+    {
+      "matchManagers": ["dockerfile", "regex"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["tests/**/Dockerfile", ".github/workflows/publish-test-e2e-images.yaml"],
+      "groupName": "test base images",
+      "schedule": ["on monday"]
     }
   ]
 }
