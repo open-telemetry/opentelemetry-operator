@@ -10,10 +10,13 @@ EXPECTED_MIN=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath
 EXPECTED_CIPHERS=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath='{.data.expect_ciphers}')
 echo "Verifying profile: min_version=$EXPECTED_MIN, expect_ciphers=$EXPECTED_CIPHERS"
 
-# Get the collector ConfigMap name (it includes a hash suffix)
-CM_NAME=$(kubectl get configmap -n "$NAMESPACE" -l app.kubernetes.io/component=opentelemetry-collector \
-  -o jsonpath='{.items[0].metadata.name}')
-[ -n "$CM_NAME" ] || fail "collector ConfigMap not found"
+# Get the collector ConfigMap name from the deployment's volume reference.
+# The operator intentionally keeps the previous ConfigMap for one extra reconcile cycle
+# (configVersionsToKeep+1) to support rollbacks, so listing by label can return a stale
+# ConfigMap. Reading from the deployment volume spec always gives the current one.
+CM_NAME=$(kubectl get deployment tls-profile-test-collector -n "$NAMESPACE" \
+  -o jsonpath='{.spec.template.spec.volumes[?(@.name=="otc-internal")].configMap.name}' 2>/dev/null || true)
+[ -n "$CM_NAME" ] || fail "collector ConfigMap not found in deployment volume spec"
 
 # Extract the collector.yaml from the ConfigMap and convert YAML to JSON
 CONFIG=$(kubectl get configmap "$CM_NAME" -n "$NAMESPACE" -o jsonpath='{.data.collector\.yaml}' | yq -o json)

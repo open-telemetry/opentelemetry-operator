@@ -4,7 +4,7 @@
 MUST_GATHER_DIR=$(mktemp -d)
 
 # Run the must-gather script
-oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather:latest -- /usr/bin/gather --operator-namespace $otelnamespace
+oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather:main -- /usr/bin/gather --operator-namespace $otelnamespace
 
 # Define required files and directories
 REQUIRED_ITEMS=(
@@ -69,9 +69,17 @@ for item in "${OPTIONAL_ITEMS[@]}"; do
   fi
 done
 
-# Validate output with omc
+# Validate output with omc — download the binary matching the current host OS/arch
 OMC=/tmp/omc
-curl -sL -o "$OMC" https://github.com/gmeghnag/omc/releases/latest/download/omc_Linux_x86_64
+_OS=$(uname -s)
+_ARCH=$(uname -m)
+case "${_OS}/${_ARCH}" in
+  Darwin/arm64)  _OMC_BIN="omc_Darwin_arm64" ;;
+  Darwin/x86_64) _OMC_BIN="omc_Darwin_x86_64" ;;
+  Linux/aarch64) _OMC_BIN="omc_Linux_arm64" ;;
+  *)             _OMC_BIN="omc_Linux_x86_64" ;;
+esac
+curl -sL -o "$OMC" "https://github.com/gmeghnag/omc/releases/latest/download/${_OMC_BIN}"
 chmod +x "$OMC"
 
 OMC_ROOT=$(find "$MUST_GATHER_DIR" -maxdepth 1 -type d -name '*-must-gather-sha256-*' | head -1)
