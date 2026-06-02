@@ -620,7 +620,7 @@ func TestAgent_getEffectiveConfig(t *testing.T) {
 		defer agent.Shutdown()
 		require.NoError(t, err, "should be able to start agent")
 
-		effectiveConfig, err := agent.getEffectiveConfig(context.Background())
+		effectiveConfig, err := agent.getEffectiveConfig(t.Context())
 		require.NoError(t, err, "should be able to get effective config")
 
 		cfgMap := effectiveConfig.GetConfigMap().GetConfigMap()
