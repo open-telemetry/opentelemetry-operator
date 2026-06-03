@@ -2,7 +2,6 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
   name: instrumentation-go
 spec:
   skip: true # temporary until https://github.com/open-telemetry/opentelemetry-operator/pull/5181 is merged
