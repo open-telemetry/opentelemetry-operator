@@ -11,6 +11,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -81,18 +83,54 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	for i := range list.Items {
 		toUpgrade := list.Items[i]
 		upgraded, blockedVersions := u.upgrade(ctx, toUpgrade)
+
+		var upgradeErr error
 		if !reflect.DeepEqual(upgraded, toUpgrade) {
 			// use update instead of patch because the patch does not upgrade annotations
 			if err := u.Client.Update(ctx, upgraded); err != nil {
+				upgradeErr = err
 				u.Logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
-				continue
 			}
 		}
+
+		statusUpdated := false
 		// Update status if the blocked versions set has changed (including clearing it when no longer blocked).
 		if !maps.Equal(upgraded.Status.UpgradeBlockedVersions, blockedVersions) {
 			upgraded.Status.UpgradeBlockedVersions = blockedVersions
+			statusUpdated = true
+		}
+
+		if upgraded.Status.ObservedGeneration != upgraded.Generation {
+			upgraded.Status.ObservedGeneration = upgraded.Generation
+			statusUpdated = true
+		}
+
+		conditionStatus := metav1.ConditionTrue
+		reason := "Reconciled"
+		message := "Successfully reconciled"
+		if upgradeErr != nil {
+			conditionStatus = metav1.ConditionFalse
+			reason = "ReconcileError"
+			message = upgradeErr.Error()
+		}
+
+		newCondition := metav1.Condition{
+			Type:               "Ready",
+			Status:             conditionStatus,
+			ObservedGeneration: upgraded.Generation,
+			Reason:             reason,
+			Message:            message,
+			LastTransitionTime: metav1.Now(),
+		}
+		existingCondition := meta.FindStatusCondition(upgraded.Status.Conditions, newCondition.Type)
+		if existingCondition == nil || existingCondition.Status != newCondition.Status || existingCondition.Reason != newCondition.Reason || existingCondition.Message != newCondition.Message || existingCondition.ObservedGeneration != newCondition.ObservedGeneration {
+			statusUpdated = true
+		}
+		meta.SetStatusCondition(&upgraded.Status.Conditions, newCondition)
+
+		if statusUpdated {
 			if err := u.Client.Status().Update(ctx, upgraded); err != nil {
-				u.Logger.Error(err, "failed to update status for blocked upgrade", "name", upgraded.Name, "namespace", upgraded.Namespace)
+				u.Logger.Error(err, "failed to update status for instrumentation", "name", upgraded.Name, "namespace", upgraded.Namespace)
 			}
 		}
 	}
