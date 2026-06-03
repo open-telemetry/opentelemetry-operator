@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: instrumentation-go
 spec:
+  skip: true # temporary until https://github.com/open-telemetry/opentelemetry-operator/pull/5181 is merged
   bindings:
     - name: podLabelSelector
       value: app=my-golang
