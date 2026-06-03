@@ -1,0 +1,8 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector
+status:
+  observedGeneration: 2
+  conditions:
+  - observedGeneration: 2

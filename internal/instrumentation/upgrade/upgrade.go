@@ -22,6 +22,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
+const (
+	reasonReconcileError      = "ReconcileError"
+	msgSuccessfullyReconciled = "Successfully reconciled"
+	reasonReconciled          = "Reconciled"
+	conditionTypeReady        = "Ready"
+)
+
 type autoInstConfig struct {
 	id           string
 	enabled      bool
@@ -106,16 +113,16 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 		}
 
 		conditionStatus := metav1.ConditionTrue
-		reason := "Reconciled"
-		message := "Successfully reconciled"
+		reason := reasonReconciled
+		message := msgSuccessfullyReconciled
 		if upgradeErr != nil {
 			conditionStatus = metav1.ConditionFalse
-			reason = "ReconcileError"
+			reason = reasonReconcileError
 			message = upgradeErr.Error()
 		}
 
 		newCondition := metav1.Condition{
-			Type:               "Ready",
+			Type:               conditionTypeReady,
 			Status:             conditionStatus,
 			ObservedGeneration: upgraded.Generation,
 			Reason:             reason,

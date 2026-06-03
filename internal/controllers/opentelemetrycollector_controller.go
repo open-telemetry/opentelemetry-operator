@@ -20,7 +20,6 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -287,31 +286,6 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects, ownedObjects)
-	instance.Status.ObservedGeneration = instance.Generation
-	if err != nil {
-		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               "Ready",
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: instance.Generation,
-			Reason:             "ReconcileError",
-			Message:            err.Error(),
-			LastTransitionTime: metav1.Now(),
-		})
-	} else {
-		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               "Ready",
-			Status:             metav1.ConditionTrue,
-			ObservedGeneration: instance.Generation,
-			Reason:             "Reconciled",
-			Message:            "Successfully reconciled",
-			LastTransitionTime: metav1.Now(),
-		})
-	}
-
-	if updateErr := r.Status().Update(ctx, &instance); updateErr != nil {
-		log.Error(updateErr, "failed to update OpenTelemetryCollector status")
-	}
-
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
