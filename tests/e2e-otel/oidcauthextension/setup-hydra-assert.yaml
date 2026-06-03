@@ -1,0 +1,6 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-hydra
+status:
+  succeeded: 1

@@ -1,0 +1,77 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otelcol-cloudwatch
+spec:
+  serviceAccount: otelcol-cloudwatch
+  volumes:
+    - name: aws-iam-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: sts.amazonaws.com
+              expirationSeconds: 86400
+              path: token
+  volumeMounts:
+    - name: aws-iam-token
+      mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+      readOnly: true
+  env:
+    - name: AWSREGION
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: region
+    - name: LOGGROUPNAME
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: log_group_name
+    - name: AWS_ROLE_ARN
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: base_role_arn
+    - name: AWS_WEB_IDENTITY_TOKEN_FILE
+      value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+      # AWS CloudWatch Logs exporter with STS configuration
+      awscloudwatchlogs:
+        log_group_name: "${env:LOGGROUPNAME}"
+        log_stream_name: "tracing-otelcol-stream"
+        raw_log: true
+        region: "${env:AWSREGION}"
+        log_retention: 1
+        role_arn: "arn:aws:iam::123456789012:role/invalid-role-for-testing"
+        tags: { 'tracing-otel': 'true', 'test-type': 'aws-sts-direct' }
+
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 50
+        send_batch_max_size: 100
+      # Add resource processor to include metadata
+      resource:
+        attributes:
+        - key: test.scenario
+          value: "role-arn-direct-authentication"
+          action: insert
+        - key: deployment.environment
+          value: "test"
+          action: insert
+
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [resource, batch]
+          exporters: [awscloudwatchlogs, debug]

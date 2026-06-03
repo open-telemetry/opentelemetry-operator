@@ -1,0 +1,29 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-receiver
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      prometheusremotewrite:
+        endpoint: "0.0.0.0:9090"
+
+    processors:
+      batch:
+
+    exporters:
+      debug:
+        verbosity: detailed
+        sampling_initial: 100
+        sampling_thereafter: 100
+
+    service:
+      telemetry:
+        logs:
+          level: debug
+      pipelines:
+        metrics:
+          receivers: [prometheusremotewrite]
+          processors: [batch]
+          exporters: [debug]

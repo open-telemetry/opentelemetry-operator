@@ -1,0 +1,55 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: routing
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+
+    exporters:
+      otlp/red:
+        endpoint: tempo-red.chainsaw-routecnctr.svc:4317
+        tls:
+          insecure: true
+      otlp/green:
+        endpoint: tempo-green.chainsaw-routecnctr.svc:4317
+        tls:
+          insecure: true
+      otlp/blue:
+        endpoint: tempo-blue.chainsaw-routecnctr.svc:4317
+        tls:
+          insecure: true
+
+    processors:
+
+    connectors:
+      routing:
+        error_mode: ignore
+        default_pipelines: [traces/green]
+        table:
+          - statement: route() where attributes["X-Tenant"] == "red"
+            pipelines: [traces/red]
+          - statement: route() where attributes["X-Tenant"] == "blue"
+            pipelines: [traces/blue]
+
+    service:
+      pipelines:
+        traces/in:
+          receivers: [otlp]
+          processors: []
+          exporters: [routing]
+        traces/red:
+          receivers: [routing]
+          processors: []
+          exporters: [otlp/red]
+        traces/blue:
+          receivers: [routing]
+          processors: []
+          exporters: [otlp/blue]
+        traces/green:
+          receivers: [routing]
+          processors: []
+          exporters: [otlp/green]

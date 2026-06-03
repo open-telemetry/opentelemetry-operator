@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: chainsaw-lb-backends
+  namespace: chainsaw-lb
+spec:
+  replicas: 5
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+
+    processors:
+
+    exporters:
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]

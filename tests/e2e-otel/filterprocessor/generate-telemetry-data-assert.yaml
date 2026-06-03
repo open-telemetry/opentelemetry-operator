@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: traces-red
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: traces-green
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: metrics-red
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: metrics-green
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: logs-red
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: logs-green
+status:
+  succeeded: 1

@@ -1,0 +1,58 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: tailsmp
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+      otlp:
+        endpoint: tempo-tailsmp:4317
+        tls:
+          insecure: true
+
+    processors:
+      tail_sampling:
+        decision_wait: 30s
+        num_traces: 50000
+        expected_new_traces_per_sec: 20
+        policies:
+          [
+            {
+              name: status-code-policy,
+              type: status_code,
+              status_code: {status_codes: [ERROR]}
+            },
+            {
+              name: latency-policy,
+              type: latency,
+              latency: {threshold_ms: 5000, upper_threshold_ms: 10000}
+            },
+            {
+                name: span-count-policy,
+                type: span_count,
+                span_count: {min_spans: 39, max_spans: 50}
+            },
+            {
+                name: service-name-policy,
+                type: string_attribute,
+                string_attribute:
+                {
+                  key: service.name,
+                  values: [customer],
+                },
+            },
+          ]
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling]
+          exporters: [otlp,debug]

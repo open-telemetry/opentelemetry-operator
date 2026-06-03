@@ -47,15 +47,6 @@ metadata:
 spec:
   template:
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: ingress-ready
-                operator: In
-                values:
-                - "true"
       containers:
       - env:
         - name: TEST_ENV

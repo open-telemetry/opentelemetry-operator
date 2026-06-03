@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-grpc
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=chainsaw-oidc-client-collector:4317
+        - --traces=100
+        - --otlp-insecure=true
+        - --service=telemetrygen-grpc
+        - --otlp-attributes=protocol="grpc"
+      restartPolicy: Never

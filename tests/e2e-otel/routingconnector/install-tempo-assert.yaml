@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tempo-blue
+  namespace: chainsaw-routecnctr
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tempo-red
+  namespace: chainsaw-routecnctr
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tempo-green
+  namespace: chainsaw-routecnctr
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1

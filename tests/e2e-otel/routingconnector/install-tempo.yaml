@@ -1,0 +1,31 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: red
+spec:
+  jaegerui:
+    enabled: true
+    route:
+      enabled: true
+
+---
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: blue
+spec:
+  jaegerui:
+    enabled: true
+    route:
+      enabled: true
+
+---
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: green
+spec:
+  jaegerui:
+    enabled: true
+    route:
+      enabled: true

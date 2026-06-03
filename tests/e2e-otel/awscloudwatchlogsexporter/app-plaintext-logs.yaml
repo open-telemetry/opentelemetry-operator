@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-log-plaintext-config
+data:
+  ocp_logtest.cfg: --rate 60.0 -o /log-data/app-log-plaintext.log
+
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    run: otel-logtest-plaintext
+    test: otel-logtest-plaintext
+  name: app-log-plaintext-rc
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        containerType.logging.openshift.io/app-log-plaintext: app-log-plaintext
+        sidecar.opentelemetry.io/inject: "true"
+      generateName: otel-logtest-
+      labels:
+        run: otel-logtest-plaintext
+        test: otel-logtest-plaintext
+    spec:
+      containers:
+      - env: []
+        image: quay.io/openshifttest/ocp-logtest@sha256:6e2973d7d454ce412ad90e99ce584bf221866953da42858c4629873e53778606
+        imagePullPolicy: IfNotPresent
+        name: app-log-plaintext
+        resources: {}
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /log-data
+          name: log-data
+        - mountPath: /var/lib/svt
+          name: config
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - configMap:
+          name: app-log-plaintext-config
+        name: config
+      - name: log-data
+        emptyDir: {}

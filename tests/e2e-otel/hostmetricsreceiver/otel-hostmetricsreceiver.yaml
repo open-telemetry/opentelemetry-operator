@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-hostfs-daemonset
+  namespace: chainsaw-hostmetrics
+
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities: null
+defaultAddCapabilities:
+- SYS_ADMIN
+fsGroup:
+  type: RunAsAny
+groups: []
+metadata:
+  name: otel-hostmetrics
+readOnlyRootFilesystem: true
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:serviceaccount:chainsaw-hostmetrics:otel-hostfs-daemonset
+volumes:
+- configMap
+- emptyDir
+- hostPath
+- projected
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-hstmtrs
+spec:
+  mode: daemonset
+  serviceAccount: otel-hostfs-daemonset
+  config: |
+    receivers:
+      hostmetrics:
+        root_path: /hostfs
+        collection_interval: 10s
+        scrapers:
+          cpu:
+          load:
+          memory:
+          disk:
+          filesystem:
+          network:
+          paging:
+          processes:
+          process:
+    processors:
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        metrics:
+          receivers: [hostmetrics]
+          processors: []
+          exporters: [debug]
+  volumeMounts:
+  - name: hostfs
+    mountPath: /hostfs
+    readOnly: true
+    mountPropagation: HostToContainer
+  volumes:
+  - name: hostfs
+    hostPath:
+      path: /
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule

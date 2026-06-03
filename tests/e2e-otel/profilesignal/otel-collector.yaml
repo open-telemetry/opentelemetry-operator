@@ -1,0 +1,27 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-profiles-collector
+  namespace: chainsaw-profilesignal
+spec:
+  mode: deployment
+  args:
+    feature-gates: service.profilesSupport
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: '0.0.0.0:4317'
+          http:
+            endpoint: '0.0.0.0:4318'
+
+    exporters:
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        profiles:
+          receivers: [otlp]
+          exporters: [debug]

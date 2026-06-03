@@ -1,0 +1,46 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: routingconnector
+spec:
+  namespace: chainsaw-routecnctr
+  steps:
+  - name: Create Tempo monolithic instances
+    try:
+    - apply:
+        file: install-tempo.yaml
+    - assert:
+        file: install-tempo-assert.yaml
+  - name: Check the status of Tempo Monolithc instance red
+    try:
+    - script:
+        timeout: 5m
+        content: kubectl get --namespace chainsaw-routecnctr tempomonolithics red -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  - name: Check the status of Tempo Monolithc instance blue
+    try:
+    - script:
+        timeout: 5m
+        content: kubectl get --namespace chainsaw-routecnctr tempomonolithics blue -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  - name: Check the status of Tempo Monolithc instance green
+    try:
+    - script:
+        timeout: 5m
+        content: kubectl get --namespace chainsaw-routecnctr tempomonolithics green -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  - name: Create OTEL collector instance
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Generate and send traces to the OTEL collector
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Verify traces in the Tempo instances
+    try:
+    - apply:
+        file: verify-traces.yaml
+    - assert:
+        file: verify-traces-assert.yaml

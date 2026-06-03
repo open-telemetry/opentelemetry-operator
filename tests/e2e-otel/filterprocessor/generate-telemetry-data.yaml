@@ -1,0 +1,169 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: traces-red
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: traces-red
+    spec:
+      containers:
+        - name: traces-red
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--traces=5"
+            - "--otlp-attributes=traces-colour=\"red\""
+            - "--otlp-header=traces-envtype=\"devenv\""
+            - "--telemetry-attributes=traces-env=\"dev\""
+            - "--service=red"
+            - "traces"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: traces-green
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: traces-green
+    spec:
+      containers:
+        - name: traces-green
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--traces=5"
+            - "--otlp-attributes=traces-colour=\"green\""
+            - "--otlp-header=traces-envtype=\"prodenv\""
+            - "--telemetry-attributes=traces-env=\"prod\""
+            - "--service=green"
+            - "traces"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: metrics-red
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: metrics-red
+    spec:
+      containers:
+        - name: metrics-red
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--metrics=5"
+            - "--otlp-attributes=metrics-colour=\"red\""
+            - "--otlp-header=metrics-envtype=\"devenv\""
+            - "--telemetry-attributes=metrics-env=\"dev\""
+            - "metrics"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: metrics-green
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: metrics-green
+    spec:
+      containers:
+        - name: metrics-green
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--metrics=5"
+            - "--otlp-attributes=metrics-colour=\"green\""
+            - "--otlp-header=metrics-envtype=\"prodenv\""
+            - "--telemetry-attributes=metrics-env=\"prod\""
+            - "metrics"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: logs-red
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: logs-red
+    spec:
+      containers:
+        - name: logs-red
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--logs=5"
+            - "--body=\"drop message\""
+            - "--otlp-attributes=logs-colour=\"red\""
+            - "--otlp-header=logs-envtype=\"devenv\""
+            - "--telemetry-attributes=logs-env=\"dev\""
+            - "logs"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: logs-green
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: logs-green
+    spec:
+      containers:
+        - name: logs-green
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=filterprocessor-collector:4318"
+            - "--otlp-http"
+            - "--otlp-insecure=true"
+            - "--logs=5"
+            - "--otlp-attributes=logs-colour=\"green\""
+            - "--otlp-header=logs-envtype=\"prodenv\""
+            - "--telemetry-attributes=logs-env=\"prod\""
+            - "logs"
+      restartPolicy: Never

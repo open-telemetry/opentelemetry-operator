@@ -1,0 +1,46 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otlp-forward-connector
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      otlp/blue:
+        protocols:
+          http:
+      otlp/green:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4319
+    processors:
+      attributes/blue:
+        actions:
+        - key: otel_pipeline_tag
+          value: "blue"
+          action: insert
+      attributes/green:
+        actions:
+        - key: otel_pipeline_tag
+          value: "green"
+          action: insert
+      batch:
+    exporters:
+      debug:
+        verbosity: detailed
+    connectors:
+      forward:
+    service:
+      pipelines:
+        traces/blue:
+          receivers: [otlp/blue]
+          processors: [attributes/blue]
+          exporters: [forward]
+        traces/green:
+          receivers: [otlp/green]
+          processors: [attributes/green]
+          exporters: [forward]
+        traces:
+          receivers: [forward]
+          processors: [batch]
+          exporters: [debug]

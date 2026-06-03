@@ -1,0 +1,53 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: oidcauthextension
+spec:
+  # Need to use static namespace for oidc authentication
+  namespace: chainsaw-oidcauthextension
+  steps:
+  - name: Install Hydra for OIDC
+    try:
+    - apply:
+        file: install-hydra.yaml
+    - assert:
+        file: install-hydra-assert.yaml
+  - name: Create OAuth2 client in Hydra
+    try:
+    - apply:
+        file: setup-hydra.yaml
+    - assert:
+        file: setup-hydra-assert.yaml
+  - name: Generate certs and create configmap required by OTEL collectors
+    try:
+    - script:
+        timeout: 5m
+        content: ./generate_certs.sh
+  - name: Create OTEL collector instance with OIDC auth extension in OTLP receiver
+    try:
+    - apply:
+        file: install-otel-oidc-server.yaml
+    - assert:
+        file: install-otel-oidc-server-assert.yaml
+  - name: Create OTEL collector instance with oauth2client auth extension in OTLP exporter
+    try:
+    - apply:
+        file: install-otel-oidc-client.yaml
+    - assert:
+        file: install-otel-oidc-client-assert.yaml
+  - name: Generate traces to ingest in client OTEL collector
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Wait for the traces to be collected by OTEL collector
+    try:
+    - sleep:
+        duration: 60s
+  - name: Check traces in the OTEL server collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh
+

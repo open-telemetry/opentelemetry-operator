@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hotrod-curl
+spec:
+  template:
+    metadata:
+      labels:
+        app: hotrod-curl
+    spec:
+      containers:
+        - name: hotrod-curl
+          image: ghcr.io/grafana/tempo-operator/test-utils:main
+          command: ["/bin/sh", "-c"]
+          args:
+            - "for end in $(seq 1 10); do for j in $(seq 1 1); do curl http://hotrod:80/dispatch?customer=123 & done; wait; sleep 1; done"
+      restartPolicy: Never

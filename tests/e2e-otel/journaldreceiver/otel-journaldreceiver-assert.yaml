@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-journald.otel-joural-logs
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otel-joural-logs-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: otel-joural-logs-collector
+  namespace: chainsaw-journald
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-journald.otel-joural-logs
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otel-joural-logs-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+  name: otel-joural-logs-collector-monitoring
+  namespace: chainsaw-journald
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-journald.otel-joural-logs
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  type: ClusterIP

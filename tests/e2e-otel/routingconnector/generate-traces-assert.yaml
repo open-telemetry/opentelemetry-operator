@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-blue
+  namespace: chainsaw-routecnctr
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-red
+  namespace: chainsaw-routecnctr
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-green
+  namespace: chainsaw-routecnctr
+status:
+  succeeded: 1

@@ -1,0 +1,63 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: count
+spec:
+  mode: deployment
+  observability:
+    metrics:
+      enableMetrics: true
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http:  {}
+    processors: {}
+    connectors:
+      count:
+        spans:
+          dev.span.count:
+            description: The number of spans from each environment.
+            attributes:
+              - key: telemetrygentype
+                default_value: unspecified_environment
+        spanevents:
+          dev.spanevent.count:
+            description: The number of span events from each environment.
+        metrics:
+          dev.metric.count:
+            description: The number of metrics from each environment.
+        datapoints:
+          dev.metrics.datapoint:
+            description: The number of metric datapoints from each environment.
+            attributes:
+              - key: telemetrygentype
+                default_value: unspecified_environment
+        logs:
+          dev.log.count:
+            description: The number of logs from each environment.
+            attributes:
+              - key: telemetrygentype
+                default_value: unspecified_environment
+    exporters:
+      debug: {}
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        resource_to_telemetry_conversion:
+          enabled: true # by default resource attributes are dropped
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [count]
+        metrics:
+          receivers: [otlp]
+          exporters: [count]
+        logs:
+          receivers: [otlp]
+          exporters: [count]
+        metrics/count:
+          receivers: [count]
+          exporters: [prometheus, debug]
+

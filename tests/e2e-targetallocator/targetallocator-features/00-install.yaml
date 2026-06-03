@@ -29,15 +29,6 @@ spec:
 
   mode: statefulset
   targetAllocator:
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: ingress-ready
-              operator: In
-              values:
-              - "true"
     enabled: true
     env:
     - name: TEST_ENV

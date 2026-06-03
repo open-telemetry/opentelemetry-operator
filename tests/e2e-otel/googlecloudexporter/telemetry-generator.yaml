@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces
+  namespace: chainsaw-googlecloudexporter
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=googlecloudexporter-collector:4317
+        - --otlp-insecure=true
+        - --traces=10
+        - --service=gcp-exporter-test
+        - --otlp-attributes=test.type="googlecloudexporter"
+        - --otlp-attributes=test.signal="traces"
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-metrics
+  namespace: chainsaw-googlecloudexporter
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - metrics
+        - --otlp-endpoint=googlecloudexporter-collector:4317
+        - --otlp-insecure=true
+        - --metrics=1
+        - --service=gcp-exporter-test
+        - --otlp-attributes=test.type="googlecloudexporter"
+        - --otlp-attributes=test.signal="metrics"
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-logs
+  namespace: chainsaw-googlecloudexporter
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - logs
+        - --otlp-endpoint=googlecloudexporter-collector:4317
+        - --otlp-insecure=true
+        - --logs=10
+        - --service=gcp-exporter-test
+        - --otlp-attributes=test.type="googlecloudexporter"
+        - --otlp-attributes=test.signal="logs"
+      restartPolicy: Never
+  backoffLimit: 4

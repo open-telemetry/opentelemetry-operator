@@ -1,0 +1,33 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: groupbyattrsprocessor
+spec:
+  namespace: chainsaw-gba
+  description: 
+  steps:
+  - name: Enable user workload monitoring
+    try:
+    - apply:
+        file: workload-monitoring.yaml
+    - assert:
+        file: workload-monitoring-assert.yaml
+  - name: Create OTEl collector with kubletstats receiver
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Create OTEL collector with groupbyattrs processor
+    try:
+    - apply:
+        file: otel-groupbyattributes.yaml
+    - assert:
+        file: otel-groupbyattributes-assert.yaml
+  - name: Check the groupbyattrs metrics
+    try:
+    - apply:
+        file: monitoring-view-role.yaml
+    - script:
+        timeout: 5m
+        content: ./check_metrics.sh

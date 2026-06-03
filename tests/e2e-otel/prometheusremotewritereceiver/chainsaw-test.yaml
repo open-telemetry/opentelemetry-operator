@@ -1,0 +1,34 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: prometheusremotewritereceiver
+spec:
+  steps:
+  - name: Create OTEL collector instance with prometheus remote write receiver
+    try:
+    - apply:
+        file: otel-collector-receiver.yaml
+    - assert:
+        file: otel-collector-receiver-assert.yaml
+  - name: Create OTEL sender collector with prometheus remote write exporter (v2)
+    try:
+    - apply:
+        file: otel-collector-sender.yaml
+    - assert:
+        file: otel-collector-sender-assert.yaml
+  - name: Setup RBAC for verification job
+    try:
+    - apply:
+        file: rbac.yaml
+  - name: Generate and send metrics via telemetrygen to sender collector
+    try:
+    - apply:
+        file: generate-metrics.yaml
+    - assert:
+        file: generate-metrics-assert.yaml
+  - name: Verify metrics are received by the receiver collector
+    try:
+    - apply:
+        file: check-metrics.yaml
+    - assert:
+        file: check-metrics-assert.yaml

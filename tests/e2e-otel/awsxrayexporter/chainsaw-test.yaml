@@ -1,0 +1,34 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: awsxrayexporter
+spec:
+  steps:
+  - name: Create AWS credentials secret
+    try:
+    - script:
+        timeout: 20s
+        content: ./create-aws-creds-secret.sh
+  - name: Create OTEL collector instance with AWS Xray exporter
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Install hotrod trace generator app
+    try:
+    - apply:
+        file: install-hotrod.yaml
+    - assert:
+        file: install-hotrod-assert.yaml
+  - name: Generate traces
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Check traces in AWS Cloudwatch Xray
+    try:
+    - script:
+        timeout: 20s
+        content: ./check_traces.sh

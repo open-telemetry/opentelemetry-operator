@@ -1,0 +1,31 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: fileexporter
+spec:
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+
+    processors:
+
+    exporters:
+      debug:
+      file:
+        path: /telemetry-data/telemetrygen-traces.json
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug,file]
+  volumes:
+    - name: file
+      persistentVolumeClaim:
+        claimName: otlp-data
+  volumeMounts: 
+    - name: file
+      mountPath: /telemetry-data

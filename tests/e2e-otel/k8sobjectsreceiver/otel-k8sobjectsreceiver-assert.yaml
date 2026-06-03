@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainsaw-k8sobjectsreceiver
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-k8sobjectsreceiver
+  namespace: chainsaw-k8sobjectsreceiver
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-k8sobjectsreceiver-role
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - events
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-k8sobjectsreceiver-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-k8sobjectsreceiver-role
+subjects:
+  - kind: ServiceAccount
+    name: chainsaw-k8sobjectsreceiver
+    namespace: chainsaw-k8sobjectsreceiver
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chainsaw-k8sobjectsreceiver-collector
+  namespace: chainsaw-k8sobjectsreceiver
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1

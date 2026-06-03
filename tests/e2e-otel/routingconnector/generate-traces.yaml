@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-red
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=routing-collector.chainsaw-routecnctr.svc:4317
+        - --otlp-insecure=true
+        - --traces=5
+        - --service=red
+        - --otlp-attributes=X-Tenant="red"
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-green
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=routing-collector.chainsaw-routecnctr.svc:4317
+        - --otlp-insecure=true
+        - --traces=5
+        - --service=green
+        - --otlp-attributes=X-Tenant="green"
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-blue
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=routing-collector.chainsaw-routecnctr.svc:4317
+        - --otlp-insecure=true
+        - --traces=5
+        - --service=blue
+        - --otlp-attributes=X-Tenant="blue"
+      restartPolicy: Never
+  backoffLimit: 4

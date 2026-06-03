@@ -1,0 +1,38 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: gba-main
+  namespace: chainsaw-gba
+spec:
+  mode: deployment
+  observability:
+    metrics:
+      enableMetrics: true
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+    processors:
+      groupbyattrs:
+        keys:
+        - k8s.namespace.name
+        - k8s.container.name
+        - k8s.pod.name
+      batch:
+      attributes:
+        actions:
+          - key: otelpipeline
+            value: gba
+            action: insert
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        resource_to_telemetry_conversion:
+          enabled: true # by default resource attributes are dropped
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [attributes, batch, groupbyattrs]
+          exporters: [prometheus]

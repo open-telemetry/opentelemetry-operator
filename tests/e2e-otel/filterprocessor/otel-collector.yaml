@@ -1,0 +1,44 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: filterprocessor
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+
+    processors:
+      filter:
+        error_mode: ignore
+        traces:
+          span:
+            - 'attributes["traces-env"] == "red"'
+            - 'resource.attributes["traces-colour"] == "red"'
+        metrics:
+          metric:
+              - 'name == "gen" and resource.attributes["metrics-colour"] == "red"'
+        logs:
+          log_record:
+            - 'IsMatch(body, "drop message")'
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [filter]
+          exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          processors: [filter]
+          exporters: [debug]
+        logs:
+          receivers: [otlp]
+          processors: [filter]
+          exporters: [debug]

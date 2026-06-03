@@ -1,0 +1,78 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: awscloudwatchlogsexporter
+spec:
+  description: "Test the AWS CloudwatchLogs and EMF exporters"
+  template: true
+  bindings:
+  - name: log_group_name
+    value: (join('-', ['tracing', $namespace]))
+  - name: log_stream_name
+    value: (join('-', ['tracing', $namespace, 'stream', 'emf']))
+  steps:
+  - name: Create AWS credentials secret
+    try:
+    - script:
+        timeout: 20s
+        content: ./create-aws-creds-secret.sh
+  - name: Create OTEL collector instance with AWS CloudWatchLogs exporter
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Create OTEL sidecar to ship app logs to OTEL collector with CloudWatchLogs exporter
+    try:
+    - command:
+        args:
+        - -n
+        - $NAMESPACE
+        - create
+        - rolebinding
+        - default-view-$NAMESPACE
+        - --role=pod-view
+        - --serviceaccount=$NAMESPACE:ta
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - apply:
+        file: otel-filelog-sidecar.yaml
+    - assert:
+        file: otel-filelog-sidecar-assert.yaml
+  - name: Create logs generator app
+    try:
+    - apply:
+        file: app-plaintext-logs.yaml
+    - assert:
+        file: app-plaintext-logs-assert.yaml
+  - name: Generate metrics
+    try:
+    - apply:
+        file: generate-metrics.yaml
+    - assert:
+        file: generate-metrics-assert.yaml
+  - name: Check the Cloudwatch log group and logs in AWS
+    try:
+    - script:
+        env:
+        - name: log_group_name
+          value: ($log_group_name)
+        - name: log_stream_name
+          value: ($log_stream_name)
+        timeout: 5m
+        content: ./check_logs_metrics.sh

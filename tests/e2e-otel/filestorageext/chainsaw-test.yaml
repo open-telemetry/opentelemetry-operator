@@ -1,0 +1,58 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: filestorageext
+spec:
+  steps:
+  - name: Create OTEL collector with filestorage extension
+    try:
+    - command:
+        args:
+        - -n
+        - $NAMESPACE
+        - create
+        - rolebinding
+        - default-view-$NAMESPACE
+        - --role=pod-view
+        - --serviceaccount=$NAMESPACE:ta
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - apply:
+        file: otel-filestorageext.yaml
+    - assert:
+        file: otel-filestorageext-assert.yaml
+  - name: Create the logs generator app
+    try:
+    - apply:
+        file: app-plaintest-logs.yaml
+    - assert:
+        file: app-plaintest-logs-assert.yaml
+  - name: Wait for the logs to be collected
+    try:
+    - sleep:
+        duration: 10s
+  - name: Check the collected logs
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh
+  - name: Confirm the filestorage extension is working
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_filestorageext.sh

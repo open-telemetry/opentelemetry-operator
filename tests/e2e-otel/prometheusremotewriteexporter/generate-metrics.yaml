@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-metrics
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: telemetrygen-metrics
+    spec:
+      containers:
+        - name: telemetrygen-metrics
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=otel-collector:4317"
+            - "--otlp-insecure=true"
+            - "--duration=30s"
+            - "--rate=1"
+            - "--otlp-attributes=telemetrygen=\"metrics\""
+            - "--otlp-header=telemetrygen=\"metrics\""
+            - "metrics"
+      restartPolicy: Never

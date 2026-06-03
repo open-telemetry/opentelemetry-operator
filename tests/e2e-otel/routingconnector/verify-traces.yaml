@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces-red
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces-red
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command:
+        - /bin/bash
+        - -eux
+        - -c
+        args:
+        - |
+          curl -v -G http://tempo-red-jaegerui.chainsaw-routecnctr.svc:16686/api/traces --data-urlencode "service=red" | tee /tmp/jaeger.out
+          num_traces=$(jq ".data | length" /tmp/jaeger.out)
+          if [[ "$num_traces" -ne 5 ]]; then
+            echo && echo "The Jaeger API returned $num_traces instead of 10 traces."
+            exit 1
+          fi
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces-blue
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces-blue
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command:
+        - /bin/bash
+        - -eux
+        - -c
+        args:
+        - |
+          curl -v -G http://tempo-blue-jaegerui.chainsaw-routecnctr.svc:16686/api/traces --data-urlencode "service=blue" | tee /tmp/jaeger.out
+          num_traces=$(jq ".data | length" /tmp/jaeger.out)
+          if [[ "$num_traces" -ne 5 ]]; then
+            echo && echo "The Jaeger API returned $num_traces instead of 10 traces."
+            exit 1
+          fi
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces-green
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces-green
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command:
+        - /bin/bash
+        - -eux
+        - -c
+        args:
+        - |
+          curl -v -G http://tempo-green-jaegerui.chainsaw-routecnctr.svc:16686/api/traces --data-urlencode "service=green" | tee /tmp/jaeger.out
+          num_traces=$(jq ".data | length" /tmp/jaeger.out)
+          if [[ "$num_traces" -ne 5 ]]; then
+            echo && echo "The Jaeger API returned $num_traces instead of 10 traces."
+            exit 1
+          fi
+      restartPolicy: Never

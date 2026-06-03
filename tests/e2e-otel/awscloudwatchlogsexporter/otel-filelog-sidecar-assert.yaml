@@ -1,0 +1,37 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-logs-sidecar
+spec:
+  config:
+    exporters:
+      otlp:
+        endpoint: cwlogs-collector:4317
+        tls:
+          insecure: true
+    processors: {}
+    receivers:
+      filelog:
+        include:
+        - /log-data/*.log
+        operators:
+        - regex: ^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+)
+            - (?P<sev>\S+) - (?P<message>.*)$
+          severity:
+            parse_from: attributes.sev
+          timestamp:
+            layout: '%Y-%m-%d %H:%M:%S'
+            parse_from: attributes.time
+          type: regex_parser
+    service:
+      pipelines:
+        logs:
+          exporters:
+          - otlp
+          receivers:
+          - filelog
+  managementState: managed
+  mode: sidecar
+  volumeMounts:
+  - mountPath: /log-data
+    name: log-data

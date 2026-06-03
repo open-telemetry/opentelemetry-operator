@@ -1,0 +1,27 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: k8seventsreceiver
+spec:
+  steps:
+  - name: Create OTEL collector with k8s_cluster receiver
+    try:
+    - apply:
+        file: otel-k8seventsreceiver.yaml
+    - assert:
+        file: otel-k8seventsreceiver-assert.yaml
+  - name: Deploy a sample app to generate events
+    try:
+    - apply:
+        file: install-app.yaml
+    - assert:
+        file: install-app-assert.yaml
+  - name: Wait for the event logs to be collected
+    try:
+    - sleep:
+        duration: 60s
+  - name: Check some of the event logs in the OTEl collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh

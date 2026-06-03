@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector-contrib-telemetrygen
+  labels:
+    opentelemetry.io/name: collector-contrib-telemetrygen
+    app.kubernetes.io/instance: telemetrygen
+    app.kubernetes.io/component: collector-contrib
+    app.kubernetes.io/name: collector-contrib-telemetrygen
+    app.kubernetes.io/version: "0.122.0"
+    app.kubernetes.io/part-of: collector-contrib-telemetrygen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      opentelemetry.io/name: collector-contrib-telemetrygen
+  template:
+    metadata:
+      labels:
+        opentelemetry.io/name: collector-contrib-telemetrygen
+        app.kubernetes.io/instance: telemetrygen
+        app.kubernetes.io/component: collector-contrib
+    spec:
+      containers:
+        - name: metrics
+          image: 'ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0'
+          args: ["metrics", "--otlp-insecure", "--rate=0.1", "--duration=5m", "--otlp-endpoint=$(OTEL_EXPORTER_OTLP_METRICS_ENDPOINT)"]
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: OTEL_SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.labels['app.kubernetes.io/component']
+          - name: OTEL_COLLECTOR_NAME
+            value: 'gmp-collector'
+          - name: OTEL_COLLECTOR_NAMESPACE
+            value: 'chainsaw-gmpmetrics'
+          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+            value: $(OTEL_COLLECTOR_NAME).$(OTEL_COLLECTOR_NAMESPACE).svc.cluster.local:4317
+          - name: OTEL_RESOURCE_ATTRIBUTES
+            value: service.name=$(OTEL_SERVICE_NAME),service.namespace=opentelemetry-demo
+          resources:
+            limits:
+              memory: 100Mi

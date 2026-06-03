@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-http-blue
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen-blue
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=chainsaw-lb-collector:4318
+        - --traces=5
+        - --otlp-http
+        - --otlp-insecure=true
+        - --service=telemetrygen-http-blue
+        - --otlp-attributes=protocol="otlp-http-blue"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-http-green
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen-green
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=chainsaw-lb-collector:4318
+        - --traces=5
+        - --otlp-http
+        - --otlp-insecure=true
+        - --service=telemetrygen-http-green
+        - --otlp-attributes=protocol="otlp-http-green"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-http-red
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen-red
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=chainsaw-lb-collector:4318
+        - --traces=5
+        - --otlp-http
+        - --otlp-insecure=true
+        - --service=telemetrygen-http-red
+        - --otlp-attributes=protocol="otlp-http-red"
+      restartPolicy: Never

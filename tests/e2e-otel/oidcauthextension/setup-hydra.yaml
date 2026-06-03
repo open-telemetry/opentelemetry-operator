@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-hydra
+spec:
+  template:
+    spec:
+      containers:
+      - name: setup-hydra
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command: ["/bin/bash", "-eux", "-c"]
+        args:
+        - |
+          # create OAuth2 client
+          client_id=tenant1-oidc-client
+          client_secret=ZXhhbXBsZS1hcHAtc2VjcmV0 # notsecret
+          curl -v \
+            --data '{"audience": ["'$client_id'"], "client_id": "'$client_id'", "client_secret": "'$client_secret'", "grant_types": ["client_credentials"], "token_endpoint_auth_method": "client_secret_basic"}' \
+            http://hydra:4445/admin/clients
+      restartPolicy: Never

@@ -1,0 +1,27 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: filterprocessor
+spec:
+  steps:
+  - name: Create OTEL collector instance
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Generate and send traces, metrics and logs to the OTEL collector
+    try:
+    - apply:
+        file: generate-telemetry-data.yaml
+    - assert:
+        file: generate-telemetry-data-assert.yaml
+  - name: Wait for the telemetry data to be collected
+    try:
+    - sleep:
+        duration: 5s
+  - name: Check filtered telemetry data in OTEl collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh 

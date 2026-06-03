@@ -1,0 +1,34 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: loadbalancingexporter
+spec:
+  namespace: chainsaw-lb
+  steps:
+  - name: Create OTEL collector which acts as backend with 5 replicas, we will use the headless service for LB
+    try:
+    - apply:
+        file: otel-loadbalancingexporter-backends.yaml
+    - assert:
+        file: otel-loadbalancingexporter-backends-assert.yaml
+  - name: Create OTEL collector with loadbalancingexporter which uses k8s resolver to discover the backend IPs from the backend collector headless service
+    try:
+    - apply:
+        file: otel-loadbalancingexporter-lb.yaml
+    - assert:
+        file: otel-loadbalancingexporter-lb-assert.yaml
+  - name: Generate traces with service names telemetrygen-http-blue, telemetrygen-http-red, telemetrygen-http-green and send it to the LB collector.
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Wait for the traces to be collected
+    try:
+    - sleep:
+        duration: 5s
+  - name: Check traces in the backend collector pods. Traces for a service name should be present in only one backend pod.
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh 

@@ -1,0 +1,42 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: chainsaw-oidc-server
+spec:
+  mode: deployment
+  volumeMounts:
+  - mountPath: /certs
+    name: chainsaw-certs
+  volumes:
+  - configMap:
+      name: chainsaw-certs
+    name: chainsaw-certs
+  config: |
+    extensions:
+      oidc:
+        issuer_url: http://hydra:4444
+        audience: tenant1-oidc-client
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            tls:
+              cert_file: /certs/server.crt
+              key_file: /certs/server.key
+            auth:
+              authenticator: oidc
+
+    processors:
+
+    exporters:
+      debug:
+        verbosity: detailed
+
+    service:
+      extensions: [oidc]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]

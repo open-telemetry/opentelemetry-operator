@@ -1,0 +1,64 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: chainsaw-kubeletstatsreceiver
+status:
+  phase: Active
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-kubeletstatsreceiver
+  namespace: chainsaw-kubeletstatsreceiver
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-kubeletstatsreceiver-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-kubeletstatsreceiver-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-kubeletstatsreceiver-role
+subjects:
+- kind: ServiceAccount
+  name: chainsaw-kubeletstatsreceiver
+  namespace: chainsaw-kubeletstatsreceiver
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: chainsaw-kubeletstatsreceiver-collector
+  namespace: chainsaw-kubeletstatsreceiver
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true

@@ -1,0 +1,22 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: hostmetricsreceiver
+spec:
+  namespace: chainsaw-hostmetrics
+  steps:
+  - name: Create OTEL collector with hostmetricsreceiver receiver
+    try:
+    - apply:
+        file: otel-hostmetricsreceiver.yaml
+    - assert:
+        file: otel-hostmetricsreceiver-assert.yaml
+  - name: Wait for the metrics to be collected
+    try:
+    - sleep:
+        duration: 60s
+  - name: Check some of the metrics in the OTEl collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh 

@@ -1,0 +1,33 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-logs-sidecar-rolearn
+spec:
+  mode: sidecar
+  config:
+    receivers:
+      filelog:
+        include: [ /tmp/*.log ]
+        operators:
+          - type: regex_parser
+            regex: '^\[(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (?P<sev>\S+): (?P<message>.*)$'
+            timestamp:
+              parse_from: attributes.time
+              layout: '%Y-%m-%d %H:%M:%S'
+            severity:
+              parse_from: attributes.sev
+    processors: {}
+    exporters:
+      otlp:
+        endpoint: otelcol-cloudwatch-collector:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: []
+          exporters: [otlp]
+  volumeMounts:
+  - name: log-storage
+    mountPath: /tmp

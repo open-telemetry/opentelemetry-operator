@@ -1,0 +1,67 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cwlogs
+spec:
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: secret_access_key
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+      awsemf:
+        log_group_name: ($log_group_name)
+        log_stream_name: ($log_stream_name)
+        log_retention: 1
+        tags: { 'tracing-otel': 'true'}
+        namespace: "Tracing-EMF"
+        endpoint: "https://logs.us-east-2.amazonaws.com"
+        no_verify_ssl: false
+        region: "us-east-2"
+        max_retries: 1
+        dimension_rollup_option: "ZeroAndSingleDimensionRollup"
+        resource_to_telemetry_conversion:
+          enabled: true
+        output_destination: "cloudwatch"
+        detailed_metrics: false
+        parse_json_encoded_attr_values: []
+        metric_declarations: []
+        metric_descriptors: []
+        retain_initial_value_of_delta_metric: false
+      awscloudwatchlogs:
+        log_group_name: ($log_group_name)
+        log_stream_name: ($log_stream_name)
+        raw_log: true
+        region: "us-east-2"
+        endpoint: "https://logs.us-east-2.amazonaws.com"
+        log_retention: 1
+        tags: { 'tracing-otel': 'true'}
+
+    processors:
+      batch: {}
+
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [awscloudwatchlogs]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [awsemf,debug]

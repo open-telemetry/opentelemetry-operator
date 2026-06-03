@@ -1,0 +1,62 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otelcol-cloudwatch
+spec:
+  serviceAccount: otelcol-cloudwatch
+  env:
+    - name: AWS_REGION
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: region
+    - name: AWS_ROLE_ARN
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: role_arn
+    - name: LOG_GROUP_NAME
+      valueFrom:
+        secretKeyRef:
+          name: aws-sts-cloudwatch
+          key: log_group_name
+    - name: AWS_WEB_IDENTITY_TOKEN_FILE
+      value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+      # AWS CloudWatch Logs exporter with STS configuration
+      awscloudwatchlogs:
+        log_group_name: "${env:LOG_GROUP_NAME}"
+        log_stream_name: "tracing-otelcol-stream"
+        raw_log: true
+        region: "${env:AWS_REGION}"
+        endpoint: "https://logs.us-east-2.amazonaws.com"
+        log_retention: 1
+        tags: { 'tracing-otel': 'true', 'test-type': 'aws-sts' }
+
+    processors:
+      batch: {}
+      # Add resource processor to include metadata
+      resource:
+        attributes:
+        - key: test.scenario
+          value: "role-arn-authentication"
+          action: insert
+        - key: deployment.environment
+          value: "test"
+          action: insert
+
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [resource, batch]
+          exporters: [awscloudwatchlogs, debug]

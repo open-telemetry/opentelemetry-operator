@@ -1,0 +1,21 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: k8sobjectsreceiver
+spec:
+  steps:
+  - name: Create OTEL collector with k8sobjects receiver
+    try:
+    - apply:
+        file: otel-k8sobjectsreceiver.yaml
+    - assert:
+        file: otel-k8sobjectsreceiver-assert.yaml
+  - name: Wait for the event logs to be collected
+    try:
+    - sleep:
+        duration: 10s
+  - name: Check some of the event logs in the OTEl collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh

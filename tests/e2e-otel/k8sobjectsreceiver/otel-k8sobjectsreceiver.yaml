@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainsaw-k8sobjectsreceiver
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-k8sobjectsreceiver
+  namespace: chainsaw-k8sobjectsreceiver
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-k8sobjectsreceiver-role
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - events
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-k8sobjectsreceiver-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-k8sobjectsreceiver-role
+subjects:
+  - kind: ServiceAccount
+    name: chainsaw-k8sobjectsreceiver
+    namespace: chainsaw-k8sobjectsreceiver
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: chainsaw-k8sobjectsreceiver
+  namespace: chainsaw-k8sobjectsreceiver
+spec:
+  mode: deployment
+  serviceAccount: chainsaw-k8sobjectsreceiver
+  config: |
+    receivers:
+      k8sobjects:
+        objects:
+          - name: pods
+            mode: pull
+          - name: events
+            mode: watch
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        logs:
+          receivers: [k8sobjects]
+          exporters: [debug]

@@ -1,0 +1,30 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: prometheusremotewriteexporter
+spec:
+  steps:
+  - name: Create a Prometheus deployment with remote write receiver enabled
+    try:
+    - apply:
+        file: deploy-prometheus.yaml
+    - assert:
+        file: deploy-prometheus-assert.yaml
+  - name: Create OTEL collector instance
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Generate and send metrics to the OTEL collector
+    try:
+    - apply:
+        file: generate-metrics.yaml
+    - assert:
+        file: generate-metrics-assert.yaml
+  - name: Verify metrics in the Prometheus instances
+    try:
+    - apply:
+        file: check-metrics.yaml
+    - assert:
+        file: check-metrics-assert.yaml

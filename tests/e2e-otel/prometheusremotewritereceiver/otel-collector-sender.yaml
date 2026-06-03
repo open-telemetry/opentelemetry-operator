@@ -1,0 +1,40 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-sender
+spec:
+  mode: deployment
+  args:
+    feature-gates: exporter.prometheusremotewritexporter.enableSendingRW2
+  config: |
+    feature-gates:
+      exporter.prometheusremotewritexporter.enableSendingRW2: true
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    processors:
+      batch:
+
+    exporters:
+      prometheusremotewrite:
+        endpoint: "http://otel-receiver-collector:9090/api/v1/write"
+        protobuf_message: "io.prometheus.write.v2.Request"
+        # Force v2 remote write via header expected by v2-compatible receivers
+        headers:
+          X-Prometheus-Remote-Write-Version: "0.2.0"
+          Prometheus-Remote-Write-Version: "0.2.0"
+          Content-Type: "application/x-protobuf; proto=io.prometheus.write.v2.Request; encoding=snappy"
+        resource_to_telemetry_conversion:
+          enabled: true
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [prometheusremotewrite]
+

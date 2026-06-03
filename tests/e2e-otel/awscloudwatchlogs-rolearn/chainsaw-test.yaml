@@ -1,0 +1,92 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: awscloudwatchlogs-rolearn
+  
+  labels:
+    type: aws-sts
+spec:
+  description: Test AWS CloudWatch Logs exporter with STS role assumption. This test is meant to be run from OpenShift CI as it depends on the credentials from CI.
+  namespace: chainsaw-awssts-cloudwatch
+  steps:
+  - name: Create AWS STS configuration for CloudWatch Logs
+    try:
+    - script:
+        timeout: 2m
+        content: ./create-aws-rolearn-secret.sh otelcol-cloudwatch chainsaw-awssts-cloudwatch
+    - script:
+        timeout: 30s
+        content: oc get secret aws-sts-cloudwatch -n chainsaw-awssts-cloudwatch -o yaml
+  - name: Create service account with STS role annotation
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          ROLE_ARN=$(oc get secret aws-sts-cloudwatch -n chainsaw-awssts-cloudwatch -o jsonpath='{.data.role_arn}' | base64 -d)
+          cat <<EOF | oc apply -f -
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: otelcol-cloudwatch
+            namespace: chainsaw-awssts-cloudwatch
+            annotations:
+              eks.amazonaws.com/role-arn: "$ROLE_ARN"
+          EOF
+  - name: Create sidecar OTEL collector for log collection
+    try:
+    - command:
+        args:
+        - -n
+        - $NAMESPACE
+        - create
+        - rolebinding
+        - default-view-$NAMESPACE
+        - --role=pod-view
+        - --serviceaccount=$NAMESPACE:ta
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - apply:
+        file: otel-filelog-sidecar.yaml
+    - assert:
+        file: otel-filelog-sidecar-assert.yaml
+  - name: Create OTEL collector instance with AWS CloudWatch Logs exporter using STS
+    try:
+    - apply:
+        file: otel-collector-rolearn.yaml
+    - assert:
+        file: otel-collector-rolearn-assert.yaml
+  - name: Create logs generator app
+    try:
+    - apply:
+        file: app-plaintext-logs.yaml
+    - assert:
+        file: app-plaintext-logs-assert.yaml
+  - name: Check the CloudWatch log group and logs in AWS
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs_rolearn.sh
+  - name: Check collector logs for role_arn configuration
+    try:
+    - script:
+        timeout: 2m
+        content: ./check_role_arn_config.sh
+    cleanup:
+    - script:
+        timeout: 2m
+        content: ./aws-sts-cloudwatch-delete.sh otelcol-cloudwatch chainsaw-awssts-cloudwatch

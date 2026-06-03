@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces
+  namespace: chainsaw-googlecloudexporter
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-metrics
+  namespace: chainsaw-googlecloudexporter
+status:
+  succeeded: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-logs
+  namespace: chainsaw-googlecloudexporter
+status:
+  succeeded: 1

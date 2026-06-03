@@ -1,0 +1,48 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: xray
+spec:
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: secret_access_key
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    exporters:
+      awsxray:
+        num_workers: 2
+        endpoint: "https://xray.us-east-2.amazonaws.com"
+        request_timeout_seconds: 30
+        max_retries: 2
+        no_verify_ssl: false
+        region: "us-east-2"
+        local_mode: false
+        index_all_attributes: false
+        aws_log_groups: [ikanse=tracing-test]
+        telemetry:
+          enabled: true
+          include_metadata: true
+          hostname: "ocp-otel-collector"
+          instance_id: "otel-collector-xray"
+
+    processors: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [awsxray]

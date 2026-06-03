@@ -1,0 +1,48 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: tailsamplingprocessor
+spec:
+  namespace: chainsaw-tailsmp
+  steps:
+  - name: Create Tempo monolithic instances
+    try:
+    - apply:
+        file: install-tempo.yaml
+    - assert:
+        file: install-tempo-assert.yaml
+  - name: Check the status of Tempo Monolithc instance tailsmp
+    try:
+    - script:
+        timeout: 5m
+        content: kubectl get --namespace ${NAMESPACE} tempomonolithics tailsmp -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  - name: Create OTEL collector instance
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Install the riders on demand app
+    try:
+    - apply:
+        file: install-hotrod.yaml
+    - assert:
+        file: assert-install-hotrod.yaml
+  - name: Generate traces from the riders on demand app
+    try:
+    - apply:
+        file: hotrod-traces.yaml
+    - assert:
+        file: assert-hotrod-traces.yaml
+  - name: Generate and send traces to the OTEL collector
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Verify traces in the Tempo instances
+    try:
+    - apply:
+        file: verify-traces.yaml
+    - assert:
+        file: verify-traces-assert.yaml

@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tempo-jsonrecv
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1

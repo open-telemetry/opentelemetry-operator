@@ -1,0 +1,82 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: otel-clusterlogs-collector-scc
+allowPrivilegedContainer: false
+requiredDropCapabilities:
+- ALL
+allowHostDirVolumePlugin: true
+volumes:
+- configMap
+- emptyDir
+- hostPath
+- projected
+- secret
+defaultAllowPrivilegeEscalation: false
+allowPrivilegeEscalation: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+readOnlyRootFilesystem: true
+forbiddenSysctls:
+- '*'
+seccompProfiles:
+- runtime/default
+users:
+- system:serviceaccount:chainsaw-filelog:clusterlogs-collector
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: clusterlogs
+  namespace: chainsaw-filelog
+spec:
+  mode: daemonset
+  config:
+    receivers:
+      filelog:
+        include:
+        - /var/log/pods/*/*/*.log
+        exclude:
+        - /var/log/pods/*/otc-container/*.log
+        - "/var/log/pods/*/*/*.gz"
+        - "/var/log/pods/*/*/*.log.*"
+        - "/var/log/pods/*/*/*.tmp"
+        - "/var/log/pods/default_*/*/*.log"
+        - "/var/log/pods/kube-*_*/*/*.log"
+        - "/var/log/pods/kube_*/*/*.log"
+        - "/var/log/pods/openshift-*_*/*/*.log"
+        - "/var/log/pods/openshift_*/*/*.log"
+        include_file_path: true
+        include_file_name: false
+        operators:
+        - type: container
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          exporters: [debug]
+  securityContext:
+    runAsUser: 0
+    seLinuxOptions:
+      type: spc_t
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  volumeMounts:
+  - name: varlogpods
+    mountPath: /var/log/pods
+    readOnly: true
+  volumes:
+  - name: varlogpods
+    hostPath:
+      path: /var/log/pods

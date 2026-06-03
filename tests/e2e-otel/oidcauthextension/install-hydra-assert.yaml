@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hydra
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hydra
+spec:
+  ports:
+  - name: public
+    port: 4444
+    protocol: TCP
+    targetPort: public
+  - name: internal
+    port: 4445
+    protocol: TCP
+    targetPort: internal
+  selector:
+    app: hydra

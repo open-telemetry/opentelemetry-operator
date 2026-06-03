@@ -1,0 +1,43 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otlpjsonfile
+spec:
+  config: |
+    receivers:
+      otlpjsonfile:
+        include:
+          - "/telemetry-data/*.json"
+
+    processors:
+
+    exporters:
+      debug:
+      otlp:
+        endpoint: tempo-jsonrecv:4317
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlpjsonfile]
+          processors: []
+          exporters: [debug,otlp]
+  volumes:
+    - name: file
+      persistentVolumeClaim:
+        claimName: otlp-data
+  volumeMounts: 
+    - name: file
+      mountPath: /telemetry-data
+      readOnly: true
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: opentelemetry-collector
+              app.kubernetes.io/managed-by: opentelemetry-operator
+              app.kubernetes.io/name: fileexporter-collector
+          topologyKey: "kubernetes.io/hostname"

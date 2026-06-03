@@ -1,0 +1,9 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: tprocssr
+spec:
+  jaegerui:
+    enabled: true
+    route:
+      enabled: true

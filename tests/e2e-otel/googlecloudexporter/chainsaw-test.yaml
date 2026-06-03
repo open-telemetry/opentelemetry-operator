@@ -1,0 +1,38 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: googlecloudexporter
+spec:
+  description: "Test the Google Cloud Exporter with Workload Identity Federation"
+  template: true
+  steps:
+  - name: Setup GCP Workload Identity Federation
+    try:
+    - script:
+        timeout: 5m
+        content: ./gcp-wif-create.sh
+    catch:
+    - script:
+        timeout: 3m
+        content: ./gcp-wif-delete.sh
+  - name: Create OTEL collector instance with Google Cloud Exporter
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Create telemetry generator app
+    try:
+    - apply:
+        file: telemetry-generator.yaml
+    - assert:
+        file: telemetry-generator-assert.yaml
+  - name: Check Google Cloud telemetry data
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_gcp_telemetry.sh
+    finally:
+    - script:
+        timeout: 3m
+        content: ./gcp-wif-delete.sh

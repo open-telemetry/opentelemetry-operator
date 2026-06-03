@@ -1,0 +1,28 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: forwardconnector
+spec:
+  namespace: chainsaw-forwardconnector
+  steps:
+  - name: Create OTEL collector with forward connector
+    try:
+    - apply:
+        file: otel-forward-connector.yaml
+    - assert:
+        file: otel-forward-connector-assert.yaml
+  - name: Generate traces
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Wait for the traces to be collected
+    try:
+    - sleep:
+        duration: 10s
+  - name: Check traces in the collector pods
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh 

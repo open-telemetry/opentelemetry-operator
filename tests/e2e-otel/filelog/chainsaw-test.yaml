@@ -1,0 +1,24 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: filelog
+spec:
+  namespace: chainsaw-filelog
+  steps:
+  - name: Create OpenTelemetry Collector with FileLog receiver to collect logs from the OpenShift cluster
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: assert-otel-collector.yaml
+  - name: Create OpenTelemetry Collector with FileLog receiver to collect logs from the OpenShift cluster
+    try:
+    - apply:
+        file: app-plaintext-logs.yaml
+    - assert:
+        file: assert-app-plaintext-logs.yaml
+  - name: Check the collected logs for the app-plaintext-logs
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh

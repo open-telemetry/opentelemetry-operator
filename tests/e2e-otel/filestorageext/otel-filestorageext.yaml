@@ -1,0 +1,72 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: filestorageext
+spec:
+  mode: deployment
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: filestorageext-sidecar
+spec:
+  mode: sidecar
+  config: |
+    receivers:
+      filelog:
+        storage: file_storage
+        include: [ /log-data/*.log ]
+        operators:
+          - type: regex_parser
+            regex: '^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<sev>\S+) - (?P<message>.*)$'
+            timestamp:
+              parse_from: attributes.time
+              layout: '%Y-%m-%d %H:%M:%S'
+            severity:
+              parse_from: attributes.sev
+    processors:
+    exporters:
+      otlp:
+        endpoint: filestorageext-collector:4317
+        tls:
+          insecure: true
+    extensions:
+      file_storage:
+        directory: /filestorageext/data
+        timeout: 1s
+        compaction:
+          on_start: true
+          directory: /filestorageext/compaction
+          max_transaction_size: 65_536
+        fsync: true
+    service:
+      extensions: [file_storage]
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: []
+          exporters: [otlp]
+  volumeMounts:
+  - name: log-data
+    mountPath: /log-data
+  - name: filestorageext
+    mountPath: /filestorageext/data
+  - name: filestorageext
+    mountPath: /filestorageext/compaction

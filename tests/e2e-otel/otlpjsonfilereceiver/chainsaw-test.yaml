@@ -1,0 +1,42 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: otlpjsonfilereceiver
+spec:
+  steps:
+  - name: Create Tempo Monolithic instance
+    try:
+    - apply:
+        file: install-tempo.yaml
+    - assert:
+        file: install-tempo-assert.yaml
+  - name: Create a PVC to be used by OTEL collectors.
+    try:
+    - apply:
+        file: create-pvc.yaml
+    - assert:
+        file: create-pvc-assert.yaml
+  - name: Creat a OTEL collector with fileexporter which will export Trace data in OTLP format to a file
+    try:
+    - apply:
+        file: fileexporter-otel-collector.yaml
+    - assert:
+        file: fileexporter-otel-collector-assert.yaml
+  - name: Create a OTEL collector with otlpjsonfilereceiver to receive OTLP telemetry data from a file exported by filereceiver
+    try:
+    - apply:
+        file: otlpjsonfilereceiver-otel-collector.yaml
+    - assert:
+        file: otlpjsonfilereceiver-otel-collector-assert.yaml
+  - name: Generate traces and send it to the OTEL collector with fileexporter
+    try:
+    - apply:
+        file: generate-traces.yaml
+    - assert:
+        file: generate-traces-assert.yaml
+  - name: Verify traces
+    try:
+    - apply:
+        file: verify-traces.yaml
+    - assert:
+        file: verify-traces-assert.yaml

@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainsaw-kubeletstatsreceiver
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-kubeletstatsreceiver
+  namespace: chainsaw-kubeletstatsreceiver
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-kubeletstatsreceiver-role
+rules:
+  - apiGroups: ['']
+    resources: ['nodes/stats']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-kubeletstatsreceiver-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-kubeletstatsreceiver-role
+subjects:
+  - kind: ServiceAccount
+    name: chainsaw-kubeletstatsreceiver
+    namespace: chainsaw-kubeletstatsreceiver
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: chainsaw-kubeletstatsreceiver
+  namespace: chainsaw-kubeletstatsreceiver
+spec:
+  mode: daemonset
+  serviceAccount: chainsaw-kubeletstatsreceiver
+  env:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  config: |
+    receivers:
+      kubeletstats:
+        collection_interval: 20s
+        auth_type: "serviceAccount"
+        endpoint: "https://${env:K8S_NODE_NAME}:10250"
+        insecure_skip_verify: true
+        extra_metadata_labels:
+          - container.id
+    exporters:
+      otlp:
+        endpoint: gmp-collector.chainsaw-gmpmetrics.svc:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          receivers: [kubeletstats]
+          exporters: [otlp]
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule

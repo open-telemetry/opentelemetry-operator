@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+spec:
+  template:
+    spec:
+      containers:
+      - name: check-metrics
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command:
+        - /bin/bash
+        - -eux
+        - -c
+        args:
+        - |
+          output=$(curl -s --cacert /etc/prometheus-ca/ca.crt \
+          --data-urlencode 'query=gen' \
+          https://prometheus:9090/api/v1/query)
+          if [[ "$output" == *'"__name__":"gen"'* && "$output" == *'"telemetrygen":"metrics"'* ]]; then
+            echo "Telemetrygen metrics found in the Prometheus instance"
+          else
+            echo "Telemetrygen metrics not found in Prometheus instance"
+            exit 1
+          fi
+        volumeMounts:
+        - name: prometheus-ca
+          mountPath: /etc/prometheus-ca
+          readOnly: true
+      restartPolicy: Never
+      volumes:
+      - name: prometheus-ca
+        secret:
+          secretName: prometheus-ca
+  backoffLimit: 4

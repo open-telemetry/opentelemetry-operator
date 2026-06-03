@@ -1,0 +1,86 @@
+# Add the clusterrole and rolebinding required for fetching metrics from Thanos querier. Refer https://issues.redhat.com/browse/MON-3379
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-otlp-metrics-traces-api
+rules:
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["prometheuses/api"]
+  verbs: ["get", "list", "watch","create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-otlp-metrics-traces-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-otlp-metrics-traces-api
+subjects:
+- kind: ServiceAccount
+  name: prometheus-user-workload
+  namespace: openshift-user-workload-monitoring
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - traces
+        - --otlp-endpoint=count-collector:4317
+        - --otlp-insecure=true
+        - --traces=5
+        - --rate=0
+        - "--telemetry-attributes=telemetrygentype=\"traces\""
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-metrics
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - metrics
+        - --otlp-endpoint=count-collector:4317
+        - --otlp-insecure=true
+        - --metrics=5
+        - --rate=0
+        - "--telemetry-attributes=telemetrygentype=\"metrics\""
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        args:
+        - logs
+        - --otlp-endpoint=count-collector:4317
+        - --otlp-insecure=true
+        - --logs=5
+        - --rate=0
+        - "--telemetry-attributes=telemetrygentype=\"logs\""
+      restartPolicy: Never
+  backoffLimit: 4

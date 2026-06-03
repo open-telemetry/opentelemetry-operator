@@ -1,0 +1,42 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: tprocssr
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+
+    exporters:
+      otlp:
+        endpoint: tempo-tprocssr.chainsaw-tprocssr.svc:4317
+        tls:
+          insecure: true
+
+    processors:
+      transform:
+        error_mode: ignore
+        trace_statements:
+          - context: resource
+            statements:
+              - keep_keys(attributes, ["service.name", "X-Tenant", "otel.library.name"])
+              - set(attributes["X-Tenant"], "blue") where attributes["X-Tenant"] == "green"
+              - limit(attributes, 100, [])
+              - truncate_all(attributes, 4096)
+          - context: span
+            statements:
+              - set(attributes["net.peer.ip"], "5.6.7.8") where attributes["network.peer.address"] == "1.2.3.4"
+              - set(attributes["peer.service"], "modified-server") where attributes["service.peer.name"] == "telemetrygen-server"
+              - set(attributes["peer.service"], "modified-client") where attributes["service.peer.name"] == "telemetrygen-client"
+              - set(name, "modified-operation") where name == "okey-dokey-0"
+              - limit(attributes, 100, [])
+              - truncate_all(attributes, 4096)
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [transform]
+          exporters: [otlp]

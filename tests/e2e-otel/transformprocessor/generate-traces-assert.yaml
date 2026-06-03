@@ -1,0 +1,7 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-green
+  namespace: chainsaw-tprocssr
+status:
+  succeeded: 1

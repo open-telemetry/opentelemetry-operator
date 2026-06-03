@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-awssts-cloudwatch.otelcol-cloudwatch
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otelcol-cloudwatch-collector
+    app.kubernetes.io/part-of: opentelemetry
+  namespace: chainsaw-awssts-cloudwatch
+status:
+  containerStatuses:
+  - name: otc-container
+    ready: true
+    started: true
+  phase: Running

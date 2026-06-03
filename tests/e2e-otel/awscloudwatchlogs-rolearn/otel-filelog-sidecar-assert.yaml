@@ -1,0 +1,5 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-logs-sidecar-rolearn
+  namespace: chainsaw-awssts-cloudwatch

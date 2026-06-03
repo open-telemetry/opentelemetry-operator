@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces-green
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command:
+        - /bin/bash
+        - -eux
+        - -c
+        args:
+        - |
+          TRACE_JSON=$(curl -s -G http://tempo-tprocssr-jaegerui.chainsaw-tprocssr.svc:16686/api/traces --data-urlencode "service=green")
+          echo "Debug: Full trace JSON:"
+          echo $TRACE_JSON | jq '.'
+          
+          # Check if we have any spans with the expected transformations
+          SPAN_WITH_MODIFIED_CLIENT=$(echo $TRACE_JSON | jq '.data[].spans[] | select(.tags[] | select(.key == "peer.service" and .value == "modified-client"))')
+          echo "Debug: Span with modified-client:"
+          echo $SPAN_WITH_MODIFIED_CLIENT | jq '.'
+          
+          # Check the operation name of this span
+          OPERATION_NAME=$(echo $SPAN_WITH_MODIFIED_CLIENT | jq -r '.operationName')
+          echo "Debug: Operation name: $OPERATION_NAME"
+          
+          # Check if net.peer.ip exists
+          NET_PEER_IP=$(echo $SPAN_WITH_MODIFIED_CLIENT | jq '.tags[] | select(.key == "net.peer.ip")')
+          echo "Debug: net.peer.ip tag: $NET_PEER_IP"
+          
+          # Check what net attributes exist
+          NET_ATTRS=$(echo $SPAN_WITH_MODIFIED_CLIENT | jq '.tags[] | select(.key | startswith("net."))')
+          echo "Debug: All net.* attributes: $NET_ATTRS"
+          
+          VALIDATE=$(echo $TRACE_JSON | jq '
+            .data[] | 
+            select(
+              .spans[] | 
+              (
+                (.operationName == "modified-operation") and 
+                (.tags[] | select(.key == "net.peer.ip" and .value == "5.6.7.8")) and 
+                (.tags[] | select(.key == "peer.service" and .value == "modified-client"))
+              )
+            ) and 
+            (
+              .processes[] | 
+              (
+                (.tags[] | select(.key == "X-Tenant" and .value == "blue"))
+              )
+            )
+          ')
+          if [ -n "$VALIDATE" ]; then
+            echo "Validation passed: The trace values match the transform processor settings."
+          else
+            echo "Validation failed: The trace values do not match the transform processor settings."
+            exit 1
+          fi
+      restartPolicy: Never

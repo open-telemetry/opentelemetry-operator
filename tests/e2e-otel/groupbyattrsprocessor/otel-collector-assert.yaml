@@ -1,0 +1,64 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: chainsaw-gba
+status:
+  phase: Active
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-gba
+  namespace: chainsaw-gba
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-gba-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-gba-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-gba-role
+subjects:
+- kind: ServiceAccount
+  name: chainsaw-gba
+  namespace: chainsaw-gba
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: chainsaw-gba-collector
+  namespace: chainsaw-gba
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true

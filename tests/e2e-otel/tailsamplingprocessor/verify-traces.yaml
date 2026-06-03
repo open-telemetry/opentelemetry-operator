@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      containers:
+        - name: verify-traces
+          image: ghcr.io/grafana/tempo-operator/test-utils:main
+          command:
+            - /bin/bash
+            - -eux
+            - -c
+          args:
+            - |
+              # Wait for tail sampling decision_wait (30s) and Tempo ingestion
+              max_retries=15
+              retry_interval=10
+
+              # Retry loop: wait until "customer" traces appear in Tempo
+              for i in $(seq 1 $max_retries); do
+                curl -s -G \
+                  http://tempo-tailsmp:3200/api/search \
+                  --data-urlencode 'q={ resource.service.name="customer" }' \
+                  | tee /tmp/customer.out
+                num_traces=$(jq ".traces | length" /tmp/customer.out)
+                if [[ "$num_traces" != "0" ]]; then
+                  echo "Found $num_traces customer traces after $i attempts."
+                  break
+                fi
+                echo "Attempt $i/$max_retries: No customer traces yet, retrying in ${retry_interval}s..."
+                sleep $retry_interval
+              done
+
+              if [[ "$num_traces" == "0" ]]; then
+                echo "ERROR: No customer traces found after $max_retries attempts."
+                exit 1
+              fi
+
+              # Verify "green" service traces were filtered out by tail sampling
+              curl -s -G \
+                http://tempo-tailsmp:3200/api/search \
+                --data-urlencode 'q={ resource.service.name="green" }' \
+                | tee /tmp/jaeger.out
+              num_traces=$(jq ".traces | length" /tmp/jaeger.out)
+              if [[ "$num_traces" != "0" ]]; then
+                echo && echo "The TraceQL API returned $num_traces instead of 0 traces for green service."
+                exit 1
+              fi
+
+              echo "Fetch the first trace ID and store it in a variable"
+              traceID=$(jq -r '.traces[0].traceID' /tmp/customer.out)
+
+              echo "Use the trace ID to fetch the complete trace"
+              traceOutput=$(curl -s -G http://tempo-tailsmp:3200/api/traces/$traceID)
+
+              echo "Check for the strings in the trace output"
+              stringsToSearch=(
+                  "\"key\":\"service.name\""
+                  "\"stringValue\":\"/customer\""
+                  "\"key\":\"rpc.method\""
+                  "\"stringValue\":\"driver.DriverService/FindNearest\""
+              )
+              for searchString in "${stringsToSearch[@]}"; do
+                  if echo "$traceOutput" | grep -q "$searchString"; then
+                      echo "Trace output contains: $searchString"
+                  else
+                      echo "Trace output does not contain: $searchString"
+                      exit 1
+                  fi
+              done
+      restartPolicy: Never

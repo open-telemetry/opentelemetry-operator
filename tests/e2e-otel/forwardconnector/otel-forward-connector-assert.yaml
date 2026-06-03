@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otlp-forward-connector-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otlp-forward-connector-collector
+spec:
+  ports:
+  - appProtocol: http
+    name: otlp-blue-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - appProtocol: http
+    name: otlp-green-http
+    port: 4319
+    protocol: TCP
+    targetPort: 4319
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-forwardconnector.otlp-forward-connector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry

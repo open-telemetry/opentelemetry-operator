@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZJRENDQXdpZ0F3SUJBZ0lVQWtjSk5laXpqcHczOUc3QU1iTFEzWlJNNytBd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0V6RVJNQThHQTFVRUF3d0lUWGxFWlcxdlEwRXdIaGNOTWpRd09ERTVNVEF4T0RFd1doY05NelF3T0RFMwpNVEF4T0RFd1dqQVZNUk13RVFZRFZRUUREQXB3Y205dFpYUm9aWFZ6TUlJQ0lqQU5CZ2txaGtpRzl3MEJBUUVGCkFBT0NBZzhBTUlJQ0NnS0NBZ0VBbk1KdEl0NUs4WDZDZUwxUnlXdEFnV2pldVFoc1VPbHBadmk3NlJGWTFaU1UKdG0xcUdkVEQvS2RjWFJBV2hqVmY3RjBCVDZ6blNWbkU5Q0Q0ZnNLY0s5WW1hc2d2RysvSDc2eGxPaVIxWlhmUAppSVA1L3JyOENpMWhLdXh3U2hQcnpJMkQraDFMNjllY2NrWXZTdGpoU2t5RXdBSWgrNzJpaUxYU3JQcE54RXhFCjdiVjV6Nm1sWXQrTmZEZTlFa01id092LzI2dzkzclplK0lMZEtaa3dYdWtubGhocHRiU0txM3N3ZnNzbjJza2sKemV1eGRnTTU5TWYydUFHWERWTXFTQ3dHSUFEUmJMVGRNK1JEdnBRZEp3TzNaZ29SM1ZMRldmR1Q1WWpXOWxjbgpWUXl6ejVGd2NScXIvWVZNVjM1QkkreU1SMUdvTXlCVUc5S1QxQzZ3MkFoWnVjMFRWWVhHN0tMN2V6ZWJ0L0NMClRBRG9VVnRMZFVCUU9Dd0M2QVBNdk5KaGZBT0lRQWtFZTlMSDB5R0dQUkdPRU81Vm9UWC84ZVlKbXVSZzgyYjQKeFJ5OTJGTHpDMlhBbVBYeHYvVnJ3SHpkVUhFL2RzRlVDQ2FZRFhBL3k2OTNhaCtGeVRuaVhBbHcwSFEzdVYvdQpCRHdjQUI2d0NMeG5jWkFFMVlSSVdDd1JRa1ExcWNoMDd1YUoxNllXUXplMFhHandXWTNsNzlIYVpGK3BqS3FjCm1yOW1XZm1nQWZPUmNRVWdPU2taUmo5VEdMNWxVUlFnQTJaQ1B6SWRRZzlObytpQTBFU1YrV1ZXcElUVFM0UW0KZDVRR0tlMVZVbDZ3Wmt5bmhOU1g1R01ueTA3dlJRcEV0algxUlBBWXFEZHdJVDBNdmtSN0cxamk0MVZiSlhjQwpBd0VBQWFOcU1HZ3dIUVlEVlIwT0JCWUVGRFdMVnFuVm1ZWHVOT044QmZpT2ovQ2pKNUdxTUI4R0ExVWRJd1FZCk1CYUFGQW9pVTM1Njk1ckhyazFvVjQxbGMybzNoZkYwTUE4R0ExVWRFd0VCL3dRRk1BTUJBZjh3RlFZRFZSMFIKQkE0d0RJSUtjSEp2YldWMGFHVjFjekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBZ0VBUkZFODh4RG9Pd3MzVXFCUgpKaTh3bUlPbmU3Z2dGd1JkTHYrU2diYkpvanFLaXcyLytKaUhZZmYweXdRYSs3dXFTaVN0Wjl3NmJ6TGp5T0x6CjJOazdST0xacERqVDhWbnJnM2xEMlBna0NWRjJyWHhXdGRMWGlHNjlTc0cyNFdPNXVZNzk4ZVdac1lIckhsUlEKNnJuNzNtemxHMUN1VDFmVGphRmNKVXhiSHBOcXpQRXkzOFJ6bUlsWEVSSWlVRE0xUStTQXhiNHNjZ1B4eHhWLwpMa1ZBZmdhdjNYZ3cxanlBZDFOQjZwQkFFZWdkOXJGckpHVXk5MWZTNTZZdG9VZlM0bHNBTFlNcmhHVUxrWk5SCjNBalRtU3dDODVoTmhiQXFWMzhzZWl2K1Y3VHl2TUtvMElDN0E3UW52ZnhTb1A3bEQydjNFTVJmb01TV3Jmb2MKTWFGbVdpUEYzcll4OHF5ZU5lRlE0Tm9hQmtRTGZUZW5TaEtYY1JLRWs0ZnZja3luYnU5QjZpdmszY203OWp5OQo4WkRaUGpkdzliUUtXUW9jY1hYVkNxaXZUOHNISWR2NkxmTk5pZjhLVVREeTBpRlVXK0lGZ2tBeFlwRFlmakY1CmlyUjFZU3YzYlphZ3ZJWXpXQUVXcUg4MHdTRHd2bEU4RS9tY296dm9kSkJjNXR3VTRHYlZRK0VyNWNhVS9NNXMKcHVqcHJhSjhPTE5UTHFMamdTNTZMeDdMS0ZiczJpQVdMNzI0QVN1RDhUNVcya2NENHIrTFFMbGlTK3hTT0h0VAo3N0xROXh3QURBY0QxODUzbi92QmJsREJZdTY3MG12blRQVGVBejBteml1NmRwTzMrLzFqc2tvTnpjYzBRbU1uCmdkN284Ukh1cXhRT3laRjNXb0kwWlpuT1Qxbz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUpRd0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQ1Mwd2dna3BBZ0VBQW9JQ0FRQ2N3bTBpM2tyeGZvSjQKdlZISmEwQ0JhTjY1Q0d4UTZXbG0rTHZwRVZqVmxKUzJiV29aMU1QOHAxeGRFQmFHTlYvc1hRRlByT2RKV2NUMApJUGgrd3B3cjFpWnF5QzhiNzhmdnJHVTZKSFZsZDgrSWcvbit1dndLTFdFcTdIQktFK3ZNallQNkhVdnIxNXh5ClJpOUsyT0ZLVElUQUFpSDd2YUtJdGRLcytrM0VURVR0dFhuUHFhVmkzNDE4TjcwU1F4dkE2Ly9ickQzZXRsNzQKZ3QwcG1UQmU2U2VXR0dtMXRJcXJlekIreXlmYXlTVE42N0YyQXpuMHgvYTRBWmNOVXlwSUxBWWdBTkZzdE4wego1RU8rbEIwbkE3ZG1DaEhkVXNWWjhaUGxpTmIyVnlkVkRMUFBrWEJ4R3F2OWhVeFhma0VqN0l4SFVhZ3pJRlFiCjBwUFVMckRZQ0ZtNXpSTlZoY2Jzb3Z0N041dTM4SXRNQU9oUlcwdDFRRkE0TEFMb0E4eTgwbUY4QTRoQUNRUjcKMHNmVElZWTlFWTRRN2xXaE5mL3g1Z21hNUdEelp2akZITDNZVXZNTFpjQ1k5ZkcvOVd2QWZOMVFjVDkyd1ZRSQpKcGdOY0QvTHIzZHFINFhKT2VKY0NYRFFkRGU1WCs0RVBCd0FIckFJdkdkeGtBVFZoRWhZTEJGQ1JEV3B5SFR1CjVvblhwaFpETjdSY2FQQlpqZVh2MGRwa1g2bU1xcHlhdjJaWithQUI4NUZ4QlNBNUtSbEdQMU1Zdm1WUkZDQUQKWmtJL01oMUNEMDJqNklEUVJKWDVaVmFraE5OTGhDWjNsQVlwN1ZWU1hyQm1US2VFMUpma1l5ZkxUdTlGQ2tTMgpOZlZFOEJpb04zQWhQUXkrUkhzYldPTGpWVnNsZHdJREFRQUJBb0lDQUEyS0czd0tBQ1lZbTdOTEFzL25WQlI1ClZ0ZGJlMk9IcllObjAyOGZnUEU5bXBTaElhdG1mYUVLWVlkbU50UFRzMXZLY3EwTGpaUi96T3ViRjJ0M2FwNjgKcWVmS0w0dDFxK3F2RkxVdlpmWmtJVWcwd2ZoMjlRTDZCV3o4Sy95eCtNbGJwYjBLSDc4WWlkb3k1cTNMeXJXcwpvMENrVG9RY1RuZ0pZRTl4ZFJzUnpWaE10dDh4VTJnVlQvYWRKOWIyZGVTMVhZMS9OSDdTZUtSMVJSM3RMY2pjCjBYNzh6OUNTYmZHK3U2TVA3L3JOS2NFaGJOdjVEbDN1a1lnMkZ2SmZMd1U1ekRPaWJuUTVzT3RrK1ZieUd3eCsKSFM2U2l4VjNLeldJRUpLZ1BaVGNWVGphMW9NRW1GWWtqQnRqRW9OeUU3VkRIcUNnVkd0S0RRbTBKL0dKTU52dApQWEdCSENrdGovZTRSV2ZMcEVEVitCZ3hEemViN0hyM0JoNjVQM3NWWFBzTHU0MnZsaUl2TVVhV0Y3Z3lVMGZFCnhqREJNMTZDT2FQQlJ1bUFnNEVCNG1sYUdZYURibngzVDcxV0FWaTZVSThmSStLMEJ2aFV1WEplRERCYWk4TmoKWmhmc0liMTRGQ25jalV5Y3NhK1BxQ0o4aEtlT0ZxSGkzYzE1dU9kN1d1RjY1N2k2RFA3Si95MUZHTmxhdTBzbQpZZnlqakFsQ0wxSzhwSkkrdmE1R3MyZGhCeUp5QjBCOFJleDU2b0w3QitGclNkYmtWTnQvVUU3akdxbTB3S0FmCkd6aDRac2o5c1BwNUNyZWsrQWVVdnMwVkMrYThSR1E4cVRaRGtLWlBWZGc4UU1oUldHNFhIUSs0SXIwUzJ2dzMKZXJURUhNOTRGVm0rQzdPcFN2b1JBb0lCQVFEVTNWVTIzZHpwQ3pwWFM0ZkI1VTF0ZlRid3A0Ylo5cFl0YVRFdgpvaUFWajZjTEJOR2JzUWFDZzhSMThSZnNrS253OWh1YjdpYjMzNFE2RDlJeXpEblBLRGNXUTJLYmpRbDdLc0h3ClVTelR5MkdTUVNaYTdRdGxKZFVHeEtpNVBRK0RnNDQ0bjJqc0VpUGtvRlNQdGs3Mkt2QXBQcjBvWlZhaVloQmMKY1dtYmUyQWRVdzNRM08wb1Q5UklsVmQ0QWtVYTdVRzNxU0VGU1lwYU5iM0pFaXhacjlsKysxZHluY2lnVmhtQgpZV2h5RURTWG5aZlBMNEcrUzl4VTBEZFVEc0V2M05paG1sdk5Qa0NZcXVqcHlTZ3hJQTFLenEvdnRCWis5OTU4CkY0eTV4S2lyUS9YRDFiWVlyQnhKeldVVTdRVHltRUplZ2J2dEJJZ0lrODFIL0VzbkFvSUJBUUM4aG83QjNlYTAKUG5RcTJRa1pJaVVKQkVMVExnOWEzUEFaNHM5akIvY2hkQ3lRRjNsYUgzWGpEeGpER2xTaUMyL2szL3FZZWM2YgpZQldmQXRFRXdDK1hoajBBdzBwcUxQVzh0NWdmNVNZaFVjdEVwMjdFTHl3Z010cVNteU1hdW1COTdNb00zQW1kClVHb0taVE9DV2pHR3ZpbzZORXVMUWJnMUNPb1pOdmlTZUpYV1NzNDZhNGtMeUpyNlRQRVZEOFQyTjNkdEhYeC8KY3ZOWGhOeTFrd0xjMG9VM3RpR0ZzQzhVazJLT2s5VThVbUhQWERoUkhNN090QUs3dDhiK3Q1dWl6Tk1wenZ6WQpaZnV2OTI2bFRFYytZb1pzVzVsZXArSENaTzhxWEtURzhuVmFva0R5MWh0dmM4dU1lNVBsTlRqc0hTcjRRQmJQCm90QmxTOUlPUHdVeEFvSUJBUUNocU9aS29QeGcwSElpVWU1c1J5VWlmZkgzbW9ORGpZNUlOcGR3UVlSMFc0RFYKVVhlTzhrYXJZRDhZQTEzVC81blFzbGdOZURTSUUyeHNYQStiSEpiYXlRUHRHSWdPOG5HODVLQWRUc2pvb0pFZApiZlVmSU4rQ2xkVFBLeE9vZXNNSmNpUFV4TnYrVFZpTkRXYXJMaDJSdnRKZHdKUVAxY2FSMUQvd3RRRXJYK3VDCjJjeW9UdUNkdU9MVHJQZWM0THh5MHJVU01wUXRXOGlDOGtXTUt3MGJuLzFoL3FoUEY1MkNoMkVmYlViUk9aVjMKZit3SElXRTdrSWxvc0NrVTRZKytOYzhnREFha1BSNzUwdkxJZWtqWDVpdXlJSDVsWVRPa2djS3FJNGh3blBZcgorNVR1Z2FPbDRUQXFySjZUNGQzY0Q5NTN2N2RsTGdmUjI4NFBXWUFKQW9JQkFRQ3lPWExVQy9lQ0JsakQrUklFCjFLYTJjM1RKT0E0RUZFSlg5bmVnWTNOYUNQM242b2txamZ0Z2dIRWtZTXdKdFU0K3pRK1cvZkE0S3duRm5XQUUKWWJ1Y1A2ZUVCUnRnYk1pVGMrMDRtZVVHTXRFN1FoNFJFWmRoaVRIZ3p4RE12ODFndm0zMDRqK2tuTlRpcHZHZgpGYTBrZUxwcTgrMUc1UVpEL1AxeWdPbFZidklYOS9nbWVtckEzUkRGOTk4aHpocWh1YVlKWFlySTRkN3lxZ1FOCkU4SHRDSWd3TnRwU0RGRTEzbStaNGwvLyt0SEV1cVh5NkkwS0ZGdFJJMWZZamJOd29Mb3dHQ0lvWWFFaXBZUFEKZU9BUk5ndG1mT0hzL2tFTENXaWdYNXpYQjNleUN4bmplRTNQZTJTK2xrVW10cjN0V1ZXNkFyeU41cG1rYVoxWApJblRCQW9JQkFCem9mSEZuL0hkNU0yTTJGV2xaN3NKdThaNmVFLzhDVFJBTGlyVjNiSXVIa1p4RnMwaEdkSm9JClJoOC8rblAwWmsxYSs2UGpmK1ZpNHZkR2JzaDVESmx2T0pocGVRc2FGQ0crMjF5akxyVXpmNUJvaVUvd3BXa1AKbVJ1Zk9ZbU56Y1pXeWxZQ0FRdktvZFJFTEZFeFNrajFYOVBtQjQybWZGOVBjK3RUa1hORmhIQk4ySXNIZ0E4bAo5Q1hvYXZ2OWhrOHg5WmhhbnFsZURqa0FESGt3S3VnS0JZTFpsOEllbStQRVJHT1lwd2I1MU9PTVMzNlU3dVBhCnZ1T05IbjhEMTU2U2ducFczWHNJYTYxM3VCeDl0aVpDdFV6V2ZFalZXMkpteGo1TGkvSGExcFpVOUY5VHFQdk0KVmxqbWthejR1MENpN2VLWjdKZXgzVmFhTzZRZkJNdz0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=
+kind: Secret
+metadata:
+  name: prometheus-certs
+type: kubernetes.io/tls
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+  web-config.yml: |
+    tls_server_config:
+      cert_file: /etc/prometheus/certs/tls.crt
+      key_file: /etc/prometheus/certs/tls.key
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-receiver
+spec:
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-receiver
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: prometheus-receiver
+    spec:
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus:v2.53.2
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --web.config.file=/etc/prometheus/web-config.yml
+            - --web.enable-lifecycle
+            - --web.enable-remote-write-receiver
+          ports:
+            - name: web
+              containerPort: 9090
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+            - name: storage-volume
+              mountPath: /prometheus
+            - name: certs-volume
+              mountPath: /etc/prometheus/certs
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          securityContext:
+            runAsNonRoot: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+        - name: certs-volume
+          secret:
+            secretName: prometheus-certs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus-receiver
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090

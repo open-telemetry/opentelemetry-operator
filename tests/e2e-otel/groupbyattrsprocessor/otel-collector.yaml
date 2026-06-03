@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chainsaw-gba
+  namespace: chainsaw-gba
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainsaw-gba-role
+rules:
+  - apiGroups: ['']
+    resources: ['nodes/stats']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-gba-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-gba-role
+subjects:
+  - kind: ServiceAccount
+    name: chainsaw-gba
+    namespace: chainsaw-gba
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: chainsaw-gba
+  namespace: chainsaw-gba
+spec:
+  mode: daemonset
+  serviceAccount: chainsaw-gba
+  env:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  config: |
+    receivers:
+      kubeletstats:
+        collection_interval: 20s
+        auth_type: "serviceAccount"
+        endpoint: "https://${env:K8S_NODE_NAME}:10250"
+        insecure_skip_verify: true
+    exporters:
+      otlp:
+        endpoint: gba-main-collector.chainsaw-gba.svc:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          receivers: [kubeletstats]
+          exporters: [otlp]
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule

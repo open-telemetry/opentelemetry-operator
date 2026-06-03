@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-proportional
+  namespace: chainsaw-probabilistic-sampler
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        args:
+        - traces
+        - --otlp-endpoint=probabilistic-proportional-collector:4317
+        - --otlp-insecure=true
+        - --traces=200
+        - --duration=30s
+        - --rate=10
+        - "--otlp-attributes=test.mode=\"proportional\",sampling.test=\"enabled\""

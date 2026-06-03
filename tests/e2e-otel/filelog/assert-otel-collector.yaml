@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: clusterlogs-collector
+  namespace: chainsaw-filelog
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-filelog.clusterlogs
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: clusterlogs-collector
+    app.kubernetes.io/part-of: opentelemetry
+  namespace: chainsaw-filelog
+status:
+  containerStatuses:
+  - name: otc-container
+    ready: true
+    started: true
+  phase: Running
