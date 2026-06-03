@@ -924,7 +924,7 @@ For more information about the maintainer role, see the [community repository](h
 
 - [Antoine Toulme](https://github.com/atoulme), Splunk
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
-- [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
+- [Tyler Helmuth](https://github.com/TylerHelmuth), Grafana Labs
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
