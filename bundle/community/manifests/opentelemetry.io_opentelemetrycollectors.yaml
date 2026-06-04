@@ -6087,6 +6087,8 @@ spec:
                     minimum: 1
                     type: integer
                 type: object
+              command:
+                type: string
               config:
                 properties:
                   connectors:

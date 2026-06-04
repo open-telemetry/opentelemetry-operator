@@ -119,6 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		ImagePullPolicy: otelcol.Spec.ImagePullPolicy,
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
+		Command:         commandArgs(otelcol.Spec.Command),
 		Args:            args,
 		Env:             getContainerEnvVars(cfg, otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
@@ -172,6 +173,13 @@ func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) ([]corev1.
 	})
 
 	return ports, nil
+}
+
+func commandArgs(command string) []string {
+	if command == "" {
+		return nil
+	}
+	return []string{command}
 }
 
 func defaultProbeSettings(probe *corev1.Probe, probeConfig *v1beta1.Probe) {

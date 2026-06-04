@@ -604,6 +604,21 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 	assert.Empty(t, c.Resources)
 }
 
+func TestContainerCommand(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Command: "/otelcol-contrib",
+			},
+		},
+	}
+	cfg := config.New()
+
+	c := Container(cfg, testLogger, otelcol, true, nil)
+
+	assert.Equal(t, []string{"/otelcol-contrib"}, c.Command)
+}
+
 func TestContainerArgs(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{

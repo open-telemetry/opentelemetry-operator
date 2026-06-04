@@ -106,6 +106,9 @@ type OpenTelemetryCommonFields struct {
 	// Args is the set of arguments to pass to the main container's binary.
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
+	// Command is used to override the default command of the main container.
+	// +optional
+	Command string `json:"command,omitempty"`
 	// Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.
 	// +optional
 	// +kubebuilder:default:=1

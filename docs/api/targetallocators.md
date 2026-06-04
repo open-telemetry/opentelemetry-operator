@@ -147,6 +147,13 @@ The default is 30s, which means that if a collector becomes not Ready, the targe
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>command</b></td>
+        <td>string</td>
+        <td>
+          Command is used to override the default command of the main container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dnsPolicy</b></td>
         <td>string</td>
         <td>

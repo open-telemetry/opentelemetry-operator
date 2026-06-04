@@ -20199,6 +20199,13 @@ for the workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>command</b></td>
+        <td>string</td>
+        <td>
+          Command is used to override the default command of the main container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>configVersions</b></td>
         <td>integer</td>
         <td>

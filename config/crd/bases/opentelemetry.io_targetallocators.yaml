@@ -1215,6 +1215,8 @@ spec:
                 default: 30s
                 format: duration
                 type: string
+              command:
+                type: string
               dnsPolicy:
                 type: string
               env:
