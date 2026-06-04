@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-collector-statefulset
+# Consolidated smoke test for the OpenTelemetryCollector "statefulset" mode.
+# Replaces smoke-statefulset, statefulset-features and volume-claim-label, plus
+# the statefulset arm of the per-attribute tests.
+spec:
+  steps:
+    - name: install
+      description: install a statefulset collector with volume/PVC and pod-spec fields set
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml

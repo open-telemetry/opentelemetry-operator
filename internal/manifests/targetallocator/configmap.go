@@ -12,12 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -136,7 +134,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
 		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
@@ -193,7 +191,7 @@ func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1bet
 		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
 	}
 
-	configStr, err := otelconfig.Yaml(&collectorConfig)
+	configStr, err := collectorConfig.Yaml()
 	if err != nil {
 		return nil, err
 	}

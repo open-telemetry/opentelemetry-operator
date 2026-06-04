@@ -1,0 +1,68 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+  annotations:
+    regular-annotation: regular-value
+spec:
+  mode: statefulset
+  replicas: 1
+  # statefulset-specific fields
+  podManagementPolicy: OrderedReady
+  terminationGracePeriodSeconds: 600
+  volumes:
+    - name: testvolume
+  volumeMounts:
+    - name: testvolume
+      mountPath: /usr/share/testvolume
+  volumeClaimTemplates:
+    - metadata:
+        name: testvolume
+        labels:
+          test: "true"
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+  # common pod-spec fields
+  shareProcessNamespace: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+  podAnnotations:
+    pod-annotation1: value1
+    pod-annotation2: value2
+  podDnsConfig:
+    nameservers:
+      - 8.8.8.8
+    searches:
+      - my.dns.search.suffix
+  initContainers:
+    - name: init-test-echo
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'echo "init done"']
+  additionalContainers:
+    - name: alpine
+      image: mirror.gcr.io/library/alpine:latest
+      command: ['sh', '-c', 'while true; do sleep 30; done']
+  config:
+    receivers:
+      jaeger:
+        protocols:
+          grpc: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]

@@ -28,11 +28,13 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 	}
 	labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 
+	annotations := maps.Clone(params.OtelCol.Annotations)
+
 	return &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        params.OtelCol.Name,
 			Namespace:   params.OtelCol.Namespace,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 			Labels:      labels,
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
@@ -60,6 +62,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			Observability:                taSpec.Observability,
 			AllowInsecureAuthSecrets:     taSpec.AllowInsecureAuthSecrets,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
+			Mtls:                         taSpec.Mtls,
 		},
 	}, nil
 }

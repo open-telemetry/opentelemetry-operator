@@ -1,0 +1,19 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: must-gather
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Fix must-gather output to produce omc-compatible directory layout and correct YAML serialization
+
+# One or more tracking issues related to the change
+issues: [4965]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Previously collected files used a per-collector directory with kind-prefixed filenames (e.g. `namespaces/<ns>/<collector-name>/deployment-<name>.yaml`),
+  which omc cannot parse. Output now follows the standard omc layout (`namespaces/<ns>/<api-group>/<resource-plural>/<name>.yaml`).
+  Also fixes missing apiVersion/kind fields in serialized YAML, incorrect default output directory, and adds collection of CRDs and OpAMPBridge resources.

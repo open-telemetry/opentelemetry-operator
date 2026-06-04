@@ -15,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -60,7 +59,7 @@ func TestAddNativeSidecar(t *testing.T) {
 		},
 	}
 
-	otelcolYaml, err := otelconfig.Yaml(&otelcol.Spec.Config)
+	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
 	cfg := config.Config{
 		CollectorImage: "some-default-image",
@@ -189,7 +188,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 		},
 	}
 
-	otelcolYaml, err := otelconfig.Yaml(&otelcol.Spec.Config)
+	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
 	cfg := config.Config{
 		CollectorImage: "some-default-image",

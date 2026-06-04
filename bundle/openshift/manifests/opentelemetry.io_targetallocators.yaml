@@ -2301,6 +2301,14 @@ spec:
                 - managed
                 - unmanaged
                 type: string
+              mtls:
+                properties:
+                  enabled:
+                    type: boolean
+                  useCertManager:
+                    default: true
+                    type: boolean
+                type: object
               networkPolicy:
                 properties:
                   enabled:

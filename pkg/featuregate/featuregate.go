@@ -23,13 +23,6 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
-	// EnableTargetAllocatorMTLS is the feature gate that enables mTLS between the target allocator and the collector.
-	EnableTargetAllocatorMTLS = featuregate.GlobalRegistry().MustRegister(
-		"operator.targetallocator.mtls",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
-		featuregate.WithRegisterFromVersion("v0.111.0"),
-	)
 	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
 	// strategy for allocation strategies that might not assign all jobs (per-node).
 	EnableTargetAllocatorFallbackStrategy = featuregate.GlobalRegistry().MustRegister(

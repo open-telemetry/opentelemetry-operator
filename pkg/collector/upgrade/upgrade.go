@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
 
 type VersionUpgrade struct {
@@ -125,7 +126,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 		if available.GreaterThan(instanceV) {
 			if available.upgrade != nil {
 				otelcolV1alpha1 := &v1alpha1.OpenTelemetryCollector{}
-				if err := otelcolV1alpha1.ConvertFrom(&updated); err != nil {
+				if err := webhook.OtelColConvertFrom(otelcolV1alpha1, &updated); err != nil {
 					return updated, err
 				}
 
@@ -136,7 +137,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 				}
 				upgradedV1alpha1.Status.Version = available.String()
 
-				if err := upgradedV1alpha1.ConvertTo(&updated); err != nil {
+				if err := webhook.OtelColConvertTo(upgradedV1alpha1, &updated); err != nil {
 					return updated, err
 				}
 				u.Log.V(1).Info("step upgrade", "name", updated.Name, "namespace", updated.Namespace, "version", available.String())

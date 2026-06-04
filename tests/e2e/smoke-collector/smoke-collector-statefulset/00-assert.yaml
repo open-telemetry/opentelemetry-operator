@@ -1,0 +1,54 @@
+# Asserts the statefulset-mode collector propagates volume/PVC and pod-spec
+# fields onto the reconciled StatefulSet.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: smoke-collector-collector
+  annotations:
+    regular-annotation: regular-value
+spec:
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      annotations:
+        pod-annotation1: value1
+        pod-annotation2: value2
+    spec:
+      shareProcessNamespace: true
+      terminationGracePeriodSeconds: 600
+      nodeSelector:
+        kubernetes.io/os: linux
+      (affinity != null): true
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+        searches:
+          - my.dns.search.suffix
+      initContainers:
+        - name: init-test-echo
+      (length(containers[?name == 'alpine'])): 1
+  volumeClaimTemplates:
+    - metadata:
+        name: testvolume
+        labels:
+          test: "true"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+status:
+  replicas: 1
+  readyReplicas: 1
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-collector
+status:
+  (image != ''): true
+  (version != ''): true
+  scale:
+    replicas: 1
+    statusReplicas: "1/1"

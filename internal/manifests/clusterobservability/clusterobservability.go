@@ -16,6 +16,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
@@ -64,7 +66,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		resourceManifests = append(resourceManifests, agentCollector)
 	}
 
-	// Build cluster-level collector (Deployment)
+	// Build cluster-level collector (StatefulSet)
 	clusterCollector, err := buildClusterCollector(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build cluster collector: %w", err)
@@ -333,6 +335,7 @@ func buildClusterCollector(params manifests.Params) (*v1beta1.OpenTelemetryColle
 	clusterLabels := manifestutils.Labels(co.ObjectMeta, clusterCollectorName, params.Config.CollectorImage, ComponentClusterObservability, params.Config.LabelsFilter)
 	clusterLabels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	clusterLabels["app.kubernetes.io/component"] = ComponentClusterObservability
+	clusterLabels[constants.LabelTargetAllocator] = naming.TargetAllocator(co.Name)
 
 	clusterCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -351,7 +354,7 @@ func buildClusterCollector(params manifests.Params) (*v1beta1.OpenTelemetryColle
 			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode:   v1beta1.ModeDeployment,
+			Mode:   v1beta1.ModeStatefulSet,
 			Config: collectorConfig,
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Image:    getCollectorImage(params.Config.CollectorImage),

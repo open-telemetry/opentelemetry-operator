@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -62,7 +63,7 @@ func TestContainerNewDefault(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -82,7 +83,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 		CollectorImage: "default-image",
 	}
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -414,7 +415,7 @@ service:
 			}
 
 			// test
-			c := Container(cfg, testLogger, otelcol, true)
+			c := Container(cfg, testLogger, otelcol, true, nil)
 			// verify
 			assert.ElementsMatch(t, testCase.expectedPorts, c.Ports, testCase.description)
 		})
@@ -436,7 +437,7 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Len(t, c.Args, 2)
@@ -458,7 +459,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 2)
@@ -481,7 +482,7 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 3)
@@ -493,7 +494,7 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
-	c1 := Container(config.New(), testLogger, v1beta1.OpenTelemetryCollector{Spec: v1beta1.OpenTelemetryCollectorSpec{}}, true)
+	c1 := Container(config.New(), testLogger, v1beta1.OpenTelemetryCollector{Spec: v1beta1.OpenTelemetryCollectorSpec{}}, true, nil)
 
 	// verify
 	assert.Nil(t, c1.SecurityContext)
@@ -512,7 +513,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 				},
 			},
 		},
-	}, true)
+	}, true, nil)
 
 	// verify
 	assert.NotNil(t, c2.SecurityContext)
@@ -537,7 +538,7 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Len(t, c.Env, 4)
@@ -556,7 +557,7 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Len(t, c.Env, 3)
@@ -577,7 +578,7 @@ func TestContainerProxyEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	require.Len(t, c.Env, 5)
@@ -609,7 +610,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Equal(t, resource.MustParse("100m"), *c.Resources.Limits.Cpu())
@@ -626,7 +627,7 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Empty(t, c.Resources)
@@ -647,7 +648,7 @@ func TestContainerArgs(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Contains(t, c.Args, "--metrics-level=detailed")
@@ -669,7 +670,7 @@ func TestContainerOrderedArgs(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify that the first args is (always) the config, and the remaining args are ordered alphabetically
 	// by the key
@@ -690,7 +691,7 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Equal(t, c.ImagePullPolicy, corev1.PullIfNotPresent)
@@ -725,7 +726,7 @@ func TestContainerEnvFrom(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Contains(t, c.EnvFrom, envFrom1)
@@ -775,7 +776,7 @@ service:
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
@@ -831,7 +832,7 @@ service:
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
@@ -860,7 +861,7 @@ service:
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	// verify
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
@@ -887,7 +888,7 @@ func TestContainerLifecycle(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	expectedLifecycleHooks := corev1.Lifecycle{
 		PostStart: &corev1.LifecycleHandler{
@@ -917,38 +918,26 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 		CertManagerAvailability: certmanager.Available,
 	}
 
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-	otelcol.Spec.TargetAllocator.Enabled = true
+	ta := &v1alpha1.TargetAllocator{}
+	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-	require.NoError(t, err)
+	c := Container(cfg, testLogger, otelcol, true, ta)
 
-	// test
-	c := Container(cfg, testLogger, otelcol, true)
-
-	// verify
 	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
 		Name:      naming.TAClientCertificate(""),
 		MountPath: constants.TACollectorTLSDirPath,
 	})
 }
 
-func TestContainerWithFeaturegateEnabledButTADisabled(t *testing.T) {
+func TestContainerWithMTLSEnabledButNilTA(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
 	cfg := config.Config{
 		CertManagerAvailability: certmanager.Available,
 	}
 
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
-	require.NoError(t, err)
-
-	// test
-	c := Container(cfg, testLogger, otelcol, true)
-
-	// verify
 	assert.NotContains(t, c.VolumeMounts, corev1.VolumeMount{
 		Name:      naming.TAClientCertificate(""),
 		MountPath: constants.TACollectorTLSDirPath,

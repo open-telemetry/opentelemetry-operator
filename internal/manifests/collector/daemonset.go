@@ -47,8 +47,8 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
 					InitContainers:                params.OtelCol.Spec.InitContainers,
-					Containers:                    append([]corev1.Container{Container(params.Config, params.Log, params.OtelCol, true)}, params.OtelCol.Spec.AdditionalContainers...),
-					Volumes:                       Volumes(params.Config, params.OtelCol),
+					Containers:                    append([]corev1.Container{Container(params.Config, params.Log, params.OtelCol, true, params.TargetAllocator)}, params.OtelCol.Spec.AdditionalContainers...),
+					Volumes:                       Volumes(params.Config, params.OtelCol, params.TargetAllocator),
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,

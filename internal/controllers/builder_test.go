@@ -23,7 +23,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // renderObjects serializes a list of client.Object into a multi-document YAML
@@ -249,7 +248,7 @@ func TestBuildTargetAllocator(t *testing.T) {
 		},
 		{
 			name:          "mtls",
-			inputFile:     "build_target_allocator_minimal.input.yaml",
+			inputFile:     "build_target_allocator_mtls.input.yaml",
 			collectorFile: "build_target_allocator_collector.input.yaml",
 			wantFile:      "build_target_allocator_mtls.yaml",
 			cfg: config.Config{
@@ -259,7 +258,6 @@ func TestBuildTargetAllocator(t *testing.T) {
 				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
 			},
-			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {
