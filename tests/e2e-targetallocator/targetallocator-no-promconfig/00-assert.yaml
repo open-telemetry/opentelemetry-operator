@@ -27,8 +27,7 @@ apiVersion: v1
 data:
   collector.yaml: |
     exporters:
-        prometheus:
-            endpoint: 0.0.0.0:9090
+        nop: {}
     receivers:
         prometheus:
             target_allocator:
@@ -39,7 +38,7 @@ data:
         pipelines:
             metrics:
                 exporters:
-                    - prometheus
+                    - nop
                 receivers:
                     - prometheus
         telemetry:
