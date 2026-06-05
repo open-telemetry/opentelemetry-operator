@@ -50,13 +50,13 @@ func NewServer(agents *data.Agents) *Server {
 func (srv *Server) Start() {
 	settings := server.StartSettings{
 		Settings: server.Settings{
-			Callbacks: server.CallbacksStruct{
-				OnConnectingFunc: func(request *http.Request) types.ConnectionResponse {
+			Callbacks: types.Callbacks{
+				OnConnecting: func(request *http.Request) types.ConnectionResponse {
 					return types.ConnectionResponse{
 						Accept: true,
-						ConnectionCallbacks: server.ConnectionCallbacksStruct{
-							OnMessageFunc:         srv.onMessage,
-							OnConnectionCloseFunc: srv.onDisconnect,
+						ConnectionCallbacks: types.ConnectionCallbacks{
+							OnMessage:         srv.onMessage,
+							OnConnectionClose: srv.onDisconnect,
 						},
 					}
 				},

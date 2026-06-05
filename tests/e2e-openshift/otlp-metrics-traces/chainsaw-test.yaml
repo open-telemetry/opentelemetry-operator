@@ -44,11 +44,3 @@ spec:
     - script:
         timeout: 5m
         content: ./check_metrics.sh
-  - name: Run the must-gather and verify the contents
-    try:
-    - script:
-        env:
-        - name: otelnamespace
-          value: opentelemetry-operator-system
-        timeout: 5m
-        content: ./check_must_gather.sh

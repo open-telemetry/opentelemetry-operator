@@ -27,6 +27,7 @@ The Target Allocator uses a configuration file (by default under `/conf/targetal
 | `filter_strategy`                  | Filter strategy to apply to metrics                                           | `relabel-config`                              |                      |
 | `prometheus_cr`                    | Whether to watch Prometheus Custom Resources                                  |                                               |                      |
 | `https`                            | Whether to expose the target allocator endpoint over https                    |                                               |                      |
+| `allow_insecure_auth_secrets`      | Serve auth secret values over plain HTTP without mTLS                         | `false`                                       | `ALLOW_INSECURE_AUTH_SECRETS` |
 | `collector_not_ready_grace_period` | Wait time before assigning jobs to a new collector.                           | 30s                                           |                      |
 
 Additional configuration options are present under [./internal/config/config.go](./internal/config/config.go).
@@ -421,9 +422,29 @@ Prerequisites:
           - delete
         ```
 
-- Enable the `operator.targetallocator.mtls` feature gate in the operator's deployment. 
+* Configure mTLS by setting `spec.mtls.enabled: true` on the `TargetAllocator` CR.
+* If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
+* `useCertManager` defaults to `true`, so cert-manager will provision the serving and client certificates unless you explicitly disable it.
 
+#### Alternative: allow insecure auth secrets
 
+If transport security is already handled by a service mesh or equivalent, you can skip the mTLS setup and serve auth secret values over plain HTTP.
+
+**With the Operator (CRD):**
+
+```yaml
+targetAllocator:
+  enabled: true
+  allowInsecureAuthSecrets: true
+```
+
+This works on both the `OpenTelemetryCollector` CR (embedded target allocator) and the standalone `TargetAllocator` CR.
+
+**Standalone Target Allocator (without Operator):**
+
+Set `allow_insecure_auth_secrets: true` in the target allocator config file, or set the `ALLOW_INSECURE_AUTH_SECRETS=true` environment variable.
+
+> **Warning:** Only enable this when transport-level security is guaranteed by other means.
 
 # Design
 

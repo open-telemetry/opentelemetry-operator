@@ -87,6 +87,60 @@ func (r *Reviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccount
 	return r.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
 }
 
+// CheckPolicyRulesForUser is a convenience function that checks whether a user (identified by
+// username and group membership) holds all the permissions described by the given PolicyRules.
+func (r *Reviewer) CheckPolicyRulesForUser(ctx context.Context, username string, groups []string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
+	var subjectAccessReviews []*v1.SubjectAccessReview
+	var errs []error
+	for _, rule := range rules {
+		if rule == nil {
+			continue
+		}
+		resourceAttributes := policyRuleToResourceAttributes(rule)
+		nonResourceAttributes := policyRuleToNonResourceAttributes(rule)
+		for _, res := range resourceAttributes {
+			sar, err := r.CanAccessAsUser(ctx, username, groups, res, nil)
+			subjectAccessReviews = append(subjectAccessReviews, sar)
+			errs = append(errs, err)
+		}
+		for _, nonResourceAttribute := range nonResourceAttributes {
+			sar, err := r.CanAccessAsUser(ctx, username, groups, nil, nonResourceAttribute)
+			subjectAccessReviews = append(subjectAccessReviews, sar)
+			errs = append(errs, err)
+		}
+	}
+	return subjectAccessReviews, errors.Join(errs...)
+}
+
+// CheckSARsForUser re-checks the resource attributes described by the given SubjectAccessReviews
+// against a user identity. It is used to check whether a user holds the same permissions that
+// a ServiceAccount was found to be missing: the caller runs CheckPolicyRules for the SA, collects
+// the denied results, and passes them here to see whether the requesting user holds those
+// permissions themselves.
+func (r *Reviewer) CheckSARsForUser(ctx context.Context, username string, groups []string, sars []*v1.SubjectAccessReview) ([]*v1.SubjectAccessReview, error) {
+	var result []*v1.SubjectAccessReview
+	var errs []error
+	for _, sar := range sars {
+		userSAR, err := r.CanAccessAsUser(ctx, username, groups, sar.Spec.ResourceAttributes, sar.Spec.NonResourceAttributes)
+		result = append(result, userSAR)
+		errs = append(errs, err)
+	}
+	return result, errors.Join(errs...)
+}
+
+// CanAccessAsUser checks whether a user is able to access a single requested resource attribute.
+func (r *Reviewer) CanAccessAsUser(ctx context.Context, username string, groups []string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {
+	sar := &v1.SubjectAccessReview{
+		Spec: v1.SubjectAccessReviewSpec{
+			ResourceAttributes:    res,
+			NonResourceAttributes: nonResourceAttributes,
+			User:                  username,
+			Groups:                groups,
+		},
+	}
+	return r.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
+}
+
 // policyRuleToResourceAttributes converts a single policy rule in to a list of resource attribute requests.
 // policyRules have lists of resources, verbs, groups, etc. whereas resource attributes do not work on lists. This
 // requires us to iterate over each list and flatten.

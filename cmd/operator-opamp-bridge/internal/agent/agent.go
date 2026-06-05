@@ -246,13 +246,13 @@ func (agent *Agent) Start() error {
 		OpAMPServerURL: agent.config.Endpoint,
 		Header:         agent.config.Headers.ToHTTPHeader(),
 		InstanceUid:    types.InstanceUid(agent.instanceId),
-		Callbacks: types.CallbacksStruct{
-			OnConnectFunc:              agent.onConnect,
-			OnConnectFailedFunc:        agent.onConnectFailed,
-			OnErrorFunc:                agent.onError,
-			SaveRemoteConfigStatusFunc: agent.saveRemoteConfigStatus,
-			GetEffectiveConfigFunc:     agent.getEffectiveConfig,
-			OnMessageFunc:              agent.onMessage,
+		Callbacks: types.Callbacks{
+			OnConnect:              agent.onConnect,
+			OnConnectFailed:        agent.onConnectFailed,
+			OnError:                agent.onError,
+			SaveRemoteConfigStatus: agent.saveRemoteConfigStatus,
+			GetEffectiveConfig:     agent.getEffectiveConfig,
+			OnMessage:              agent.onMessage,
 		},
 		RemoteConfigStatus:    agent.remoteConfigStatus,
 		PackagesStateProvider: nil,
@@ -348,6 +348,10 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
+		// Skip collectors pending deletion
+		if instance.GetDeletionTimestamp() != nil {
+			continue
+		}
 		col := instance
 		marshaled, err := yaml.Marshal(&col)
 		if err != nil {

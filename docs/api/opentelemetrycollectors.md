@@ -20199,6 +20199,13 @@ for the workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the container entrypoint (Pod.spec.containers[].command). When omitted, the image ENTRYPOINT is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>configVersions</b></td>
         <td>integer</td>
         <td>
@@ -32210,6 +32217,15 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>allowInsecureAuthSecrets</b></td>
+        <td>boolean</td>
+        <td>
+          AllowInsecureAuthSecrets controls whether auth secret values (e.g. basicAuth passwords)
+are served over plain HTTP without requiring mTLS. Only enable this when the target allocator
+endpoint is secured by a service mesh or equivalent transport-level security.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>collectorNotReadyGracePeriod</b></td>
         <td>string</td>
         <td>
@@ -32263,6 +32279,13 @@ The default is relabel-config.<br/>
         <td>string</td>
         <td>
           Image indicates the container image to use for the OpenTelemetry TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtls">mtls</a></b></td>
+        <td>object</td>
+        <td>
+          Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34314,6 +34337,43 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator-1)</sup></sup>
+
+
+
+Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether to enable mTLS between the target allocator and the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>useCertManager</b></td>
+        <td>boolean</td>
+        <td>
+          UseCertManager defines whether cert-manager should be used to provision certificates for mTLS.
+Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr></tbody>

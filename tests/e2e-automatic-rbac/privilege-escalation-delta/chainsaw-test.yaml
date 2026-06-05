@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: privilege-escalation-delta
+spec:
+  # This test verifies the delta approach in the RBAC privilege escalation check:
+  # if the collector's ServiceAccount already holds the required permissions through
+  # a pre-existing binding, the webhook allows the request even when the requesting
+  # user does not hold those permissions themselves.
+  #
+  # The collector is named "privilege-delta-test", so the operator would manage RBAC
+  # for ServiceAccount "privilege-delta-test-collector" (naming.ServiceAccount derives
+  # this deterministically).  That SA is pre-bound to the events permissions before the
+  # OTC is submitted, making the delta empty — reconciliation would grant nothing new,
+  # so no privilege escalation can occur and the request must be accepted.
+  steps:
+  - name: setup-pre-existing-sa-binding
+    try:
+    - apply:
+        file: 01-install.yaml
+  - name: limited-user-request-accepted-because-sa-already-has-permissions
+    try:
+    - script:
+        content: |
+          kubectl apply \
+            --namespace $NAMESPACE \
+            --dry-run=server \
+            --as=limited-user \
+            -f 02-collector.yaml
+        check:
+          ($error != null): false

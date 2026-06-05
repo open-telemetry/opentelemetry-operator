@@ -6,9 +6,13 @@ receivers:
     collection_interval: 30s
     node_conditions_to_report: ["Ready", "MemoryPressure", "DiskPressure", "PIDPressure"]
     allocatable_types_to_report: ["cpu", "memory", "storage", "pods"]
-    
+
   k8s_events:
     auth_type: serviceAccount
+
+  prometheus:
+    config:
+      scrape_configs: []
 
 processors:
   batch: {}

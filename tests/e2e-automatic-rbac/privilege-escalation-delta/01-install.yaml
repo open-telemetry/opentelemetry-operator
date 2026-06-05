@@ -1,0 +1,56 @@
+# limited-user: has permission to create OpenTelemetryCollectors but does NOT hold the
+# cluster-level get/list/watch on events that the k8s_events receiver requires.
+#
+# The collector's ServiceAccount (privilege-delta-test-collector, derived from
+# naming.ServiceAccount("privilege-delta-test")) is pre-bound to the events permissions,
+# simulating a binding that exists independently of the operator's auto-RBAC feature.
+# The SA object itself does not need to exist for RBAC bindings to take effect.
+---
+# Namespace-scoped role that allows managing OpenTelemetryCollectors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otc-creator
+rules:
+- apiGroups: ["opentelemetry.io"]
+  resources: ["opentelemetrycollectors"]
+  verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: limited-user-otc-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otc-creator
+subjects:
+- kind: User
+  name: limited-user
+  apiGroup: rbac.authorization.k8s.io
+---
+# Cluster-level events permissions that the k8s_events receiver requires.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('-', [$namespace, 'events-reader']))
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+---
+# Pre-bind the collector's ServiceAccount to the events permissions.
+# This represents a binding that exists before the OTC is created — the operator would
+# not grant any new permissions, so the delta is empty and the request should be allowed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', [$namespace, 'sa-events']))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('-', [$namespace, 'events-reader']))
+subjects:
+- kind: ServiceAccount
+  name: privilege-delta-test-collector
+  namespace: ($namespace)

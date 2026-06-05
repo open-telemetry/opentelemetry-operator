@@ -8,7 +8,7 @@
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
 
-FROM busybox
+FROM busybox@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
 
 ARG SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE
 

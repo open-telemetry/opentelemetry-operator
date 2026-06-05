@@ -1678,6 +1678,11 @@ func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
+	if in.Mtls != nil {
+		in, out := &in.Mtls, &out.Mtls
+		*out = new(v1beta1.TargetAllocatorMTLS)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.LivenessProbe != nil {
 		in, out := &in.LivenessProbe, &out.LivenessProbe
 		*out = new(v1.Probe)

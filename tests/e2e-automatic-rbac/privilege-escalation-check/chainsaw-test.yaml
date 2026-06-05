@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: privilege-escalation-check
+spec:
+  # This test verifies that the OpenTelemetryCollector admission webhook rejects requests
+  # where the auto-RBAC feature would grant the collector's ServiceAccount permissions
+  # that the requesting user does not already hold themselves (privilege escalation
+  # prevention).
+  #
+  # Two scenarios are exercised using kubectl impersonation (--as):
+  #   1. limited-user  — can create OTCs but lacks the cluster-level events permissions
+  #                      that the k8s_events receiver requires.  Request must be rejected.
+  #   2. permitted-user — can create OTCs and already holds those events permissions.
+  #                       Request must be accepted.
+  #
+  # Both scenarios use --dry-run=server so the admission webhook fires without persisting
+  # the OTC.
+  steps:
+  - name: setup-test-subjects
+    try:
+    - apply:
+        file: 01-install.yaml
+  - name: wait-for-rbac-propagation
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          for i in $(seq 1 30); do
+            if kubectl auth can-i get events --as=permitted-user -A 2>/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "RBAC propagation timed out"
+          exit 1
+  - name: limited-user-request-is-rejected
+    try:
+    - script:
+        content: |
+          kubectl apply \
+            --namespace $NAMESPACE \
+            --dry-run=server \
+            --as=limited-user \
+            -f 02-collector.yaml
+        check:
+          ($error != null): true
+          (contains($stderr, 'is not allowed to create a collector whose config would grant permissions they do not hold')): true
+  - name: permitted-user-request-is-accepted
+    try:
+    - script:
+        content: |
+          kubectl apply \
+            --namespace $NAMESPACE \
+            --dry-run=server \
+            --as=permitted-user \
+            -f 02-collector.yaml
+        check:
+          ($error != null): false

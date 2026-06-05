@@ -172,20 +172,20 @@ func TestApplyFeatureGateOverrides_MultipleGates(t *testing.T) {
 
 	// Get original states
 	originalGolangFlags := SetGolangFlags.IsEnabled()
-	originalMTLS := EnableTargetAllocatorMTLS.IsEnabled()
+	originalFallbackStrategy := EnableTargetAllocatorFallbackStrategy.IsEnabled()
 	t.Cleanup(func() {
 		// Restore original states
 		_ = registry.Set(SetGolangFlags.ID(), originalGolangFlags)
-		_ = registry.Set(EnableTargetAllocatorMTLS.ID(), originalMTLS)
+		_ = registry.Set(EnableTargetAllocatorFallbackStrategy.ID(), originalFallbackStrategy)
 	})
 
 	// Apply multiple feature gates
-	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.mtls")
+	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.fallbackstrategy")
 	require.NoError(t, err)
 
 	// Verify both were enabled
 	assert.True(t, SetGolangFlags.IsEnabled())
-	assert.True(t, EnableTargetAllocatorMTLS.IsEnabled())
+	assert.True(t, EnableTargetAllocatorFallbackStrategy.IsEnabled())
 }
 
 func TestApplyFeatureGateOverrides_MixedEnableDisable(t *testing.T) {
@@ -194,21 +194,21 @@ func TestApplyFeatureGateOverrides_MixedEnableDisable(t *testing.T) {
 
 	// Get original states
 	originalGolangFlags := SetGolangFlags.IsEnabled()
-	originalMTLS := EnableTargetAllocatorMTLS.IsEnabled()
+	originalFallbackStrategy := EnableTargetAllocatorFallbackStrategy.IsEnabled()
 	originalNetworkPolicy := EnableOperatorNetworkPolicy.IsEnabled()
 	t.Cleanup(func() {
 		// Restore original states
 		_ = registry.Set(SetGolangFlags.ID(), originalGolangFlags)
-		_ = registry.Set(EnableTargetAllocatorMTLS.ID(), originalMTLS)
+		_ = registry.Set(EnableTargetAllocatorFallbackStrategy.ID(), originalFallbackStrategy)
 		_ = registry.Set(EnableOperatorNetworkPolicy.ID(), originalNetworkPolicy)
 	})
 
-	// Apply mixed gates: enable golang.flags and mtls, disable networkpolicy
-	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.mtls,-operator.networkpolicy")
+	// Apply mixed gates: enable golang.flags and fallbackstrategy, disable networkpolicy
+	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.fallbackstrategy,-operator.networkpolicy")
 	require.NoError(t, err)
 
 	// Verify states
 	assert.True(t, SetGolangFlags.IsEnabled(), "golang.flags should be enabled")
-	assert.True(t, EnableTargetAllocatorMTLS.IsEnabled(), "mtls should be enabled")
+	assert.True(t, EnableTargetAllocatorFallbackStrategy.IsEnabled(), "fallbackstrategy should be enabled")
 	assert.False(t, EnableOperatorNetworkPolicy.IsEnabled(), "networkpolicy should be disabled")
 }

@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/smithy-go/ptr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
@@ -75,8 +74,8 @@ func TestLoadFromFile(t *testing.T) {
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -95,10 +94,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -171,8 +170,8 @@ func TestLoadFromFile(t *testing.T) {
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -191,10 +190,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -279,8 +278,8 @@ func TestLoadFromFile(t *testing.T) {
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -299,10 +298,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -373,8 +372,8 @@ func TestLoadFromFile(t *testing.T) {
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
 						ScrapeTimeout:              model.Duration(10 * time.Second),
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
@@ -396,10 +395,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -494,8 +493,8 @@ func TestLoadFromFile(t *testing.T) {
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
 						ScrapeTimeout:              model.Duration(10 * time.Second),
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
@@ -517,10 +516,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -572,13 +571,13 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeClasses: []monitoringv1.ScrapeClass{
 						{
 							Name:    "test-scrape-class",
-							Default: ptr.Bool(false),
+							Default: new(false),
 							TLSConfig: &monitoringv1.TLSConfig{
 								TLSFilesConfig: monitoringv1.TLSFilesConfig{
 									CAFile: "/etc/ca-bundle.pem",
 								},
 								SafeTLSConfig: monitoringv1.SafeTLSConfig{
-									InsecureSkipVerify: ptr.Bool(true),
+									InsecureSkipVerify: new(true),
 								},
 							},
 						},
@@ -596,8 +595,8 @@ func TestLoadFromFile(t *testing.T) {
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
 						ScrapeTimeout:              model.Duration(10 * time.Second),
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
@@ -619,10 +618,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -716,8 +715,8 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeNativeHistograms:     ptr.Bool(false),
-						ExtraScrapeMetrics:         ptr.Bool(false),
+						ScrapeNativeHistograms:     new(false),
+						ExtraScrapeMetrics:         new(false),
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
@@ -740,10 +739,10 @@ func TestLoadFromFile(t *testing.T) {
 							ScrapeProtocols:                promconfig.DefaultScrapeProtocols,
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
-							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
-							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
-							ScrapeNativeHistograms:         ptr.Bool(false),
-							ExtraScrapeMetrics:             ptr.Bool(false),
+							AlwaysScrapeClassicHistograms:  new(false),
+							ConvertClassicHistogramsToNHCB: new(false),
+							ScrapeNativeHistograms:         new(false),
+							ExtraScrapeMetrics:             new(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -792,6 +791,31 @@ func TestLoadFromEnv(t *testing.T) {
 	err := LoadFromEnv(cfg)
 	require.NoError(t, err)
 	assert.Equal(t, namespace, cfg.CollectorNamespace)
+}
+
+func TestLoadFromEnvAllowInsecureAuthSecrets(t *testing.T) {
+	t.Run("not set defaults to false", func(t *testing.T) {
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to true", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "true")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.True(t, cfg.AllowInsecureAuthSecrets)
+	})
+
+	t.Run("set to false", func(t *testing.T) {
+		t.Setenv("ALLOW_INSECURE_AUTH_SECRETS", "false")
+		cfg := &Config{}
+		err := LoadFromEnv(cfg)
+		require.NoError(t, err)
+		assert.False(t, cfg.AllowInsecureAuthSecrets)
+	})
 }
 
 func TestValidateConfig(t *testing.T) {
@@ -1002,6 +1026,7 @@ users:
 		assert.Equal(t, DefaultFilterStrategy, config.FilterStrategy)
 		assert.False(t, config.PrometheusCR.Enabled)
 		assert.False(t, config.HTTPS.Enabled)
+		assert.False(t, config.AllowInsecureAuthSecrets)
 	})
 
 	t.Run("command-line has priority over config file for boolean values", func(t *testing.T) {
@@ -1012,6 +1037,7 @@ prometheus_cr:
   enabled: false
 https:
   enabled: false
+allow_insecure_auth_secrets: false
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
 		err := os.WriteFile(configPath, []byte(configContent), 0o600)
@@ -1024,6 +1050,7 @@ https:
 			"--" + configFilePathFlagName + "=" + configPath,
 			"--" + prometheusCREnabledFlagName + "=true",
 			"--" + httpsEnabledFlagName + "=true",
+			"--" + allowInsecureAuthSecretsFlagName + "=true",
 			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
 		}
 
@@ -1034,6 +1061,7 @@ https:
 		// Assert CLI values override config file
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
 		assert.True(t, config.HTTPS.Enabled, "CLI should override config file for HTTPS enabled")
+		assert.True(t, config.AllowInsecureAuthSecrets, "CLI should override config file for allow insecure auth secrets")
 	})
 
 	t.Run("command-line has priority over config file for string values", func(t *testing.T) {
@@ -1094,6 +1122,7 @@ kube_config_file_path: "/config/kube.config"
 		configContent := `
 collector_namespace: config-file-namespace
 listen_addr: "` + configListenAddr + `"
+allow_insecure_auth_secrets: true
 prometheus_cr:
   enabled: true
 https:
@@ -1121,6 +1150,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.Equal(t, ":7443", config.HTTPS.ListenAddr, "Config file should override defaults for HTTPS listen address")
 		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "Config file should set kube config path")
 		assert.Equal(t, "config-file-namespace", config.CollectorNamespace, "Config file should set collector namespace")
+		assert.True(t, config.AllowInsecureAuthSecrets, "Config file should override defaults for allow insecure auth secrets")
 	})
 
 	t.Run("environment variables are applied", func(t *testing.T) {

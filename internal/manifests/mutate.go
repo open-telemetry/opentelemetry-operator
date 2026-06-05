@@ -299,8 +299,12 @@ func mutateTargetAllocator(existing, desired *v1alpha1.TargetAllocator) {
 }
 
 func mutateService(existing, desired *corev1.Service) {
-	existing.Spec.Ports = desired.Spec.Ports
-	existing.Spec.Selector = desired.Spec.Selector
+	// ClusterIP and ClusterIPs are immutable once assigned by the API server.
+	clusterIP := existing.Spec.ClusterIP
+	clusterIPs := existing.Spec.ClusterIPs
+	existing.Spec = desired.Spec
+	existing.Spec.ClusterIP = clusterIP
+	existing.Spec.ClusterIPs = clusterIPs
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {

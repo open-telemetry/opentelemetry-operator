@@ -18,7 +18,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -420,16 +419,14 @@ prometheus_cr:
 		cfg := config.Config{
 			CertManagerAvailability: certmanager.Available,
 		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
-		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
+		testParams.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
@@ -477,12 +474,14 @@ https:
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
 		require.NoError(t, err)
+		targetAllocator := targetAllocatorInstance()
 
 		testParams := Params{
 			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocatorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          cfg,
 		}
+		testParams.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
@@ -629,7 +628,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			configStr, err := otelconfig.Yaml(&testCase.input)
+			configStr, err := testCase.input.Yaml()
 			require.NoError(t, err)
 			actual, err := getScrapeConfigsFromOtelConfig(configStr)
 			assert.Equal(t, testCase.wantErr, err)
@@ -933,6 +932,45 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
+}
+
+func TestDesiredConfigMapAllowInsecureAuthSecrets(t *testing.T) {
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	_ = flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
+
+	expectedData := map[string]string{
+		targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+allow_insecure_auth_secrets: true
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+	}
+	ta := targetAllocatorInstance()
+	ta.Spec.AllowInsecureAuthSecrets = true
+	testParams := Params{
+		Collector:       collectorInstance(),
+		TargetAllocator: ta,
+	}
+	actual, err := ConfigMap(testParams)
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-instance-targetallocator", actual.Name)
+	assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 }
 
 func TestDesiredConfigMapWithDenyFSAccessThroughSMs(t *testing.T) {
