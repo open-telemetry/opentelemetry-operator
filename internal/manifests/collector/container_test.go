@@ -96,7 +96,7 @@ func TestContainerCommandPassthrough(t *testing.T) {
 		},
 	}
 	cfg := config.Config{CollectorImage: "default-image"}
-	c := Container(cfg, testLogger, otelcol, true)
+	c := Container(cfg, testLogger, otelcol, true, nil)
 
 	assert.Equal(t, []string{"/usr/share/agent", "otel"}, c.Command)
 	assert.Contains(t, c.Args[0], "--config=")
@@ -104,7 +104,7 @@ func TestContainerCommandPassthrough(t *testing.T) {
 
 func TestContainerCommandOmittedWhenUnset(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{Spec: v1beta1.OpenTelemetryCollectorSpec{}}
-	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true)
+	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true, nil)
 	assert.Nil(t, c.Command)
 }
 
@@ -114,7 +114,7 @@ func TestContainerCommandNameOnly(t *testing.T) {
 			Command: []string{"/otelcol"},
 		},
 	}
-	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true)
+	c := Container(config.Config{CollectorImage: "default-image"}, testLogger, otelcol, true, nil)
 	assert.Equal(t, []string{"/otelcol"}, c.Command)
 }
 
