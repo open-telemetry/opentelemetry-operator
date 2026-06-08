@@ -59,7 +59,7 @@ jobs:
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: python
-      build-args: 'BASE_IMAGE=docker.io/library/python:3.14-alpine3.22@sha256:6b91e66ab2a880ce9ca5a1b91c70f45963ff71ff68268df056336e1a657d5efd'
+      build-args: 'BASE_IMAGE=docker.io/library/python:3.10-alpine3.22@sha256:8be23d04f6f85e79a56f6b86761f8bd1db7d3f673917c2fcecb049d4af510dc8'
       tag-suffix: '-3.10'
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   java:
