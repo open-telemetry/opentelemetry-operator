@@ -8,6 +8,19 @@ metadata:
 # per-attribute tests (affinity/additional-containers/node-selector).
 spec:
   steps:
+    - name: setup-scc
+      description: on OpenShift, create an SCC that allows hostNetwork and hostPID
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                echo "OpenShift detected — creating SCC for hostNetwork/hostPID"
+                kubectl apply -f scc.yaml
+                oc adm policy add-scc-to-user daemonset-with-hostport -z smoke-collector-collector -n $NAMESPACE
+              else
+                echo "Not OpenShift — skipping SCC setup"
+              fi
     - name: install
       description: install a daemonset collector with host-level and pod-spec fields set
       try:
@@ -15,3 +28,10 @@ spec:
             file: 00-install.yaml
         - assert:
             file: 00-assert.yaml
+      finally:
+        - script:
+            timeout: 1m
+            content: |
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                kubectl delete scc daemonset-with-hostport --ignore-not-found
+              fi
