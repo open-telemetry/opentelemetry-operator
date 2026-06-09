@@ -24,6 +24,8 @@ rules:
   - namespaces/status
   - nodes
   - nodes/spec
+  - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - pods/status
   - replicationcontrollers
