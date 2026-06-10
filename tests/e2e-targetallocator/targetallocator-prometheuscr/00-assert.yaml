@@ -28,7 +28,6 @@ data:
             endpoint: 0.0.0.0:9090
     receivers:
         prometheus:
-            config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
                 endpoint: http://prometheus-cr-targetallocator:80

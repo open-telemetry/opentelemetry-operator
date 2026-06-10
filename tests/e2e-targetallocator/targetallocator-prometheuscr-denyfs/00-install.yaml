@@ -48,9 +48,7 @@ metadata:
 spec:
   config:
     receivers:
-      prometheus:
-        config:
-          scrape_configs: []
+      prometheus: {}
     exporters:
       debug:
         verbosity: detailed

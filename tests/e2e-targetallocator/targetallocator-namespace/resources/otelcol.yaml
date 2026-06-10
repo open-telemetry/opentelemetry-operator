@@ -12,9 +12,7 @@ spec:
       enableMetrics: true
   config:
     receivers:
-      prometheus:
-        config:
-          scrape_configs: []
+      prometheus: {}
 
     processors:
 
