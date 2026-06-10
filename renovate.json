@@ -200,6 +200,13 @@
       "matchFileNames": ["tests/**/Dockerfile", ".github/workflows/publish-test-e2e-images.yaml"],
       "groupName": "test base images",
       "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": [".github/workflows/publish-test-e2e-images.yaml"],
+      "matchPackageNames": ["docker.io/library/python"],
+      "allowedVersions": "/^3\\.10-/"
     }
   ]
 }

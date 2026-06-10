@@ -55,6 +55,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./.ci/create-release-github.sh
 
-    - name: "refresh go proxy module info on release"
-      run: |
-        curl https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${DESIRED_VERSION}.info
+    # Note: the release created above is a draft, so the v${DESIRED_VERSION} git
+    # tag does not exist yet. Tagging the apis/ submodule and refreshing the Go
+    # module proxy happen once the draft is published and the tag is created, in
+    # the tag-release.yaml workflow.
