@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=docker.io/library/python:3.13-alpine3.22@sha256:e81548ac35b07a3bd4805f275107592ef458b1e893c0e04d45aedaa19416cca5
+ARG BASE_IMAGE=docker.io/library/python:3.14-alpine3.22@sha256:6b91e66ab2a880ce9ca5a1b91c70f45963ff71ff68268df056336e1a657d5efd
 FROM ${BASE_IMAGE}
 
 WORKDIR /app
