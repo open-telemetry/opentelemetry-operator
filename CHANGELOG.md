@@ -2,6 +2,59 @@
 
 <!-- next version -->
 
+## 0.153.0
+
+### 🛑 Breaking changes 🛑
+
+- `api`: Move apis package to a separate sub-module (#4362)
+  - `Yaml` standalone functions in `internal/otelconfig` is moved to a methods on `*Config` (package `apis/v1beta1`)
+  - Move `CheckTargetAllocatorPrometheusCRPolicyRules` from `apis/v1beta1/targetallocator_rbac.go` to `internal/webhook/targetallocator_rbac.go` + rename it to `checkTargetAllocatorPrometheusCRPolicyRules`.
+  - `OpenTelemetryCollector` is not implementing the `Convertible` interface from `sigs.k8s.io/controller-runtime/pkg/conversion`, but implements 2 helper function the achieve the same functionality:
+    - OtelColConvertTo(otc *OpenTelemetryCollector, dstRaw any) error
+    - OtelColConvertFrom(otc *OpenTelemetryCollector, srcRaw any) error
+  - Move `apis` package to a dedicated sub-module.
+  
+- `target allocator`: The `operator.targetallocator.mtls` feature gate has been removed. mTLS is now configured per-CR via `spec.mtls.enabled` on the TargetAllocator or Collector resource. (#5136)
+  Set `spec.mtls.useCertManager: false` to provide your own TLS secrets instead of having cert-manager provision them.
+  
+
+### 💡 Enhancements 💡
+
+- `collector`: Add optional `spec.command` to OpenTelemetryCollector to override the collector container entrypoint (#3188)
+  `spec.command` is a `[]string` matching `Pod.spec.containers[].command`.
+  
+- `target allocator`: Add allowInsecureAuthSecrets option to serve auth secret values over plain HTTP without mTLS (#3746)
+  Adds a new allowInsecureAuthSecrets field to both the TargetAllocator CRD and the
+  embedded TargetAllocator in the OpenTelemetryCollector CRD. When enabled, auth secret
+  values (e.g. basicAuth passwords) are served over plain HTTP instead of being masked.
+  This is useful when transport security is handled by a service mesh or equivalent.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `must-gather`: Fix must-gather output to produce omc-compatible directory layout and correct YAML serialization (#4965)
+  Previously collected files used a per-collector directory with kind-prefixed filenames (e.g. `namespaces/<ns>/<collector-name>/deployment-<name>.yaml`),
+  which omc cannot parse. Output now follows the standard omc layout (`namespaces/<ns>/<api-group>/<resource-plural>/<name>.yaml`).
+  Also fixes missing apiVersion/kind fields in serialized YAML, incorrect default output directory, and adds collection of CRDs and OpAMPBridge resources.
+  
+- `opamp`: Skip OpenTelemetryCollector instances with a non-nil DeletionTimestamp when building EffectiveConfig (#5170)
+  ListInstances returns objects with DeletionTimestamp set until finalizers complete.
+  Reporting them as effective races with the bridge's own Delete calls in applyRemoteConfig.
+  
+- `collector`: Fix Service reconciliation to propagate trafficDistribution, internalTrafficPolicy, ipFamilies, and ipFamilyPolicy changes (#5141)
+
+### Components
+
+* [OpenTelemetry Collector - v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0)
+* [OpenTelemetry Contrib - v0.153.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.153.0)
+* [Java auto-instrumentation - v2.28.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.28.1)
+* [.NET auto-instrumentation - v1.15.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0)
+* [Node.JS - v0.76.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.76.0)
+* [Python - v0.63b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.63b1)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.152.0
 
 ### 🛑 Breaking changes 🛑
