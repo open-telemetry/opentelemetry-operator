@@ -1488,11 +1488,8 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 								"pull": map[string]any{
 									"exporter": map[string]any{
 										"prometheus": map[string]any{
-											"host":                "0.0.0.0",
-											"port":                int32(8888),
-											"without_type_suffix": false,
-											"without_units":       false,
-											"without_scope_info":  false,
+											"host": "0.0.0.0",
+											"port": int32(8888),
 										},
 									},
 								},
@@ -1551,38 +1548,49 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
 	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
-	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutUnits)
-	require.Equal(t, false, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
+	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutUnits)
+	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
-func TestAddPrometheusMetricsEndpointPreservesShape(t *testing.T) {
+// withTelemetryShapeGate temporarily flips the operator.collector.usedefaulttelemetryshape
+// gate to the given value for the duration of the test and restores it on cleanup.
+func withTelemetryShapeGate(t *testing.T, enabled bool) {
+	t.Helper()
+	registry := colfeaturegate.GlobalRegistry()
+	original := featuregate.UseCollectorDefaultTelemetryShape.IsEnabled()
+	require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), enabled))
+	t.Cleanup(func() {
+		require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), original))
+	})
+}
+
+// Default behavior (beta gate enabled): the injected reader carries no shape overrides,
+// so the collector's defaults apply.
+func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T) {
 	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
 	require.NotNil(t, reader.Pull)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus)
-	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
-	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
-	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutUnits)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-	require.Equal(t, false, *reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-}
-
-func TestAddPrometheusMetricsEndpointGateUsesCollectorDefaults(t *testing.T) {
-	registry := colfeaturegate.GlobalRegistry()
-	originalVal := featuregate.UseCollectorDefaultTelemetryShape.IsEnabled()
-	require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), true))
-	t.Cleanup(func() {
-		require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), originalVal))
-	})
-
-	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
 	require.NotNil(t, reader.Pull.Exporter.Prometheus)
 	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
+}
+
+// Opt-out behavior: when the gate is disabled, the operator pins all three
+// fields to false to preserve the pre-v0.152.0 metric name shape.
+func TestAddPrometheusMetricsEndpointPreservesShapeWhenGateDisabled(t *testing.T) {
+	withTelemetryShapeGate(t, false)
+
+	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
+	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutUnits)
+	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
+	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
