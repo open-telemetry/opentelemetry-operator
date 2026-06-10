@@ -47,13 +47,13 @@ jobs:
               --force
 
       - name: Checkout operatorhub repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 # zizmor: ignore[artipacked] credentials must persist for the git push later in this job
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3 # zizmor: ignore[artipacked] credentials must persist for the git push later in this job
         with:
           repository: opentelemetrybot/${{ inputs.repo }}
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           repository: open-telemetry/opentelemetry-operator
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
