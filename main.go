@@ -280,11 +280,18 @@ func main() {
 
 	// Restrict the informer caches for operator-created resources to only objects
 	// labeled with managed-by=opentelemetry-operator. Without this filter, owning
-	// these GVKs causes a cluster-wide LIST+WATCH for every ConfigMap/Service/etc.
+	// these GVKs causes a cluster-wide LIST+WATCH for every Service/Ingress/etc.
 	// in the cluster, which dominates startup memory.
 	//
-	// ServiceAccount, ClusterRole, and ClusterRoleBinding are deliberately NOT
-	// filtered: those follow an adoption pattern where users may pre-create the
+	// ConfigMap and Deployment are deliberately NOT filtered: the pod-mutating
+	// webhook reads user-owned objects of these types (the CA ConfigMap referenced
+	// by an Instrumentation, and the Deployment that owns an injected pod) which
+	// don't carry the managed-by label. A label-filtered cache would hide them.
+	// They're owned by controllers, so they need a cache and can't be routed
+	// through the API server like Secret/ReplicaSet below.
+	//
+	// ServiceAccount, ClusterRole, and ClusterRoleBinding are also deliberately
+	// NOT filtered: those follow an adoption pattern where users may pre-create the
 	// resource (with bindings) and the operator then attaches owner refs/labels.
 	// A label-filtered cache would hide the pre-created object, causing the
 	// CreateOrUpdate Get to NotFound and the subsequent Create to AlreadyExists.
@@ -293,9 +300,7 @@ func main() {
 	})
 	managedByByObject := cache.ByObject{Label: operatorManagedSelector}
 	byObject := map[client.Object]cache.ByObject{
-		&corev1.ConfigMap{}:                      managedByByObject,
 		&corev1.Service{}:                        managedByByObject,
-		&appsv1.Deployment{}:                     managedByByObject,
 		&appsv1.DaemonSet{}:                      managedByByObject,
 		&appsv1.StatefulSet{}:                    managedByByObject,
 		&networkingv1.Ingress{}:                  managedByByObject,
@@ -575,12 +580,11 @@ func main() {
 			os.Exit(1)
 		}
 		decoder := admission.NewDecoder(mgr.GetScheme())
-		apiReader := mgr.GetAPIReader()
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, cfg, mgr.GetClient(), apiReader),
-					instrumentation.NewMutator(logger, mgr.GetClient(), apiReader, mgr.GetEventRecorder("opentelemetry-operator"), cfg),
+					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 				}),
 		})
 
