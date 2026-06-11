@@ -43,11 +43,11 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-config
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon"
+            - wget -q -O - http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon"
 ---
 # Check scrapeClass TLS caFile is applied specifically to the ServiceMonitor's scrape config,
 # not just to the Probe which also uses the same scrapeClass.
@@ -64,8 +64,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-tls
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon.*scrapeclass-ca.pem"
+            - wget -q -O - http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrapeclass-smon.*scrapeclass-ca.pem"

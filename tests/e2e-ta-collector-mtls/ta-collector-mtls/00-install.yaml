@@ -90,7 +90,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-ta
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           volumeMounts:
             - name: tls-secret
               mountPath: /etc/tls
@@ -99,7 +99,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              curl -s \
+              wget -q -O - \
                 --cert /etc/tls/tls.crt \
                 --key /etc/tls/tls.key \
                 --cacert /etc/tls/ca.crt \

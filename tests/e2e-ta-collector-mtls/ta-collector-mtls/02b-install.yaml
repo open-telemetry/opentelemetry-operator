@@ -91,7 +91,7 @@ spec:
               echo "Creating ConfigMap cert-date-tracker in namespace $NAMESPACE..."
 
               # Create ConfigMap and capture response
-              RESPONSE=$(curl -s -k -X POST \
+              RESPONSE=$(wget -q -O - -k -X POST \
                 -H "Authorization: Bearer $TOKEN" \
                 -H "Content-Type: application/json" \
                 -w "\n%{http_code}" \

@@ -57,8 +57,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-ns-discovery-v1beta1-targetallocator/scrape_configs | grep "ns-discovery-scrape-config-cr"
+            - wget -q -O - http://prometheus-cr-ns-discovery-v1beta1-targetallocator/scrape_configs | grep "ns-discovery-scrape-config-cr"
