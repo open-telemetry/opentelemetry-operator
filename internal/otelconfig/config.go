@@ -496,10 +496,10 @@ func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.Eve
 }
 
 // AddPrometheusMetricsEndpoint creates a MetricReader with a Prometheus pull exporter.
-// without_type_suffix/without_units/without_scope_info are explicitly set to false to
-// preserve the historical metric name shape produced by operator-managed collectors
-// before open-telemetry/opentelemetry-collector#15027. Opt into collector defaults via
-// the operator.collector.usedefaulttelemetryshape feature gate. See issue #5075.
+// By default (operator.collector.usedefaulttelemetryshape beta gate enabled) the
+// reader carries no overrides, so the collector's defaults for without_type_suffix,
+// without_units, and without_scope_info apply. Disabling the gate explicitly sets
+// all three to false to preserve the pre-v0.154.0 metric name shape. See #5075.
 func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
 	portInt := int(port)
 	prom := &otelConfig.Prometheus{
