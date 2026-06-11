@@ -499,7 +499,7 @@ func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.Eve
 // By default (operator.collector.usedefaulttelemetryshape beta gate enabled) the
 // reader carries no overrides, so the collector's defaults for without_type_suffix,
 // without_units, and without_scope_info apply. Disabling the gate explicitly sets
-// all three to false to preserve the pre-v0.152.0 metric name shape. See #5075.
+// all three to false to preserve the pre-v0.154.0 metric name shape. See #5075.
 func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
 	portInt := int(port)
 	prom := &otelConfig.Prometheus{

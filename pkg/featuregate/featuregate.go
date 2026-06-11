@@ -56,12 +56,12 @@ var (
 	// for without_type_suffix, without_units, and without_scope_info — metric
 	// names emitted by operator-managed collectors no longer carry type
 	// suffixes, units, or scope_info. When disabled, the operator explicitly
-	// sets all three to false to preserve the pre-v0.152.0 metric name shape.
+	// sets all three to false to preserve the pre-v0.154.0 metric name shape.
 	// See open-telemetry/opentelemetry-operator#5075.
 	UseCollectorDefaultTelemetryShape = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.usedefaulttelemetryshape",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("when enabled (default), the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. When disabled, the operator explicitly sets all three to false to preserve the pre-v0.152.0 metric name shape."),
+		featuregate.WithRegisterDescription("when enabled (default), the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. When disabled, the operator explicitly sets all three to false to preserve the pre-v0.154.0 metric name shape."),
 		featuregate.WithRegisterFromVersion("v0.152.0"),
 	)
 )

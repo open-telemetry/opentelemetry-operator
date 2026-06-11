@@ -1579,7 +1579,7 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 }
 
 // Opt-out behavior: when the gate is disabled, the operator pins all three
-// fields to false to preserve the pre-v0.152.0 metric name shape.
+// fields to false to preserve the pre-v0.154.0 metric name shape.
 func TestAddPrometheusMetricsEndpointPreservesShapeWhenGateDisabled(t *testing.T) {
 	withTelemetryShapeGate(t, false)
 
