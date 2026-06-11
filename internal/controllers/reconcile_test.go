@@ -618,6 +618,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				PrometheusCRAvailability:      prometheus.Available,
 				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
+				EnableInstrumentationCRDs:     true,
 			}
 			reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -787,6 +788,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
 		PrometheusCRAvailability:    prometheus.Available,
+		EnableInstrumentationCRDs:   true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -910,6 +912,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		TargetAllocatorImage:        "default-ta-allocator",
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		EnableInstrumentationCRDs:   true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1105,6 +1108,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:           "collector.yaml",
 				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
+				EnableInstrumentationCRDs:         true,
 			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
@@ -1254,6 +1258,7 @@ service:
 		CreateRBACPermissions:             autoRBAC.Available,
 		CollectorConfigMapEntry:           "collector.yaml",
 		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+		EnableInstrumentationCRDs:         true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1309,6 +1314,7 @@ func TestUpgrade(t *testing.T) {
 		TargetAllocatorImage:          "default-ta-allocator",
 		CollectorConfigMapEntry:       "collector.yaml",
 		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+		EnableInstrumentationCRDs:     true,
 	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,

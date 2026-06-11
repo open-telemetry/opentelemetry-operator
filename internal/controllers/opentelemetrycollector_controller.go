@@ -29,9 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -207,8 +209,10 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
-// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=configmaps;serviceaccounts;services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
@@ -217,6 +221,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=get;watch;update;patch
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures;infrastructures/status;apiservers,verbs=get;list;watch
@@ -224,7 +229,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/finalizers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/finalizers,verbs=update
 // +kubebuilder:rbac:urls=/version,verbs=get
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
@@ -362,6 +367,10 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 
 	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		ownedResources = append(ownedResources, &routev1.Route{})
+	}
+
+	if r.config.GatewayAPIsAvailability == gatewayapi.ApiAvailable {
+		ownedResources = append(ownedResources, &gatewayv1.HTTPRoute{})
 	}
 
 	return ownedResources

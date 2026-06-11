@@ -6,9 +6,7 @@ metadata:
 spec:
   config:
     receivers:
-      prometheus:
-        config:
-          scrape_configs: []
+      prometheus: {}
     exporters:
       prometheus:
         endpoint: 0.0.0.0:9090
@@ -27,6 +25,7 @@ spec:
       evaluationInterval: 2m
       scrapeProtocols:
         - PrometheusText1.0.0
+      serviceMonitorSelector: {}
       scrapeConfigSelector: {}
       probeSelector: {}
       scrapeClasses:

@@ -106,6 +106,22 @@ func TestDesiredClusterRoles(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:       "k8s_attributes processor - snake_case alias",
+			configPath: "testdata/rbac_k8s_attributes_snake_case.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

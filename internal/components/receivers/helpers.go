@@ -133,7 +133,7 @@ var componentParsers = []components.Parser{
 	components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
 		WithRbacGen(generatek8sobjectsRbacRules).
 		MustBuild(),
-	NewScraperParser("prometheus"),
+	NewPrometheusParser(),
 	NewScraperParser("sshcheck"),
 	NewScraperParser("cloudfoundry"),
 	NewScraperParser("vcenter"),

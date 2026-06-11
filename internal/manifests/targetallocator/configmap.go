@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -112,6 +111,14 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
 		}
 
+		if taSpec.PrometheusCR.SecretNamespaces != nil {
+			prometheusCRConfig["secret_namespaces"] = taSpec.PrometheusCR.SecretNamespaces
+		}
+
+		if taSpec.PrometheusCR.DenyFSAccessThroughSMs {
+			prometheusCRConfig["deny_fs_access_through_sms"] = true
+		}
+
 		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
@@ -127,7 +134,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
 		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
@@ -135,6 +142,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+	}
+
+	if taSpec.AllowInsecureAuthSecrets {
+		taConfig["allow_insecure_auth_secrets"] = true
 	}
 
 	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
@@ -214,6 +225,13 @@ func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig
 func getScrapeConfigsFromOtelConfig(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA Scrape Configs should have a single "$", as it does not support env var substitution
+	promConfig, err := adapters.ConfigToPromConfig(otelcolConfig)
+	if err != nil {
+		return nil, err
+	}
+	if _, hasConfig := promConfig["config"]; !hasConfig {
+		return []v1beta1.AnyConfig{}, nil
+	}
 	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
 	if err != nil {
 		return nil, err

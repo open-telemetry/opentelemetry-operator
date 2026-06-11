@@ -13,6 +13,7 @@ body:
       - auto-instrumentation
       - target allocator
       - opamp
+      - cluster observability
   - type: textarea
     attributes:
       label: Is your feature request related to a problem? Please describe.

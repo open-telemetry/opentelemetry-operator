@@ -10,6 +10,9 @@ spec:
         - containerPort: 16686
           name: jaeger-query
           protocol: TCP
+        - containerPort: 16685
+          name: jaeger-query-2
+          protocol: TCP
         - containerPort: 8888
           name: metrics
           protocol: TCP
@@ -133,5 +136,8 @@ spec:
   - name: jaeger-query
     port: 16686
     targetPort: 16686
+  - name: jaeger-query-2
+    port: 16685
+    targetPort: 16685
 status:
   loadBalancer: {}

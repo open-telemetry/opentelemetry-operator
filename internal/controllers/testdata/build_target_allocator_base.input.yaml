@@ -1,0 +1,20 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  filterStrategy: relabel-config
+  scrapeConfigs:
+  - job_name: example
+    metric_relabel_configs:
+    - replacement: $1_$2
+      source_labels: [job]
+      target_label: job
+    relabel_configs:
+    - replacement: my_service_$1
+      source_labels: [__meta_service_id]
+      target_label: job
+    - replacement: $1
+      source_labels: [__meta_service_name]
+      target_label: instance
+  prometheusCR:
+    enabled: true

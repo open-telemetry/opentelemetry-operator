@@ -1,4 +1,4 @@
-[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
+[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/open-telemetry/opentelemetry-operator/badge)](https://securityscorecards.dev/viewer/?uri=github.com/open-telemetry/opentelemetry-operator)
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -95,10 +95,10 @@ The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `
 
 See below for examples of each deployment mode:
 
-- [`Deployment`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/ingress/00-install.yaml)
-- [`DaemonSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/01-install.yaml)
-- [`StatefulSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-statefulset/00-install.yaml)
-- [`Sidecar`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-sidecar/00-install.yaml)
+- [`Deployment`](tests/e2e/ingress/00-install.yaml)
+- [`DaemonSet`](tests/e2e/smoke-collector/smoke-collector-daemonset/00-install.yaml)
+- [`StatefulSet`](tests/e2e/smoke-collector/smoke-collector-statefulset/00-install.yaml)
+- [`Sidecar`](tests/e2e-sidecar/smoke-sidecar/00-install.yaml)
 
 #### Sidecar injection
 
@@ -290,6 +290,18 @@ NodeJS:
 
 ```bash
 instrumentation.opentelemetry.io/inject-nodejs: "true"
+```
+
+Node.js resolves modules from the injected auto-instrumentation script path. If an instrumentation
+package needs to load an application dependency from the application's `node_modules` directory, set
+`NODE_PATH` with the application dependency path in the `Instrumentation` resource:
+
+```yaml
+spec:
+  nodejs:
+    env:
+      - name: NODE_PATH
+        value: /home/node/app/node_modules
 ```
 
 Python:
@@ -647,7 +659,7 @@ Language support can be disabled by passing the flag with a value of `false`.
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
 These features can be enabled using the `enable-multi-instrumentation` flag. By default flag is `false`.
 
-For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
+For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#multi-container-pods-with-multiple-instrumentations).
 
 ### Target Allocator
 
@@ -912,7 +924,7 @@ For more information about the maintainer role, see the [community repository](h
 
 - [Antoine Toulme](https://github.com/atoulme), Splunk
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
-- [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
+- [Tyler Helmuth](https://github.com/TylerHelmuth), Grafana Labs
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).

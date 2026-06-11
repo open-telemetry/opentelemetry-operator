@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.21.0
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -3363,6 +3363,8 @@ spec:
                     type: object
                   prometheusCR:
                     properties:
+                      denyFSAccessThroughSMs:
+                        type: boolean
                       enabled:
                         type: boolean
                       podMonitorSelector:
@@ -6085,6 +6087,12 @@ spec:
                     minimum: 1
                     type: integer
                 type: object
+              command:
+                items:
+                  type: string
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: atomic
               config:
                 properties:
                   connectors:
@@ -6324,6 +6332,22 @@ spec:
                 type: boolean
               hostUsers:
                 type: boolean
+              httpRoute:
+                properties:
+                  enabled:
+                    type: boolean
+                  gateway:
+                    type: string
+                  gatewayNamespace:
+                    type: string
+                  hostnames:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - enabled
+                - gateway
+                type: object
               image:
                 type: string
               imagePullPolicy:
@@ -8069,6 +8093,8 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  allowInsecureAuthSecrets:
+                    type: boolean
                   collectorNotReadyGracePeriod:
                     default: 30s
                     format: duration
@@ -8170,6 +8196,14 @@ spec:
                     type: string
                   image:
                     type: string
+                  mtls:
+                    properties:
+                      enabled:
+                        type: boolean
+                      useCertManager:
+                        default: true
+                        type: boolean
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -8286,6 +8320,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      denyFSAccessThroughSMs:
+                        type: boolean
                       denyNamespaces:
                         items:
                           type: string
@@ -8466,6 +8502,10 @@ spec:
                         format: duration
                         type: string
                       scrapeProtocols:
+                        items:
+                          type: string
+                        type: array
+                      secretNamespaces:
                         items:
                           type: string
                         type: array

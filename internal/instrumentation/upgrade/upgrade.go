@@ -6,20 +6,25 @@ package upgrade
 import (
 	"context"
 	"fmt"
+	"maps"
 	"reflect"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 type autoInstConfig struct {
-	id      string
-	enabled bool
+	id           string
+	enabled      bool
+	language     constants.InstrumentationLanguage
+	defaultImage string
 }
 
 type InstrumentationUpgrade struct {
@@ -38,13 +43,13 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder events.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {"enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {"enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationGo:          {"enable-go-instrumentation", cfg.EnableGoAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNginx:       {"enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationPython:      {"enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {"enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationJava:        {"enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {id: "enable-apache-httpd-instrumentation", enabled: cfg.EnableApacheHttpdInstrumentation, language: constants.InstrumentationLanguageApacheHttpd, defaultImage: cfg.AutoInstrumentationApacheHttpdImage},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {id: "enable-dotnet-instrumentation", enabled: cfg.EnableDotNetAutoInstrumentation, language: constants.InstrumentationLanguageDotNet, defaultImage: cfg.AutoInstrumentationDotNetImage},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {id: "enable-go-instrumentation", enabled: cfg.EnableGoAutoInstrumentation, language: constants.InstrumentationLanguageGo, defaultImage: cfg.AutoInstrumentationGoImage},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {id: "enable-nginx-instrumentation", enabled: cfg.EnableNginxAutoInstrumentation, language: constants.InstrumentationLanguageNginx, defaultImage: cfg.AutoInstrumentationNginxImage},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {id: "enable-python-instrumentation", enabled: cfg.EnablePythonAutoInstrumentation, language: constants.InstrumentationLanguagePython, defaultImage: cfg.AutoInstrumentationPythonImage},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {id: "enable-nodejs-instrumentation", enabled: cfg.EnableNodeJSAutoInstrumentation, language: constants.InstrumentationLanguageNodeJS, defaultImage: cfg.AutoInstrumentationNodeJSImage},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {id: "enable-java-instrumentation", enabled: cfg.EnableJavaAutoInstrumentation, language: constants.InstrumentationLanguageJava, defaultImage: cfg.AutoInstrumentationJavaImage},
 	}
 
 	return &InstrumentationUpgrade{
@@ -63,6 +68,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations/status,verbs=get;update;patch
 
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
@@ -74,12 +80,19 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 
 	for i := range list.Items {
 		toUpgrade := list.Items[i]
-		upgraded := u.upgrade(ctx, toUpgrade)
+		upgraded, blockedVersions := u.upgrade(ctx, toUpgrade)
 		if !reflect.DeepEqual(upgraded, toUpgrade) {
 			// use update instead of patch because the patch does not upgrade annotations
 			if err := u.Client.Update(ctx, upgraded); err != nil {
 				u.Logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
+			}
+		}
+		// Update status if the blocked versions set has changed (including clearing it when no longer blocked).
+		if !maps.Equal(upgraded.Status.UpgradeBlockedVersions, blockedVersions) {
+			upgraded.Status.UpgradeBlockedVersions = blockedVersions
+			if err := u.Client.Status().Update(ctx, upgraded); err != nil {
+				u.Logger.Error(err, "failed to update status for blocked upgrade", "name", upgraded.Name, "namespace", upgraded.Namespace)
 			}
 		}
 	}
@@ -90,12 +103,37 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	return nil
 }
 
-func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
-	upgraded := inst.DeepCopy()
+func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) (
+	upgraded *v1alpha1.Instrumentation, blockedVersions map[string]string,
+) {
+	upgraded = inst.DeepCopy()
 	for annotation, instCfg := range u.defaultAnnotationToConfig {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
 			if instCfg.enabled {
+				// Check if the current version is unupgradable
+				if isUnupgradable, warningMsg := version.IsInstrumentationVersionUnupgradable(instCfg.language, autoInst, instCfg.defaultImage); isUnupgradable {
+					msg := fmt.Sprintf("Automated upgrade blocked for %s: version is marked as unupgradable. Manual upgrade required.", instCfg.language)
+					if warningMsg != "" {
+						msg = fmt.Sprintf("Automated upgrade blocked for %s: %s", instCfg.language, warningMsg)
+					}
+					// Include the language in the event action so that two events
+					// for the same Instrumentation but different languages are
+					// not aggregated into one by the events.k8s.io broadcaster
+					// (which keys by type/action/reason/regarding, not note).
+					u.Recorder.Eventf(upgraded, nil, corev1.EventTypeWarning, "UpgradeBlocked", fmt.Sprintf("Upgrade-%s", instCfg.language), msg)
+					u.Logger.Info("upgrade blocked for unupgradable instrumentation version",
+						"name", inst.Name,
+						"namespace", inst.Namespace,
+						"language", instCfg.language,
+						"image", autoInst)
+					if blockedVersions == nil {
+						blockedVersions = make(map[string]string)
+					}
+					blockedVersions[string(instCfg.language)] = msg
+					continue // Skip upgrade for this language
+				}
+
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
@@ -139,5 +177,5 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		}
 	}
 
-	return upgraded
+	return upgraded, blockedVersions
 }

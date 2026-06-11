@@ -40,6 +40,19 @@ const (
 	TACollectorTLSCertFileName = "tls.crt"
 )
 
+// InstrumentationLanguage represents a language for auto-instrumentation.
+type InstrumentationLanguage string
+
+const (
+	InstrumentationLanguageJava        InstrumentationLanguage = "java"
+	InstrumentationLanguageNodeJS      InstrumentationLanguage = "nodejs"
+	InstrumentationLanguagePython      InstrumentationLanguage = "python"
+	InstrumentationLanguageDotNet      InstrumentationLanguage = "dotnet"
+	InstrumentationLanguageGo          InstrumentationLanguage = "go"
+	InstrumentationLanguageApacheHttpd InstrumentationLanguage = "apache-httpd"
+	InstrumentationLanguageNginx       InstrumentationLanguage = "nginx"
+)
+
 var (
 	LabelAppName = []string{
 		"app.kubernetes.io/instance",

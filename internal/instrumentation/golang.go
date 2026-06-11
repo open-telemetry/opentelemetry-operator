@@ -43,14 +43,19 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 	zero := int64(0)
 	pod.Spec.ShareProcessNamespace = &truee
 
-	goAgent := corev1.Container{
-		Name:      sideCarName,
-		Image:     goSpec.Image,
-		Resources: goSpec.Resources,
-		SecurityContext: &corev1.SecurityContext{
+	securityContext := goSpec.SecurityContext
+	if securityContext == nil {
+		securityContext = &corev1.SecurityContext{
 			RunAsUser:  &zero,
 			Privileged: &truee,
-		},
+		}
+	}
+
+	goAgent := corev1.Container{
+		Name:            sideCarName,
+		Image:           goSpec.Image,
+		Resources:       goSpec.Resources,
+		SecurityContext: securityContext,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/sys/kernel/debug",

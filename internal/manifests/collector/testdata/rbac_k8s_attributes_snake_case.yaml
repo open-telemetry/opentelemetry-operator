@@ -1,0 +1,18 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+processors:
+  k8s_attributes:
+    extract:
+      metadata:
+        - service.name
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [k8s_attributes]
+      exporters: [otlp]

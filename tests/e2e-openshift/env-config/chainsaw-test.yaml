@@ -1,0 +1,128 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: env-config
+spec:
+  # Running serially as this patches the operator Subscription causing a restart
+  concurrent: false
+  steps:
+  - name: Patch operator Subscription with LABELS_FILTER env var
+    try:
+    - script:
+        env:
+        - name: OTEL_NAMESPACE
+          value: opentelemetry-operator-system
+        timeout: 180s
+        content: |
+          #!/bin/bash
+          set -e
+
+          # Find the OpenTelemetry operator Subscription (present for both operator-sdk and OLM installs)
+          SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1)
+
+          if [ -z "$SUB_NAME" ]; then
+            echo "ERROR: No Subscription found for the OpenTelemetry operator"
+            exit 1
+          fi
+
+          echo "Patching Subscription: $SUB_NAME"
+
+          # Check if spec.config.env already exists on the Subscription
+          ENV_EXISTS=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{.spec.config.env}' 2>/dev/null || true)
+
+          if [ -n "$ENV_EXISTS" ] && [ "$ENV_EXISTS" != "null" ] && [ "$ENV_EXISTS" != "[]" ]; then
+            # Append to existing env array
+            kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
+              -p '[{"op":"add","path":"/spec/config/env/-","value":{"name":"LABELS_FILTER","value":"^env-config-test-label$"}}]'
+          else
+            # Create spec.config.env
+            kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=merge \
+              -p '{"spec":{"config":{"env":[{"name":"LABELS_FILTER","value":"^env-config-test-label$"}]}}}'
+          fi
+
+          # OLM may require multiple reconciliation cycles to propagate Subscription spec.config.env
+          # to the running deployment when no new CSV version is available (AtLatestKnown state).
+          # Poll the Deployment spec until LABELS_FILTER appears before waiting for the rollout.
+          echo "Waiting for OLM to propagate LABELS_FILTER from Subscription to operator Deployment..."
+          TIMEOUT=120
+          ELAPSED=0
+          DEP_ENV=""
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            DEP_ENV=$(kubectl get deployment opentelemetry-operator-controller-manager \
+              -n "$OTEL_NAMESPACE" \
+              -o jsonpath='{.spec.template.spec.containers[0].env}' 2>/dev/null || true)
+            if echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
+              echo "LABELS_FILTER found in Deployment spec after ${ELAPSED}s"
+              break
+            fi
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+          if ! echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
+            echo "ERROR: OLM did not propagate LABELS_FILTER from Subscription to the Deployment within ${TIMEOUT}s"
+            exit 1
+          fi
+
+          # Now that the Deployment spec has LABELS_FILTER, wait for the rollout to finish
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s
+          echo "Operator rolled out with LABELS_FILTER from Subscription config"
+    - sleep:
+        duration: 10s
+    - assert:
+        file: 00-assert-operator-pod.yaml
+
+  - name: Verify label filtering on collector resources
+    try:
+    - apply:
+        file: 01-install-collector.yaml
+    - assert:
+        file: 01-assert-collector.yaml
+    - script:
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        timeout: 30s
+        content: |
+          #!/bin/bash
+          set -e
+          labels=$(kubectl get deployment env-config-collector -n "$NAMESPACE" -o jsonpath='{.metadata.labels}')
+          if echo "$labels" | grep -q "env-config-test-label"; then
+            echo "FAIL: env-config-test-label should have been filtered out by LABELS_FILTER"
+            exit 1
+          fi
+          echo "PASS: env-config-test-label was correctly filtered by LABELS_FILTER env var"
+    finally:
+    - script:
+        timeout: 180s
+        content: |
+          #!/bin/bash
+          set -e
+
+          OTEL_NAMESPACE=opentelemetry-operator-system
+
+          # Find the OpenTelemetry operator Subscription
+          SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+
+          if [ -n "$SUB_NAME" ]; then
+            echo "Cleaning up Subscription: $SUB_NAME"
+            ENV_INDEX=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
+              -o jsonpath='{range .spec.config.env[*]}{.name}{"\n"}{end}' 2>/dev/null \
+              | grep -n "^LABELS_FILTER$" | cut -d: -f1 || true)
+            if [ -n "$ENV_INDEX" ]; then
+              IDX=$((ENV_INDEX - 1))
+              kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
+                -p "[{\"op\":\"remove\",\"path\":\"/spec/config/env/$IDX\"}]" || true
+            fi
+          fi
+
+          # Wait for operator to be ready after cleanup
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s || true
+          echo "Cleanup complete"

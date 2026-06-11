@@ -4,8 +4,9 @@
 package opampbridge
 
 import (
+	"slices"
+
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -30,7 +31,7 @@ func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridg
 		volumeMounts = append(volumeMounts, opampBridge.Spec.VolumeMounts...)
 	}
 
-	envVars := opampBridge.Spec.Env
+	envVars := slices.Clone(opampBridge.Spec.Env)
 	if opampBridge.Spec.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}
@@ -74,7 +75,7 @@ func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridg
 		)
 	}
 
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
+	envVars = append(envVars, cfg.ProxyEnvVars...)
 
 	return corev1.Container{
 		Name:            naming.OpAMPBridgeContainer(),

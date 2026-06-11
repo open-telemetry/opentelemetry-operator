@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "labels": ["dependencies"],
-  "enabledManagers": ["regex", "npm", "pip_requirements"],
+  "enabledManagers": ["regex", "npm", "pip_requirements", "gomod", "github-actions", "dockerfile"],
   "customManagers": [
     {
       "customType": "regex",
@@ -76,6 +76,17 @@
       "matchStrings": [
         "image: kindest/node:(?<currentValue>v[\\d\\.]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update BASE_IMAGE build-arg in test e2e publish workflow",
+      "datasourceTemplate": "docker",
+      "fileMatch": [
+        "(^|/)\\.github/workflows/publish-test-e2e-images\\.yaml$"
+      ],
+      "matchStrings": [
+        "build-args:\\s*['\"]BASE_IMAGE=(?<depName>[^:@'\"\\s]+):(?<currentValue>[^@'\"\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})['\"]"
+      ]
     }
   ],
   "packageRules": [
@@ -83,6 +94,7 @@
       "matchDatasources": ["golang-version"],
       "matchManagers": ["regex"],
       "matchFileNames": [".github/workflows/*.yaml", ".github/workflows/*.yml"],
+      "separateMinorPatch": true,
       "commitMessageTopic": "go version in CI"
     },
     {
@@ -127,6 +139,74 @@
       "groupName": "kind node images",
       "schedule": ["on monday"],
       "commitMessageTopic": "kind node images"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["tests/test-e2e-apps/**/go.mod"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["gomod"],
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["golang.org/x/**"],
+      "groupName": "golang.org/x"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchPackageNames": [
+        "github.com/prometheus-operator/prometheus-operator{,/**}",
+        "github.com/prometheus/prometheus{,/**}",
+        "github.com/prometheus/client_go{,/**}"
+      ],
+      "groupName": "prometheus"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"],
+      "groupName": "kubernetes",
+      "group": {
+        "commitMessageTopic": "kubernetes group to {{#each upgrades}}{{#if (equals depName \"k8s.io/api\")}}{{newVersion}}{{/if}}{{/each}}"
+      }
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["go.opentelemetry.io/otel{,/**}"],
+      "groupName": "opentelemetry"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackagePatterns": ["^docker/"],
+      "groupName": "docker GitHub Actions"
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": ["Dockerfile", "cmd/**/Dockerfile", "autoinstrumentation/**/Dockerfile"],
+      "groupName": "production base images"
+    },
+    {
+      "matchManagers": ["dockerfile", "regex"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["tests/**/Dockerfile", ".github/workflows/publish-test-e2e-images.yaml"],
+      "groupName": "test base images",
+      "schedule": ["on monday"]
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": [".github/workflows/publish-test-e2e-images.yaml"],
+      "matchPackageNames": ["docker.io/library/python"],
+      "allowedVersions": "/^3\\.10-/"
     }
   ]
 }

@@ -1,0 +1,17 @@
+# These resources must NOT be created for sidecar-mode collectors.
+# The operator injects the collector as a sidecar into the user's Pod,
+# so Services, HPA, and Ingress are non-functional and must be skipped.
+apiVersion: v1
+kind: Service
+metadata:
+  name: sidecar-for-my-app-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sidecar-for-my-app-collector-headless
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sidecar-for-my-app-collector-monitoring

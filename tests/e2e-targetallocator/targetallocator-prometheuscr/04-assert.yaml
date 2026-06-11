@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-smon-scrapeclass-config
+status:
+  succeeded: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-smon-scrapeclass-tls
+status:
+  succeeded: 1

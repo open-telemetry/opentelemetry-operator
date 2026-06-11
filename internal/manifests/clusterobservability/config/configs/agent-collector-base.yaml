@@ -1,6 +1,17 @@
 # Base configuration for agent collectors (DaemonSet) 
 # Collects kubelet stats, container logs, and OTLP data from auto-instrumentation
 receivers:
+  hostmetrics:
+    root_path: /hostfs
+    collection_interval: 30s
+    scrapers:
+      cpu: {}
+      memory: {}
+      disk: {}
+      filesystem: {}
+      load: {}
+      network: {}
+      paging: {}
   otlp:
     protocols:
       grpc:
@@ -11,6 +22,7 @@ receivers:
     collection_interval: 30s
     auth_type: serviceAccount
     endpoint: "https://${env:K8S_NODE_NAME}:10250"
+    insecure_skip_verify: true
     metric_groups:
       - container
       - pod  
@@ -25,15 +37,8 @@ receivers:
     include_file_path: true
     include_file_name: false
     operators:
-      - type: router
-        id: get-format
-        routes:
-          - output: parser-docker
-            expr: 'body matches "^\\{"'
-          - output: parser-crio  
-            expr: 'body matches "^[^ Z]+ "'
-          - output: parser-containerd
-            expr: 'body matches "^[^ Z]+Z"'
+      - type: container
+        id: container-parser
 
 processors:
   batch: {}

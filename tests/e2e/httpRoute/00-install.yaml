@@ -1,0 +1,27 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-httproute
+spec:
+  mode: deployment
+  httpRoute:
+    enabled: true
+    gateway: my-gateway
+    gatewayNamespace: default
+    hostnames:
+      - "example.com"
+      - "*.example.com"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

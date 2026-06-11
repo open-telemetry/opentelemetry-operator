@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
@@ -81,6 +82,23 @@ func GetScrapeConfigsFromPromConfig(promReceiverConfig map[any]any) ([]map[strin
 	return scrapeConfigMaps, nil
 }
 
+// namedPrometheusReceivers returns the names of any "prometheus/<name>" receivers
+// present in the receivers config, sorted for stable output.
+func namedPrometheusReceivers(receivers map[any]any) []string {
+	var named []string
+	for key := range receivers {
+		keyStr, ok := key.(string)
+		if !ok {
+			continue
+		}
+		if strings.HasPrefix(keyStr, "prometheus/") {
+			named = append(named, keyStr)
+		}
+	}
+	slices.Sort(named)
+	return named
+}
+
 // ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
 func ConfigToPromConfig(cfg string) (map[any]any, error) {
 	config, err := adapters.ConfigFromString(cfg)
@@ -100,6 +118,9 @@ func ConfigToPromConfig(cfg string) (map[any]any, error) {
 
 	prometheusProperty, ok := receivers["prometheus"]
 	if !ok {
+		if named := namedPrometheusReceivers(receivers); len(named) > 0 {
+			return nil, fmt.Errorf("the target allocator requires a receiver named exactly \"prometheus\", but only named instances were found: %s; rename one of them to \"prometheus\"", strings.Join(named, ", "))
+		}
 		return nil, errorNoComponent("prometheus")
 	}
 
@@ -282,14 +303,16 @@ func WithCollectorTargetReloadInterval(interval string) TAOption {
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
 func AddTAConfigToPromConfig(prometheus map[any]any, taServiceName string, taOpts ...TAOption) (map[any]any, error) {
-	prometheusConfigProperty, ok := prometheus["config"]
-	if !ok {
-		return nil, errorNoComponent("prometheusConfig")
-	}
-
-	prometheusCfg, ok := prometheusConfigProperty.(map[any]any)
-	if !ok {
-		return nil, errorNotAMap("prometheusConfig")
+	// When the receiver has a `config:` block, strip any user-provided scrape_configs:
+	// they will be supplied by the target allocator at runtime. When the block is absent
+	// (TA-only mode: scrape configs come from the TA itself, e.g. a mounted configmap or
+	// PrometheusCR objects), there is nothing to strip.
+	if prometheusConfigProperty, ok := prometheus["config"]; ok {
+		prometheusCfg, ok := prometheusConfigProperty.(map[any]any)
+		if !ok {
+			return nil, errorNotAMap("prometheusConfig")
+		}
+		delete(prometheusCfg, "scrape_configs")
 	}
 
 	// Create the TargetAllocConfig dynamically if it doesn't exist
@@ -312,9 +335,6 @@ func AddTAConfigToPromConfig(prometheus map[any]any, taServiceName string, taOpt
 			return nil, err
 		}
 	}
-
-	// Remove the scrape_configs key from the map
-	delete(prometheusCfg, "scrape_configs")
 
 	return prometheus, nil
 }
@@ -342,6 +362,12 @@ func ValidatePromConfig(config map[any]any, targetAllocatorEnabled bool) error {
 //   - PrometheusCR has to be enabled in target allocator settings
 func ValidateTargetAllocatorConfig(targetAllocatorPrometheusCR bool, promReceiverConfig map[any]any) error {
 	if targetAllocatorPrometheusCR {
+		return nil
+	}
+	// TA-only mode: when the receiver has no `config:` block, the user is delegating
+	// scrape configuration to the target allocator itself (loaded from an external
+	// source at runtime). Permit this — we have nothing to validate locally.
+	if _, hasConfig := promReceiverConfig["config"]; !hasConfig {
 		return nil
 	}
 	// if PrometheusCR isn't enabled, we need at least one scrape config

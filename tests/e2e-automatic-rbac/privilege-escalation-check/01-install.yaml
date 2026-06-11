@@ -1,0 +1,67 @@
+# limited-user: has permission to create OpenTelemetryCollectors but does NOT hold the
+# cluster-level get/list/watch on events that the k8s_events receiver requires.
+# permitted-user: has permission to create OpenTelemetryCollectors AND already holds the
+# cluster-level permissions that k8s_events requires.
+#
+# Users are not Kubernetes objects; RBAC bindings reference them by name directly.
+---
+# Namespace-scoped role that allows managing OpenTelemetryCollectors.
+# Both test subjects share this role via separate RoleBindings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otc-creator
+rules:
+- apiGroups: ["opentelemetry.io"]
+  resources: ["opentelemetrycollectors"]
+  verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: limited-user-otc-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otc-creator
+subjects:
+- kind: User
+  name: limited-user
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: permitted-user-otc-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otc-creator
+subjects:
+- kind: User
+  name: permitted-user
+  apiGroup: rbac.authorization.k8s.io
+---
+# Cluster-level events permissions that the k8s_events receiver requires.
+# Granted ONLY to permitted-user so that limited-user triggers the escalation check.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('-', [$namespace, 'events-reader']))
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', [$namespace, 'permitted-user-events']))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('-', [$namespace, 'events-reader']))
+subjects:
+- kind: User
+  name: permitted-user
+  apiGroup: rbac.authorization.k8s.io

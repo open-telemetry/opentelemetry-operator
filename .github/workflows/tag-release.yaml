@@ -1,0 +1,49 @@
+name: "Tag the release"
+# Runs when the operator's v* tag is created, which happens when the release
+# draft created by release.yaml is published. At that point the tag exists, so
+# we can tag the apis/ submodule at the same commit and refresh the Go module
+# proxy for both modules.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  tag-apis-module:
+    permissions:
+      contents: write # required for creating the apis/ submodule tag
+    runs-on: ubuntu-latest
+    env:
+      # github.ref_name is the operator tag, e.g. v0.152.0
+      OPERATOR_TAG: ${{ github.ref_name }}
+    steps:
+      - name: "tag the apis submodule"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The apis/ directory is published as its own Go module
+          # (github.com/open-telemetry/opentelemetry-operator/apis). Per Go's
+          # rules for multiple modules in a single repository, it must be tagged
+          # with the module's directory as a prefix, i.e. apis/vX.Y.Z.
+          # https://go.dev/doc/modules/managing-source#multiple-module-source
+          #
+          # The tag points at the same commit as the operator tag that triggered
+          # this workflow. Creating the apis/ tag does not re-trigger this
+          # workflow: it doesn't match the v* filter, and tags created via
+          # GITHUB_TOKEN don't trigger workflow runs.
+          APIS_TAG="apis/${OPERATOR_TAG}"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${APIS_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${APIS_TAG} already exists, skipping."
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f "ref=refs/tags/${APIS_TAG}" \
+              -f "sha=${GITHUB_SHA}"
+          fi
+
+      - name: "refresh go proxy module info on release"
+        run: |
+          curl "https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${OPERATOR_TAG}.info"
+          curl "https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/apis/@v/${OPERATOR_TAG}.info"

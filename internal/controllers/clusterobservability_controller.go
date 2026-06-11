@@ -82,6 +82,7 @@ func NewClusterObservabilityReconciler(params ClusterObservabilityReconcilerPara
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch

@@ -35,7 +35,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // TargetAllocatorReconciler reconciles a TargetAllocator object.
@@ -135,8 +134,10 @@ func NewTargetAllocatorReconciler(
 	}
 }
 
-// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=configmaps;serviceaccounts;services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
@@ -198,7 +199,7 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
 	}
 
-	if r.config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if r.config.CertManagerAvailability == certmanager.Available {
 		ctrlBuilder.Owns(&cmv1.Certificate{})
 		ctrlBuilder.Owns(&cmv1.Issuer{})
 	}

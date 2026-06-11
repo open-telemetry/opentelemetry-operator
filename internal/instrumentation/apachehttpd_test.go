@@ -56,8 +56,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/usr/local/apache2/conf/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
@@ -67,9 +66,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -151,8 +148,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /opt/customPath/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/opt/customPath/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
@@ -162,9 +158,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /opt/customPath/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheHttpdAgentScript, "--", "/opt/customPath"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -252,8 +246,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/usr/local/apache2/conf/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
@@ -263,9 +256,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -358,8 +349,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/usr/local/apache2/conf/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
@@ -369,9 +359,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -471,8 +459,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 						{
 							Name:    apacheAgentCloneContainerName,
 							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
+							Command: []string{"cp", "-r", "/usr/local/apache2/conf/.", apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      apacheAgentConfigVolume,
 								MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
@@ -482,9 +469,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo -e '\nInclude /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf",
-							},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -540,6 +525,29 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 			assert.Equal(t, test.expected, pod)
 		})
 	}
+}
+
+// Regression test: when the container's VolumeMounts slice has spare capacity
+// (e.g. after Istio injection), append aliasing corrupts the clone init
+// container's mounts.
+func TestInjectApacheHttpdagentVolumemountAliasing(t *testing.T) {
+	// Spare capacity is the trigger — simulates a prior webhook leaving room.
+	mounts := make([]corev1.VolumeMount, 0, 4)
+	mounts = append(mounts,
+		corev1.VolumeMount{Name: "a", MountPath: "/a"},
+		corev1.VolumeMount{Name: "b", MountPath: "/b"},
+	)
+
+	pod := corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{VolumeMounts: mounts}}}}
+	result := injectApacheHttpdagent(logr.Discard(), v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+		pod, false, &pod.Spec.Containers[0], "http://otlp:4317",
+		map[string]string{string(semconv.K8SDeploymentNameKey): "svc"}, v1alpha1.InstrumentationSpec{})
+
+	clone := result.Spec.InitContainers[0]
+	lastMount := clone.VolumeMounts[len(clone.VolumeMounts)-1]
+	assert.Equal(t, apacheAgentConfigVolume, lastMount.Name,
+		"clone's config mount was corrupted by slice aliasing: %v", clone.VolumeMounts)
+	assert.Equal(t, apacheAgentConfDirFull, lastMount.MountPath)
 }
 
 func TestApacheInitContainerMissing(t *testing.T) {

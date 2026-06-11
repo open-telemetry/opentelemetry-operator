@@ -44,24 +44,3 @@ spec:
     - script:
         timeout: 5m
         content: ./check_metrics.sh
-  - name: Run the must-gather and verify the contents
-    try:
-    - command:
-        entrypoint: oc
-        args:
-        - get
-        - pods
-        - -A
-        - -l control-plane=controller-manager
-        - -l app.kubernetes.io/name=opentelemetry-operator
-        - -o 
-        - jsonpath={.items[0].metadata.namespace}
-        outputs:
-        - name: OTEL_NAMESPACE
-          value: ($stdout)
-    - script:
-        env:
-        - name: otelnamespace
-          value: ($OTEL_NAMESPACE)
-        timeout: 5m
-        content: ./check_must_gather.sh

@@ -485,6 +485,30 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 		},
+		{
+			description: "http with allow-insecure-auth-secrets serves real secret values",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp3/0": {
+					JobName:         "serviceMonitor/testapp/testapp3/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+						BasicAuth: &config.BasicAuth{
+							Username: "test",
+							Password: "P@$$w0rd1!?",
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+			serverOptions: []Option{
+				WithInsecureAuthSecrets(),
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -514,14 +538,15 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			err = yaml.Unmarshal(bodyBytes, scrapeConfigs)
 			require.NoError(t, err)
 
+			serveSecrets := s.httpsServer != nil || s.allowInsecureAuthSecrets
 			for _, c := range scrapeConfigs {
-				if s.httpsServer == nil && c.HTTPClientConfig.BasicAuth != nil {
+				if !serveSecrets && c.HTTPClientConfig.BasicAuth != nil {
 					assert.Equal(t, c.HTTPClientConfig.BasicAuth.Password, config.Secret("<secret>"))
 				}
 			}
 
 			for _, c := range tc.scrapeConfigs {
-				if s.httpsServer == nil && c.HTTPClientConfig.BasicAuth != nil {
+				if !serveSecrets && c.HTTPClientConfig.BasicAuth != nil {
 					c.HTTPClientConfig.BasicAuth.Password = "<secret>"
 				}
 			}

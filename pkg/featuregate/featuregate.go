@@ -23,13 +23,6 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
-	// EnableTargetAllocatorMTLS is the feature gate that enables mTLS between the target allocator and the collector.
-	EnableTargetAllocatorMTLS = featuregate.GlobalRegistry().MustRegister(
-		"operator.targetallocator.mtls",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
-		featuregate.WithRegisterFromVersion("v0.111.0"),
-	)
 	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
 	// strategy for allocation strategies that might not assign all jobs (per-node).
 	EnableTargetAllocatorFallbackStrategy = featuregate.GlobalRegistry().MustRegister(
@@ -57,6 +50,19 @@ var (
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
+	)
+	// UseCollectorDefaultTelemetryShape, when enabled (default at beta), makes
+	// the operator-injected Prometheus telemetry reader use collector defaults
+	// for without_type_suffix, without_units, and without_scope_info — metric
+	// names emitted by operator-managed collectors no longer carry type
+	// suffixes, units, or scope_info. When disabled, the operator explicitly
+	// sets all three to false to preserve the pre-v0.154.0 metric name shape.
+	// See open-telemetry/opentelemetry-operator#5075.
+	UseCollectorDefaultTelemetryShape = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.usedefaulttelemetryshape",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("when enabled (default), the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. When disabled, the operator explicitly sets all three to false to preserve the pre-v0.154.0 metric name shape."),
+		featuregate.WithRegisterFromVersion("v0.152.0"),
 	)
 )
 

@@ -8,13 +8,12 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -48,7 +47,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	}}
 	volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
 
-	envVars := instance.Spec.Env
+	envVars := slices.Clone(instance.Spec.Env)
 	if envVars == nil {
 		envVars = []corev1.EnvVar{}
 	}
@@ -127,7 +126,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		}
 	}
 
-	if cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if manifestutils.IsTAMTLSEnabled(&instance) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,
@@ -139,7 +138,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		})
 	}
 
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
+	envVars = append(envVars, cfg.ProxyEnvVars...)
 	return corev1.Container{
 		Name:            naming.TAContainer(),
 		Image:           image,

@@ -1,0 +1,192 @@
+apiVersion: v1
+data:
+  targetallocator.yaml: |
+    allocation_strategy: consistent-hashing
+    collector_selector:
+      matchlabels:
+        app.kubernetes.io/component: opentelemetry-collector
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/part-of: opentelemetry
+      matchexpressions: []
+    config:
+      scrape_configs:
+      - job_name: example
+        metric_relabel_configs:
+        - replacement: $1_$2
+          source_labels:
+          - job
+          target_label: job
+        relabel_configs:
+        - replacement: my_service_$1
+          source_labels:
+          - __meta_service_id
+          target_label: job
+        - replacement: $1
+          source_labels:
+          - __meta_service_name
+          target_label: instance
+    filter_strategy: relabel-config
+    prometheus_cr:
+      enabled: true
+      pod_monitor_namespace_selector: null
+      pod_monitor_selector: null
+      probe_namespace_selector: null
+      probe_selector: null
+      scrape_config_namespace_selector: null
+      scrape_config_selector: null
+      service_monitor_namespace_selector: null
+      service_monitor_selector: null
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: test-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        opentelemetry-targetallocator-config/hash: a81383bc4e7ebbf141d2fd9cde3dcd9758bc47f27af6cbaeb0f14ab6360e08c6
+      labels:
+        app.kubernetes.io/component: opentelemetry-targetallocator
+        app.kubernetes.io/instance: test.test
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: test-targetallocator
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - env:
+        - name: OTELCOL_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: ta-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: ta-container
+              divisor: "0"
+              resource: limits.cpu
+        image: default-ta-allocator
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 8080
+        name: ta-container
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: ta-internal
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: test-targetallocator
+      shareProcessNamespace: false
+      volumes:
+      - configMap:
+          items:
+          - key: targetallocator.yaml
+            path: targetallocator.yaml
+          name: test-targetallocator
+        name: ta-internal
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  ports:
+  - name: targetallocation
+    port: 80
+    targetPort: http
+  selector:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations:
+    opentelemetry-targetallocator-config/hash: a81383bc4e7ebbf141d2fd9cde3dcd9758bc47f27af6cbaeb0f14ab6360e08c6
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: test-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: test-targetallocator
+  namespace: test
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/instance: test.test
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: test-targetallocator
+      app.kubernetes.io/part-of: opentelemetry

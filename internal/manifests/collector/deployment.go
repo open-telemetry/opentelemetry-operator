@@ -48,8 +48,8 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
 					InitContainers:                params.OtelCol.Spec.InitContainers,
-					Containers:                    append([]corev1.Container{Container(params.Config, params.Log, params.OtelCol, true)}, params.OtelCol.Spec.AdditionalContainers...),
-					Volumes:                       Volumes(params.Config, params.OtelCol),
+					Containers:                    append([]corev1.Container{Container(params.Config, params.Log, params.OtelCol, true, params.TargetAllocator)}, params.OtelCol.Spec.AdditionalContainers...),
+					Volumes:                       Volumes(params.Config, params.OtelCol, params.TargetAllocator),
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig, params.OtelCol.Spec.DNSPolicy),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,

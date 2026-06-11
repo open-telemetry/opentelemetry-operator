@@ -1,0 +1,308 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-blocked-upgrade
+spec:
+  # This test modifies the operator deployment to verify upgrade blocking behavior.
+  steps:
+  - name: Create instrumentation with blocked dotnet and java versions and verify webhook warnings
+    try:
+    - script:
+        timeout: 60s
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+
+          # Get the operator's effective default images (env var overrides compiled-in args).
+          DEFAULT_DOTNET=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET")].value}' 2>/dev/null || true)
+          DEFAULT_JAVA=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA")].value}' 2>/dev/null || true)
+
+          # Fall back to the compiled-in upstream defaults when no env override is present (kind/direct install).
+          [ -z "$DEFAULT_DOTNET" ] && DEFAULT_DOTNET="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0"
+          [ -z "$DEFAULT_JAVA" ] && DEFAULT_JAVA="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.28.1"
+
+          DOTNET_REPO="${DEFAULT_DOTNET%:*}"
+          JAVA_REPO="${DEFAULT_JAVA%:*}"
+          DOTNET_DEFAULT_TAG="${DEFAULT_DOTNET##*:}"
+
+          # Choose test images based on whether the default tag is semver-parseable:
+          #   Semver default (e.g. 1.15.0): use a version BELOW the blocked threshold so the
+          #     range check (current < blocked <= target) fires.
+          #   Non-semver default (e.g. "latest"): use the EXACT blocked version so the
+          #     exact-match fallback in IsInstrumentationVersionUnupgradable fires.
+          if echo "$DOTNET_DEFAULT_TAG" | grep -qE '^v?[0-9]+\.[0-9]+'; then
+            BLOCKED_DOTNET_IMG="${DOTNET_REPO}:1.2.0"
+            BLOCKED_JAVA_IMG="${JAVA_REPO}:1.33.6"
+          else
+            BLOCKED_DOTNET_IMG="${DOTNET_REPO}:1.3.0"
+            BLOCKED_JAVA_IMG="${JAVA_REPO}:2.0.0"
+          fi
+          echo "Using blocked images: dotnet=$BLOCKED_DOTNET_IMG  java=$BLOCKED_JAVA_IMG"
+
+          kubectl apply -n "$NAMESPACE" -f - 2>&1 << EOF
+          apiVersion: opentelemetry.io/v1alpha1
+          kind: Instrumentation
+          metadata:
+            name: blocked-upgrade-test
+          spec:
+            exporter:
+              endpoint: http://localhost:4317
+            sampler:
+              type: always_on
+            dotnet:
+              image: "${BLOCKED_DOTNET_IMG}"
+            java:
+              image: "${BLOCKED_JAVA_IMG}"
+          EOF
+        check:
+          (contains($stdout, 'cannot be automatically upgraded')): true
+    - assert:
+        file: 00-assert.yaml
+  - name: Patch operator to use old dotnet and java versions as defaults
+    try:
+    - script:
+        timeout: 5m
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+
+          # Get the operator's effective default images
+          DEFAULT_DOTNET=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET")].value}' 2>/dev/null || true)
+          DEFAULT_JAVA=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA")].value}' 2>/dev/null || true)
+          [ -z "$DEFAULT_DOTNET" ] && DEFAULT_DOTNET="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0"
+          [ -z "$DEFAULT_JAVA" ] && DEFAULT_JAVA="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.28.1"
+
+          DOTNET_REPO="${DEFAULT_DOTNET%:*}"
+          JAVA_REPO="${DEFAULT_JAVA%:*}"
+          DOTNET_DEFAULT_TAG="${DEFAULT_DOTNET##*:}"
+
+          # Use the same image selection logic as step 1
+          if echo "$DOTNET_DEFAULT_TAG" | grep -qE '^v?[0-9]+\.[0-9]+'; then
+            OLD_DOTNET_IMG="${DOTNET_REPO}:1.2.0"
+            OLD_JAVA_IMG="${JAVA_REPO}:1.33.6"
+          else
+            OLD_DOTNET_IMG="${DOTNET_REPO}:1.3.0"
+            OLD_JAVA_IMG="${JAVA_REPO}:2.0.0"
+          fi
+          echo "Using old images: dotnet=$OLD_DOTNET_IMG  java=$OLD_JAVA_IMG"
+
+          # Detect whether OLM is managing the operator by checking for a CSV.
+          # On kind (upstream CI): no OLM, no CSV — patch the Deployment directly (persists).
+          # On OpenShift (OLM): OLM reconciles Deployment back to CSV template within seconds,
+          # so we must patch the CSV instead and wait for OLM to propagate the change.
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+
+          if [ -n "$CSV_NAME" ]; then
+            echo "OLM install detected (CSV: $CSV_NAME) — patching CSV"
+
+            ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
+              -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              --arg dotnet "$OLD_DOTNET_IMG" \
+              --arg java "$OLD_JAVA_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+
+            kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+            # Poll the Deployment spec until OLM propagates the CSV args change.
+            echo "Waiting for OLM to propagate args from CSV to operator Deployment..."
+            TIMEOUT=120
+            ELAPSED=0
+            DEP_ARGS=""
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              DEP_ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" \
+                -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null || true)
+              if echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+                echo "Override args found in Deployment spec after ${ELAPSED}s"
+                break
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+
+            if ! echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+              echo "ERROR: OLM did not propagate args from CSV to the Deployment within ${TIMEOUT}s"
+              exit 1
+            fi
+          else
+            echo "Direct install detected (no CSV) — patching Deployment directly"
+
+            ARGS=$(kubectl get deploy -n "$NS" "$DEPLOY" -o json | jq -c '.spec.template.spec.containers[0].args')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              --arg dotnet "$OLD_DOTNET_IMG" \
+              --arg java "$OLD_JAVA_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+
+            kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          fi
+
+          kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s
+  - name: Create instrumentation that will be subject to upgrade
+    try:
+    - apply:
+        file: 01-install-instrumentation-upgrade-test.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: Restore operator to default dotnet and java versions and trigger upgrade
+    try:
+    - script:
+        timeout: 5m
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+
+          if [ -n "$CSV_NAME" ]; then
+            echo "OLM install detected (CSV: $CSV_NAME) — restoring CSV args"
+
+            ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
+              -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+
+            kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+
+            # Poll until override args are removed from the Deployment spec
+            echo "Waiting for OLM to remove override args from Deployment..."
+            TIMEOUT=120
+            ELAPSED=0
+            DEP_ARGS=""
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              DEP_ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" \
+                -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null || true)
+              if ! echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+                echo "Override args removed from Deployment spec after ${ELAPSED}s"
+                break
+              fi
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+
+            if echo "$DEP_ARGS" | grep -q "auto-instrumentation-dotnet-image"; then
+              echo "ERROR: OLM did not remove override args from the Deployment within ${TIMEOUT}s"
+              exit 1
+            fi
+          else
+            echo "Direct install detected (no CSV) — restoring Deployment args directly"
+
+            ARGS=$(kubectl get deploy -n "$NS" "$DEPLOY" -o json | jq -c '.spec.template.spec.containers[0].args')
+            NEW_ARGS=$(echo "$ARGS" | jq -c \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+
+            kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
+              -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
+          fi
+
+          kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s
+          # Give the upgrade mechanism time to process existing Instrumentation CRs
+          sleep 5
+  - name: Assert upgrades were blocked
+    try:
+    # The Instrumentation status should record the blocked upgrade reason for both
+    # languages, regardless of which image registry or tag the operator uses.
+    - assert:
+        file: 02-assert.yaml
+    # Verify both UpgradeBlocked events were emitted by the operator. We do
+    # this in a script (instead of two chainsaw `assert` blocks on the Event
+    # resource) because chainsaw's assertion-tree matcher cannot reliably
+    # disambiguate two Events that share every field except `note` — it picks
+    # one actual event and compares it against both expected matchers, which
+    # fails for at least one of them.
+    - script:
+        timeout: 90s
+        shell: /bin/bash
+        content: |
+          #!/bin/bash
+          set -eo pipefail
+
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+
+          # Compute the current (restored) operator defaults — the images upgrade-test must NOT have.
+          CURRENT_DOTNET=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET")].value}' 2>/dev/null || true)
+          CURRENT_JAVA=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA")].value}' 2>/dev/null || true)
+          [ -z "$CURRENT_DOTNET" ] && CURRENT_DOTNET="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0"
+          [ -z "$CURRENT_JAVA" ] && CURRENT_JAVA="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.28.1"
+
+          # Verify the images in upgrade-test were NOT auto-upgraded to the current defaults.
+          # This is the core proof that upgrade blocking worked: the images must still be at
+          # the old blocked version set in step 2, not at the restored current defaults.
+          ACTUAL_DOTNET=$(kubectl get instrumentation upgrade-test -n "$NAMESPACE" \
+            -o jsonpath='{.spec.dotnet.image}' 2>/dev/null || true)
+          ACTUAL_JAVA=$(kubectl get instrumentation upgrade-test -n "$NAMESPACE" \
+            -o jsonpath='{.spec.java.image}' 2>/dev/null || true)
+
+          if [ "$ACTUAL_DOTNET" = "$CURRENT_DOTNET" ]; then
+            echo "ERROR: dotnet image was auto-upgraded to current default '$CURRENT_DOTNET' — blocking failed" >&2
+            exit 1
+          fi
+          if [ "$ACTUAL_JAVA" = "$CURRENT_JAVA" ]; then
+            echo "ERROR: java image was auto-upgraded to current default '$CURRENT_JAVA' — blocking failed" >&2
+            exit 1
+          fi
+          echo "Images preserved at blocked version (not auto-upgraded):"
+          echo "  dotnet: $ACTUAL_DOTNET"
+          echo "  java:   $ACTUAL_JAVA"
+
+          # Events are queued by the operator's event recorder and flushed
+          # asynchronously, so the Instrumentation status may be updated before
+          # the events surface in the API. Retry briefly to allow them to land.
+          notes=""
+          missing=()
+          for _ in {1..30}; do
+            events_json=$(kubectl get events.events.k8s.io -n "$NAMESPACE" -o json)
+            notes=$(jq -r '.items[] | select(.reason == "UpgradeBlocked" and .regarding.name == "upgrade-test") | .note' <<<"$events_json")
+            missing=()
+            grep -qF "Automated upgrade blocked for dotnet:" <<<"$notes" || missing+=("dotnet")
+            grep -qF "Automated upgrade blocked for java:"   <<<"$notes" || missing+=("java")
+            [ ${#missing[@]} -eq 0 ] && exit 0
+            sleep 2
+          done
+          echo "Missing UpgradeBlocked events for: ${missing[*]}" >&2
+          echo "Notes for UpgradeBlocked / upgrade-test events:" >&2
+          echo "$notes" >&2
+          echo "All events in namespace $NAMESPACE:" >&2
+          jq '.items[] | {reason, type, regarding: .regarding.name, note}' <<<"$events_json" >&2
+          exit 1
+    catch:
+    - get:
+        apiVersion: opentelemetry.io/v1alpha1
+        kind: Instrumentation
+        name: upgrade-test
+        format: yaml
+    - get:
+        apiVersion: events.k8s.io/v1
+        kind: Event
+        format: yaml
+    - script:
+        content: |
+          kubectl logs -n opentelemetry-operator-system \
+            -l app.kubernetes.io/name=opentelemetry-operator \
+            --container manager --tail=100 || true

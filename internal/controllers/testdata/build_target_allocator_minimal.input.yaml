@@ -1,0 +1,7 @@
+metadata:
+  name: test
+  namespace: test
+spec:
+  filterStrategy: relabel-config
+  prometheusCR:
+    enabled: true

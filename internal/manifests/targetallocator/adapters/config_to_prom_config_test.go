@@ -106,6 +106,24 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
 }
 
+func TestExtractPromConfigFromNamedPrometheusReceivers(t *testing.T) {
+	configStr := `receivers:
+  prometheus/otelcol:
+    config:
+      scrape_configs: []
+  prometheus/loki:
+    config:
+      scrape_configs: []
+`
+
+	// test
+	promConfig, err := ta.ConfigToPromConfig(configStr)
+	assert.EqualError(t, err, `the target allocator requires a receiver named exactly "prometheus", but only named instances were found: prometheus/loki, prometheus/otelcol; rename one of them to "prometheus"`)
+
+	// verify
+	assert.True(t, reflect.ValueOf(promConfig).IsNil())
+}
+
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	testCases := []struct {
 		description string
@@ -339,17 +357,12 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		assert.Equal(t, expectedResult, result)
 	})
 
-	t.Run("missing or invalid prometheusConfig property, returns error", func(t *testing.T) {
+	t.Run("invalid prometheusConfig property, returns error", func(t *testing.T) {
 		testCases := []struct {
 			name    string
 			cfg     map[any]any
 			errText string
 		}{
-			{
-				name:    "missing config property",
-				cfg:     map[any]any{},
-				errText: "no prometheusConfig available as part of the configuration",
-			},
 			{
 				name: "invalid config property",
 				cfg: map[any]any{
@@ -369,6 +382,47 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 				assert.EqualError(t, err, tc.errText)
 			})
 		}
+	})
+
+	t.Run("TA-only mode: no config block, only target_allocator set", func(t *testing.T) {
+		// Regression test for #2998. The user supplied only a `target_allocator:` block
+		// on the prometheus receiver (no `config:`). Reconciliation must not fail, and
+		// no spurious `config:` block should be inserted — the prometheus receiver itself
+		// does not require one.
+		cfg := map[any]any{
+			"target_allocator": map[any]any{
+				"endpoint": "user-supplied-endpoint",
+			},
+		}
+		taServiceName := "test-targetallocator"
+
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		taSection, ok := result["target_allocator"].(map[any]any)
+		assert.True(t, ok)
+		// Operator-managed endpoint replaces the user-supplied one.
+		assert.Equal(t, "http://test-targetallocator:80", taSection["endpoint"])
+		// No `config:` block should be added when the user didn't supply one.
+		_, hasConfig := result["config"]
+		assert.False(t, hasConfig)
+	})
+
+	t.Run("TA-only mode: no config block, no target_allocator block", func(t *testing.T) {
+		// Edge case for #2998: an entirely empty receiver succeeds once TA is enabled.
+		// The operator inserts the target_allocator block but leaves `config:` absent.
+		cfg := map[any]any{}
+		taServiceName := "test-targetallocator"
+
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		_, hasConfig := result["config"]
+		assert.False(t, hasConfig)
+		_, hasTA := result["target_allocator"]
+		assert.True(t, hasTA)
 	})
 }
 
@@ -481,10 +535,24 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 			expectedError:               nil,
 		},
 		{
+			// TA-only mode (#2998): receiver has no `config:` block, so the user is
+			// delegating scrape configuration to the target allocator. Validator permits.
 			description:                 "receiver config empty and PrometheusCR disabled",
 			config:                      map[any]any{},
 			targetAllocatorPrometheusCR: false,
-			expectedError:               fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+			expectedError:               nil,
+		},
+		{
+			// TA-only mode with explicit target_allocator block — same as the empty case,
+			// permitted because no `config:` means scrape configs come from the TA itself.
+			description: "no config block but target_allocator set, PrometheusCR disabled",
+			config: map[any]any{
+				"target_allocator": map[any]any{
+					"endpoint": "http://my-ta:80",
+				},
+			},
+			targetAllocatorPrometheusCR: false,
+			expectedError:               nil,
 		},
 		{
 			description: "scrape configs empty and PrometheusCR disabled",

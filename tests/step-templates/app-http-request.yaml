@@ -1,0 +1,30 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: app-http-request
+spec:
+  try:
+    - command:
+        entrypoint: kubectl
+        env:
+          - name: POD_LABEL_SELECTOR
+            value: ($podLabelSelector)
+        args:
+          - get
+          - pod
+          - -n
+          - ${NAMESPACE}
+          - -l
+          - ${POD_LABEL_SELECTOR}
+          - -o
+          - jsonpath={.items[0].metadata.name}
+        outputs:
+          - name: podName
+            value: ($stdout)
+    - proxy:
+        apiVersion: v1
+        kind: Pod
+        name: ($podName)
+        namespace: ${NAMESPACE}
+        port: ($appPort)
+        path: ($appPath)
