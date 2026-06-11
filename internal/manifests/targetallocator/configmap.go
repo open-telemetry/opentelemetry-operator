@@ -225,6 +225,13 @@ func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig
 func getScrapeConfigsFromOtelConfig(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA Scrape Configs should have a single "$", as it does not support env var substitution
+	promConfig, err := adapters.ConfigToPromConfig(otelcolConfig)
+	if err != nil {
+		return nil, err
+	}
+	if _, hasConfig := promConfig["config"]; !hasConfig {
+		return []v1beta1.AnyConfig{}, nil
+	}
 	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
 	if err != nil {
 		return nil, err

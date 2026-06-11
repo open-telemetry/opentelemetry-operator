@@ -556,6 +556,17 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 			wantErr: errors.New("no scrape_configs available as part of the configuration"),
 		},
 		{
+			name: "no prom config key",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]any{
+						"prometheus": map[string]any{},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{},
+		},
+		{
 			name: "one scrape config",
 			input: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
