@@ -241,10 +241,6 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch OpenTelemetryCollector")
 		}
-
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -254,8 +250,6 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 
-	// We have a deletion, short circuit and let the deletion happen
-	// Remove finalizer if RBAC permission not available
 	deletionTimestamp, err := removeFinalizer(ctx, r, params, &instance)
 	if err != nil || deletionTimestamp != nil {
 		return ctrl.Result{}, err
@@ -263,7 +257,6 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
-		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
 	}
 
@@ -272,11 +265,9 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
 		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 	}
 
-	// Add finalizer for this CR
 	if maybeAddFinalizer(params, &instance) {
 		err = r.Update(ctx, &instance)
 		if err != nil {
