@@ -9,13 +9,13 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
             - |
               for i in $(seq 30); do
-                if curl -m 1 -s http://prometheus-kubernetessd-collector:9090/metrics | grep "kubelet_running_pods"; then exit 0; fi
+                if wget -q -T 1 -O - http://prometheus-kubernetessd-collector:9090/metrics | grep "kubelet_running_pods"; then exit 0; fi
                 sleep 5
               done
               exit 1
@@ -30,11 +30,11 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-kubernetessd-targetallocator/scrape_configs | grep "kubelet"
+            - wget -q -O - http://prometheus-kubernetessd-targetallocator/scrape_configs | grep "kubelet"
 ---
 apiVersion: batch/v1
 kind: Job
@@ -46,9 +46,9 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
             # First get the collector pod name, subsequently check that the targets for the collector include the node name label.
-            - curl -s http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets?collector_id=$(curl -s http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets | grep -oE "prometheus-kubernetessd-collector-.{5}") | grep "__meta_kubernetes_node_name"
+            - wget -q -O - http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets?collector_id=$(wget -q -O - http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets | grep -oE "prometheus-kubernetessd-collector-.{5}") | grep "__meta_kubernetes_node_name"

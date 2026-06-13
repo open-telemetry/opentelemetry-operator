@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           env:
             - name: endpoint
               value: ($endpoint)
@@ -22,8 +22,8 @@ spec:
             - -c
             - |
               for i in $(seq $retries); do
-                if curl -m 1 -s $endpoint | grep "$pattern"; then
-                  echo "Found $pattern in $endpoint" 
+                if wget -q -T 1 -O - $endpoint | grep "$pattern"; then
+                  echo "Found $pattern in $endpoint"
                   exit 0
                 fi
                 echo "Waiting for $pattern in $endpoint"

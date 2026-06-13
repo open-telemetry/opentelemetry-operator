@@ -120,7 +120,7 @@ spec:
       - args:
         - /bin/sh
         - -c
-        - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
-        image: mirror.gcr.io/curlimages/curl:latest
+        - wget -q -O - http://simplest-targetallocator/jobs | grep "targetallocator"
+        image: mirror.gcr.io/alpine:latest
         name: check-metrics
       restartPolicy: OnFailure

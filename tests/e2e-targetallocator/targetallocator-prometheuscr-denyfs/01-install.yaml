@@ -81,13 +81,13 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-config
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
             - |
               set -e
-              CONFIG=$(curl -fs http://prometheus-cr-denyfs-targetallocator/scrape_configs)
+              CONFIG=$(wget -q -O - http://prometheus-cr-denyfs-targetallocator/scrape_configs)
               echo "$CONFIG"
               # The safe endpoint (port safe-metrics) must remain.
               echo "$CONFIG" | grep -q "safe-metrics"

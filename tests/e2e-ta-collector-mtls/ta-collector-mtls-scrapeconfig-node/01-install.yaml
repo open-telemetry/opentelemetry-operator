@@ -11,11 +11,11 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrape-config-cr"
+            - wget -q -O - http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrape-config-cr"
 ---
 apiVersion: batch/v1
 kind: Job
@@ -30,8 +30,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-v1beta1-targetallocator/jobs | grep "scrape-config-cr"
+            - wget -q -O - http://prometheus-cr-v1beta1-targetallocator/jobs | grep "scrape-config-cr"
