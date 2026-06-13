@@ -437,6 +437,12 @@ e2e-log-operator:
 	kubectl get events -n opentelemetry-operator-system --sort-by=.lastTimestamp
 	kubectl get deploy -A
 
+# Fail if two chainsaw tests share a metadata.name (chainsaw renames collisions
+# to <name>#NN, which can't be traced back to a directory in JUnit/Codecov reports).
+.PHONY: check-chainsaw-test-names
+check-chainsaw-test-names:
+	./hack/check-chainsaw-test-names.sh
+
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
 .PHONY: e2e-multi-instrumentation-default
