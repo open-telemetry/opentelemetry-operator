@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: env-vars
+  name: use-labels-for-resource-attributes
 spec:
   steps:
     - name: step-00

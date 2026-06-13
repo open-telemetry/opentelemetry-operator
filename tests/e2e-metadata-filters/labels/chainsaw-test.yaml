@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: smoke-pod-annotations
+  name: smoke-pod-labels
 spec:
   steps:
   - name: step-00

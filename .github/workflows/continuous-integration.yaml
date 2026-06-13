@@ -78,6 +78,9 @@ jobs:
     - name: Lint
       run: make lint
 
+    - name: Check chainsaw test names are unique
+      run: make check-chainsaw-test-names
+
   security:
     permissions:
       security-events: write # for github/codeql-action/analyze to upload SARIF results
