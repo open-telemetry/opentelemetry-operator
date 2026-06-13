@@ -1,0 +1,325 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: opampbridge-standalone
+spec:
+  steps:
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+      name: install fake OpAMP server
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: install standalone bridge
+      try:
+        - apply:
+            bindings:
+              - name: operatorOpampBridgeImage
+                value: (env('OPERATOROPAMPBRIDGE_IMG'))
+            file: 01-install.yaml
+            template: true
+        - assert:
+            file: 01-assert.yaml
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: verify initial standalone report
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              last=""
+              for _ in $(seq 1 60); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -q '"effective_config":{"collector":' &&
+                    printf '%s' "$last" | grep -q '"health":' &&
+                    printf '%s' "$last" | grep -q '"status":"0/0"'; then
+                    printf '%s' "$last"
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+
+              printf '%s\n' "$last" >&2
+              exit 1
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.health.status): 0/0
+              (values($result)[0].status.health.healthy || `false`): false
+              (contains(keys(values($result)[0].status.health), 'component_health_map')): false
+              (contains(keys(values($result)[0].effective_config), 'collector')): true
+              (parse_yaml(values(values($result)[0].effective_config)[0])):
+                receivers:
+                  otlp:
+                    protocols:
+                      grpc: (`{}`)
+                      http: (`{}`)
+                exporters:
+                  debug: (`{}`)
+                service:
+                  pipelines:
+                    traces:
+                      receivers:
+                        - otlp
+                      exporters:
+                        - debug
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: send valid remote config
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              remote_config=$(cat <<EOF
+              {
+                "config": {
+                  "collector": "receivers:\n  otlp:\n    protocols:\n      http: {}\nexporters:\n  debug:\n    verbosity: detailed\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+                },
+                "content_type": "application/yaml"
+              }
+              EOF
+              )
+
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-valid-remote-config \
+                --image=mirror.gcr.io/curlimages/curl:latest \
+                --restart=Never \
+                --rm -i \
+                --command -- curl -fsS \
+                -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
+                -H "Content-Type: application/json" \
+                --data-binary @-
+        - assert:
+            timeout: 30s
+            resource:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: standalone-collector
+              data:
+                collector.yaml: |
+                  receivers:
+                    otlp:
+                      protocols:
+                        http: {}
+                  exporters:
+                    debug:
+                      verbosity: detailed
+                  service:
+                    pipelines:
+                      traces:
+                        receivers: [otlp]
+                        exporters: [debug]
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              kubectl get deployment standalone-collector -n "$NAMESPACE" -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}'
+            outputs:
+              - name: restartedAt
+                value: ($stdout)
+        - assert:
+            resource:
+              (length($restartedAt) > `0`): true
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: verify valid remote config status
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              last=""
+              for _ in $(seq 1 60); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -q '"remote_config_status":' &&
+                    printf '%s' "$last" | grep -q '"status":1' &&
+                    printf '%s' "$last" | grep -q 'verbosity: detailed'; then
+                    printf '%s' "$last"
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+
+              printf '%s\n' "$last" >&2
+              exit 1
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.remote_config_status.status): 1
+              (length(values($result)[0].status.remote_config_status.last_remote_config_hash) > `0`): true
+              (contains(keys(values($result)[0].effective_config), 'collector')): true
+              (parse_yaml(values(values($result)[0].effective_config)[0])):
+                receivers:
+                  otlp:
+                    protocols:
+                      http: (`{}`)
+                exporters:
+                  debug:
+                    verbosity: detailed
+                service:
+                  pipelines:
+                    traces:
+                      receivers:
+                        - otlp
+                      exporters:
+                        - debug
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: reject invalid remote config
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              remote_config=$(cat <<EOF
+              {
+                "config": {
+                  "collector": "receivers:\n  otlp:\n    protocols:\n      http: {}\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+                },
+                "content_type": "application/yaml"
+              }
+              EOF
+              )
+
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-invalid-remote-config \
+                --image=mirror.gcr.io/curlimages/curl:latest \
+                --restart=Never \
+                --rm -i \
+                --command -- curl -fsS \
+                -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
+                -H "Content-Type: application/json" \
+                --data-binary @-
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              last=""
+              for _ in $(seq 1 60); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -q '"remote_config_status":' &&
+                    printf '%s' "$last" | grep -q '"status":3'; then
+                    printf '%s' "$last"
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+
+              printf '%s\n' "$last" >&2
+              exit 1
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.remote_config_status.status): 3
+              (contains(values($result)[0].status.remote_config_status.error_message, 'invalid collector config')): true
+        - assert:
+            resource:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: standalone-collector
+              data:
+                collector.yaml: |
+                  receivers:
+                    otlp:
+                      protocols:
+                        http: {}
+                  exporters:
+                    debug:
+                      verbosity: detailed
+                  service:
+                    pipelines:
+                      traces:
+                        receivers: [otlp]
+                        exporters: [debug]
+
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/name=otel-opamp-bridge-standalone
+      name: verify multiple standalone agents
+      try:
+        - apply:
+            file: 02-install.yaml
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              kubectl delete pod -n "$NAMESPACE" -l app.kubernetes.io/name=otel-opamp-bridge-standalone
+        - assert:
+            file: 02-assert.yaml
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+
+              last=""
+              for _ in $(seq 1 60); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -q '"effective_config":{"collector":' &&
+                    printf '%s' "$last" | grep -q '"effective_config":{"agent":'; then
+                    printf '%s' "$last"
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+
+              printf '%s\n' "$last" >&2
+              exit 1
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 2
+              (length(values($result)[?contains(keys(effective_config), 'collector')])): 1
+              (length(values($result)[?contains(keys(effective_config), 'agent')])): 1

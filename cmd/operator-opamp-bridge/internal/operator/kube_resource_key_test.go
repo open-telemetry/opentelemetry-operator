@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package agent
+package operator
 
 import (
 	"fmt"
@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_collectorKeyFromKey(t *testing.T) {
+func TestKubeResourceFromKey(t *testing.T) {
 	type args struct {
 		key string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    kubeResourceKey
+		want    KubeResourceKey
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
@@ -25,7 +25,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "namespace/good",
 			},
-			want: kubeResourceKey{
+			want: KubeResourceKey{
 				name:      "good",
 				namespace: "namespace",
 			},
@@ -36,7 +36,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "badnamespace",
 			},
-			want:    kubeResourceKey{},
+			want:    KubeResourceKey{},
 			wantErr: assert.Error,
 		},
 		{
@@ -44,7 +44,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "too/many/slashes",
 			},
-			want:    kubeResourceKey{},
+			want:    KubeResourceKey{},
 			wantErr: assert.Error,
 		},
 	}
@@ -59,29 +59,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 	}
 }
 
-func Test_collectorKey_String(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "can make a key",
-			fields: fields{
-				name:      "good",
-				namespace: "namespace",
-			},
-			want: "namespace/good",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			k := newKubeResourceKey(tt.fields.namespace, tt.fields.name)
-			assert.Equalf(t, tt.want, k.String(), "String()")
-		})
-	}
+func TestKubeResourceKeyString(t *testing.T) {
+	key := NewKubeResourceKey("namespace", "good")
+	assert.Equal(t, "namespace/good", key.String())
 }
