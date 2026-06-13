@@ -429,7 +429,12 @@ e2e-no-crds: chainsaw
 # Log operator pod information for debugging
 .PHONY: e2e-log-operator
 e2e-log-operator:
-	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	# `-` prefix: a not-yet-started container has no logs, but that must not stop the
+	# describe/events below, which are exactly what explains why it has not started
+	# (e.g. an operator pod stuck in ContainerCreating during a deploy rollout timeout).
+	-kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	kubectl describe pod -n opentelemetry-operator-system -l app.kubernetes.io/name=opentelemetry-operator
+	kubectl get events -n opentelemetry-operator-system --sort-by=.lastTimestamp
 	kubectl get deploy -A
 
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
