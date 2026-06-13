@@ -486,11 +486,22 @@ e2e-metadata-filters: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters --report-name e2e-metadata-filters
 
 # end-to-end-test for testing upgrading
+#
+# The tests in this group are run sequentially, as two ordered invocations, because
+# both manipulate the operator's lifecycle and must not run concurrently:
+#   1. upgrade-test boots on operator v0.86.0 (applied above) and its step-01 upgrades
+#      to the current build via `make deploy`.
+#   2. instrumentation-blocked-upgrade patches the operator's default-image args and
+#      restarts it; it requires the current operator, so it must run *after* upgrade-test
+#      has swapped it in. It lives here (rather than in e2e-instrumentation) so its operator
+#      restarts can't reset the operator's informer cache out from under the parallel
+#      auto-instrumentation tests, which silently miss injection during a cold-cache window.
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy chainsaw
 	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
 	go run hack/check-operator-ready.go
-	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade --report-name e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade/upgrade-test --report-name e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade/instrumentation-blocked-upgrade --report-name e2e-instrumentation-blocked-upgrade
 
 # end-to-end tests to test crd validations
 .PHONY: e2e-crd-validations
