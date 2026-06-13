@@ -3,7 +3,7 @@
 e2e-httproute: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
-VERSION ?= $(shell git describe --tags | sed 's/^v//')
+VERSION ?= $(shell git describe --tags --match 'v*' | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= github.com/open-telemetry/opentelemetry-operator/internal/version
 OTELCOL_VERSION ?= "$(shell awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"
@@ -355,9 +355,14 @@ release-artifacts: set-image-controller
 	$(KUSTOMIZE) build config/overlays/openshift -o dist/opentelemetry-operator-openshift.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
+# apis/ is a nested Go module, which the "./..." pattern does not descend into, so
+# controller-gen only sees the CRD types as an imported dependency. Passing ./apis/...
+# explicitly loads them as source roots, keeping generation deterministic even when a
+# stray copy of the apis module exists on disk (e.g. a git worktree under .claude/),
+# which can otherwise shadow the types and silently drop fields from the CRDs.
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
 # Run tests
 .PHONY: test
@@ -386,9 +391,11 @@ lint: golangci-lint
 	$(GOLANGCI_LINT) run
 
 # Generate code
+# apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
+# for the API types (the "./..." pattern does not descend into nested modules).
 .PHONY: generate
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..." paths="./apis/..."
 
 ##@ E2E
 # end-to-tests
