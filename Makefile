@@ -728,7 +728,8 @@ cmctl:
 		exit 0; \
 	fi ;\
 	TMP_DIR=$$(mktemp -d) ;\
-	curl -L -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	gzip -t $$TMP_DIR/cmctl.tar.gz || { echo "ERROR: downloaded cmctl archive is corrupt or incomplete" >&2; exit 1; } ;\
 	tar xzf $$TMP_DIR/cmctl.tar.gz -C $$TMP_DIR ;\
 	[ -d bin ] || mkdir bin ;\
 	mv $$TMP_DIR/cmctl $(CMCTL) ;\
