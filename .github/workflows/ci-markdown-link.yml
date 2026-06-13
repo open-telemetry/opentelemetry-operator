@@ -23,7 +23,7 @@ jobs:
 
       # equivalent cli: linkspector check
       - name: Run linkspector
-        uses: umbrelladocs/action-linkspector@6c637d70424624231467a4ca918be54fa3b792d0 # v1
+        uses: umbrelladocs/action-linkspector@6c637d70424624231467a4ca918be54fa3b792d0 # v1.5.4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
