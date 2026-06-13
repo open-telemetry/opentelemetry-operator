@@ -504,9 +504,7 @@ e2e-metadata-filters: chainsaw
 #      to the current build via `make deploy`.
 #   2. instrumentation-blocked-upgrade patches the operator's default-image args and
 #      restarts it; it requires the current operator, so it must run *after* upgrade-test
-#      has swapped it in. It lives here (rather than in e2e-instrumentation) so its operator
-#      restarts can't reset the operator's informer cache out from under the parallel
-#      auto-instrumentation tests, which silently miss injection during a cold-cache window.
+#      has swapped it in.
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy chainsaw
 	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
@@ -641,10 +639,7 @@ container-instrumentation-all: container-instrumentation-java container-instrume
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
 	# Tolerate a pre-existing cluster (idempotent local re-runs), but do NOT swallow a
-	# genuine creation failure with `|| true`. When `kind create cluster` fails to pull the
-	# node image (e.g. a Docker Hub timeout), the old `|| true` hid it and the run instead
-	# died later in `cert-manager`/`deploy` with a misleading "connection refused to
-	# localhost:8080" cascade against a cluster that never came up. Fail loudly here instead.
+	# genuine creation failure with `|| true`.
 	@if $(KIND) get clusters 2>/dev/null | grep -qxF $(KIND_CLUSTER_NAME); then \
 		echo "kind cluster $(KIND_CLUSTER_NAME) already exists; skipping create"; \
 	else \
