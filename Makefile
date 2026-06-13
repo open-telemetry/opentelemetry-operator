@@ -629,7 +629,16 @@ container-instrumentation-all: container-instrumentation-java container-instrume
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
-	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
+	# Tolerate a pre-existing cluster (idempotent local re-runs), but do NOT swallow a
+	# genuine creation failure with `|| true`. When `kind create cluster` fails to pull the
+	# node image (e.g. a Docker Hub timeout), the old `|| true` hid it and the run instead
+	# died later in `cert-manager`/`deploy` with a misleading "connection refused to
+	# localhost:8080" cascade against a cluster that never came up. Fail loudly here instead.
+	@if $(KIND) get clusters 2>/dev/null | grep -qxF $(KIND_CLUSTER_NAME); then \
+		echo "kind cluster $(KIND_CLUSTER_NAME) already exists; skipping create"; \
+	else \
+		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG); \
+	fi
 endif
 
 # Stop kind cluster
