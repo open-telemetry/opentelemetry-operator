@@ -216,7 +216,7 @@ require (
 )
 
 require (
-	github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished
+	github.com/open-telemetry/opentelemetry-operator/apis v0.153.0
 	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
 	sigs.k8s.io/e2e-framework v0.7.0
 )
