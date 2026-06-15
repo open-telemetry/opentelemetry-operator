@@ -501,6 +501,8 @@ github.com/operator-framework/api v0.42.0 h1:rkc5V3zW8RxZMjePAe12jdL7Co/hwsYo1pL
 github.com/operator-framework/api v0.42.0/go.mod h1:bMEj+wl/8tGqcGNtxt38cLUYagu9chNsbYzb/5HQaUQ=
 github.com/operator-framework/api v0.43.0 h1:ZMXghGPe3+h9dV964eVe+iBARgcxQIOLw+I1aMRwGHg=
 github.com/operator-framework/api v0.43.0/go.mod h1:psXOO7iwROhoer/I+v1FXPYAhuDqYuTgVJgFiL3z1sQ=
+github.com/operator-framework/api v0.44.0 h1:UPPNVVI2HJyfH17cnL/8PADV4DCaNLqfL08e+AyYrO8=
+github.com/operator-framework/api v0.44.0/go.mod h1:H46wpymo4j3kJZraarbuBUPLF5OzTCw4u0n2xb9sMNQ=
 github.com/operator-framework/operator-lib v0.19.0 h1:az6ogYj21rtU0SF9uYctRLyKp2dtlqTsmpfehFy6Ce8=
 github.com/operator-framework/operator-lib v0.19.0/go.mod h1:KxycAjFnHt0DBtHmH3Jm7yHcY5sdrshPKTqM/HKAQ08=
 github.com/ovh/go-ovh v1.9.0 h1:6K8VoL3BYjVV3In9tPJUdT7qMx9h0GExN9EXx1r2kKE=
