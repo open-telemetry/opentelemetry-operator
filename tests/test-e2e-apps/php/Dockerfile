@@ -1,6 +1,6 @@
-FROM composer:2 AS composer_build
+FROM composer:2@sha256:1c62c57bb5228569034b7b4d1415b17ba6b731619f7de226eaa33ad1845785ec AS composer_build
 
-FROM php:8.4
+FROM php:8.4@sha256:966621a53c8e75f062fad4e043ffec507cb793822aee3422110e0127fe53952d
 
 COPY --from=composer_build /usr/bin/composer /usr/local/bin/composer
 
