@@ -142,7 +142,7 @@
     },
     {
       "matchManagers": ["gomod"],
-      "matchFileNames": ["tests/test-e2e-apps/**/go.mod"],
+      "matchFileNames": ["tests/test-e2e-apps/**/go.mod", "apis/go.mod"],
       "enabled": false
     },
     {
