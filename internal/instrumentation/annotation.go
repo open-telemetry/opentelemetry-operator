@@ -17,6 +17,8 @@ const (
 	annotationInjectJavaContainersName        = "instrumentation.opentelemetry.io/java-container-names"
 	annotationInjectNodeJS                    = "instrumentation.opentelemetry.io/inject-nodejs"
 	annotationInjectNodeJSContainersName      = "instrumentation.opentelemetry.io/nodejs-container-names"
+	annotationInjectPhp                       = "instrumentation.opentelemetry.io/inject-php"
+	annotationInjectPhpContainersName         = "instrumentation.opentelemetry.io/php-container-names"
 	annotationInjectPython                    = "instrumentation.opentelemetry.io/inject-python"
 	annotationInjectPythonContainersName      = "instrumentation.opentelemetry.io/python-container-names"
 	annotationPythonPlatform                  = "instrumentation.opentelemetry.io/otel-python-platform"
