@@ -429,8 +429,19 @@ e2e-no-crds: chainsaw
 # Log operator pod information for debugging
 .PHONY: e2e-log-operator
 e2e-log-operator:
-	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	# `-` prefix: a not-yet-started container has no logs, but that must not stop the
+	# describe/events below, which are exactly what explains why it has not started
+	# (e.g. an operator pod stuck in ContainerCreating during a deploy rollout timeout).
+	-kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	kubectl describe pod -n opentelemetry-operator-system -l app.kubernetes.io/name=opentelemetry-operator
+	kubectl get events -n opentelemetry-operator-system --sort-by=.lastTimestamp
 	kubectl get deploy -A
+
+# Fail if two chainsaw tests share a metadata.name (chainsaw renames collisions
+# to <name>#NN, which can't be traced back to a directory in JUnit/Codecov reports).
+.PHONY: check-chainsaw-test-names
+check-chainsaw-test-names:
+	./hack/check-chainsaw-test-names.sh
 
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
@@ -486,11 +497,20 @@ e2e-metadata-filters: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters --report-name e2e-metadata-filters
 
 # end-to-end-test for testing upgrading
+#
+# The tests in this group are run sequentially, as two ordered invocations, because
+# both manipulate the operator's lifecycle and must not run concurrently:
+#   1. upgrade-test boots on operator v0.86.0 (applied above) and its step-01 upgrades
+#      to the current build via `make deploy`.
+#   2. instrumentation-blocked-upgrade patches the operator's default-image args and
+#      restarts it; it requires the current operator, so it must run *after* upgrade-test
+#      has swapped it in.
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy chainsaw
 	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
 	go run hack/check-operator-ready.go
-	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade --report-name e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade/upgrade-test --report-name e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade/instrumentation-blocked-upgrade --report-name e2e-instrumentation-blocked-upgrade
 
 # end-to-end tests to test crd validations
 .PHONY: e2e-crd-validations
@@ -618,7 +638,13 @@ container-instrumentation-all: container-instrumentation-java container-instrume
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
-	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
+	# Tolerate a pre-existing cluster (idempotent local re-runs), but do NOT swallow a
+	# genuine creation failure with `|| true`.
+	@if $(KIND) get clusters 2>/dev/null | grep -qxF $(KIND_CLUSTER_NAME); then \
+		echo "kind cluster $(KIND_CLUSTER_NAME) already exists; skipping create"; \
+	else \
+		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG); \
+	fi
 endif
 
 # Stop kind cluster
@@ -708,7 +734,8 @@ cmctl:
 		exit 0; \
 	fi ;\
 	TMP_DIR=$$(mktemp -d) ;\
-	curl -L -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	gzip -t $$TMP_DIR/cmctl.tar.gz || { echo "ERROR: downloaded cmctl archive is corrupt or incomplete" >&2; exit 1; } ;\
 	tar xzf $$TMP_DIR/cmctl.tar.gz -C $$TMP_DIR ;\
 	[ -d bin ] || mkdir bin ;\
 	mv $$TMP_DIR/cmctl $(CMCTL) ;\
