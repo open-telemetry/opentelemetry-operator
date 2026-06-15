@@ -202,7 +202,10 @@ func (m *Discoverer) Reload() {
 
 // processTargetGroups processes the target groups and returns a map of targets.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
+	// the builder for group labels
 	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
+
+	// a slice for sorting target label names, we allocate it here to avoid doing it in the hot loop
 	targetLabelNames := make([]model.LabelName, 0, labelBuilderPreallocSize)
 
 	begin := time.Now()
@@ -235,7 +238,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			targetBuilder := &groupBuilder
 			targetBuilder.Reset()
 
-			// Sort target label names (typically very few: __address__, __metrics_path__).
+			// Sort target label names.
 			targetLabelNames = targetLabelNames[:0]
 			for ln := range t {
 				targetLabelNames = append(targetLabelNames, ln)
