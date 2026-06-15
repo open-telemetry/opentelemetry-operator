@@ -202,11 +202,8 @@ func (m *Discoverer) Reload() {
 
 // processTargetGroups processes the target groups and returns a map of targets.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
-	// the builder for group labels
 	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
-
-	// a slice for sorting target label names, we allocate it here to avoid doing it in the hot loop
-	targetLabelNames := make([]string, 0, labelBuilderPreallocSize)
+	targetLabelNames := make([]model.LabelName, 0, labelBuilderPreallocSize)
 
 	begin := time.Now()
 	defer func() {
@@ -214,7 +211,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	}()
 	var count float64
 	index := 0
-	// Reusable sorted group labels for indexed merge access.
+	// Reusable slice for sorted group labels.
 	groupSlice := make([]labels.Label, 0, labelBuilderPreallocSize)
 	// Overwrite target for group labels — reuses internal buffer across groups.
 	var groupLabels labels.Labels
@@ -234,46 +231,18 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 
 		for _, t := range tg.Targets {
 			count++
-			// Pointer alias: reuse groupBuilder for per-target merged labels.
+			// Reuse groupBuilder for per-target merged labels.
 			targetBuilder := &groupBuilder
 			targetBuilder.Reset()
 
 			// Sort target label names (typically very few: __address__, __metrics_path__).
 			targetLabelNames = targetLabelNames[:0]
 			for ln := range t {
-				targetLabelNames = append(targetLabelNames, string(ln))
+				targetLabelNames = append(targetLabelNames, ln)
 			}
 			slices.Sort(targetLabelNames)
 
-			// Merge two sorted sequences (group labels + target labels) to produce
-			// globally sorted output without a final Sort() call. This preserves the
-			// performance spirit of PR #4587's struct-copy optimization while ensuring
-			// labels.Labels.Get() (binary search) works correctly. The previous
-			// struct-copy approach produced two independently sorted sublists that
-			// broke Get("__address__") when group labels sorted after it alphabetically.
-			gi, ti := 0, 0
-			for gi < len(groupSlice) && ti < len(targetLabelNames) {
-				gn := groupSlice[gi].Name
-				tn := targetLabelNames[ti]
-				switch {
-				case gn < tn:
-					targetBuilder.Add(gn, groupSlice[gi].Value)
-					gi++
-				case gn > tn:
-					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
-					ti++
-				default: // target label overrides group label
-					targetBuilder.Add(tn, string(t[model.LabelName(tn)]))
-					gi++
-					ti++
-				}
-			}
-			for ; gi < len(groupSlice); gi++ {
-				targetBuilder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
-			}
-			for ; ti < len(targetLabelNames); ti++ {
-				targetBuilder.Add(targetLabelNames[ti], string(t[model.LabelName(targetLabelNames[ti])]))
-			}
+			mergeSortedLabels(targetBuilder, groupSlice, targetLabelNames, t)
 
 			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
@@ -281,6 +250,34 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 		}
 	}
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
+}
+
+// mergeSortedLabels merges sorted group and target labels into the builder.
+// Target labels override group labels on name collision.
+func mergeSortedLabels(builder *labels.ScratchBuilder, groupSlice []labels.Label, targetLabelNames []model.LabelName, targetLabels model.LabelSet) {
+	gi, ti := 0, 0
+	for gi < len(groupSlice) && ti < len(targetLabelNames) {
+		gn := groupSlice[gi].Name
+		tn := string(targetLabelNames[ti])
+		switch {
+		case gn < tn:
+			builder.Add(gn, groupSlice[gi].Value)
+			gi++
+		case gn > tn:
+			builder.Add(tn, string(targetLabels[targetLabelNames[ti]]))
+			ti++
+		default: // target label overrides group label
+			builder.Add(tn, string(targetLabels[targetLabelNames[ti]]))
+			gi++
+			ti++
+		}
+	}
+	for ; gi < len(groupSlice); gi++ {
+		builder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
+	}
+	for ; ti < len(targetLabelNames); ti++ {
+		builder.Add(string(targetLabelNames[ti]), string(targetLabels[targetLabelNames[ti]]))
+	}
 }
 
 // Run receives and saves target set updates and triggers the scraping loops reloading.
