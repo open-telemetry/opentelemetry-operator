@@ -23,6 +23,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -661,6 +662,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			for _, check := range firstCheck.checks {
 				check(t, tt.args.params)
 			}
+			if createErr == nil && deletionTimestamp == nil {
+				assertCollectorReadyStatus(t, nsn)
+			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
 				existing := v1beta1.OpenTelemetryCollector{}
@@ -694,6 +698,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				assert.Equal(t, checkGroup.result, got)
 				for _, check := range checkGroup.checks {
 					check(t, updateParam)
+				}
+				if createErr == nil && deletionTimestamp == nil {
+					assertCollectorReadyStatus(t, nsn)
 				}
 			}
 			// Only delete upon a successful creation
@@ -1506,6 +1513,24 @@ func namespacedObjectName(name, namespace string) types.NamespacedName {
 		Namespace: namespace,
 		Name:      name,
 	}
+}
+
+func assertCollectorReadyStatus(t *testing.T, nsn types.NamespacedName) {
+	t.Helper()
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		actual := &v1beta1.OpenTelemetryCollector{}
+		err := k8sClient.Get(context.Background(), nsn, actual)
+		assert.NoError(collect, err)
+		if actual.GetDeletionTimestamp() != nil {
+			return
+		}
+		assert.Equal(collect, actual.Generation, actual.Status.ObservedGeneration)
+		readyCondition := meta.FindStatusCondition(actual.Status.Conditions, "Ready")
+		if assert.NotNil(collect, readyCondition) {
+			assert.Equal(collect, metav1.ConditionTrue, readyCondition.Status)
+			assert.Equal(collect, actual.Generation, readyCondition.ObservedGeneration)
+		}
+	}, time.Second*10, time.Millisecond*100)
 }
 
 func TestTLSDefaultingAtReconcileTime(t *testing.T) {

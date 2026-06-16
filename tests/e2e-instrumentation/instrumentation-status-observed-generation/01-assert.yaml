@@ -1,0 +1,8 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: instrumentation
+status:
+  observedGeneration: 2
+  conditions:
+  - observedGeneration: 2

@@ -1,0 +1,20 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: status-observed-generation
+spec:
+  steps:
+    - name: step-00-install
+      description: Install collector and instrumentation
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+    - name: step-01-update
+      description: Update spec to increment generation
+      try:
+        - update:
+            file: 01-update.yaml
+        - assert:
+            file: 01-assert.yaml
