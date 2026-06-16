@@ -556,6 +556,8 @@ spec:
               - args:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
+                - '--target-allocator-image=ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:'
+                - '--operator-opamp-bridge-image=ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:'
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:

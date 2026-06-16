@@ -53,6 +53,7 @@ func TestUpgrade(t *testing.T) {
 		AutoInstrumentationJavaImage:        "java:1",
 		AutoInstrumentationNodeJSImage:      "nodejs:1",
 		AutoInstrumentationPythonImage:      "python:1",
+		AutoInstrumentationRubyImage:        "ruby:1",
 		AutoInstrumentationDotNetImage:      "dotnet:1",
 		AutoInstrumentationGoImage:          "go:1",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
@@ -62,6 +63,7 @@ func TestUpgrade(t *testing.T) {
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
 		EnablePythonAutoInstrumentation:     true,
+		EnableRubyAutoInstrumentation:       true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
 	}
@@ -74,6 +76,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
+	assert.Equal(t, "ruby:1", inst.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "go:1", inst.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:1", inst.Spec.ApacheHttpd.Image)
@@ -85,6 +88,7 @@ func TestUpgrade(t *testing.T) {
 		AutoInstrumentationJavaImage:        "java:2",
 		AutoInstrumentationNodeJSImage:      "nodejs:2",
 		AutoInstrumentationPythonImage:      "python:2",
+		AutoInstrumentationRubyImage:        "ruby:2",
 		AutoInstrumentationDotNetImage:      "dotnet:2",
 		AutoInstrumentationGoImage:          "go:2",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:2",
@@ -94,6 +98,7 @@ func TestUpgrade(t *testing.T) {
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
 		EnablePythonAutoInstrumentation:     true,
+		EnableRubyAutoInstrumentation:       true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
 	}
@@ -121,6 +126,8 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
 	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
+	assert.Equal(t, "ruby:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationRuby])
+	assert.Equal(t, "ruby:2", updated.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
 	assert.Equal(t, "go:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationGo])

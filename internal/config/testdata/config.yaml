@@ -1,6 +1,7 @@
 targetallocator-image: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.0.0
 operatoropampbridge-image: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.0.0
 auto-instrumentation-python-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.0.0
+auto-instrumentation-ruby-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-ruby:0.0.0
 collector-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.0.0
 collector-configmap-entry: collector.yaml
 create-rbac-permissions: 0
@@ -10,6 +11,7 @@ enable-dot-net-auto-instrumentation: true
 enable-go-auto-instrumentation: false
 enable-nginx-auto-instrumentation: false
 enable-python-auto-instrumentation: true
+enable-ruby-auto-instrumentation: true
 enable-node-js-auto-instrumentation: true
 enable-java-auto-instrumentation: true
 auto-instrumentation-dot-net-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:0.0.0

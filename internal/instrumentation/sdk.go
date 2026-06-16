@@ -57,6 +57,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.Python.Instrumentation != nil {
 		pod = i.injectPython(ctx, insts.Python, ns, pod)
 	}
+	if insts.Ruby.Instrumentation != nil {
+		pod = i.injectRuby(ctx, insts.Ruby, ns, pod)
+	}
 	if insts.DotNet.Instrumentation != nil {
 		pod = i.injectDotNet(ctx, insts.DotNet, ns, pod)
 	}
@@ -140,9 +143,30 @@ func (i *sdkInjector) injectPython(ctx context.Context, inst instrumentationWith
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
 			}
 		}
-
 		pod = injectPythonSDKToPod(otelinst.Spec.Python, pod, containers[0].Name, platform, otelinst.Spec)
 		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), pythonInitContainerName)
+	}
+
+	return pod
+}
+
+func (i *sdkInjector) injectRuby(ctx context.Context, inst instrumentationWithContainers, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+	otelinst := *inst.Instrumentation
+	i.logger.V(1).Info("injecting Ruby instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+	containers := containersToInstrument(&inst, &pod)
+
+	if len(containers) > 0 {
+		for _, container := range containers {
+			if err := injectRubySDKToContainer(otelinst.Spec.Ruby, container); err != nil {
+				i.logger.Info("Skipping Ruby SDK injection", "reason", err.Error(), "container", container.Name)
+			} else {
+				i.injectCommonEnvVar(otelinst, container)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
+			}
+		}
+		pod = injectRubySDKToPod(otelinst.Spec.Ruby, pod, containers[0].Name, otelinst.Spec)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), rubyInitContainerName)
 	}
 
 	return pod
