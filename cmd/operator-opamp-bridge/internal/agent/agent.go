@@ -258,7 +258,6 @@ func (agent *Agent) Start() error {
 		},
 		RemoteConfigStatus:    agent.remoteConfigStatus,
 		PackagesStateProvider: nil,
-		Capabilities:          agent.config.GetCapabilities(),
 	}
 
 	// Configure TLS based on explicit tls settings.
@@ -292,6 +291,11 @@ func (agent *Agent) Start() error {
 		return err
 	}
 	err = agent.opampClient.SetHealth(agent.getHealth())
+	if err != nil {
+		return err
+	}
+	capabilities := agent.config.GetCapabilities()
+	err = agent.opampClient.SetCapabilities(&capabilities)
 	if err != nil {
 		return err
 	}
