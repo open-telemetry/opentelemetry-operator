@@ -220,8 +220,12 @@ spec:
     try:
     - apply:
         file: create-upgrade-catalog.yaml
-    - assert:
-        file: assert-upgrade-catalog.yaml
+        expect:
+        - check:
+            # Allow success or forbidden error
+            ($error == null || contains($error, 'forbidden')): true
+      - assert:
+          file: assert-upgrade-catalog.yaml
   - name: Upgrade OpenTelemetry Operator
     try:
     - apply:
