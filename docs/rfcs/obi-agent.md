@@ -32,6 +32,31 @@ OBI observes application traffic at the kernel level using eBPF probes, requirin
 - Extension of the existing `Instrumentation` CR for eBPF — deferred to a follow-up RFC
 - Multi-instance support — one `ClusterOBIAgent` per cluster (singleton, like `ClusterObservability`)
 
+## Alternatives Considered
+### OBI Sidecar Injection via existing auto-instrumentation injection
+OBI supports [sidecar deployment](https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-as-a-sidecar-container).
+Although this would fit the existing `Instrumentation` CR mutating web hook model; it is inefficient. Unlike the OpenTelemetry auto-instrumentation libraries, OBI supports instrumenting multiple processes. A sidecar per pod model would duplicate OBI memory usage (userspace agent, BPF maps etc) for each pod instrumented; a DaemonSet avoids this.
+
+Also a DaemonSet model allows the privileged OBI pods to remain under the cluster administrators control, rather than having to deploy privileged sidecar containers in every namespace with pods requiring instrumentation.
+
+### OBI Collector Receiver 
+OBI also supports running as a [collector receiver](https://opentelemetry.io/docs/zero-code/obi/configure/collector-receiver/). 
+
+```yaml
+receivers:
+  obi:
+    open_port: '8080'
+    discovery:
+      instrument:
+        - k8s_namespace: tenant-alpha
+exporters:
+  otlp:
+    endpoint: <your-otlp-endpoint>
+```
+
+Unfortunately this is not yet available in an existing collector distribution, such as `otelcol-contrib`. Users would need to build their own collector image using `ocb`. Therefore this is unviable currently for initial OBI support in the operator. Eventually the operator could support both a dedicated `DaemonSet` (via the proposal in this RFC) and deployment via a collector `DaemonSet`. Since both options require configuring a `DaemonSet` with necessary privileges, volume mounts etc; the work in this RFC can be reused to later support the collector receiver model.
+
+
 ## Use cases
 
 ### Zero-code HTTP trace collection
@@ -266,9 +291,3 @@ users:
 - Introduce `ClusterOBIAgent` CRD as `v1alpha1`
 - Feature gated behind an operator flag initially (`--enable-obi-agent`)
 - Graduation to `v1beta1` pending field stability and broader testing
-
-## Limitations
-
-- `privileged: false` is not verified on all distributions — `SYS_PTRACE` + `RuntimeDefault` seccomp can cause silent failures on some managed Kubernetes offerings
-- Tenant opt-in / pod selection controls are not addressed in this RFC
-- A single `ClusterOBIAgent` per cluster is enforced (no multi-tenancy at the agent level in this RFC)
