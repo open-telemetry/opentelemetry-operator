@@ -19,6 +19,10 @@ spec:
     port: 9090
     protocol: TCP
     targetPort: 9090
+  - name: prometheus
+    port: 8889
+    protocol: TCP
+    targetPort: 8889
   selector:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/managed-by: opentelemetry-operator

@@ -41,16 +41,16 @@ spec:
   mode: daemonset
   serviceAccount: chainsaw-gba
   env:
-  - name: K8S_NODE_NAME
+  - name: K8S_NODE_IP
     valueFrom:
       fieldRef:
-        fieldPath: spec.nodeName
+        fieldPath: status.hostIP
   config: |
     receivers:
       kubeletstats:
         collection_interval: 20s
         auth_type: "serviceAccount"
-        endpoint: "https://${env:K8S_NODE_NAME}:10250"
+        endpoint: "https://${env:K8S_NODE_IP}:10250"
         insecure_skip_verify: true
     exporters:
       otlp:

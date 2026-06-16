@@ -16,10 +16,6 @@ spec:
         file: otel-collector-sender.yaml
     - assert:
         file: otel-collector-sender-assert.yaml
-  - name: Setup RBAC for verification job
-    try:
-    - apply:
-        file: rbac.yaml
   - name: Generate and send metrics via telemetrygen to sender collector
     try:
     - apply:

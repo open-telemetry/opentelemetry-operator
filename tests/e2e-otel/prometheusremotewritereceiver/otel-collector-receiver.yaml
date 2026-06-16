@@ -17,6 +17,8 @@ spec:
         verbosity: detailed
         sampling_initial: 100
         sampling_thereafter: 100
+      prometheus:
+        endpoint: "0.0.0.0:8889"
 
     service:
       telemetry:
@@ -26,4 +28,4 @@ spec:
         metrics:
           receivers: [prometheusremotewrite]
           processors: [batch]
-          exporters: [debug]
+          exporters: [debug, prometheus]
