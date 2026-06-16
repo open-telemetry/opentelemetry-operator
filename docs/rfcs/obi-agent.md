@@ -288,6 +288,7 @@ users:
 
 ## Rollout Plan
 
-- Introduce `ClusterOBIAgent` CRD as `v1alpha1`
-- Feature gated behind an operator flag initially (`--enable-obi-agent`)
-- Graduation to `v1beta1` pending field stability and broader testing
+1. Introduce `ClusterOBIAgent` CRD as `v1alpha1`, gated behind a feature gate (`operator.obiagent`, Alpha, disabled by default) — consistent with how other experimental features are gated (e.g. `operator.networkpolicy`, `operator.clusterobservability`)
+2. Graduate the feature gate to Beta (enabled by default) once the reconciler is stable and has e2e coverage
+3. Once the feature gate reaches GA/stable, replace it with a dedicated CLI flag (`--enable-obi-agent`) so administrators can disable the controller without feature-gate machinery, matching the pattern used for mature optional controllers
+4. Graduate CRD to `v1beta1` pending field stability and broader testing
