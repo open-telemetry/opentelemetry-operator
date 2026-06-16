@@ -25,10 +25,13 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
+          processors: [memory_limiter]
           exporters: [debug]
         logs:
           receivers: [otlp]
+          processors: [memory_limiter]
           exporters: [debug]
         metrics:
           receivers: [otlp]
+          processors: [memory_limiter]
           exporters: [debug]
