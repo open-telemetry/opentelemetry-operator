@@ -1,0 +1,46 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: sink
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    exporters:
+      debug:
+        verbosity: detailed
+        sampling_initial: 100
+        sampling_thereafter: 100
+    service:
+      pipelines:
+        metrics: {receivers: [otlp], exporters: [debug]}
+        logs:    {receivers: [otlp], exporters: [debug]}
+        traces:  {receivers: [otlp], exporters: [debug]}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+spec:
+  exporter:
+    endpoint: http://sink-collector:4318
+    timeout: 30s
+---
+# Paired TargetAllocator required by the cluster collector's
+# opentelemetry.io/target-allocator label. No-op scrape config is enough to
+# satisfy the TA binary's startup check.
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: cluster-obs-targetallocator
+spec:
+  scrapeConfigs:
+    - job_name: noop
+      static_configs:
+        - targets: []
