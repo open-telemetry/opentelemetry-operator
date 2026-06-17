@@ -9,9 +9,6 @@ receivers:
       memory: {}
       disk: {}
       filesystem:
-        # Skip virtual and container-runtime filesystems so the scraper only
-        # reports real host disks. Matches the upstream opentelemetry-collector
-        # Helm chart's hostMetrics preset.
         exclude_mount_points:
           match_type: regexp
           mount_points:
