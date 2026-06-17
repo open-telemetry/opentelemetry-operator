@@ -67,7 +67,7 @@ docs/
 ├── architectures/             reference deployment patterns        (Phase 2)
 ├── security/                  RBAC, TLS, certificates              (Phase 2)
 ├── troubleshooting/           debug tips
-├── reference/                 generated CRD docs, CRD changelog, feature gates
+├── reference/                 generated CRD docs, CRD changelog, feature gates, telemetry
 └── rfcs/                      design proposals (unchanged)
 ```
 
@@ -92,6 +92,7 @@ These proceed independently. Each PR adds its folder to the root README's naviga
 - `operator-flags.md` - from the `pflag.FlagSet` constructed in [`main.go`](../../main.go).
 - `target-allocator-flags.md` - from [`cmd/otel-allocator/main.go`](../../cmd/otel-allocator/main.go).
 - `feature-gates.md` - from [`pkg/featuregate/featuregate.go`](../../pkg/featuregate/featuregate.go) via `featuregate.GlobalRegistry().VisitAll(...)`.
+- consider generating the telemetry reference via Weaver
 
 CI gains a `docs-check` target mirroring the existing api-docs verify step in the [`Makefile`](../../Makefile).
 
