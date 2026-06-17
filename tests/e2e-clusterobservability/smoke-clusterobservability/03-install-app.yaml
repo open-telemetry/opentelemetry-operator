@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traces-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traces-demo
+  template:
+    metadata:
+      labels:
+        app: traces-demo
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "cluster-obs"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+        - name: myapp
+          image: ($APP_IMAGE)
+          ports:
+            - containerPort: 3000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: NODE_PATH
+              value: /usr/local/lib/node_modules
+          readinessProbe:
+            httpGet:
+              path: /rolldice
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3

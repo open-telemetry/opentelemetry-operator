@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-clusterobservability
+spec:
+  timeouts:
+    apply: 30s
+    assert: 5m
+    cleanup: 2m
+  steps:
+  - name: Install sink and ClusterObservability
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: Assert collectors are running
+    try:
+    - assert:
+        file: 01-assert-collectors.yaml
+  - name: Assert telemetry reaches the sink
+    use:
+      template: 02-assert-telemetry-flow.yaml
+  - name: Assert instrumented app traces reach the sink
+    try:
+    - apply:
+        bindings:
+        - name: APP_IMAGE
+          value: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+        file: 03-install-app.yaml
+    - assert:
+        file: 03-assert-app.yaml
+    # Spans travel app -> node agent -> sink; assert via the sink's span counter
+    # rather than logs, which are dominated by metric debug output.
+    - script:
+        timeout: 5m
+        content: |
+          set -u
+          APP_POD=$(kubectl get pod -n "$NAMESPACE" -l app=traces-demo -o jsonpath='{.items[0].metadata.name}')
+          SINK_POD=$(kubectl get pod -n "$NAMESPACE" -l app.kubernetes.io/name=sink-collector -o jsonpath='{.items[0].metadata.name}')
+          echo "app=$APP_POD sink=$SINK_POD"
+          for i in $(seq 1 30); do
+            kubectl get --raw "/api/v1/namespaces/$NAMESPACE/pods/$APP_POD:3000/proxy/rolldice" >/dev/null 2>&1 || true
+            spans=$(kubectl get --raw "/api/v1/namespaces/$NAMESPACE/pods/$SINK_POD:8888/proxy/metrics" 2>/dev/null \
+              | grep -E '^otelcol_receiver_accepted_spans' | grep -vE ' 0$' || true)
+            if [ -n "$spans" ]; then
+              echo "spans received at sink:"; echo "$spans"; exit 0
+            fi
+            echo "attempt $i: no spans at sink yet"; sleep 10
+          done
+          echo "ERROR: no spans reached the sink"; exit 1
+    catch:
+    - podLogs:
+        selector: app=traces-demo
+  - name: Cleanup
+    try:
+    - delete:
+        ref:
+          apiVersion: apps/v1
+          kind: Deployment
+          name: traces-demo
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1alpha1
+          kind: ClusterObservability
+          name: cluster-obs
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1beta1
+          kind: OpenTelemetryCollector
+          name: sink
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Pod
+          name: telemetry-trigger
