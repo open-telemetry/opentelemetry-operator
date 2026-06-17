@@ -40,6 +40,6 @@ spec:
     - script:
         env:
         - name: otelnamespace
-          value: openshift-opentelemetry-operator
+          value: opentelemetry-operator-system
         timeout: 5m
         content: ./check_must_gather.sh
