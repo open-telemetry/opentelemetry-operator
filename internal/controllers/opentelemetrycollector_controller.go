@@ -12,6 +12,8 @@ import (
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
+	securityv1 "github.com/openshift/api/security/v1"
+	"github.com/openshift/library-go/pkg/security/uid"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -156,6 +158,10 @@ func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1
 }
 
 func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		r.defaultFSGroupOnOpenShift(ctx, &instance)
+	}
+
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -173,6 +179,47 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instan
 	}
 	p.TargetAllocator = targetAllocator
 	return p, nil
+}
+
+// defaultFSGroupOnOpenShift sets podSecurityContext.fsGroup from the namespace's
+// supplemental-groups or UID range annotation when running on OpenShift and no
+// explicit fsGroup is configured.
+//
+// On OpenShift, the restricted SCC normally injects fsGroup from the namespace range,
+// but more permissive SCCs (e.g. anyuid) do not. Explicitly setting fsGroup ensures
+// PVC volumes are group-writable regardless of which SCC is selected.
+//
+// See: https://github.com/migtools/crane/blob/440432b/cmd/transfer-pvc/transfer-pvc.go#L554
+func (r *OpenTelemetryCollectorReconciler) defaultFSGroupOnOpenShift(ctx context.Context, instance *v1beta1.OpenTelemetryCollector) {
+	if instance.Spec.PodSecurityContext != nil && instance.Spec.PodSecurityContext.FSGroup != nil {
+		return
+	}
+
+	ns := &corev1.Namespace{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Namespace}, ns); err != nil {
+		r.log.V(4).Info("unable to fetch namespace for fsGroup defaulting", "namespace", instance.Namespace, "error", err)
+		return
+	}
+
+	rangeAnnotation := ns.Annotations[securityv1.SupplementalGroupsAnnotation]
+	if rangeAnnotation == "" {
+		rangeAnnotation = ns.Annotations[securityv1.UIDRangeAnnotation]
+	}
+	if rangeAnnotation == "" {
+		return
+	}
+
+	block, err := uid.ParseBlock(rangeAnnotation)
+	if err != nil {
+		r.log.V(4).Info("unable to parse group range annotation", "annotation", rangeAnnotation, "error", err)
+		return
+	}
+
+	fsGroup := int64(block.Start)
+	if instance.Spec.PodSecurityContext == nil {
+		instance.Spec.PodSecurityContext = &corev1.PodSecurityContext{}
+	}
+	instance.Spec.PodSecurityContext.FSGroup = &fsGroup
 }
 
 func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Context, params manifests.Params) (*v1alpha1.TargetAllocator, error) {
@@ -223,6 +270,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=get;watch;update;patch
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures;infrastructures/status;apiservers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
