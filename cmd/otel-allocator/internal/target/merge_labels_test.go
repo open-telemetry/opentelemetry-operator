@@ -12,20 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMergeSortedLabels(t *testing.T) {
+func TestMergeLabels(t *testing.T) {
 	tests := []struct {
-		name             string
-		groupLabels      []labels.Label
-		targetLabelNames []model.LabelName
-		targetLabels     model.LabelSet
-		expected         labels.Labels
+		name         string
+		groupLabels  []labels.Label
+		targetLabels model.LabelSet
+		expected     labels.Labels
 	}{
 		{
-			name:             "empty inputs",
-			groupLabels:      nil,
-			targetLabelNames: nil,
-			targetLabels:     nil,
-			expected:         labels.EmptyLabels(),
+			name:     "empty inputs",
+			expected: labels.EmptyLabels(),
 		},
 		{
 			name:        "only group labels",
@@ -33,45 +29,51 @@ func TestMergeSortedLabels(t *testing.T) {
 			expected:    labels.FromStrings("env", "prod", "region", "us"),
 		},
 		{
-			name:             "only target labels",
-			targetLabelNames: []model.LabelName{"__address__"},
-			targetLabels:     model.LabelSet{"__address__": "localhost:9090"},
-			expected:         labels.FromStrings("__address__", "localhost:9090"),
+			name:         "only target labels",
+			targetLabels: model.LabelSet{"__address__": "localhost:9090"},
+			expected:     labels.FromStrings("__address__", "localhost:9090"),
 		},
 		{
-			name:             "interleaved merge",
-			groupLabels:      []labels.Label{{Name: "env", Value: "prod"}},
-			targetLabelNames: []model.LabelName{"__address__"},
-			targetLabels:     model.LabelSet{"__address__": "localhost:9090"},
-			expected:         labels.FromStrings("__address__", "localhost:9090", "env", "prod"),
+			name:         "interleaved merge",
+			groupLabels:  []labels.Label{{Name: "env", Value: "prod"}},
+			targetLabels: model.LabelSet{"__address__": "localhost:9090"},
+			expected:     labels.FromStrings("__address__", "localhost:9090", "env", "prod"),
 		},
 		{
-			name:             "group label sorts after target label (original bug scenario)",
-			groupLabels:      []labels.Label{{Name: "vendor", Value: "nginx"}},
-			targetLabelNames: []model.LabelName{"__address__"},
-			targetLabels:     model.LabelSet{"__address__": "https://target-alpha.example.com:8393/"},
-			expected:         labels.FromStrings("__address__", "https://target-alpha.example.com:8393/", "vendor", "nginx"),
+			name:         "group label sorts after target label (original bug scenario)",
+			groupLabels:  []labels.Label{{Name: "vendor", Value: "nginx"}},
+			targetLabels: model.LabelSet{"__address__": "https://target-alpha.example.com:8393/"},
+			expected:     labels.FromStrings("__address__", "https://target-alpha.example.com:8393/", "vendor", "nginx"),
 		},
 		{
-			name:             "target overrides group on collision",
-			groupLabels:      []labels.Label{{Name: "job", Value: "from-group"}},
-			targetLabelNames: []model.LabelName{"job"},
-			targetLabels:     model.LabelSet{"job": "from-target"},
-			expected:         labels.FromStrings("job", "from-target"),
+			name:         "target overrides group on collision",
+			groupLabels:  []labels.Label{{Name: "job", Value: "from-group"}},
+			targetLabels: model.LabelSet{"job": "from-target"},
+			expected:     labels.FromStrings("job", "from-target"),
 		},
 		{
-			name:             "multiple labels both sides",
-			groupLabels:      []labels.Label{{Name: "b", Value: "2"}, {Name: "d", Value: "4"}},
-			targetLabelNames: []model.LabelName{"a", "c", "e"},
-			targetLabels:     model.LabelSet{"a": "1", "c": "3", "e": "5"},
-			expected:         labels.FromStrings("a", "1", "b", "2", "c", "3", "d", "4", "e", "5"),
+			name:        "multiple labels both sides",
+			groupLabels: []labels.Label{{Name: "env", Value: "prod"}, {Name: "namespace", Value: "monitoring"}},
+			targetLabels: model.LabelSet{
+				"__address__":      "localhost:9090",
+				"__metrics_path__": "/metrics",
+				"__scheme__":       "https",
+			},
+			expected: labels.FromStrings(
+				"__address__", "localhost:9090",
+				"__metrics_path__", "/metrics",
+				"__scheme__", "https",
+				"env", "prod",
+				"namespace", "monitoring",
+			),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := labels.NewScratchBuilder(16)
-			mergeSortedLabels(&builder, tt.groupLabels, tt.targetLabelNames, tt.targetLabels)
+			targetLabelNamesBuf := make([]model.LabelName, 0, len(tt.targetLabels))
+			mergeLabels(&builder, tt.groupLabels, tt.targetLabels, targetLabelNamesBuf)
 			result := builder.Labels()
 			assert.Equal(t, tt.expected, result)
 
@@ -99,11 +101,12 @@ func TestSortedLabelsBlackboxScenario(t *testing.T) {
 	}
 
 	var items []*Item
+	targetLabelNamesBuf := make([]model.LabelName, 0, 1)
 	for _, addr := range addresses {
 		builder := labels.NewScratchBuilder(16)
-		targetLabelNames := []model.LabelName{model.AddressLabel}
 		targetLabels := model.LabelSet{model.AddressLabel: model.LabelValue(addr)}
-		mergeSortedLabels(&builder, groupLabels, targetLabelNames, targetLabels)
+		targetLabelNamesBuf = targetLabelNamesBuf[:0]
+		mergeLabels(&builder, groupLabels, targetLabels, targetLabelNamesBuf)
 		items = append(items, NewItem("blackbox-test", addr, builder.Labels(), ""))
 	}
 

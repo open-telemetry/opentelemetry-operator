@@ -238,14 +238,8 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			targetBuilder := &groupBuilder
 			targetBuilder.Reset()
 
-			// Sort target label names.
 			targetLabelNames = targetLabelNames[:0]
-			for ln := range t {
-				targetLabelNames = append(targetLabelNames, ln)
-			}
-			slices.Sort(targetLabelNames)
-
-			mergeSortedLabels(targetBuilder, groupSlice, targetLabelNames, t)
+			mergeLabels(targetBuilder, groupSlice, t, targetLabelNames)
 
 			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
@@ -255,22 +249,27 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
 }
 
-// mergeSortedLabels merges sorted group and target labels into the builder.
+// mergeLabels merges sorted group labels with target labels into the builder.
 // Target labels override group labels on name collision.
-func mergeSortedLabels(builder *labels.ScratchBuilder, groupSlice []labels.Label, targetLabelNames []model.LabelName, targetLabels model.LabelSet) {
+func mergeLabels(builder *labels.ScratchBuilder, groupSlice []labels.Label, targetLabels model.LabelSet, targetLabelNamesBuf []model.LabelName) {
+	for ln := range targetLabels {
+		targetLabelNamesBuf = append(targetLabelNamesBuf, ln)
+	}
+	slices.Sort(targetLabelNamesBuf)
+
 	gi, ti := 0, 0
-	for gi < len(groupSlice) && ti < len(targetLabelNames) {
+	for gi < len(groupSlice) && ti < len(targetLabelNamesBuf) {
 		gn := groupSlice[gi].Name
-		tn := string(targetLabelNames[ti])
+		tn := string(targetLabelNamesBuf[ti])
 		switch {
 		case gn < tn:
 			builder.Add(gn, groupSlice[gi].Value)
 			gi++
 		case gn > tn:
-			builder.Add(tn, string(targetLabels[targetLabelNames[ti]]))
+			builder.Add(tn, string(targetLabels[targetLabelNamesBuf[ti]]))
 			ti++
 		default: // target label overrides group label
-			builder.Add(tn, string(targetLabels[targetLabelNames[ti]]))
+			builder.Add(tn, string(targetLabels[targetLabelNamesBuf[ti]]))
 			gi++
 			ti++
 		}
@@ -278,8 +277,8 @@ func mergeSortedLabels(builder *labels.ScratchBuilder, groupSlice []labels.Label
 	for ; gi < len(groupSlice); gi++ {
 		builder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
 	}
-	for ; ti < len(targetLabelNames); ti++ {
-		builder.Add(string(targetLabelNames[ti]), string(targetLabels[targetLabelNames[ti]]))
+	for ; ti < len(targetLabelNamesBuf); ti++ {
+		builder.Add(string(targetLabelNamesBuf[ti]), string(targetLabels[targetLabelNamesBuf[ti]]))
 	}
 }
 
