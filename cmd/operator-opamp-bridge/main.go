@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,7 +58,9 @@ func main() {
 		os.Exit(1)
 	}
 	<-signalCtx.Done()
-	manager.Shutdown()
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+	manager.Shutdown(shutdownCtx)
 }
 
 func commonManagerOptions(log logr.Logger, cfg *config.Config, c client.Client) []bridgemanager.Option {

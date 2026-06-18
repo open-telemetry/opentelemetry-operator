@@ -20,7 +20,7 @@ func TestServerStartsHealthEndpoint(t *testing.T) {
 
 	require.NoError(t, server.Start(t.Context()))
 	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 		defer cancel()
 		require.NoError(t, server.Stop(ctx))
 	})

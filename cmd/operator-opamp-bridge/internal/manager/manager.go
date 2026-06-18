@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	opampclient "github.com/open-telemetry/opamp-go/client"
@@ -119,7 +118,7 @@ func (m *Manager) Start(ctx context.Context) error {
 	}
 	for _, runtime := range m.runtimes {
 		if err := runtime.OpAMPAgent.Start(); err != nil {
-			m.Shutdown()
+			m.Shutdown(ctx)
 			return err
 		}
 	}
@@ -129,26 +128,26 @@ func (m *Manager) Start(ctx context.Context) error {
 		if err := m.kubernetesClient.Start(kubernetesClientCtx); err != nil {
 			cancelKubernetesClient()
 			m.cancelKubernetesClient = nil
-			m.Shutdown()
+			m.Shutdown(ctx)
 			return err
 		}
 	}
 	if m.opampProxy != nil {
 		if err := m.opampProxy.Start(); err != nil {
-			m.Shutdown()
+			m.Shutdown(ctx)
 			return err
 		}
 	}
 	if m.healthServer != nil {
 		if err := m.healthServer.Start(ctx); err != nil {
-			m.Shutdown()
+			m.Shutdown(ctx)
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *Manager) Shutdown() {
+func (m *Manager) Shutdown(ctx context.Context) {
 	m.shutdownOnce.Do(func() {
 		if m.cancelKubernetesClient != nil {
 			m.cancelKubernetesClient()
@@ -156,8 +155,6 @@ func (m *Manager) Shutdown() {
 		for _, runtime := range m.runtimes {
 			runtime.OpAMPAgent.Shutdown()
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
 		if m.opampProxy != nil {
 			if err := m.opampProxy.Stop(ctx); err != nil {
 				m.log.Error(err, "failed to stop OpAMP proxy")

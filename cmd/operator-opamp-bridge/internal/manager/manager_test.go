@@ -37,7 +37,9 @@ func TestManager_StartStartsRuntimesBeforeKubernetesClient(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, manager.Start(context.Background()))
-	t.Cleanup(manager.Shutdown)
+	t.Cleanup(func() {
+		manager.Shutdown(t.Context())
+	})
 	require.True(t, kubernetesClient.started)
 }
 
