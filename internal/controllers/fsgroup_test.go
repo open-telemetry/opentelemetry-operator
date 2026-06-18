@@ -32,14 +32,14 @@ func TestDefaultFSGroupOnOpenShift(t *testing.T) {
 			name:          "OpenShift with UID range annotation",
 			isOpenShift:   true,
 			nsAnnotations: map[string]string{"openshift.io/sa.scc.uid-range": "1000850000/10000"},
-			wantFSGroup:   ptr.To(int64(1000850000)),
+			wantFSGroup:   ptr.To[int64](1000850000),
 		},
 		{
 			name:            "OpenShift with explicit fsGroup preserves it",
 			isOpenShift:     true,
 			nsAnnotations:   map[string]string{"openshift.io/sa.scc.uid-range": "1000850000/10000"},
-			existingFSGroup: ptr.To(int64(65532)),
-			wantFSGroup:     ptr.To(int64(65532)),
+			existingFSGroup: ptr.To[int64](65532),
+			wantFSGroup:     ptr.To[int64](65532),
 		},
 		{
 			name:          "non-OpenShift does not set fsGroup",
@@ -66,19 +66,19 @@ func TestDefaultFSGroupOnOpenShift(t *testing.T) {
 				"openshift.io/sa.scc.supplemental-groups": "1000900000/10000",
 				"openshift.io/sa.scc.uid-range":           "1000850000/10000",
 			},
-			wantFSGroup: ptr.To(int64(1000900000)),
+			wantFSGroup: ptr.To[int64](1000900000),
 		},
 		{
 			name:          "OpenShift falls back to uid-range when supplemental-groups absent",
 			isOpenShift:   true,
 			nsAnnotations: map[string]string{"openshift.io/sa.scc.uid-range": "1000850000/10000"},
-			wantFSGroup:   ptr.To(int64(1000850000)),
+			wantFSGroup:   ptr.To[int64](1000850000),
 		},
 		{
 			name:          "OpenShift with dash-format annotation",
 			isOpenShift:   true,
 			nsAnnotations: map[string]string{"openshift.io/sa.scc.uid-range": "1000850000-1000860000"},
-			wantFSGroup:   ptr.To(int64(1000850000)),
+			wantFSGroup:   ptr.To[int64](1000850000),
 		},
 	}
 
