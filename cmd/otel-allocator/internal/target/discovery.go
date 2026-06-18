@@ -7,7 +7,6 @@ import (
 	"context"
 	"hash"
 	"hash/fnv"
-	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -207,7 +206,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
 
 	// a slice for sorting target label names, we allocate it here to avoid doing it in the hot loop
-	targetLabelNames := make([]string, 0, labelBuilderPreallocSize)
+	targetLabelNames := make([]model.LabelName, 0, labelBuilderPreallocSize)
 
 	begin := time.Now()
 	defer func() {
@@ -215,38 +214,72 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	}()
 	var count float64
 	index := 0
+	// Reusable slice for sorted group labels.
+	groupSlice := make([]labels.Label, 0, labelBuilderPreallocSize)
+	// Overwrite target for group labels — reuses internal buffer across groups.
+	var groupLabels labels.Labels
+
 	for _, tg := range groups {
 		groupBuilder.Reset()
 		for ln, lv := range tg.Labels {
 			groupBuilder.Add(string(ln), string(lv))
 		}
 		groupBuilder.Sort()
+		// Overwrite reuses the builder's internal buffer (no allocation after first group).
+		groupBuilder.Overwrite(&groupLabels)
+		groupSlice = groupSlice[:0]
+		groupLabels.Range(func(l labels.Label) {
+			groupSlice = append(groupSlice, l)
+		})
+
 		for _, t := range tg.Targets {
 			count++
-			// ScratchBuilder is a struct containing a slice of labels. By assigning to a new variable, we get a copy
-			// of the struct, with a new slice pointing to the same underlying array. As long as we don't mutate the
-			// original slice and only append to it, we can avoid copying the group labels.
-			targetBuilder := groupBuilder
-			targetLabelNames = targetLabelNames[:0]
+			// Reuse groupBuilder for per-target merged labels.
+			targetBuilder := &groupBuilder
+			targetBuilder.Reset()
 
-			// We can't sort the whole builder slice, because that would modify the underlying groupBuilder. Instead,
-			// we sort the labels in a separate slice. As a result, the group labels and the target labels are sorted
-			// subslices of the builder slice, which is in itself not sorted. This is fine, as we don't care what the
-			// order of labels is - just that it's consistent, so the hash is always the same.
-			for ln := range maps.Keys(t) {
-				targetLabelNames = append(targetLabelNames, string(ln))
-			}
-			slices.Sort(targetLabelNames)
-			for _, ln := range targetLabelNames {
-				lv := t[model.LabelName(ln)]
-				targetBuilder.Add(ln, string(lv))
-			}
+			targetLabelNames = targetLabelNames[:0]
+			mergeLabels(targetBuilder, groupSlice, t, targetLabelNames)
+
 			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
 			index++
 		}
 	}
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
+}
+
+// mergeLabels merges sorted group labels with target labels into the builder.
+// Target labels override group labels on name collision.
+func mergeLabels(builder *labels.ScratchBuilder, groupSlice []labels.Label, targetLabels model.LabelSet, targetLabelNamesBuf []model.LabelName) {
+	for ln := range targetLabels {
+		targetLabelNamesBuf = append(targetLabelNamesBuf, ln)
+	}
+	slices.Sort(targetLabelNamesBuf)
+
+	gi, ti := 0, 0
+	for gi < len(groupSlice) && ti < len(targetLabelNamesBuf) {
+		gn := groupSlice[gi].Name
+		tn := string(targetLabelNamesBuf[ti])
+		switch {
+		case gn < tn:
+			builder.Add(gn, groupSlice[gi].Value)
+			gi++
+		case gn > tn:
+			builder.Add(tn, string(targetLabels[targetLabelNamesBuf[ti]]))
+			ti++
+		default: // target label overrides group label
+			builder.Add(tn, string(targetLabels[targetLabelNamesBuf[ti]]))
+			gi++
+			ti++
+		}
+	}
+	for ; gi < len(groupSlice); gi++ {
+		builder.Add(groupSlice[gi].Name, groupSlice[gi].Value)
+	}
+	for ; ti < len(targetLabelNamesBuf); ti++ {
+		builder.Add(string(targetLabelNamesBuf[ti]), string(targetLabels[targetLabelNamesBuf[ti]]))
+	}
 }
 
 // Run receives and saves target set updates and triggers the scraping loops reloading.
