@@ -221,7 +221,7 @@ kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS, PHP and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -241,6 +241,13 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
+  php:
+    env:
+       # Required if endpoint is set to 4317.
+       # PHP autoinstrumentation uses http/proto by default
+       # so data must be sent to 4318 instead of 4317.
+       - name: OTEL_EXPORTER_OTLP_ENDPOINT
+         value: http://otel-collector:4318
   python:
     env:
       # Required if endpoint is set to 4317.
@@ -424,6 +431,7 @@ Supported instrumentations for init containers:
 
 **Not supported** for init containers:
 - Go (does not support multicontainer pods)
+- PHP (does not support multicontainer pods)
 - Apache HTTPD
 - Nginx
 
@@ -475,6 +483,12 @@ NodeJS:
 
 ```bash
 instrumentation.opentelemetry.io/nodejs-container-names: "nodejs1,nodejs2"
+```
+
+PHP:
+
+```bash
+instrumentation.opentelemetry.io/php-container-names: "php1"
 ```
 
 Python:
@@ -571,6 +585,8 @@ spec:
     image: your-customized-auto-instrumentation-image:java
   nodejs:
     image: your-customized-auto-instrumentation-image:nodejs
+  php:
+    image: your-customized-auto-instrumentation-image:php
   python:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
@@ -646,9 +662,10 @@ If a language is enabled by default its gate only needs to be supplied when disa
 Language support can be disabled by passing the flag with a value of `false`.
 
 | Language    | Gate                                  | Default Value |
-| ----------- | ------------------------------------- | ------------- |
+|-------------|---------------------------------------|---------------|
 | Java        | `enable-java-instrumentation`         | `true`        |
 | NodeJS      | `enable-nodejs-instrumentation`       | `true`        |
+| PHP         | `enable-php-instrumentation`          | `true`        |
 | Python      | `enable-python-instrumentation`       | `true`        |
 | DotNet      | `enable-dotnet-instrumentation`       | `true`        |
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |

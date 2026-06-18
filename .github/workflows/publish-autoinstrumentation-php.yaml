@@ -56,15 +56,12 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare files for docker image
-        run: pushd ./autoinstrumentation/php ; ./prepare_files_for_docker_image.sh --ext-ver $VERSION --dest-dir ${PWD}/files_for_docker_image ; popd
-
       - name: Build and push
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: autoinstrumentation/php
           push: ${{ github.event_name == 'push' }}
-          build-args: SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE=files_for_docker_image
+          build-args: version=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=publish-autoinstrumentation-php

@@ -442,6 +442,11 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 			Image: params.Config.AutoInstrumentationNodeJSImage,
 		}
 	}
+	if params.Config.EnablePhpAutoInstrumentation {
+		instrumentation.Spec.Php = v1alpha1.Php{
+			Image: params.Config.AutoInstrumentationPhpImage,
+		}
+	}
 	if params.Config.EnablePythonAutoInstrumentation {
 		instrumentation.Spec.Python = v1alpha1.Python{
 			Image: params.Config.AutoInstrumentationPythonImage,

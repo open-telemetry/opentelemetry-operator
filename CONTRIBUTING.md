@@ -199,7 +199,7 @@ For a general overview of the API types, check out the [official GoDoc](https://
 ### Core Custom Resources
 
 * **OpenTelemetryCollector (v1beta1)** - Manages collector deployments in multiple modes (Deployment, DaemonSet, StatefulSet, Sidecar)
-* **Instrumentation (v1alpha1)** - Configures auto-instrumentation for workloads (Java, NodeJS, Python, .NET, Go, Apache HTTPD, Nginx)
+* **Instrumentation (v1alpha1)** - Configures auto-instrumentation for workloads (Java, NodeJS, PHP, Python, .NET, Go, Apache HTTPD, Nginx)
 * **OpAMPBridge (v1alpha1)** - Enables remote configuration management via OpAMP protocol
 * **TargetAllocator (v1alpha1)** - Standalone CR for Prometheus target allocation, or embedded in OpenTelemetryCollector spec
 
