@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: fsgroup-anyuid-pvc
+spec:
+  concurrent: false
+  steps:
+    - name: create-sa-and-bind-anyuid
+      description: Pre-create the collector SA and bind anyuid SCC to it
+      try:
+        - apply:
+            file: 00-sa.yaml
+        - script:
+            timeout: 30s
+            content: |
+              oc adm policy add-scc-to-user anyuid -z fsgroup-test-collector -n $NAMESPACE
+    - name: deploy-collector
+      description: Deploy a StatefulSet collector with a PVC under anyuid SCC
+      try:
+        - apply:
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: verify-fsgroup
+      description: Verify fsGroup was defaulted from the namespace UID range
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ./verify-fsgroup.sh $NAMESPACE
+    - name: cleanup
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              oc adm policy remove-scc-from-user anyuid -z fsgroup-test-collector -n $NAMESPACE || true
