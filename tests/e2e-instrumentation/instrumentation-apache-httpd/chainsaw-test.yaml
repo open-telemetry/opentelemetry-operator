@@ -39,6 +39,8 @@ spec:
         file: 00-install-collector.yaml
     - apply:
         file: 00-install-instrumentation.yaml
+    - sleep:
+        duration: 1s
   - name: step-01
     try:
     - apply:
