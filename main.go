@@ -587,7 +587,7 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
-		return errors.New("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
+		return errors.New("NAMESPACE environment variable is not set, it is required for the Operator Network Policy to work")
 	}
 
 	// Check if API server info was discovered
