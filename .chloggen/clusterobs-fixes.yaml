@@ -1,0 +1,29 @@
+change_type: bug_fix
+
+component: cluster-observability
+
+note: Fix dependencies (image, env, volumes) required by the bundled agent and cluster collector configs
+
+issues: [3821, 3818]
+
+subtext: |
+  Follow-ups to the initial ClusterObservability framework so the generated
+  agent and cluster collectors come up cleanly on stock distributions:
+    - Generate the agent and cluster collectors with the k8s distribution of the
+      collector image (same version as the operator's collector image), overridable
+      via the `--clusterobservability-collector-image` flag.
+    - Inject `K8S_NODE_NAME` on the agent pod, referenced by the bundled
+      `kubeletstats` receiver's endpoint.
+    - Report the cluster collector's readiness from its StatefulSet workload
+      so `ClusterObservability` no longer stays in `Pending` when the cluster
+      collector is fully healthy.
+    - Mount the whole host root at `/hostfs` so the `hostmetrics` receiver 
+      can resolve symlinks and stat host mount points.
+      Exclude virtual/container-runtime filesystems from its `filesystem` scraper
+      to avoid `/sysroot` and `/boot` scrape errors on OpenShift.
+    - Run the agent as root with the `spc_t` SELinux type (supplied by the
+      generated SCC) on OpenShift so the `filelog` receiver can read the
+      root-owned container logs under `/var/log/pods`.
+    - Point the generated `Instrumentation` at the agent's OTLP HTTP port (4318),
+      since most auto-instrumentation SDKs default `OTEL_EXPORTER_OTLP_PROTOCOL`
+      to `http/protobuf`.
