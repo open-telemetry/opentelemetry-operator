@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
@@ -29,20 +30,21 @@ const (
 )
 
 type ConfigApplier interface {
-	// Apply receives a name and namespace to apply an OpenTelemetryCollector CRD that is contained in the configmap.
-	Apply(name, namespace string, configmap *protobufs.AgentConfigFile) error
+	// Apply receives an OpAMP remote config entry name and applies the corresponding configuration.
+	// Implementations define the accepted key format, but keys should match entries returned by
+	// CollectorInstance.GetConfigMap.
+	Apply(key string, configmap *protobufs.AgentConfigFile) error
 
-	// Delete attempts to delete an OpenTelemetryCollector object given a name and namespace.
-	Delete(name, namespace string) error
+	// Delete attempts to delete the resource identified by an OpAMP remote config entry name.
+	// Implementations define the accepted key format, but keys should match entries returned by
+	// CollectorInstance.GetConfigMap.
+	Delete(key string) error
 
-	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
-	ListInstances() ([]v1beta1.OpenTelemetryCollector, error)
+	// ListInstances retrieves all collector instances managed by the bridge.
+	ListInstances() ([]CollectorInstance, error)
 
-	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
-	GetInstance(name, namespace string) (*v1beta1.OpenTelemetryCollector, error)
-
-	// GetCollectorPods retrieves all pods that match the given collector's selector labels and namespace.
-	GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error)
+	// GetHealth retrieves the health of resources managed by the bridge.
+	GetHealth() (Health, error)
 }
 
 type Client struct {
@@ -65,7 +67,12 @@ func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed 
 	}
 }
 
-func (c Client) Apply(name, namespace string, configmap *protobufs.AgentConfigFile) error {
+func (c Client) Apply(key string, configmap *protobufs.AgentConfigFile) error {
+	resource, err := kubeResourceFromKey(key)
+	if err != nil {
+		return err
+	}
+	name, namespace := resource.name, resource.namespace
 	c.log.Info("Received new config", "name", name, "namespace", namespace)
 
 	if len(configmap.Body) == 0 {
@@ -73,7 +80,7 @@ func (c Client) Apply(name, namespace string, configmap *protobufs.AgentConfigFi
 	}
 
 	var collector v1beta1.OpenTelemetryCollector
-	err := yaml.Unmarshal(configmap.Body, &collector)
+	err = yaml.Unmarshal(configmap.Body, &collector)
 	if err != nil {
 		return errors.NewBadRequest(fmt.Sprintf("failed to unmarshal config into v1beta1 API Version: %v", err))
 	}
@@ -191,12 +198,16 @@ func (c Client) update(ctx context.Context, o, n *v1beta1.OpenTelemetryCollector
 	return c.k8sClient.Update(ctx, n)
 }
 
-func (c Client) Delete(name, namespace string) error {
+func (c Client) Delete(key string) error {
+	resource, err := kubeResourceFromKey(key)
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 	result := v1beta1.OpenTelemetryCollector{}
-	err := c.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: namespace,
-		Name:      name,
+	err = c.k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: resource.namespace,
+		Name:      resource.name,
 	}, &result)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -207,7 +218,79 @@ func (c Client) Delete(name, namespace string) error {
 	return c.k8sClient.Delete(ctx, &result)
 }
 
-func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
+// ListInstances returns all collectors that are visible to OpAMP as effective config entries.
+func (c Client) ListInstances() ([]CollectorInstance, error) {
+	collectors, err := c.listOpenTelemetryCollectors()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]CollectorInstance, len(collectors))
+	for i := range collectors {
+		result[i] = collectors[i]
+	}
+	return result, nil
+}
+
+// GetHealth reports bridge root health with managed collector health as children.
+func (c Client) GetHealth() (Health, error) {
+	collectors, err := c.listOpenTelemetryCollectors()
+	if err != nil {
+		return Health{}, err
+	}
+	healthMap := map[string]Health{}
+	for _, col := range collectors {
+		podMap, err := c.generateCollectorHealth(col.selectorLabels(), col.GetNamespace())
+		if err != nil {
+			return Health{}, err
+		}
+		isPoolHealthy := true
+		for _, pod := range podMap {
+			isPoolHealthy = isPoolHealthy && pod.Healthy
+		}
+		healthMap[NewKubeResourceKey(col.GetNamespace(), col.GetName()).String()] = Health{
+			StartTime: col.Col.GetCreationTimestamp().Time,
+			Status:    col.Col.Status.Scale.StatusReplicas,
+			Children:  podMap,
+			Healthy:   isPoolHealthy,
+		}
+	}
+	return Health{
+		Healthy:  true,
+		Children: healthMap,
+	}, nil
+}
+
+// generateCollectorHealth reports pod health for one collector selected by labels within a namespace.
+func (c Client) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]Health, error) {
+	pods, err := c.getCollectorPods(selectorLabels, namespace)
+	if err != nil {
+		return nil, err
+	}
+	healthMap := map[string]Health{}
+	for _, item := range pods.Items {
+		key := NewKubeResourceKey(item.GetNamespace(), item.GetName())
+		healthy := true
+		if item.Status.Phase != "Running" {
+			healthy = false
+		}
+		var startTime time.Time
+		if item.Status.StartTime != nil {
+			startTime = item.Status.StartTime.Time
+		} else {
+			healthy = false
+		}
+		healthMap[key.String()] = Health{
+			StartTime: startTime,
+			Status:    string(item.Status.Phase),
+			Healthy:   healthy,
+			Children:  map[string]Health{},
+		}
+	}
+	return healthMap, nil
+}
+
+// listOpenTelemetryCollectors returns collectors managed by this bridge plus reporting-only collectors.
+func (c Client) listOpenTelemetryCollectors() ([]CRDInstance, error) {
 	ctx := context.Background()
 
 	var instances []v1beta1.OpenTelemetryCollector
@@ -239,7 +322,11 @@ func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
 		setTypedMeta(&instances[i])
 	}
 
-	return instances, nil
+	result := make([]CRDInstance, len(instances))
+	for i := range instances {
+		result[i] = newCRDInstance(instances[i])
+	}
+	return result, nil
 }
 
 func (c Client) GetInstance(name, namespace string) (*v1beta1.OpenTelemetryCollector, error) {
@@ -260,7 +347,7 @@ func (c Client) GetInstance(name, namespace string) (*v1beta1.OpenTelemetryColle
 	return &result, nil
 }
 
-func (c Client) GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error) {
+func (c Client) getCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error) {
 	ctx := context.Background()
 	podList := &v1.PodList{}
 	err := c.k8sClient.List(ctx, podList, client.MatchingLabels(selectorLabels), client.InNamespace(namespace))

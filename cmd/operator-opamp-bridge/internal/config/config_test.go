@@ -5,6 +5,9 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +28,7 @@ func TestConfigLoadPriority(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, defaultHealthListenAddr, cfg.HealthListenAddr, "use default value")
 		assert.Equal(t, defaultHeartbeatInterval, cfg.HeartbeatInterval, "use default value")
 		assert.Equal(t, opampBridgeName, cfg.Name, "use default value")
 	})
@@ -38,6 +42,7 @@ func TestConfigLoadPriority(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, defaultHealthListenAddr, cfg.HealthListenAddr, "use default value")
 		assert.Equal(t, 10*time.Second, cfg.HeartbeatInterval, "command-line priority is higher than config, overwrite time.Duration value")
 		assert.Equal(t, "http-test-bridge", cfg.Name, "config file priority is higher than default string value")
 	})
@@ -48,14 +53,32 @@ func TestConfigLoadPriority(t *testing.T) {
 			"--" + configFilePathFlagName + "=./testdata/agenthttpbasic.yaml",
 			"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
 			"--" + nameFlagName + "=" + testOpAMPBridgeName,
+			"--" + healthListenAddrFlagName + "=:8082",
 		}
 		cfg, err := Load(GetLogger(), args)
 
 		assert.NoError(t, err)
 		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, ":8082", cfg.HealthListenAddr, "command-line priority is higher than config, overwrite health address")
 		assert.Equal(t, 45*time.Second, cfg.HeartbeatInterval, "config file priority is higher than default time.Duration value")
 		assert.Equal(t, testOpAMPBridgeName, cfg.Name, "command-line priority is higher than config, overwrite string value")
 	})
+}
+
+func TestLoadFromFileHealthListenAddr(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	configFile := filepath.Join(t.TempDir(), "config.yaml")
+	require.NoError(t, os.WriteFile(configFile, []byte(`
+endpoint: ws://127.0.0.1:4320/v1/opamp
+healthListenAddr: ":9090"
+capabilities:
+  ReportsHealth: true
+`), 0o600))
+
+	require.NoError(t, LoadFromFile(cfg, configFile))
+
+	assert.Equal(t, ":9090", cfg.HealthListenAddr)
+	assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr)
 }
 
 func TestLoadFromFile(t *testing.T) {
@@ -80,10 +103,12 @@ func TestLoadFromFile(t *testing.T) {
 				instanceId:         instanceId,
 				RootLogger:         logr.Discard(),
 				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
 				KubeConfigFilePath: defaultKubeConfigPath,
 				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
 				HeartbeatInterval:  defaultHeartbeatInterval,
 				Name:               opampBridgeName,
+				Mode:               defaultMode,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -112,9 +137,11 @@ func TestLoadFromFile(t *testing.T) {
 				RootLogger:         logr.Discard(),
 				Endpoint:           "http://127.0.0.1:4320/v1/opamp",
 				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
 				KubeConfigFilePath: defaultKubeConfigPath,
 				HeartbeatInterval:  45 * time.Second,
 				Name:               "http-test-bridge",
+				Mode:               defaultMode,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -143,9 +170,11 @@ func TestLoadFromFile(t *testing.T) {
 				RootLogger:         logr.Discard(),
 				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
 				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
 				KubeConfigFilePath: defaultKubeConfigPath,
 				HeartbeatInterval:  defaultHeartbeatInterval,
 				Name:               opampBridgeName,
+				Mode:               defaultMode,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -184,7 +213,14 @@ func TestLoadFromFile(t *testing.T) {
 			want:    &Config{},
 			needErr: true,
 			wantErr: func(t assert.TestingT, err error, i ...any) bool {
-				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
+				if err == nil {
+					return assert.Fail(t, "expected YAML error, got nil", i...)
+				}
+				msg := err.Error()
+				if !strings.Contains(msg, "error unmarshaling YAML") {
+					return assert.Fail(t, fmt.Sprintf("unexpected error %q", msg), i...)
+				}
+				return true
 			},
 		},
 		{
@@ -207,9 +243,11 @@ func TestLoadFromFile(t *testing.T) {
 					"my-env-variable-2": "my-env-variable-2-value",
 				},
 				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
 				KubeConfigFilePath: defaultKubeConfigPath,
 				HeartbeatInterval:  defaultHeartbeatInterval,
 				Name:               opampBridgeName,
+				Mode:               defaultMode,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -247,9 +285,11 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
 				KubeConfigFilePath: defaultKubeConfigPath,
 				HeartbeatInterval:  defaultHeartbeatInterval,
 				Name:               opampBridgeName,
+				Mode:               defaultMode,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -290,6 +330,35 @@ func TestLoadFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadFromFileRejectsDuplicateStandaloneConfigKeys(t *testing.T) {
+	cfg := []byte(`
+mode: standalone
+standalone:
+  agents:
+    - namespace: default
+      type: otel-collector
+      workloadRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: collector
+      config:
+        collector:
+          kind: configmap
+          name: collector-config
+          key: collector.yaml
+        collector:
+          kind: configmap
+          name: other-config
+          key: other.yaml
+`)
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	require.NoError(t, os.WriteFile(configPath, cfg, 0o600))
+
+	err := LoadFromFile(NewConfig(logr.Discard()), configPath)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, `mapping key "collector" already defined`)
+}
+
 func TestGetDescription(t *testing.T) {
 	got := NewConfig(logr.Discard())
 	instanceId := uuid.New()
@@ -319,4 +388,90 @@ func TestGetDescriptionNoneSet(t *testing.T) {
 		Value: &protobufs.AnyValue_StringValue{StringValue: instanceId.String()},
 	}})
 	assert.Len(t, desc.NonIdentifyingAttributes, 2)
+}
+
+func TestNewConfigSetsDefaultMode(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	assert.Equal(t, operatorMode, cfg.Mode, "NewConfig should seed Mode with the documented default so logs/state match the flag default")
+	assert.False(t, cfg.IsStandaloneMode())
+}
+
+func TestValidateRejectsUnknownMode(t *testing.T) {
+	t.Run("typo on mode is rejected", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Mode = "standlon"
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.ErrorContains(t, err, `invalid mode "standlon"`)
+	})
+
+	t.Run("case-sensitive mode is rejected", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Mode = "Standalone"
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.ErrorContains(t, err, `invalid mode "Standalone"`)
+	})
+
+	t.Run("operator mode validates without error", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Mode = operatorMode
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("empty mode is normalized to the documented default", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Mode = ""
+		require.NoError(t, cfg.Validate())
+		assert.Equal(t, operatorMode, cfg.Mode)
+	})
+
+	t.Run("invalid mode does not fall through to operator behavior", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Mode = "standlon"
+		cfg.Standalone = StandaloneConfig{Agents: []StandaloneAgentConfig{}}
+		// Previously, an unknown mode would short-circuit Validate() at the
+		// `IsStandaloneMode()` guard, silently behaving as operator. Make sure
+		// the error is surfaced instead.
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "standalone mode requires at least one configured agent")
+	})
+}
+
+func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	cfg.Mode = standaloneMode
+	cfg.Headers = Headers{"x-test-header": "header-value"}
+	cfg.Capabilities = map[Capability]bool{AcceptsRemoteConfig: true}
+	cfg.ComponentsAllowed = map[string][]string{"receivers": {"otlp"}}
+	cfg.AgentDescription.NonIdentifyingAttributes = map[string]string{"environment": "test"}
+
+	agentCfg := NewStandaloneAgentConfig(cfg, StandaloneAgentConfig{
+		Namespace: "default",
+		Type:      "otel-collector",
+		WorkloadRef: StandaloneWorkloadRef{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "collector-workload",
+		},
+	})
+
+	desc := agentCfg.GetDescription()
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "host.name", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "collector-workload"},
+	}})
+	assert.NotContains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "host.name", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: hostname},
+	}})
+
+	agentCfg.Headers["x-test-header"] = "changed"
+	agentCfg.Capabilities[AcceptsRemoteConfig] = false
+	agentCfg.ComponentsAllowed["receivers"][0] = "prometheus"
+	agentCfg.AgentDescription.NonIdentifyingAttributes["environment"] = "changed"
+
+	assert.Equal(t, "header-value", cfg.Headers["x-test-header"])
+	assert.True(t, cfg.Capabilities[AcceptsRemoteConfig])
+	assert.Equal(t, []string{"otlp"}, cfg.ComponentsAllowed["receivers"])
+	assert.Equal(t, "test", cfg.AgentDescription.NonIdentifyingAttributes["environment"])
 }

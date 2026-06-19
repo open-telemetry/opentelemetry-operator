@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -86,5 +87,33 @@ func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridg
 		EnvFrom:         opampBridge.Spec.EnvFrom,
 		Resources:       opampBridge.Spec.Resources,
 		SecurityContext: opampBridge.Spec.SecurityContext,
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "opamp",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
+			},
+			{
+				Name:          "healthz",
+				ContainerPort: 8081,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/healthz",
+					Port: intstr.FromString("healthz"),
+				},
+			},
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/healthz",
+					Port: intstr.FromString("healthz"),
+				},
+			},
+		},
 	}
 }

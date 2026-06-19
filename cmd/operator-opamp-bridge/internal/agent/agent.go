@@ -19,9 +19,7 @@ import (
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"k8s.io/utils/clock"
-	"sigs.k8s.io/yaml"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
@@ -31,7 +29,7 @@ import (
 type Agent struct {
 	logger logr.Logger
 
-	appliedKeys map[kubeResourceKey]bool
+	appliedKeys map[string]bool
 	clock       clock.Clock
 	startTime   uint64
 	lastHash    []byte
@@ -61,7 +59,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 		applier:             applier,
 		proxy:               p,
 		logger:              logger,
-		appliedKeys:         map[kubeResourceKey]bool{},
+		appliedKeys:         map[string]bool{},
 		instanceId:          cfg.GetInstanceId(),
 		agentDescription:    cfg.GetDescription(),
 		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
@@ -81,7 +79,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 
 // getHealth is called every heartbeat interval to report health.
 func (agent *Agent) getHealth() *protobufs.ComponentHealth {
-	healthMap, err := agent.generateCollectorPoolHealth()
+	health, err := agent.applier.GetHealth()
 	if err != nil {
 		return &protobufs.ComponentHealth{
 			Healthy:           false,
@@ -97,124 +95,80 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 			LastError:         err.Error(),
 		}
 	}
-	return &protobufs.ComponentHealth{
-		Healthy:            true,
-		StartTimeUnixNano:  agent.startTime,
-		StatusTimeUnixNano: statusTime,
-		LastError:          "",
-		ComponentHealthMap: healthMap,
+	componentHealth, err := agent.componentHealthFromInternal(health, statusTime, true)
+	if err != nil {
+		return &protobufs.ComponentHealth{
+			Healthy:           false,
+			StartTimeUnixNano: agent.startTime,
+			LastError:         err.Error(),
+		}
 	}
+	agent.addProxyHealth(componentHealth)
+	return componentHealth
 }
 
-// generateCollectorPoolHealth allows the bridge to report the status of the collector pools it owns.
-// TODO: implement enhanced health messaging using the collector's new healthcheck extension:
-// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/26661
-func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.ComponentHealth, error) {
-	cols, err := agent.applier.ListInstances()
-	if err != nil {
-		return nil, err
-	}
-	proxyHealth := agent.proxy.GetHealth()
-	agentsByHostName := agent.proxy.GetAgentsByHostname()
-	healthMap := map[string]*protobufs.ComponentHealth{}
-	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
-	for _, col := range cols {
-		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
-		podMap, err := agent.generateCollectorHealth(agent.getCollectorSelector(col), col.GetNamespace())
+// componentHealthFromInternal converts the bridge's internal recursive Health tree into the OpAMP protobuf shape.
+// statusTime is applied to every component in the tree; root controls whether the bridge start time or the
+// component-specific start time is reported.
+func (agent *Agent) componentHealthFromInternal(health operator.Health, statusTime uint64, root bool) (*protobufs.ComponentHealth, error) {
+	startTime := uint64(0)
+	if root {
+		startTime = agent.startTime
+	} else if !health.StartTime.IsZero() {
+		var err error
+		startTime, err = timeToUnixNanoUnsigned(health.StartTime)
 		if err != nil {
 			return nil, err
 		}
-		isPoolHealthy := true
-		for podName, pod := range podMap {
+	}
+	componentHealthMap := map[string]*protobufs.ComponentHealth{}
+	for key, child := range health.Children {
+		childHealth, err := agent.componentHealthFromInternal(child, statusTime, false)
+		if err != nil {
+			return nil, err
+		}
+		componentHealthMap[key] = childHealth
+	}
+	return &protobufs.ComponentHealth{
+		Healthy:            health.Healthy,
+		StartTimeUnixNano:  startTime,
+		StatusTimeUnixNano: statusTime,
+		Status:             health.Status,
+		LastError:          health.LastError,
+		ComponentHealthMap: componentHealthMap,
+	}, nil
+}
+
+// addProxyHealth merges directly connected collector agents into the reported health tree.
+// rootHealth is mutated in place: proxy agents are attached beneath matching pods by hostname, and any
+// unmatched proxy agents are reported as root-level components.
+func (agent *Agent) addProxyHealth(rootHealth *protobufs.ComponentHealth) {
+	proxyHealth := agent.proxy.GetHealth()
+	agentsByHostName := agent.proxy.GetAgentsByHostname()
+	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
+	for collectorName, collector := range rootHealth.ComponentHealthMap {
+		namespace, _, ok := strings.Cut(collectorName, "/")
+		if !ok {
+			continue
+		}
+		for podName, pod := range collector.ComponentHealthMap {
 			// we need to remove the prefix here as we don't have the namespace from the hostname.
-			podNameWithoutNamespace := strings.TrimPrefix(podName, col.GetNamespace()+"/")
-			isPoolHealthy = isPoolHealthy && pod.Healthy
+			podNameWithoutNamespace := strings.TrimPrefix(podName, namespace+"/")
 			if uid, ok := agentsByHostName[podNameWithoutNamespace]; ok {
-				podMap[podName].ComponentHealthMap[uid.String()] = proxyHealth[uid]
+				if pod.ComponentHealthMap == nil {
+					pod.ComponentHealthMap = map[string]*protobufs.ComponentHealth{}
+				}
+				pod.ComponentHealthMap[uid.String()] = proxyHealth[uid]
 				proxiesUsed[uid] = struct{}{}
 			}
 		}
-		podStartTime, err := timeToUnixNanoUnsigned(col.ObjectMeta.GetCreationTimestamp().Time)
-		if err != nil {
-			return nil, err
-		}
-		statusTime, err := agent.getCurrentTimeUnixNano()
-		if err != nil {
-			return nil, err
-		}
-		healthMap[key.String()] = &protobufs.ComponentHealth{
-			StartTimeUnixNano:  podStartTime,
-			StatusTimeUnixNano: statusTime,
-			Status:             col.Status.Scale.StatusReplicas,
-			ComponentHealthMap: podMap,
-			Healthy:            isPoolHealthy,
-		}
 	}
-	for instance, health := range proxyHealth {
+	for instance, instanceHealth := range proxyHealth {
 		if _, ok := proxiesUsed[instance]; ok {
 			continue
 		}
-		healthMap[instance.String()] = health
+		rootHealth.ComponentHealthMap[instance.String()] = instanceHealth
 	}
-	return healthMap, nil
-}
-
-// getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
-func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
-	if col.Status.Scale.Selector != "" {
-		selMap := map[string]string{}
-		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
-			kv := strings.Split(kvPair, "=")
-			// skip malformed pairs
-			if len(kv) != 2 {
-				continue
-			}
-			selMap[kv[0]] = kv[1]
-		}
-		return selMap
-	}
-	return map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", col.GetNamespace(), col.GetName()),
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
-}
-
-func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]*protobufs.ComponentHealth, error) {
-	statusTime, err := agent.getCurrentTimeUnixNano()
-	if err != nil {
-		return nil, err
-	}
-	pods, err := agent.applier.GetCollectorPods(selectorLabels, namespace)
-	if err != nil {
-		return nil, err
-	}
-	healthMap := map[string]*protobufs.ComponentHealth{}
-	for _, item := range pods.Items {
-		key := newKubeResourceKey(item.GetNamespace(), item.GetName())
-		healthy := true
-		if item.Status.Phase != "Running" {
-			healthy = false
-		}
-		var startTime uint64
-		if item.Status.StartTime != nil {
-			startTime, err = timeToUnixNanoUnsigned(item.Status.StartTime.Time)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			healthy = false
-		}
-		healthMap[key.String()] = &protobufs.ComponentHealth{
-			StartTimeUnixNano:  startTime,
-			StatusTimeUnixNano: statusTime,
-			Status:             string(item.Status.Phase),
-			Healthy:            healthy,
-			ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
-		}
-	}
-	return healthMap, nil
 }
 
 // onConnect is called when an agent is successfully connected to a server.
@@ -362,6 +316,11 @@ func (agent *Agent) runHeartbeat() {
 	}
 }
 
+// UpdateHealth sends the current health state to the OpAMP server.
+func (agent *Agent) UpdateHealth() error {
+	return agent.opampClient.SetHealth(agent.getHealth())
+}
+
 // updateAgentIdentity receives a new instancedId from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
 func (agent *Agent) updateAgentIdentity(instanceId uuid.UUID) {
@@ -381,20 +340,23 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
-		// Skip collectors pending deletion
 		if instance.GetDeletionTimestamp() != nil {
 			continue
 		}
-		col := instance
-		marshaled, err := yaml.Marshal(&col)
-		if err != nil {
-			agent.logger.Error(err, "failed to marhsal config")
-			return nil, err
-		}
-		mapKey := newKubeResourceKey(instance.GetNamespace(), instance.GetName())
-		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
-			Body:        marshaled,
-			ContentType: "yaml",
+		for key, file := range instance.GetConfigMap() {
+			if file.Body == nil {
+				agent.logger.Error(errors.New("nil effective config"), "failed to get effective config",
+					"name", instance.GetName(), "namespace", instance.GetNamespace(), "key", key)
+				continue
+			}
+			contentType := file.ContentType
+			if contentType == "" {
+				contentType = "yaml"
+			}
+			instanceMap[key] = &protobufs.AgentConfigFile{
+				Body:        file.Body,
+				ContentType: contentType,
+			}
 		}
 	}
 	for id, instance := range agent.proxy.GetConfigurations() {
@@ -427,37 +389,35 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
 //
-//	map[name/namespace] -> collector CRD spec
+//	map[resource key] -> AgentConfigFile body
 //
-// For every key in the received remote configuration, the agent attempts to apply it to the connected
-// Kubernetes cluster. If an agent fails to apply a collector CRD, it will continue to the next entry. The agent will
-// store the received configuration hash regardless of application status as per the OpAMP spec.
+// For every key in the received remote configuration, the agent attempts to apply it via the configured
+// applier. If an entry fails to apply, the agent continues to the next entry. The agent stores the
+// received configuration hash regardless of application status, as per the OpAMP spec.
 //
 // INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
 func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
 	var errs []error
 	// Apply changes from the received config map
 	for key, file := range config.Config.GetConfigMap() {
-		if key == "" || len(file.Body) == 0 {
+		if key == "" {
+			errs = append(errs, errors.New("remote config entry has empty name"))
 			continue
 		}
-		colKey, err := kubeResourceFromKey(key)
-		if err != nil {
+		if len(file.Body) == 0 {
+			errs = append(errs, fmt.Errorf("remote config entry %q has empty body", key))
+			continue
+		}
+		if err := agent.applier.Apply(key, file); err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		err = agent.applier.Apply(colKey.name, colKey.namespace, file)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		agent.appliedKeys[colKey] = true
+		agent.appliedKeys[key] = true
 	}
 	// Check if anything was deleted
-	for collectorKey := range agent.appliedKeys {
-		if _, ok := config.Config.GetConfigMap()[collectorKey.String()]; !ok {
-			err := agent.applier.Delete(collectorKey.name, collectorKey.namespace)
-			if err != nil {
+	for key := range agent.appliedKeys {
+		if _, ok := config.Config.GetConfigMap()[key]; !ok {
+			if err := agent.applier.Delete(key); err != nil {
 				errs = append(errs, err)
 			}
 		}
