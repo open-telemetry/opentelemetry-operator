@@ -59,7 +59,7 @@ func (in *MetricsConfig) DeepCopy() *MetricsConfig {
 type Telemetry struct {
 	Metrics MetricsConfig `json:"metrics,omitzero" yaml:"metrics,omitempty"`
 
-	Resource json.RawMessage `json:"resource,omitempty" yaml:"resource,omitempty"`
+	Resource json.RawMessage `json:"resource,omitempty"`
 }
 
 // GetEnabledComponents constructs a list of enabled components by component type.
@@ -407,7 +407,6 @@ func MetricsEndpoint(s *v1beta1.Service, logger logr.Logger) (host string, port 
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
-	// TODO: I think telemetry::metrics::address might be now ignored? https://opentelemetry.io/docs/collector/internal-telemetry/#service-address
 	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
 		host, port, err := parseAddressEndpoint(telemetry.Metrics.Address)
 		if err != nil {
