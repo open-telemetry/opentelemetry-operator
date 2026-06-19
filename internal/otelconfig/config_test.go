@@ -2187,7 +2187,6 @@ func TestConfig_GetSuppressedEnvVars(t *testing.T) {
 }
 
 func TestGetTelemetryWithLegacyResource(t *testing.T) {
-	name := "my-collector"
 	svc := v1beta1.Service{
 		Telemetry: &v1beta1.AnyConfig{
 			Object: map[string]any{
@@ -2200,7 +2199,7 @@ func TestGetTelemetryWithLegacyResource(t *testing.T) {
 	tel := GetTelemetry(&svc, logr.Discard())
 	require.NotNil(t, tel)
 	assert.Equal(t, "detailed", tel.Metrics.Level)
-	assert.Equal(t, map[string]*string{"service.name": &name}, tel.Resource)
+	assert.JSONEq(t, `{"service.name":"my-collector"}`, string(tel.Resource))
 }
 
 func TestGetTelemetryWithDeclarativeResource(t *testing.T) {
@@ -2239,11 +2238,10 @@ func TestServiceApplyDefaultsPreservesLegacyResource(t *testing.T) {
 
 	assert.Equal(t, map[string]any{"service.name": "my-collector"}, cfg.Service.Telemetry.Object["resource"])
 
-	name := "my-collector"
 	tel := GetTelemetry(&cfg.Service, logr.Discard())
 	require.NotNil(t, tel)
 	require.Len(t, tel.Metrics.Readers, 1, "default Prometheus reader should be injected")
-	assert.Equal(t, map[string]*string{"service.name": &name}, tel.Resource)
+	assert.JSONEq(t, `{"service.name":"my-collector"}`, string(tel.Resource))
 }
 
 func TestServiceApplyDefaultsPreservesDeclarativeResource(t *testing.T) {
@@ -2319,10 +2317,9 @@ func TestServiceApplyDefaultsDoesNotClobberDeclarativeResourceAndReaders(t *test
 }
 
 func TestTelemetryToAnyConfigPreservesLegacyResource(t *testing.T) {
-	name := "my-collector"
 	tel := &Telemetry{
 		Metrics:  MetricsConfig{Level: "basic"},
-		Resource: map[string]*string{"service.name": &name},
+		Resource: json.RawMessage(`{"service.name":"my-collector"}`),
 	}
 
 	ac, err := TelemetryToAnyConfig(tel)
