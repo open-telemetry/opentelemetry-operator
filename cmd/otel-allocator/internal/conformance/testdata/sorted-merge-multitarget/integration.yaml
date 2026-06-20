@@ -1,0 +1,9 @@
+# Consumed only by cmd/otel-allocator/integrationtest. The group label `vendor`
+# (which sorts after __address__) must reach the emitted metric. addr_copy is not
+# asserted here because repointing targets at one mock makes it dynamic.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {vendor: acme}
