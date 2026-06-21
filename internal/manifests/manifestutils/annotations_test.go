@@ -73,6 +73,51 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	assert.Equal(t, "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
+func TestDisablePrometheusAnnotationsRemovesExisting(t *testing.T) {
+	// prepare: instance with pre-existing prometheus annotations and DisablePrometheusAnnotations=true
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-ns",
+			Annotations: map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/port":   "8888",
+				"prometheus.io/path":   "/metrics",
+			},
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodAnnotations: map[string]string{
+					"prometheus.io/scrape": "true",
+					"prometheus.io/port":   "8888",
+					"prometheus.io/path":   "/metrics",
+				},
+			},
+			Observability: v1beta1.ObservabilitySpec{
+				Metrics: v1beta1.MetricsConfigSpec{
+					DisablePrometheusAnnotations: true,
+				},
+			},
+			Config: v1beta1.Config{
+				Service: v1beta1.Service{
+					Extensions: []string{"test"},
+				},
+			},
+		},
+	}
+
+	// test
+	podAnnotations, err := PodAnnotations(otelcol, []string{})
+	require.NoError(t, err)
+
+	// verify: prometheus annotations should be removed even when present in metadata/pod annotations
+	assert.NotContains(t, podAnnotations, "prometheus.io/scrape", "Prometheus scrape annotation should be removed when DisablePrometheusAnnotations is true")
+	assert.NotContains(t, podAnnotations, "prometheus.io/port", "Prometheus port annotation should be removed when DisablePrometheusAnnotations is true")
+	assert.NotContains(t, podAnnotations, "prometheus.io/path", "Prometheus path annotation should be removed when DisablePrometheusAnnotations is true")
+	// non-prometheus annotations should still be present
+	assert.Contains(t, podAnnotations, "opentelemetry-operator-config/sha256")
+}
+
 func TestUserAnnotations(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{

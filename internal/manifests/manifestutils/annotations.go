@@ -50,7 +50,7 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 		}
 	}
 
-	// Enable Prometheus annotations by default if DisablePrometheusAnnotations is nil or true
+	// Enable Prometheus annotations by default if DisablePrometheusAnnotations is nil or false
 	if !instance.Spec.Observability.Metrics.DisablePrometheusAnnotations {
 		// Set default Prometheus annotations
 		prometheusAnnotations := map[string]string{
@@ -63,6 +63,16 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 			if _, ok := podAnnotations[kMeta]; !ok {
 				podAnnotations[kMeta] = vMeta
 			}
+		}
+	} else {
+		// Remove Prometheus annotations when explicitly disabled
+		prometheusKeys := []string{
+			"prometheus.io/scrape",
+			"prometheus.io/port",
+			"prometheus.io/path",
+		}
+		for _, k := range prometheusKeys {
+			delete(podAnnotations, k)
 		}
 	}
 
