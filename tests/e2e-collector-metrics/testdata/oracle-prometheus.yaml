@@ -1,0 +1,28 @@
+# A prometheus-operator-managed Prometheus with the OTLP receiver enabled and
+# translation_strategy: NoTranslation (so OTLP target labels are stored byte-for-byte).
+# It is both the OTLP sink for the collector and the native scraper of the oracle
+# ServiceMonitors. outOfOrderTimeWindow absorbs the
+# reordering of OTLP export batches. Its ServiceAccount is granted discovery RBAC by
+# the test (BindTargetAllocatorClusterRole).
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: oracle}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata: {name: oracle}
+spec:
+  serviceAccountName: oracle
+  replicas: 1
+  enableOTLPReceiver: true
+  otlp:
+    translationStrategy: NoTranslation
+  tsdb:
+    outOfOrderTimeWindow: 30m
+  scrapeInterval: 5s
+  scrapeTimeout: 5s
+  # Scrapes the `oracle` pipeline's ServiceMonitors natively. Tests that create
+  # none (the raw scrape_configs test) simply match nothing, leaving this a pure
+  # OTLP sink.
+  serviceMonitorSelector:
+    matchLabels: {group: oracle}

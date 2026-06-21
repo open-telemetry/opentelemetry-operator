@@ -1,0 +1,28 @@
+# A collector whose target allocator scrapes the sample app via a raw static_configs
+# scrape config (no Kubernetes service discovery), exporting OTLP to the oracle
+# Prometheus.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: sample-app
+              scrape_interval: 5s
+              static_configs:
+                - targets: ['sample-app:8080']
+    exporters:
+      otlphttp:
+        endpoint: http://prometheus-operated:9090/api/v1/otlp
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [otlphttp]

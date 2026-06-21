@@ -1,0 +1,23 @@
+# brancz/prometheus-example-app: exposes a `version` gauge and (the synthetic) `up`
+# per scrape — enough to assert on target labels without any traffic. The Service port
+# is named `metrics` so a ServiceMonitor endpoint can target it.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: sample-app, labels: {app: sample-app}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: sample-app}}
+  template:
+    metadata: {labels: {app: sample-app}}
+    spec:
+      containers:
+        - name: app
+          image: quay.io/brancz/prometheus-example-app:v0.5.0
+          ports: [{containerPort: 8080, name: metrics}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: sample-app, labels: {app: sample-app}}
+spec:
+  selector: {app: sample-app}
+  ports: [{port: 8080, targetPort: 8080, name: metrics}]
