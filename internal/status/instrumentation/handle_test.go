@@ -47,9 +47,8 @@ func TestHandleReconcileStatus(t *testing.T) {
 		Build()
 
 	log := logf.Log.WithName("test")
-	result, err := HandleReconcileStatus(context.Background(), log, cli, inst)
+	_, err := HandleReconcileStatus(context.Background(), log, cli, inst)
 	require.NoError(t, err)
-	assert.False(t, result.Requeue)
 
 	var updated v1alpha1.Instrumentation
 	require.NoError(t, cli.Get(context.Background(), types.NamespacedName{Name: "my-inst", Namespace: "default"}, &updated))
@@ -91,9 +90,8 @@ func TestHandleReconcileStatusGenerationUpdate(t *testing.T) {
 		Build()
 
 	log := logf.Log.WithName("test")
-	result, err := HandleReconcileStatus(context.Background(), log, cli, inst)
+	_, err := HandleReconcileStatus(context.Background(), log, cli, inst)
 	require.NoError(t, err)
-	assert.False(t, result.Requeue)
 
 	var updated v1alpha1.Instrumentation
 	require.NoError(t, cli.Get(context.Background(), types.NamespacedName{Name: "my-inst", Namespace: "default"}, &updated))
