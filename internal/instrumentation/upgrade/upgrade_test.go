@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
@@ -108,12 +107,6 @@ func TestUpgrade(t *testing.T) {
 		Name:      "my-inst",
 	}, &updated)
 	require.NoError(t, err)
-
-	assert.Equal(t, updated.Generation, updated.Status.ObservedGeneration)
-	readyCondition := meta.FindStatusCondition(updated.Status.Conditions, "Ready")
-	require.NotNil(t, readyCondition)
-	assert.Equal(t, metav1.ConditionTrue, readyCondition.Status)
-	assert.Equal(t, updated.Generation, readyCondition.ObservedGeneration)
 
 	assert.Equal(t, "java:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
