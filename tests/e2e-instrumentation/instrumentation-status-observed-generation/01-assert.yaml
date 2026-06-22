@@ -5,4 +5,7 @@ metadata:
 status:
   observedGeneration: 2
   conditions:
-  - observedGeneration: 2
+  - type: Ready
+    status: "True"
+    reason: Reconciled
+    observedGeneration: 2
