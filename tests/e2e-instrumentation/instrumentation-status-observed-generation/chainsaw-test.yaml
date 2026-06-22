@@ -9,54 +9,11 @@ spec:
     try:
     - apply:
         file: 00-install.yaml
-    - command:
-        entrypoint: kubectl
-        args:
-          - rollout
-          - restart
-          - deployment
-          - opentelemetry-operator-controller-manager
-          - -n
-          - opentelemetry-operator-system
-    - command:
-        entrypoint: kubectl
-        args:
-          - rollout
-          - status
-          - deployment
-          - opentelemetry-operator-controller-manager
-          - -n
-          - opentelemetry-operator-system
-          - --timeout=60s
-    # adding a sleep to ensure the InstrumentationUpgrade finishes after pod restart
-    - sleep:
-        duration: 5s
     - assert:
         file: 00-assert.yaml
   - name: step-01-update
     try:
     - update:
         file: 01-update.yaml
-    - command:
-        entrypoint: kubectl
-        args:
-          - rollout
-          - restart
-          - deployment
-          - opentelemetry-operator-controller-manager
-          - -n
-          - opentelemetry-operator-system
-    - command:
-        entrypoint: kubectl
-        args:
-          - rollout
-          - status
-          - deployment
-          - opentelemetry-operator-controller-manager
-          - -n
-          - opentelemetry-operator-system
-          - --timeout=60s
-    - sleep:
-        duration: 5s
     - assert:
         file: 01-assert.yaml
