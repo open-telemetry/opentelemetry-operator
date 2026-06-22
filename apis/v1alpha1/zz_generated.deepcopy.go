@@ -9,8 +9,8 @@ package v1alpha1
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"k8s.io/api/autoscaling/v2"
-	"k8s.io/api/core/v1"
+	v2 "k8s.io/api/autoscaling/v2"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
