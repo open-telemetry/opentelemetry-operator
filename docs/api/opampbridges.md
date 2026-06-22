@@ -141,6 +141,24 @@ typically used to set access tokens or other authorization headers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>healthListenAddr</b></td>
+        <td>string</td>
+        <td>
+          HealthListenAddr is the address where this service serves health checks.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>heartbeatInterval</b></td>
+        <td>string</td>
+        <td>
+          HeartbeatInterval is the interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -174,6 +192,32 @@ to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies
         <td>string</td>
         <td>
           IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>listenAddr</b></td>
+        <td>string</td>
+        <td>
+          ListenAddr is the address where this service serves OpAMP proxy traffic.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode selects the operating mode for the bridge process.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
+          <br/>
+            <i>Enum</i>: operator, standalone<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the bridge to use for querying managed collectors.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -251,6 +295,14 @@ default.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount for the OpAMPBridge.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecstandalone">standalone</a></b></td>
+        <td>object</td>
+        <td>
+          Standalone configures bridge agents that manage Kubernetes ConfigMap-backed Collector configuration.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3485,6 +3537,170 @@ May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.standalone
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+Standalone configures bridge agents that manage Kubernetes ConfigMap-backed Collector configuration.
+This field mirrors the standalone bridge process configuration and is not used by operator reconciliation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opampbridgespecstandaloneagentsindex">agents</a></b></td>
+        <td>[]object</td>
+        <td>
+          Agents is the list of standalone workloads the bridge should manage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.standalone.agents[index]
+<sup><sup>[↩ Parent](#opampbridgespecstandalone)</sup></sup>
+
+
+
+OpAMPBridgeStandaloneAgentConfig configures one standalone OpAMP agent connection.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opampbridgespecstandaloneagentsindexconfigkey">config</a></b></td>
+        <td>map[string]object</td>
+        <td>
+          Config maps OpAMP remote config file names to local Kubernetes resources.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of the workload and config resources.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is the agent type reported to the OpAMP server.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecstandaloneagentsindexworkloadref">workloadRef</a></b></td>
+        <td>object</td>
+        <td>
+          WorkloadRef identifies the Kubernetes workload restarted after remote config updates.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.standalone.agents[index].config[key]
+<sup><sup>[↩ Parent](#opampbridgespecstandaloneagentsindex)</sup></sup>
+
+
+
+OpAMPBridgeStandaloneConfigEntry maps a remote OpAMP config file to a local Kubernetes resource key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the key in the local Kubernetes resource.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>enum</td>
+        <td>
+          Kind is the local Kubernetes resource kind.<br/>
+          <br/>
+            <i>Enum</i>: configmap<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the local Kubernetes resource name.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.standalone.agents[index].workloadRef
+<sup><sup>[↩ Parent](#opampbridgespecstandaloneagentsindex)</sup></sup>
+
+
+
+WorkloadRef identifies the Kubernetes workload restarted after remote config updates.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>apiVersion</b></td>
+        <td>enum</td>
+        <td>
+          APIVersion is the Kubernetes API version of the workload.<br/>
+          <br/>
+            <i>Enum</i>: apps/v1<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>enum</td>
+        <td>
+          Kind is the Kubernetes workload kind.<br/>
+          <br/>
+            <i>Enum</i>: Deployment, DaemonSet, StatefulSet<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the Kubernetes workload name.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

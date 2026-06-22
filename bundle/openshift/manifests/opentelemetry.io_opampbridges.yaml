@@ -611,6 +611,11 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              healthListenAddr:
+                type: string
+              heartbeatInterval:
+                format: duration
+                type: string
               hostNetwork:
                 type: boolean
               image:
@@ -622,6 +627,15 @@ spec:
                   type: string
                 type: array
               ipFamilyPolicy:
+                type: string
+              listenAddr:
+                type: string
+              mode:
+                enum:
+                - operator
+                - standalone
+                type: string
+              name:
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -872,6 +886,59 @@ spec:
                 type: object
               serviceAccount:
                 type: string
+              standalone:
+                properties:
+                  agents:
+                    items:
+                      properties:
+                        config:
+                          additionalProperties:
+                            properties:
+                              key:
+                                type: string
+                              kind:
+                                enum:
+                                - configmap
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - key
+                            - kind
+                            - name
+                            type: object
+                          type: object
+                        namespace:
+                          type: string
+                        type:
+                          type: string
+                        workloadRef:
+                          properties:
+                            apiVersion:
+                              enum:
+                              - apps/v1
+                              type: string
+                            kind:
+                              enum:
+                              - Deployment
+                              - DaemonSet
+                              - StatefulSet
+                              type: string
+                            name:
+                              type: string
+                          required:
+                          - apiVersion
+                          - kind
+                          - name
+                          type: object
+                      required:
+                      - config
+                      - namespace
+                      - type
+                      - workloadRef
+                      type: object
+                    type: array
+                type: object
               tls:
                 properties:
                   insecure:
