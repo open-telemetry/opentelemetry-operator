@@ -400,16 +400,6 @@ type Nginx struct {
 
 // InstrumentationStatus defines status of the instrumentation.
 type InstrumentationStatus struct {
-	// ObservedGeneration is the most recent generation observed for this Instrumentation.
-	// It corresponds to the Instrumentation's generation, which is updated on mutation
-	// by the API Server.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
-	// Conditions represents the latest available observations of the Instrumentation's current state.
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
 	// UpgradeBlockedVersions contains instrumentation language images whose
 	// versions could not be automatically upgraded, mapped to a message
 	// explaining why. The operator will not auto-upgrade these images until
