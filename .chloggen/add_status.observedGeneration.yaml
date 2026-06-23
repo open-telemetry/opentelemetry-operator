@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add status.observedGeneration and status.conditions support for OpenTelemetryCollector and Instrumentation resources.
+note: Add status.observedGeneration and status.conditions support for OpenTelemetryCollector resources.
 
 # One or more tracking issues related to the change
 issues: [4312]

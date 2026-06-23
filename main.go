@@ -372,14 +372,6 @@ func main() {
 			setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 			os.Exit(1)
 		}
-
-		if err = controllers.NewInstrumentationReconciler(
-			mgr.GetClient(),
-			ctrl.Log.WithName("controllers").WithName("Instrumentation"),
-		).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Instrumentation")
-			os.Exit(1)
-		}
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
