@@ -19,7 +19,7 @@ subtext: |
   so toggling disablePrometheusAnnotations from false to true on an
   existing OpenTelemetryCollector left the prometheus.io/scrape, port,
   and path annotations stuck on the rolled pods. The operator now stamps
-  an ownership marker (collector.opentelemetry.io/prometheus-annotations-added)
+  an ownership marker (operator.opentelemetry.io/prometheus-annotations-added)
   whenever it adds one of the default prometheus.io/* annotations, and
   the mutate path strips those annotations only when the marker is
   present on the existing pod template. This preserves prometheus.io/*

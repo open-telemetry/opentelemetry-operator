@@ -17,7 +17,7 @@ import (
 // operator is the owner of the prometheus.io/* annotations and may therefore
 // remove them when DisablePrometheusAnnotations is toggled to true. This
 // avoids clobbering prometheus.io/* annotations that the user set out of band.
-const PrometheusAnnotationsAddedKey = "collector.opentelemetry.io/prometheus-annotations-added"
+const PrometheusAnnotationsAddedKey = "operator.opentelemetry.io/prometheus-annotations-added"
 
 // Annotations return the annotations for OpenTelemetryCollector resources.
 func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {

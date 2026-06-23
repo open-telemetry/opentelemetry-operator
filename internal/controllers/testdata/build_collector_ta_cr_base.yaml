@@ -23,8 +23,8 @@ spec:
   template:
     metadata:
       annotations:
-        collector.opentelemetry.io/prometheus-annotations-added: "true"
         opentelemetry-operator-config/sha256: 42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0
+        operator.opentelemetry.io/prometheus-annotations-added: "true"
         prometheus.io/path: /metrics
         prometheus.io/port: "8888"
         prometheus.io/scrape: "true"
