@@ -1,0 +1,11 @@
+# LabelKeep removes every label name NOT matching the regex. In a scrape context
+# that would also strip __address__/__scheme__/job and drop the target, so the
+# regex explicitly preserves the scrape essentials while still testing that
+# user labels not matching (a) are removed.
+scrape_configs:
+  - job_name: labelkeep-prefix
+    static_configs:
+      - targets: ['10.10.0.1:9100']
+        labels: {a: foo, b1: bar, b2: baz}
+    relabel_configs:
+      - {regex: '(b.*|__.*|job)', action: labelkeep}

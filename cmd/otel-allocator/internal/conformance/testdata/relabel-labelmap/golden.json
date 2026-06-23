@@ -1,0 +1,55 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.4.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b1": "bar",
+      "b2": "baz",
+      "job": "labelmap-prefix"
+    },
+    "labels": {
+      "__address__": "10.4.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b1": "bar",
+      "b2": "baz",
+      "bar_b1": "bar",
+      "bar_b2": "baz",
+      "instance": "10.4.0.1:9100",
+      "job": "labelmap-prefix"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.4.0.2:9100",
+      "__meta_my_bar": "aaa",
+      "__meta_my_baz": "bbb",
+      "__meta_other": "ccc",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "labelmap-meta"
+    },
+    "labels": {
+      "__address__": "10.4.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "instance": "10.4.0.2:9100",
+      "job": "labelmap-meta",
+      "my_bar": "aaa",
+      "my_baz": "bbb"
+    }
+  }
+]

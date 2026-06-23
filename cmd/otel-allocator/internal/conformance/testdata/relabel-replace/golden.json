@@ -1,0 +1,162 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-basic"
+    },
+    "labels": {
+      "__address__": "10.1.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b": "bar",
+      "c": "baz",
+      "d": "choo-choo",
+      "instance": "10.1.0.1:9100",
+      "job": "replace-basic"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-multi-source"
+    },
+    "labels": {
+      "__address__": "10.1.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "boobam",
+      "b": "bar",
+      "c": "baz",
+      "d": "boooom",
+      "instance": "10.1.0.2:9100",
+      "job": "replace-multi-source"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "abc",
+      "job": "replace-capture"
+    },
+    "labels": {
+      "__address__": "10.1.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "abc",
+      "d": "b",
+      "instance": "10.1.0.3:9100",
+      "job": "replace-capture"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "boo",
+      "job": "replace-nomatch-noop"
+    },
+    "labels": {
+      "__address__": "10.1.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "boo",
+      "instance": "10.1.0.4:9100",
+      "job": "replace-nomatch-noop"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.5:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "f": "baz",
+      "job": "replace-blank-deletes"
+    },
+    "labels": {
+      "__address__": "10.1.0.5:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "instance": "10.1.0.5:9100",
+      "job": "replace-blank-deletes"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.6:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "some-name-value",
+      "job": "replace-named-target"
+    },
+    "labels": {
+      "__address__": "10.1.0.6:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "some-name-value",
+      "instance": "10.1.0.6:9100",
+      "job": "replace-named-target",
+      "name": "value"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.1.0.7:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "some-name-value",
+      "job": "replace-invalid-group"
+    },
+    "labels": {
+      "__address__": "10.1.0.7:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "some-name-value",
+      "instance": "10.1.0.7:9100",
+      "job": "replace-invalid-group"
+    }
+  }
+]
