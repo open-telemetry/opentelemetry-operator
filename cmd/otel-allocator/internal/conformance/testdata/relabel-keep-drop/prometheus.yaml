@@ -1,0 +1,45 @@
+# Keep/Drop action variations (ported from relabel_test.go). Dropped targets are
+# expected to be dropped by the allocator too (assertion A).
+scrape_configs:
+  - job_name: drop-match
+    static_configs:
+      - targets: ['10.2.0.1:9100']
+        labels: {a: foo, b: bar}
+    relabel_configs:
+      - {source_labels: [a], regex: '.*o.*', action: drop}
+
+  - job_name: drop-then-replace-pipeline
+    static_configs:
+      - targets: ['10.2.0.2:9100']
+        labels: {a: foo}
+    relabel_configs:
+      - {source_labels: [a], regex: '.*o.*', action: drop}
+      - {source_labels: [a], regex: 'f(.*)', target_label: d, separator: ';', replacement: 'ch$1-ch$1', action: replace}
+
+  - job_name: drop-nomatch-keeps
+    static_configs:
+      - targets: ['10.2.0.3:9100']
+        labels: {a: foo}
+    relabel_configs:
+      - {source_labels: [a], regex: 'no-match', action: drop}
+
+  - job_name: drop-partial-regex-keeps
+    static_configs:
+      - targets: ['10.2.0.4:9100']
+        labels: {a: foo}
+    relabel_configs:
+      - {source_labels: [a], regex: 'f|o', action: drop}
+
+  - job_name: keep-nomatch-drops
+    static_configs:
+      - targets: ['10.2.0.5:9100']
+        labels: {a: foo}
+    relabel_configs:
+      - {source_labels: [a], regex: 'no-match', action: keep}
+
+  - job_name: keep-match
+    static_configs:
+      - targets: ['10.2.0.6:9100']
+        labels: {a: foo}
+    relabel_configs:
+      - {source_labels: [a], regex: 'f.*', action: keep}

@@ -1,0 +1,68 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.40.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    },
+    "labels": {
+      "__address__": "10.40.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "addr_copy": "10.40.0.1:9100",
+      "instance": "10.40.0.1:9100",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.40.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    },
+    "labels": {
+      "__address__": "10.40.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "addr_copy": "10.40.0.2:9100",
+      "instance": "10.40.0.2:9100",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.40.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    },
+    "labels": {
+      "__address__": "10.40.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "addr_copy": "10.40.0.3:9100",
+      "instance": "10.40.0.3:9100",
+      "job": "sorted-merge",
+      "vendor": "acme"
+    }
+  }
+]

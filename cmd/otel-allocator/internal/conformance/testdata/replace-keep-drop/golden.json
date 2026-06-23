@@ -1,0 +1,64 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.0.0.1:9100",
+      "__meta_kubernetes_namespace": "prod",
+      "__meta_kubernetes_pod_label_app": "frontend",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "demo",
+      "team": "web"
+    },
+    "labels": {
+      "__address__": "10.0.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.0.0.1:9100",
+      "job": "demo",
+      "ns": "prod",
+      "team": "web"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.0.0.2:9100",
+      "__meta_kubernetes_namespace": "prod",
+      "__meta_kubernetes_pod_label_app": "frontend",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "demo",
+      "team": "web"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.0.0.3:9100",
+      "__meta_kubernetes_namespace": "prod",
+      "__meta_kubernetes_pod_label_app": "frontend",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "demo",
+      "team": "web"
+    },
+    "labels": {
+      "__address__": "10.0.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.0.0.3:9100",
+      "job": "demo",
+      "ns": "prod",
+      "team": "web"
+    }
+  }
+]

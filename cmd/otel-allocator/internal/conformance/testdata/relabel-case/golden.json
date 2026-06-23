@@ -1,0 +1,25 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.5.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "foo": "bAr123Foo",
+      "job": "case-upper-lower"
+    },
+    "labels": {
+      "__address__": "10.5.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "foo": "bAr123Foo",
+      "foo_lowercase": "bar123foo",
+      "foo_uppercase": "BAR123FOO",
+      "instance": "10.5.0.1:9100",
+      "job": "case-upper-lower"
+    }
+  }
+]
