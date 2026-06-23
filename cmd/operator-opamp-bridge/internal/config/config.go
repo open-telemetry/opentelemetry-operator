@@ -121,6 +121,7 @@ type StandaloneAgentConfig struct {
 	Type        string                           `yaml:"type"`
 	WorkloadRef StandaloneWorkloadRef            `yaml:"workloadRef"`
 	Config      map[string]StandaloneConfigEntry `yaml:"config"`
+	Description AgentDescription                 `yaml:"description,omitempty"`
 }
 
 type StandaloneWorkloadRef struct {
@@ -236,6 +237,7 @@ func (c *Config) GetDescription() *protobufs.AgentDescription {
 func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig) *Config {
 	nonIdentifyingAttributes := map[string]string{}
 	maps.Copy(nonIdentifyingAttributes, base.AgentDescription.NonIdentifyingAttributes)
+	maps.Copy(nonIdentifyingAttributes, agent.Description.NonIdentifyingAttributes)
 	nonIdentifyingAttributes["k8s.namespace.name"] = agent.Namespace
 	nonIdentifyingAttributes["k8s.workload.name"] = agent.WorkloadRef.Name
 	nonIdentifyingAttributes["k8s.workload.type"] = agent.WorkloadRef.Kind

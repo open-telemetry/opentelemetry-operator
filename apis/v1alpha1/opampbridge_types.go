@@ -120,7 +120,7 @@ type OpAMPBridgeStatus struct {
 type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
-	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes"`
+	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes" yaml:"non_identifying_attributes"`
 }
 
 type OpAMPBridgeTLSConfig struct {

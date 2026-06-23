@@ -1,0 +1,7 @@
+change_type: enhancement
+
+component: opamp
+
+note: "Allow standalone OpAMP bridge agents to configure per-agent non-identifying attributes."
+
+issues: [5245]
