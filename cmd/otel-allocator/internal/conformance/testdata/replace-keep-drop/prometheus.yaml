@@ -1,0 +1,21 @@
+# Exercises: keep on a __meta_ label, replace creating a new label, drop by address.
+# Targets carry __meta_kubernetes_* labels via static_configs (no cluster needed)
+# and a user label (team) that sorts after __address__ (guards the merge-sort bug).
+scrape_configs:
+  - job_name: demo
+    static_configs:
+      - targets: ['10.0.0.1:9100', '10.0.0.2:9100', '10.0.0.3:9100']
+        labels:
+          __meta_kubernetes_pod_label_app: frontend
+          __meta_kubernetes_namespace: prod
+          team: web
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: frontend
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: ns
+        action: replace
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.2:9100'
+        action: drop

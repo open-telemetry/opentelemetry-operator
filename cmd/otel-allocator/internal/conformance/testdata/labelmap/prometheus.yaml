@@ -1,0 +1,14 @@
+# labelmap copies __meta_kubernetes_pod_label_<x> meta labels into real labels.
+# Exercises the labelmap action and meta-label promotion (the common
+# ServiceMonitor/PodMonitor pattern), with no cluster.
+scrape_configs:
+  - job_name: lm
+    static_configs:
+      - targets: ['10.0.0.1:9100', '10.0.0.2:9100']
+        labels:
+          __meta_kubernetes_pod_label_app: web
+          __meta_kubernetes_pod_label_tier: frontend
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+        replacement: $1

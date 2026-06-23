@@ -1,0 +1,80 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.6.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "job": "keepequal-match"
+    },
+    "labels": {
+      "__address__": "10.6.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "instance": "10.6.0.1:9100",
+      "job": "keepequal-match"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.6.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "job": "keepequal-nomatch-drops"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.6.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "job": "dropequal-match-drops"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.6.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "job": "dropequal-nomatch"
+    },
+    "labels": {
+      "__address__": "10.6.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__port1": "1234",
+      "__port2": "5678",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "__tmp_port": "1234",
+      "instance": "10.6.0.4:9100",
+      "job": "dropequal-nomatch"
+    }
+  }
+]
