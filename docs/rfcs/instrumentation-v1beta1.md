@@ -46,7 +46,7 @@ Not all language SDKs support declarative configuration yet. See [language-suppo
 - **Python** — supported ([#4856](https://github.com/open-telemetry/opentelemetry-python/issues/4856))
 - **Node.js** — in progress
 - **Go** — in progress
-- **.NET** — not supported ([#6380](https://github.com/open-telemetry/opentelemetry-dotnet/issues/6380))
+- **.NET** — in progress ([#6380](https://github.com/open-telemetry/opentelemetry-dotnet/issues/6380), [#7413](https://github.com/open-telemetry/opentelemetry-dotnet/pull/7413))
 
 The operator will **skip injection** for languages that do not support declarative configuration when `spec.declarativeConfig` is set. For example, using `declarativeConfig` with `.NET` auto-instrumentation will result in the pod mutation webhook skipping injection and emitting a warning event.
 
@@ -212,7 +212,7 @@ spec:
       includeUIDs: true
     # Service identity attributes (service.name, service.version, service.namespace, service.instance.id)
     # Derived from K8s metadata following OTel semantic conventions precedence.
-    # See: https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/
+    # See: https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes
     serviceMetadata:
       # Set to false to disable automatic service attribute derivation. Defaults to true.
       enabled: true
