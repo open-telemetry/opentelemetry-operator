@@ -197,7 +197,7 @@ func (r *OpenTelemetryCollectorReconciler) defaultFSGroupOnOpenShift(ctx context
 
 	ns := &corev1.Namespace{}
 	if err := r.Get(ctx, types.NamespacedName{Name: instance.Namespace}, ns); err != nil {
-		r.log.V(4).Info("unable to fetch namespace for fsGroup defaulting", "namespace", instance.Namespace, "error", err)
+		r.log.Info("unable to fetch namespace for fsGroup defaulting", "namespace", instance.Namespace, "error", err)
 		return
 	}
 
@@ -211,7 +211,7 @@ func (r *OpenTelemetryCollectorReconciler) defaultFSGroupOnOpenShift(ctx context
 
 	block, err := uid.ParseBlock(rangeAnnotation)
 	if err != nil {
-		r.log.V(4).Info("unable to parse group range annotation", "annotation", rangeAnnotation, "error", err)
+		r.log.Info("unable to parse group range annotation", "annotation", rangeAnnotation, "error", err)
 		return
 	}
 
