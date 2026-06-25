@@ -8,14 +8,14 @@ FROM scratch
 
 ARG TARGETARCH
 
-WORKDIR /root/
+WORKDIR /
 
 # Copy the certs
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
-COPY bin/opampbridge_${TARGETARCH} ./main
+COPY bin/opampbridge_${TARGETARCH} /opampbridge
 
 # "nonroot"
 USER 65532:65532
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["/opampbridge"]

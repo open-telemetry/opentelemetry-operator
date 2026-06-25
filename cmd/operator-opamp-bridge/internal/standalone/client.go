@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,13 +35,14 @@ const (
 // Client implements operator.ConfigApplier for standalone mode.
 // ConfigMaps are the primary managed objects.
 type Client struct {
-	log            logr.Logger
-	k8sClient      client.Client
-	restCfg        *rest.Config
-	cmCache        cache.Cache
-	onUpdate       func()
-	healthMux      sync.RWMutex
-	healthUpdaters map[workloadKey]func() error
+	log             logr.Logger
+	k8sClient       client.Client
+	restCfg         *rest.Config
+	cmCache         cache.Cache
+	onUpdate        func()
+	watchNamespaces []string
+	healthMux       sync.RWMutex
+	healthUpdaters  map[workloadKey]func() error
 }
 
 type workloadKey struct {
@@ -51,27 +53,32 @@ type workloadKey struct {
 
 // NewClient creates a standalone OpAMP bridge Client that works directly on ConfigMaps
 // without the need for CRDs or the operator.
-func NewClient(log logr.Logger, c client.Client, restCfg *rest.Config, onUpdate func()) *Client {
+func NewClient(log logr.Logger, c client.Client, restCfg *rest.Config, onUpdate func(), agents ...config.StandaloneAgentConfig) *Client {
 	return &Client{
-		log:            log,
-		k8sClient:      c,
-		restCfg:        restCfg,
-		onUpdate:       onUpdate,
-		healthUpdaters: map[workloadKey]func() error{},
+		log:             log,
+		k8sClient:       c,
+		restCfg:         restCfg,
+		onUpdate:        onUpdate,
+		watchNamespaces: namespacesForAgents(agents),
+		healthUpdaters:  map[workloadKey]func() error{},
 	}
 }
 
 // Start creates an informer cache for ConfigMaps so configured agents can
 // refresh their effective config when local data changes.
 func (c *Client) Start(ctx context.Context) error {
-	ca, err := cache.New(c.restCfg, cache.Options{
+	cacheOptions := cache.Options{
 		ByObject: map[client.Object]cache.ByObject{
 			&v1.ConfigMap{}:       {},
 			&appsv1.Deployment{}:  {},
 			&appsv1.DaemonSet{}:   {},
 			&appsv1.StatefulSet{}: {},
 		},
-	})
+	}
+	if len(c.watchNamespaces) > 0 {
+		cacheOptions.DefaultNamespaces = namespaceCacheConfig(c.watchNamespaces)
+	}
+	ca, err := cache.New(c.restCfg, cacheOptions)
 	if err != nil {
 		return fmt.Errorf("failed to create standalone cache: %w", err)
 	}
@@ -208,6 +215,7 @@ func (c *Client) CheckPermissions(ctx context.Context, agents []config.Standalon
 // remoteConfigEnabled adds update permissions for managed ConfigMaps and workloads because applying config triggers rollouts.
 func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfigEnabled bool) ([]bridgemanager.Permission, error) {
 	perms := []bridgemanager.Permission{}
+	namespaces := namespacesForAgents(agents)
 	for _, rule := range []struct {
 		apiGroup string
 		resource string
@@ -217,8 +225,10 @@ func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfig
 		{apiGroup: "apps", resource: "daemonsets"},
 		{apiGroup: "apps", resource: "statefulsets"},
 	} {
-		for _, verb := range []string{"list", "watch"} {
-			perms = append(perms, bridgemanager.Permission{Verb: verb, APIGroup: rule.apiGroup, Resource: rule.resource})
+		for _, namespace := range namespaces {
+			for _, verb := range []string{"list", "watch"} {
+				perms = append(perms, bridgemanager.Permission{Verb: verb, APIGroup: rule.apiGroup, Resource: rule.resource, Namespace: namespace})
+			}
 		}
 	}
 
@@ -243,6 +253,27 @@ func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfig
 	}
 
 	return perms, nil
+}
+
+func namespacesForAgents(agents []config.StandaloneAgentConfig) []string {
+	namespaces := []string{}
+	for _, agent := range agents {
+		namespace := strings.TrimSpace(agent.Namespace)
+		if namespace == "" || slices.Contains(namespaces, namespace) {
+			continue
+		}
+		namespaces = append(namespaces, namespace)
+	}
+	slices.Sort(namespaces)
+	return namespaces
+}
+
+func namespaceCacheConfig(namespaces []string) map[string]cache.Config {
+	configs := make(map[string]cache.Config, len(namespaces))
+	for _, namespace := range namespaces {
+		configs[namespace] = cache.Config{}
+	}
+	return configs
 }
 
 func standaloneWorkloadResource(workloadType string) (string, error) {

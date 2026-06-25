@@ -79,7 +79,7 @@ func standaloneManagerOptions(log logr.Logger, cfg *config.Config, c client.Clie
 				log.Error(err, "failed to update effective config", "agent", runtime.Name)
 			}
 		}
-	})
+	}, cfg.Standalone.Agents...)
 	for _, configuredAgent := range cfg.Standalone.Agents {
 		agentCfg := config.NewStandaloneAgentConfig(cfg, configuredAgent)
 		opampClient := agentCfg.CreateClient()
