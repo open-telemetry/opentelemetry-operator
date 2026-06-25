@@ -51,12 +51,12 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-update
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine:latest
           args:
             - /bin/sh
             - -c
             - |
-              CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+              CONFIG=$(wget -q -O - http://prometheus-cr-secrets-targetallocator/scrape_configs)
               echo "$CONFIG" | grep -q "metrics-servicemonitor" && \
               echo "$CONFIG" | grep -q "basic_auth" && \
               echo "$CONFIG" | grep -q "newuser"
