@@ -2,10 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: fsgroup-test-collector
-spec:
-  template:
-    spec:
-      (securityContext.fsGroup != null): true
 status:
   replicas: 1
   readyReplicas: 1

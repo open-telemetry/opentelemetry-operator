@@ -26,9 +26,28 @@ spec:
       description: Verify fsGroup was defaulted from the namespace UID range
       try:
         - script:
-            timeout: 60s
+            timeout: 30s
             content: |
-              ./verify-fsgroup.sh $NAMESPACE
+              range=$(kubectl get namespace $NAMESPACE \
+                -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.supplemental-groups}')
+              if [[ -z "$range" ]]; then
+                range=$(kubectl get namespace $NAMESPACE \
+                  -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}')
+              fi
+              echo "${range%%[/-]*}"
+            outputs:
+              - name: expected_fsgroup
+                value: (to_number($stdout))
+        - assert:
+            resource:
+              apiVersion: apps/v1
+              kind: StatefulSet
+              metadata:
+                name: fsgroup-test-collector
+              spec:
+                template:
+                  spec:
+                    (securityContext.fsGroup == $expected_fsgroup): true
     - name: cleanup
       try:
         - script:
