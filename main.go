@@ -144,10 +144,9 @@ func newAutoInstrumentationCmd() *cobra.Command {
 	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
 
 	cmd := &cobra.Command{
-		Use:   "pod-webhook",
-		Short: "Run only the pod mutation webhook",
-		Long: `Run only the pod mutation webhook without the controllers.
-The pod mutation webhook is responsible for mutating pods to add sidecar containers and auto-instrumentation.`,
+		Use:   "webhook",
+		Short: "Run only the webhooks",
+		Long:  "Run only the webhooks without the controllers.",
 		Run: func(_ *cobra.Command, _ []string) {
 			runAutoInstrumentationWebhook(cfg, configFile, opts)
 		},
