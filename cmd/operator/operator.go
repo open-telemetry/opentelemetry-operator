@@ -390,9 +390,12 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 		if errParse != nil {
 			return fmt.Errorf("failed to parse port from metrics address: %w", errParse)
 		}
-		metricsPort, errParse := strconv.ParseInt(portStr, 10, 32)
+		metricsPort, errParse := strconv.Atoi(portStr)
 		if errParse != nil {
 			return fmt.Errorf("failed to parse port for the metrics address :%w", errParse)
+		}
+		if metricsPort < 0 || metricsPort > 65535 {
+			return fmt.Errorf("metrics port out of range: %d", metricsPort)
 		}
 		policyOpts = append(policyOpts, operatornetworkpolicy.WithMetricsPort(int32(metricsPort)))
 	}
