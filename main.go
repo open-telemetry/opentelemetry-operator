@@ -119,7 +119,7 @@ func main() {
 	rootCmd.Flags().AddFlagSet(cliFlags)
 
 	// Create the auto-instrumentation sub-command with its own flag set
-	autoInstrumentationCmd := newAutoInstrumentationCmd()
+	autoInstrumentationCmd := newWebhookServerCmd()
 
 	rootCmd.AddCommand(autoInstrumentationCmd)
 
@@ -131,7 +131,7 @@ func main() {
 	}
 }
 
-func newAutoInstrumentationCmd() *cobra.Command {
+func newWebhookServerCmd() *cobra.Command {
 	cfg := config.New()
 	cliFlags := config.CreateCLIParser(cfg)
 
@@ -144,11 +144,11 @@ func newAutoInstrumentationCmd() *cobra.Command {
 	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
 
 	cmd := &cobra.Command{
-		Use:   "webhook",
+		Use:   "webhook-server",
 		Short: "Run only the webhooks",
 		Long:  "Run only the webhooks without the controllers.",
 		Run: func(_ *cobra.Command, _ []string) {
-			runAutoInstrumentationWebhook(cfg, configFile, opts)
+			runWebhookServer(cfg, configFile, opts)
 		},
 	}
 
@@ -747,9 +747,9 @@ func addHealthChecks(mgr ctrl.Manager, includeWebhook bool) {
 	}
 }
 
-// runAutoInstrumentationWebhook runs only the auto-instrumentation webhook without the controllers.
+// runWebhookServer runs only the auto-instrumentation webhook without the controllers.
 // This enables High Availability (HA) deployment where the webhook can be scaled independently.
-func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts zap.Options) {
+func runWebhookServer(cfg config.Config, configFile string, opts zap.Options) {
 	applyConfigAndSetupLogger(&cfg, configFile, opts)
 	logger := ctrl.Log
 
@@ -757,7 +757,7 @@ func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts za
 
 	v := version.Get()
 
-	logger.Info("Starting the OpenTelemetry Auto-Instrumentation Webhook",
+	logger.Info("Starting the OpenTelemetry webhook server",
 		"opentelemetry-operator", v.Operator,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -822,14 +822,12 @@ func runAutoInstrumentationWebhook(cfg config.Config, configFile string, opts za
 		os.Exit(1)
 	}
 
-	// Register the pod mutation webhook with only the instrumentation mutator
-	decoder := admission.NewDecoder(mgr.GetScheme())
-
 	podMutators := []podmutation.PodMutator{
 		sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 		instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
 	}
 
+	decoder := admission.NewDecoder(mgr.GetScheme())
 	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 		Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(), podMutators),
 	})
