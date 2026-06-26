@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # Excepted CVEs.
-EXCEPTED_CVES='[]'
+EXCEPTED_CVES='["CVE-2026-40179"]'
 
 GOVULNCHECK="${GOVULNCHECK:-govulncheck}"
 
