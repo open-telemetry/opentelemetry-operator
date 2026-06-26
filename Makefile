@@ -386,16 +386,26 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
-# Run tests
+# Run tests, including the in-process target allocator integration tests (they need
+# no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
 	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
 # Run this after adding/changing fixtures or bumping the prometheus dependency.
 .PHONY: ta-conformance-regen
 ta-conformance-regen: promtool
 	PROMTOOL=$(PROMTOOL) go test -count=1 ./cmd/otel-allocator/internal/conformance/... -update
+
+# Run only the in-process target allocator + prometheus receiver integration tests.
+# They live in a separate Go module so the collector/receiver dependency graph stays
+# out of the target allocator binary, but they are in-process (no cluster/network) and
+# `make test` runs them too; this target is for iterating on them in isolation.
+.PHONY: ta-integration-test
+ta-integration-test: gotestsum
+	cd cmd/otel-allocator/integrationtest && $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit

@@ -1,0 +1,38 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.60.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "drop-by-label",
+      "keepme": "yes",
+      "who": "alice"
+    },
+    "labels": {
+      "__address__": "10.60.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.60.0.1:9100",
+      "job": "drop-by-label",
+      "keepme": "yes",
+      "who": "alice"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.60.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "drop-by-label",
+      "keepme": "no",
+      "who": "bob"
+    },
+    "labels": {}
+  }
+]

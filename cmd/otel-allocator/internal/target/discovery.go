@@ -44,7 +44,20 @@ type Discoverer struct {
 	targetsDiscovered           metric.Float64Gauge
 	processTargetsDuration      metric.Float64Histogram
 	processTargetGroupsDuration metric.Float64Histogram
+	reloadInterval              time.Duration
 }
+
+// DiscovererOption configures optional Discoverer behavior.
+type DiscovererOption func(*Discoverer)
+
+// WithReloadInterval sets how often the discoverer coalesces and applies target
+// updates from service discovery. It defaults to defaultReloadInterval; tests can
+// set a small value to avoid waiting on the debounce.
+func WithReloadInterval(d time.Duration) DiscovererOption {
+	return func(disc *Discoverer) { disc.reloadInterval = d }
+}
+
+const defaultReloadInterval = 5 * time.Second
 
 type discoveryHook interface {
 	SetConfig(map[string][]*relabel.Config)
@@ -54,7 +67,7 @@ type scrapeConfigsUpdater interface {
 	UpdateScrapeConfigResponse(map[string]*promconfig.ScrapeConfig) error
 }
 
-func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item)) (*Discoverer, error) {
+func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item), opts ...DiscovererOption) (*Discoverer, error) {
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	targetsDiscovered, err := meter.Float64Gauge("opentelemetry_allocator_targets", metric.WithDescription("Number of targets discovered."))
 	if err != nil {
@@ -70,7 +83,7 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 	if err != nil {
 		return nil, err
 	}
-	return &Discoverer{
+	d := &Discoverer{
 		log:                         log,
 		manager:                     manager,
 		close:                       make(chan struct{}),
@@ -83,7 +96,12 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		targetsDiscovered:           targetsDiscovered,
 		processTargetsDuration:      processTargetsDuration,
 		processTargetGroupsDuration: processTargetGroupsDuration,
-	}, nil
+		reloadInterval:              defaultReloadInterval,
+	}
+	for _, opt := range opts {
+		opt(d)
+	}
+	return d, nil
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConfigs []*promconfig.ScrapeConfig) error {
@@ -141,11 +159,10 @@ func (m *Discoverer) UpdateTsets(tsets map[string][]*targetgroup.Group) {
 }
 
 // reloader triggers a reload of the scrape configs at regular intervals.
-// The time between reloads is defined by reloadIntervalDuration to avoid overloading the system
+// The time between reloads is m.reloadInterval, to avoid overloading the system
 // with too many reloads, because some service discovery mechanisms can be quite chatty.
 func (m *Discoverer) reloader() {
-	reloadIntervalDuration := model.Duration(5 * time.Second)
-	ticker := time.NewTicker(time.Duration(reloadIntervalDuration))
+	ticker := time.NewTicker(m.reloadInterval)
 
 	defer ticker.Stop()
 

@@ -1,0 +1,15 @@
+# Consumed only by cmd/otel-allocator/integrationtest; the L0 conformance suite
+# (which reads only prometheus.yaml + oracle.json) ignores this file.
+#
+# Every target in this fixture is repointed at a live mock serving the exposition
+# below. The fixture's relabel rules (labelmap of __meta_kubernetes_pod_label_*)
+# must attach app/tier to the emitted metric end-to-end.
+exposition: |
+  # HELP widgets_total Total widgets.
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels:
+      app: web
+      tier: frontend

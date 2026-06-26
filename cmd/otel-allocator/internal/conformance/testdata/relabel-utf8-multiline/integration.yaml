@@ -1,0 +1,10 @@
+# Consumed only by cmd/otel-allocator/integrationtest. Multiline-matched and
+# UTF-8-named labels must survive relabeling through to OTLP attributes.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {d: match} # jobs replace-multiline / replace-utf8-source
+  - metric: widgets_total
+    labels: {"utf-8.label": match} # jobs replace-utf8-target / -var
