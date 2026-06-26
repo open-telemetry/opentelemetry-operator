@@ -801,10 +801,11 @@ func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
 
 func TestConfig_GetReceiverPorts(t *testing.T) {
 	tests := []struct {
-		name    string
-		file    string
-		want    []v1.ServicePort
-		wantErr bool
+		name          string
+		file          string
+		want          []v1.ServicePort
+		wantErr       bool
+		applyDefaults bool
 	}{
 		{
 			name: "k8sevents",
@@ -858,6 +859,33 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 			},
 		},
 		{
+			name: "otelarrow",
+			file: "testdata/otelcol-otelarrow.yaml",
+			want: []v1.ServicePort{
+				{
+					Name:        "otelarrow-grpc",
+					Protocol:    "",
+					AppProtocol: ptr.To("grpc"),
+					Port:        4317,
+					TargetPort:  intstr.FromInt32(4317),
+				},
+			},
+		},
+		{
+			name:          "otelarrow missing protocols",
+			file:          "testdata/otelcol-otelarrow-no-protocols.yaml",
+			applyDefaults: true,
+			want: []v1.ServicePort{
+				{
+					Name:        "otelarrow-grpc",
+					Protocol:    "",
+					AppProtocol: ptr.To("grpc"),
+					Port:        4317,
+					TargetPort:  intstr.FromInt32(4317),
+				},
+			},
+		},
+		{
 			name: "filelog",
 			file: "testdata/otelcol-filelog.yaml",
 			want: nil,
@@ -876,6 +904,10 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 			c := &v1beta1.Config{}
 			err = go_yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
+			if tt.applyDefaults {
+				_, err = ApplyDefaults(c, logr.Discard())
+				require.NoError(t, err)
+			}
 			ports, err := GetReceiverPorts(c, logr.Discard())
 			if tt.wantErr {
 				require.Error(t, err)

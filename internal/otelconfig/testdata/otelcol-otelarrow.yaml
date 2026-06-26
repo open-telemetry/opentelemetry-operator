@@ -1,0 +1,13 @@
+receivers:
+  otelarrow:
+    protocols:
+      grpc:
+
+exporters:
+  debug:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otelarrow]
+      exporters: [debug]

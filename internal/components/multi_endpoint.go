@@ -77,8 +77,15 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any, opt
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
+	protocols := multiProtoEndpointCfg.Protocols
+	if len(protocols) == 0 {
+		protocols = map[string]*SingleEndpointConfig{}
+		for protocol := range m.portMappings {
+			protocols[protocol] = nil
+		}
+	}
 	defaultedConfig := map[string]any{}
-	for protocol, ec := range multiProtoEndpointCfg.Protocols {
+	for protocol, ec := range protocols {
 		defaultSvc, ok := m.portMappings[protocol]
 		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)

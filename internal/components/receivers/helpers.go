@@ -77,6 +77,11 @@ var componentParsers = []components.Parser{
 			WithTargetPort(3100).
 			WithAppProtocol(&components.HttpProtocol)).
 		MustBuild(),
+	components.NewMultiPortReceiverBuilder("otelarrow").
+		AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
+			WithAppProtocol(&components.GrpcProtocol).
+			WithTargetPort(4317)).
+		MustBuild(),
 	components.NewSinglePortParserBuilder("awsxray", 2000).
 		WithTargetPort(2000).
 		WithProtocol(corev1.ProtocolUDP).
