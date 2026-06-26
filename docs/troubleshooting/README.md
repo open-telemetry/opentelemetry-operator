@@ -1,4 +1,4 @@
-# Debug tips to the OpenTelemetry Operator
+# Troubleshooting
 
 A tip during a troubleshooting process is always welcome. Therefore, we prepared this documentation to help you identify possible issues and improve the application's reliability.
 
