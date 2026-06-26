@@ -18,6 +18,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/cobra"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -26,8 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
@@ -44,8 +43,8 @@ import (
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
-	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	operatorsetup "github.com/open-telemetry/opentelemetry-operator/internal/operator"
+	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	wh "github.com/open-telemetry/opentelemetry-operator/internal/webhook"
@@ -315,7 +314,7 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 
 	operatorsetup.AddHealthChecks(mgr, result.Config.EnableWebhooks)
 
-	operatorsetup.StartManager(mgr, ctx)
+	operatorsetup.StartManager(ctx, mgr)
 }
 
 func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, cfg *config.Config) error {

@@ -184,7 +184,7 @@ func AddHealthChecks(mgr ctrl.Manager, includeWebhook bool) {
 }
 
 // StartManager starts the controller-runtime manager and exits on error.
-func StartManager(mgr ctrl.Manager, ctx context.Context) {
+func StartManager(ctx context.Context, mgr ctrl.Manager) {
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")

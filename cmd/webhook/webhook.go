@@ -84,5 +84,5 @@ func runWebhookServer(cfg config.Config, configFile string, opts zap.Options, sc
 		operatorsetup.SetupTLSProfileWatcher(mgr, result.InitialTLSProfile, cancel)
 	}
 
-	operatorsetup.StartManager(mgr, ctx)
+	operatorsetup.StartManager(ctx, mgr)
 }
