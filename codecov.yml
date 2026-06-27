@@ -1,8 +1,11 @@
 # Codecov configuration.
 #
-# Two kinds of data are uploaded from CI:
+# Three kinds of data are uploaded from CI:
 #   * Unit-test code coverage (Go profile) from the "Continuous Integration"
 #     workflow, tagged with the `unittests` flag.
+#   * Target allocator integration-test coverage from the same workflow, tagged
+#     with the `integration` flag (it covers the otel-allocator packages via
+#     -coverpkg).
 #   * e2e JUnit results from the e2e workflow as Test Analytics
 #     (report_type: test_results) -- this is independent of code coverage.
 #
@@ -22,4 +25,8 @@ flags:
   unittests:
     paths:
       - .
+    carryforward: true
+  integration:
+    paths:
+      - cmd/otel-allocator
     carryforward: true

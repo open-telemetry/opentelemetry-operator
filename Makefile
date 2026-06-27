@@ -107,6 +107,12 @@ endif
 GOTEST_COVER ?= $(if $(CI),true,)
 ifeq ($(GOTEST_COVER),true)
 GOTEST_COVER_OPTS = -coverprofile=coverage.out -covermode=atomic
+# The target allocator integration tests live in a separate module (so the
+# collector/receiver deps stay out of the TA binary) and exercise the real TA
+# code from the main module. -coverpkg attributes that coverage to the
+# otel-allocator packages; the profile is written to the repo root ($(CURDIR))
+# because the recipe cds into the module directory.
+GOTEST_COVER_INTEGRATION_OPTS = -coverprofile=$(CURDIR)/coverage-integration.out -covermode=atomic -coverpkg=github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/...
 endif
 
 START_KIND_CLUSTER ?= true
@@ -414,7 +420,7 @@ ta-conformance-regen: promtool
 # `make test` runs them too; this target is for iterating on them in isolation.
 .PHONY: ta-integration-test
 ta-integration-test: gotestsum
-	cd cmd/otel-allocator/integrationtest && $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+	cd cmd/otel-allocator/integrationtest && $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_INTEGRATION_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
