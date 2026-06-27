@@ -100,6 +100,15 @@ else
 GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
+# Unit-test coverage profile. Generated automatically in CI (where the workflow
+# uploads coverage.out to Codecov) and on demand locally with
+# `make test GOTEST_COVER=true`. coverage.out is matched by the *.out entry in
+# .gitignore. -covermode=atomic is required for correct counts under -race.
+GOTEST_COVER ?= $(if $(CI),true,)
+ifeq ($(GOTEST_COVER),true)
+GOTEST_COVER_OPTS = -coverprofile=coverage.out -covermode=atomic
+endif
+
 START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.35
@@ -390,7 +399,7 @@ manifests: controller-gen
 # no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+	$(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).

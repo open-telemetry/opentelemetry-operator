@@ -1,0 +1,25 @@
+# Codecov configuration.
+#
+# Two kinds of data are uploaded from CI:
+#   * Unit-test code coverage (Go profile) from the "Continuous Integration"
+#     workflow, tagged with the `unittests` flag.
+#   * e2e JUnit results from the e2e workflow as Test Analytics
+#     (report_type: test_results) -- this is independent of code coverage.
+#
+# Coverage is reported for visibility but is informational only: it never posts a
+# failing status that could block a merge, consistent with the e2e upload job
+# being best-effort (continue-on-error).
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+flags:
+  unittests:
+    paths:
+      - .
+    carryforward: true
