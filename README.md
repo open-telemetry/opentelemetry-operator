@@ -19,9 +19,6 @@ User documentation lives under [`docs/`](docs/README.md):
 - [Auto-instrumentation](docs/auto-instrumentation/README.md) — `Instrumentation` CRD: per-language injection, resource attributes
 - [Target Allocator](docs/target-allocator/README.md) — Prometheus scrape target distribution and discovery
 - [OpAMP Bridge](docs/opamp-bridge/README.md) — `OpAMPBridge` CRD
-- [Use cases](docs/use-cases/README.md) — task-oriented guides (planned)
-- [Reference architectures](docs/architectures/README.md) — deployment patterns (planned)
-- [Security](docs/security/README.md) — RBAC, TLS, certificates (planned)
 - [Troubleshooting](docs/troubleshooting/README.md) — debug tips and known issues
 - [Reference](docs/reference/README.md) — API docs, CRD changelog, feature gates
 - [RFCs](docs/rfcs/README.md) — design proposals
