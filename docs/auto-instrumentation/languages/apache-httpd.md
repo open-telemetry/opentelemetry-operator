@@ -4,8 +4,6 @@
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
 ```
 
-## Using Apache HTTPD autoinstrumentation
-
 For `Apache HTTPD` autoinstrumentation, by default, instrumentation assumes httpd version 2.4 and httpd configuration directory `/usr/local/apache2/conf` as it is in the official `Apache HTTPD` image (f.e. docker.io/httpd:latest). If you need to use version 2.2, or your HTTPD configuration directory is different, and or you need to adjust agent attributes, customize the instrumentation specification per following example:
 
 ```yaml
