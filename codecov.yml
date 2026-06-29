@@ -21,6 +21,13 @@ coverage:
       default:
         informational: true
 
+# Packages that exist solely to support tests and should not be counted towards
+# production code coverage.
+ignore:
+  - "internal/testenv"
+  - "cmd/otel-allocator/internal/conformance"
+  - "cmd/otel-allocator/integrationtest"
+
 flags:
   unittests:
     paths:
