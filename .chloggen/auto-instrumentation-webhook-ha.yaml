@@ -1,0 +1,12 @@
+change_type: enhancement
+
+component: operator
+
+note: Add pod-webhook subcommand for running a standalone pod mutation webhook
+
+issues: [5010]
+
+subtext: |
+  The operator binary now supports a `pod-webhook` subcommand that runs only the pod mutation
+  webhook (auto-instrumentation and sidecar injection) without the controllers. This enables
+  deploying the webhook separately.
