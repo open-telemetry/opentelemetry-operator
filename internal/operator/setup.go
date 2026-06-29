@@ -53,9 +53,14 @@ type SetupResult struct {
 // SetupManager performs the common manager setup shared between the operator and webhook commands.
 // It applies configuration, creates the controller-runtime manager, sets up autodetection, and returns
 // a SetupResult with all the components needed for further command-specific setup.
-func SetupManager(cfg *config.Config, configFile string, opts zap.Options, scheme *k8sruntime.Scheme, leaderElection bool, startupMessage string) *SetupResult {
+// If useConfigLeaderElection is true, leader election is determined by cfg.EnableLeaderElection (after
+// config is applied). If false, leader election is disabled regardless of config (used by webhook-server).
+func SetupManager(cfg *config.Config, configFile string, opts zap.Options, scheme *k8sruntime.Scheme, useConfigLeaderElection bool, startupMessage string) *SetupResult {
 	applyConfigAndSetupLogger(cfg, configFile, opts)
 	logger := ctrl.Log
+
+	// Determine leader election setting after config is applied
+	leaderElection := useConfigLeaderElection && cfg.EnableLeaderElection
 
 	v := version.Get()
 	logger.Info(startupMessage,

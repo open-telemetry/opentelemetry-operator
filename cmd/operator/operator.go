@@ -85,7 +85,8 @@ func NewOperatorCmd(scheme *k8sruntime.Scheme) *cobra.Command {
 }
 
 func runOperator(cfg config.Config, configFile string, opts zap.Options, featureGates *flag.FlagSet, scheme *k8sruntime.Scheme) {
-	result := operatorsetup.SetupManager(&cfg, configFile, opts, scheme, cfg.EnableLeaderElection, "Starting the OpenTelemetry Operator")
+	// Pass true to use the EnableLeaderElection setting from config (after config is applied)
+	result := operatorsetup.SetupManager(&cfg, configFile, opts, scheme, true, "Starting the OpenTelemetry Operator")
 
 	logger := ctrl.Log
 	logger.Info("Feature gates", "feature-gates", featureGates.Lookup(featuregate.FeatureGatesFlag).Value.String())
