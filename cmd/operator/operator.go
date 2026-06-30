@@ -11,7 +11,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -25,7 +24,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -37,20 +35,15 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
-	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
-	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/upgrade"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatorsetup "github.com/open-telemetry/opentelemetry-operator/internal/operator"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	wh "github.com/open-telemetry/opentelemetry-operator/internal/webhook"
-	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 
 var setupLog = ctrl.Log.WithName("setup")
@@ -259,23 +252,9 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	}
 
 	if result.Config.EnableWebhooks {
-		var crdMetrics *metrics.Metrics
-
-		if result.Config.EnableCRMetrics {
-			meterProvider, metricsErr := metrics.Bootstrap()
-			if metricsErr != nil {
-				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
-			}
-
-			var err error
-			crdMetrics, err = metrics.New(ctx, meterProvider, mgr.GetAPIReader())
-			if err != nil {
-				setupLog.Error(err, "Error init CRD metrics")
-			}
-		}
-
-		if result.Config.CollectorAvailability == collector.Available {
-			bv := func(ctx context.Context, col otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+		var bv wh.BuildValidator
+		if collectorReconciler != nil {
+			bv = func(ctx context.Context, col otelv1beta1.OpenTelemetryCollector) admission.Warnings {
 				var warnings admission.Warnings
 				params, newErr := collectorReconciler.GetParams(ctx, col)
 				if newErr != nil {
@@ -291,42 +270,10 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 				}
 				return warnings
 			}
-
-			var fipsCheck fips.FIPSCheck
-			if result.Autodetector.FIPSEnabled(ctx) {
-				receivers, exporters, processors, extensions := parseFipsFlag(result.Config.FipsDisabledComponents)
-				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
-				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
-			}
-			if err := wh.SetupCollectorWebhook(mgr, result.Config, result.Reviewer, crdMetrics, bv, fipsCheck); err != nil {
-				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-				os.Exit(1)
-			}
 		}
-		if result.Config.TargetAllocatorAvailability == targetallocator.Available {
-			if err := wh.SetupTargetAllocatorWebhook(mgr, result.Config, result.Reviewer); err != nil {
-				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
-				os.Exit(1)
-			}
-		}
-		if err := wh.SetupInstrumentationWebhook(mgr, result.Config); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
+		if err := operatorsetup.SetupWebhooks(ctx, mgr, result.Config, result.Reviewer, result.Autodetector, bv); err != nil {
+			setupLog.Error(err, "unable to setup webhooks")
 			os.Exit(1)
-		}
-		decoder := admission.NewDecoder(mgr.GetScheme())
-		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: podmutation.NewWebhookHandler(result.Config, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
-				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, result.Config, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), result.Config),
-				}),
-		})
-
-		if result.Config.OpAmpBridgeAvailability == opampbridge.Available {
-			if err := wh.SetupOpAMPBridgeWebhook(mgr, result.Config); err != nil {
-				setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
-				os.Exit(1)
-			}
 		}
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
@@ -438,28 +385,4 @@ func addInstrumentationUpgrader(_ context.Context, mgr ctrl.Manager, cfg config.
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
 	}
 	return nil
-}
-
-func parseFipsFlag(fipsFlag string) (receivers, exporters, processors, extensions []string) {
-	split := strings.SplitSeq(fipsFlag, ",")
-	for val := range split {
-		val = strings.TrimSpace(val)
-		typeAndName := strings.Split(val, ".")
-		if len(typeAndName) == 2 {
-			componentType := typeAndName[0]
-			name := typeAndName[1]
-
-			switch componentType {
-			case "receiver":
-				receivers = append(receivers, name)
-			case "exporter":
-				exporters = append(exporters, name)
-			case "processor":
-				processors = append(processors, name)
-			case "extension":
-				extensions = append(extensions, name)
-			}
-		}
-	}
-	return receivers, exporters, processors, extensions
 }
