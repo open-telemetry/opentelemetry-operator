@@ -237,12 +237,12 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		setupLog.Info("Setting up pod-webhook replica controller",
 			"namespace", namespace,
 			"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
-		if err := (&controllers.PodWebhookReconciler{
+		if err := (&controllers.CSVWebhookReconciler{
 			Client:          mgr.GetClient(),
 			Namespace:       namespace,
 			DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
 		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "PodWebhook")
+			setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
 			os.Exit(1)
 		}
 	}

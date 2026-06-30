@@ -19,10 +19,10 @@ const (
 	podWebhookDeploymentName = "opentelemetry-operator-pod-webhook"
 )
 
-// PodWebhookReconciler reconciles the ClusterServiceVersion to update pod-webhook replica count.
+// CSVWebhookReconciler reconciles the ClusterServiceVersion to update pod-webhook replica count.
 // On OpenShift with OLM, the pod-webhook deployment is managed by OLM via CSV.
 // This controller modifies the CSV's deployment spec to change the replica count.
-type PodWebhookReconciler struct {
+type CSVWebhookReconciler struct {
 	client.Client
 	Namespace       string
 	DesiredReplicas int32
@@ -30,7 +30,7 @@ type PodWebhookReconciler struct {
 
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list;watch;update;patch
 
-func (r *PodWebhookReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (r *CSVWebhookReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 
 	// Only reconcile CSVs in our namespace
@@ -87,7 +87,7 @@ func (r *PodWebhookReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	return reconcile.Result{}, nil
 }
 
-func (r *PodWebhookReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CSVWebhookReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&operatorsv1alpha1.ClusterServiceVersion{}).
 		Complete(r)
