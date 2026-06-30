@@ -6,8 +6,8 @@ package main
 import (
 	"os"
 
-	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	configv1 "github.com/openshift/api/config/v1"
+	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

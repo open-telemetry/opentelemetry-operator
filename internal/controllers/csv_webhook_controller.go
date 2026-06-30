@@ -50,7 +50,7 @@ func (r *CSVWebhookReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 
 	// Find the pod-webhook deployment spec in the CSV
 	deploymentSpecs := csv.Spec.InstallStrategy.StrategySpec.DeploymentSpecs
-	var podWebhookIdx int = -1
+	podWebhookIdx := -1
 	for i, ds := range deploymentSpecs {
 		if ds.Name == podWebhookDeploymentName {
 			podWebhookIdx = i
