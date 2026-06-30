@@ -258,6 +258,7 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg

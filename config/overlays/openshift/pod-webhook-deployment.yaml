@@ -13,7 +13,7 @@ spec:
       labels:
         app.kubernetes.io/name: opentelemetry-operator-pod-webhook
     spec:
-      serviceAccountName: controller-manager
+      serviceAccountName: opentelemetry-operator-controller-manager
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -27,9 +27,9 @@ spec:
       - name: webhook
         image: controller:latest
         args:
-        - "webhook"
-        - "--enable-webhooks=true"
+        - "webhook-server"
         - "--zap-log-level=info"
+        - "--zap-time-encoding=rfc3339nano"
         ports:
         - containerPort: 9443
           name: webhook-server

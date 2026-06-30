@@ -16,3 +16,7 @@ patches:
 - path: metrics_service_tls_patch.yaml
 - path: manager_auth_proxy_tls_patch.yaml
 - path: remove-cert-manager-annotations.yaml
+images:
+- name: controller
+  newName: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+  newTag: 0.153.0

@@ -127,7 +127,7 @@ spec:
             -n "$OTEL_NAMESPACE" --timeout=120s || true
           echo "Cleanup complete"
 
-  - name: Patch operator Subscription with POD_WEBHOOK_REPLICAS env var
+  - name: Patch operator Subscription with OPENSHIFT_WEBHOOK_REPLICAS env var
     try:
     - script:
         env:
@@ -154,7 +154,7 @@ spec:
             exit 0
           fi
 
-          echo "Patching Subscription $SUB_NAME with POD_WEBHOOK_REPLICAS=1"
+          echo "Patching Subscription $SUB_NAME with OPENSHIFT_WEBHOOK_REPLICAS=1"
 
           # Check if spec.config.env already exists
           ENV_EXISTS=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
@@ -162,10 +162,10 @@ spec:
 
           if [ -n "$ENV_EXISTS" ] && [ "$ENV_EXISTS" != "null" ] && [ "$ENV_EXISTS" != "[]" ]; then
             kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
-              -p '[{"op":"add","path":"/spec/config/env/-","value":{"name":"POD_WEBHOOK_REPLICAS","value":"1"}}]'
+              -p '[{"op":"add","path":"/spec/config/env/-","value":{"name":"OPENSHIFT_WEBHOOK_REPLICAS","value":"1"}}]'
           else
             kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=merge \
-              -p '{"spec":{"config":{"env":[{"name":"POD_WEBHOOK_REPLICAS","value":"1"}]}}}'
+              -p '{"spec":{"config":{"env":[{"name":"OPENSHIFT_WEBHOOK_REPLICAS","value":"1"}]}}}'
           fi
 
           kubectl rollout status deployment/opentelemetry-operator-controller-manager \
@@ -175,7 +175,7 @@ spec:
     - assert:
         file: 02-assert-pod-webhook-scaled.yaml
 
-  - name: Remove POD_WEBHOOK_REPLICAS and verify default restored
+  - name: Remove OPENSHIFT_WEBHOOK_REPLICAS and verify default restored
     try:
     - script:
         env:
@@ -198,10 +198,10 @@ spec:
             | grep -i opentelemetry | head -1 || true)
 
           if [ -n "$SUB_NAME" ]; then
-            echo "Removing POD_WEBHOOK_REPLICAS from Subscription: $SUB_NAME"
+            echo "Removing OPENSHIFT_WEBHOOK_REPLICAS from Subscription: $SUB_NAME"
             ENV_INDEX=$(kubectl get subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" \
               -o jsonpath='{range .spec.config.env[*]}{.name}{"\n"}{end}' 2>/dev/null \
-              | grep -n "^POD_WEBHOOK_REPLICAS$" | cut -d: -f1 || true)
+              | grep -n "^OPENSHIFT_WEBHOOK_REPLICAS$" | cut -d: -f1 || true)
             if [ -n "$ENV_INDEX" ]; then
               IDX=$((ENV_INDEX - 1))
               kubectl patch subscription.operators.coreos.com "$SUB_NAME" -n "$OTEL_NAMESPACE" --type=json \
@@ -211,7 +211,27 @@ spec:
 
           kubectl rollout status deployment/opentelemetry-operator-controller-manager \
             -n "$OTEL_NAMESPACE" --timeout=120s
+
+          # Wait for CSV reconciler to restore default replicas (2)
+          echo "Waiting for pod-webhook to scale back to 2 replicas..."
+          TIMEOUT=60
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            REPLICAS=$(kubectl get deployment opentelemetry-operator-pod-webhook \
+              -n "$OTEL_NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+            if [ "$REPLICAS" = "2" ]; then
+              echo "Pod-webhook scaled to 2 replicas after ${ELAPSED}s"
+              break
+            fi
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+          if [ "$REPLICAS" != "2" ]; then
+            echo "ERROR: pod-webhook did not scale to 2 replicas within ${TIMEOUT}s (current: $REPLICAS)"
+            exit 1
+          fi
     - sleep:
-        duration: 10s
+        duration: 5s
     - assert:
         file: 03-assert-pod-webhook-default.yaml

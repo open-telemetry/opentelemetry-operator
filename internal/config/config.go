@@ -28,7 +28,7 @@ const (
 	defaultCollectorConfigMapEntry           = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry     = "targetallocator.yaml"
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
-	defaultPodWebhookReplicas                = 2
+	defaultOpenShiftWebhookReplicas          = 2
 )
 
 type ZapConfig struct {
@@ -150,12 +150,12 @@ type Config struct {
 	// NO_PROXY — upper and lower case) captured from the operator's environment at
 	// startup and propagated to all managed containers.
 	ProxyEnvVars []corev1.EnvVar `yaml:"-"`
-	// PodWebhookReplicas is the desired number of replicas for the standalone pod webhook deployment.
+	// OpenShiftWebhookReplicas is the desired number of replicas for the standalone pod webhook deployment.
 	// Only used on OpenShift with OLM where the pod webhook is deployed separately.
 	// Set to 0 to disable the standalone webhook (webhook runs in operator pod instead).
 	// Set to 1 to disable HA but keep the standalone deployment.
 	// Default is 2 for HA on OpenShift. Only scaling down (0 or 1) is supported via env var.
-	PodWebhookReplicas int32 `yaml:"pod-webhook-replicas"`
+	OpenShiftWebhookReplicas int32 `yaml:"openshift-webhook-replicas"`
 }
 
 // Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
@@ -233,7 +233,7 @@ func New() Config {
 			NativeSidecarSupport: false,
 		},
 		EnableInstrumentationCRDs: true,
-		PodWebhookReplicas:        defaultPodWebhookReplicas,
+		OpenShiftWebhookReplicas:  defaultOpenShiftWebhookReplicas,
 	}
 }
 

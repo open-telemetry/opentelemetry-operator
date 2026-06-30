@@ -15,7 +15,7 @@ subtext: |
   - Default: 2 replicas for HA
   - Pod anti-affinity spreads replicas across different nodes
   - PodDisruptionBudget with maxUnavailable: 1 ensures availability during node maintenance
-  - Only scaling down is supported via `POD_WEBHOOK_REPLICAS` env var in the Subscription (0 or 1)
+  - Only scaling down is supported via `OPENSHIFT_WEBHOOK_REPLICAS` env var in the Subscription (0 or 1)
   - TLS certificates are automatically provisioned by OLM
   - Automatic cleanup when operator is uninstalled (OLM garbage collection)
 

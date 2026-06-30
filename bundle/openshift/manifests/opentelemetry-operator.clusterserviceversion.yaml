@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-06-29T13:39:18Z"
+    createdAt: "2026-06-30T09:31:24Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -485,6 +485,16 @@ spec:
           - patch
           - update
         - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets
@@ -657,10 +667,10 @@ spec:
                     weight: 100
               containers:
               - args:
-                - webhook
-                - --enable-webhooks=true
+                - webhook-server
                 - --zap-log-level=info
-                image: controller:latest
+                - --zap-time-encoding=rfc3339nano
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.153.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -686,7 +696,7 @@ spec:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: webhook-certs
                   readOnly: true
-              serviceAccountName: controller-manager
+              serviceAccountName: opentelemetry-operator-controller-manager
               volumes:
               - name: webhook-certs
                 secret:
