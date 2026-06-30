@@ -30,6 +30,11 @@ spec:
         - "webhook-server"
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
+        env:
+        - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+          value: "true"
+        - name: ENABLE_GO_AUTO_INSTRUMENTATION
+          value: "true"
         ports:
         - containerPort: 9443
           name: webhook-server
