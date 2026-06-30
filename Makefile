@@ -969,7 +969,7 @@ reset: kustomize operator-sdk manifests
 	MPOD_LINE=$$(grep -n "generateName: mpod.kb.io" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | cut -d: -f1) && \
 	DEPLOY_LINE=$$(head -n "$$MPOD_LINE" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml | grep -n "deploymentName:" | tail -1 | cut -d: -f1) && \
 	sed -i "$${DEPLOY_LINE}s/opentelemetry-operator-controller-manager/opentelemetry-operator-pod-webhook/" bundle/openshift/manifests/opentelemetry-operator.clusterserviceversion.yaml
-	git checkout config/manager/kustomization.yaml
+	git checkout config/manager/kustomization.yaml config/overlays/openshift/kustomization.yaml
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
