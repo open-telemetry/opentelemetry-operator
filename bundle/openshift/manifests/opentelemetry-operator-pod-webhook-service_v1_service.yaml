@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  name: opentelemetry-operator-pod-webhook-service
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/component: pod-webhook
+    app.kubernetes.io/name: opentelemetry-operator
+status:
+  loadBalancer: {}

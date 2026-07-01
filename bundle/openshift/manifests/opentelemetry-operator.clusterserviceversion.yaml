@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-06-30T09:31:24Z"
+    createdAt: "2026-07-01T09:45:05Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -670,6 +670,11 @@ spec:
                 - webhook-server
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
+                env:
+                - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: ENABLE_GO_AUTO_INSTRUMENTATION
+                  value: "true"
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.153.0
                 livenessProbe:
                   httpGet:
@@ -828,7 +833,7 @@ spec:
   - admissionReviewVersions:
     - v1
     containerPort: 443
-    deploymentName: opentelemetry-operator-pod-webhook
+    deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Ignore
     generateName: mpod.kb.io
     rules:

@@ -5,6 +5,7 @@ resources:
 - ../../default
 - pod-webhook-deployment.yaml
 - pod-webhook-pdb.yaml
+- pod-webhook-service.yaml
 
 patches:
 - path: manager-patch.yaml
@@ -16,3 +17,9 @@ patches:
 - path: metrics_service_tls_patch.yaml
 - path: manager_auth_proxy_tls_patch.yaml
 - path: remove-cert-manager-annotations.yaml
+- path: pod-webhook-patch.yaml
+  target:
+    group: admissionregistration.k8s.io
+    kind: MutatingWebhookConfiguration
+    name: mutating-webhook-configuration
+    version: v1
