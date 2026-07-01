@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -16,13 +17,16 @@ import (
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	prometheusbridge "go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -84,7 +88,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	metricExporter, promErr := otelprom.New()
+	// The OTel SDK metrics are exported to Prometheus through a dedicated registry
+	// rather than the default one. This keeps them separate from the metrics that are
+	// registered directly on the default Prometheus registry (Prometheus service
+	// discovery internals, Go runtime and process collectors). That separation lets the
+	// OTLP reader below pull those Prometheus-only metrics via the Prometheus bridge
+	// without double-counting the SDK metrics, which it already collects natively.
+	sdkRegistry := prometheus.NewRegistry()
+	metricExporter, promErr := otelprom.New(otelprom.WithRegisterer(sdkRegistry))
 	if promErr != nil {
 		panic(promErr)
 	}
@@ -96,11 +107,23 @@ func main() {
 			setupLog.Error(otlpErr, "Failed to create OTLP metric reader")
 			os.Exit(1)
 		}
-		meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader))
+		telemetryResource, resErr := telemetryResource(ctx)
+		if resErr != nil {
+			setupLog.Error(resErr, "Failed to build telemetry resource")
+			os.Exit(1)
+		}
+		meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader), sdkmetric.WithResource(telemetryResource))
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(meterProviderOpts...)
 	otel.SetMeterProvider(meterProvider)
+	defer func() {
+		// Flush and close exporters (notably the OTLP reader) on shutdown so the final
+		// batch of metrics is delivered.
+		if shutdownErr := meterProvider.Shutdown(context.Background()); shutdownErr != nil {
+			setupLog.Error(shutdownErr, "Error shutting down meter provider")
+		}
+	}()
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
 	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
@@ -123,6 +146,10 @@ func main() {
 	if cfg.AllowInsecureAuthSecrets {
 		httpOptions = append(httpOptions, server.WithInsecureAuthSecrets())
 	}
+	// Serve /metrics from both the default registry (Prometheus service discovery, Go
+	// runtime and process collectors) and the dedicated SDK registry (OTel SDK metrics),
+	// preserving the full metric set that used to be exposed via the default registry alone.
+	httpOptions = append(httpOptions, server.WithMetricsGatherer(prometheus.Gatherers{prometheus.DefaultGatherer, sdkRegistry}))
 	srv, serverErr := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	if serverErr != nil {
 		panic(serverErr)
@@ -316,18 +343,48 @@ func main() {
 	setupLog.Info("Target allocator exited.")
 }
 
+// envRefPattern matches ${env:VAR} references, mirroring the OTel Collector's
+// environment-variable substitution syntax.
+var envRefPattern = regexp.MustCompile(`\$\{env:([a-zA-Z_][a-zA-Z0-9_]*)\}`)
+
+// expandEnvRefs replaces ${env:VAR} occurrences in s with the value of the
+// environment variable VAR (empty if unset). This lets sensitive header values
+// (e.g. an API token) be sourced from the pod environment / a Secret at runtime
+// rather than being written in plaintext into the Target Allocator ConfigMap.
+func expandEnvRefs(s string) string {
+	return envRefPattern.ReplaceAllStringFunc(s, func(match string) string {
+		name := envRefPattern.FindStringSubmatch(match)[1]
+		return os.Getenv(name)
+	})
+}
+
+// expandHeaders returns a copy of headers with ${env:VAR} references expanded in
+// every value.
+func expandHeaders(headers map[string]string) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+	expanded := make(map[string]string, len(headers))
+	for k, v := range headers {
+		expanded[k] = expandEnvRefs(v)
+	}
+	return expanded
+}
+
 // newOTLPMetricReader creates a PeriodicExportingMetricReader backed by either
 // an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
 func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
 	temporality := temporalitySelector(cfg.Temporality)
 	readerOpts := periodicReaderOptions(cfg)
+	endpoint := expandEnvRefs(cfg.Endpoint)
+	headers := expandHeaders(cfg.Headers)
 	switch cfg.Protocol {
 	case "http":
 		// WithEndpointURL does not append /v1/metrics automatically. We do it here
 		// so the endpoint convention matches the OTel collector's otlphttp exporter
 		// (where users specify the base URL, not the full signal path).
 		// Skip if the caller already included the signal path.
-		endpoint := strings.TrimRight(cfg.Endpoint, "/")
+		endpoint = strings.TrimRight(endpoint, "/")
 		if !strings.HasSuffix(endpoint, "/v1/metrics") {
 			endpoint += "/v1/metrics"
 		}
@@ -338,8 +395,8 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 		if cfg.Insecure {
 			opts = append(opts, otlpmetrichttp.WithInsecure())
 		}
-		if len(cfg.Headers) > 0 {
-			opts = append(opts, otlpmetrichttp.WithHeaders(cfg.Headers))
+		if len(headers) > 0 {
+			opts = append(opts, otlpmetrichttp.WithHeaders(headers))
 		}
 		exp, err := otlpmetrichttp.New(ctx, opts...)
 		if err != nil {
@@ -348,14 +405,21 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
 	default: // "grpc"
 		opts := []otlpmetricgrpc.Option{
-			otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
 			otlpmetricgrpc.WithTemporalitySelector(temporality),
+		}
+		// Accept both a full URL (with scheme, consistent with the HTTP protocol and
+		// the collector's otlp exporter) and a bare host:port. WithEndpointURL requires
+		// a scheme; WithEndpoint expects host:port.
+		if strings.Contains(endpoint, "://") {
+			opts = append(opts, otlpmetricgrpc.WithEndpointURL(endpoint))
+		} else {
+			opts = append(opts, otlpmetricgrpc.WithEndpoint(endpoint))
 		}
 		if cfg.Insecure {
 			opts = append(opts, otlpmetricgrpc.WithInsecure())
 		}
-		if len(cfg.Headers) > 0 {
-			opts = append(opts, otlpmetricgrpc.WithHeaders(cfg.Headers))
+		if len(headers) > 0 {
+			opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
 		}
 		exp, err := otlpmetricgrpc.New(ctx, opts...)
 		if err != nil {
@@ -367,7 +431,15 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (s
 
 // periodicReaderOptions builds PeriodicReaderOptions from the export interval and timeout config.
 func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicReaderOption {
-	var opts []sdkmetric.PeriodicReaderOption
+	opts := []sdkmetric.PeriodicReaderOption{
+		// Bridge the metrics registered directly on the default Prometheus registry
+		// (Prometheus service discovery internals, Go runtime and process collectors)
+		// into the OTLP export. Without this, those metrics would be visible on the
+		// Prometheus /metrics endpoint but missing from OTLP. The SDK's own metrics live
+		// on a separate registry and are collected natively by this reader, so bridging
+		// the default registry does not double-count them.
+		sdkmetric.WithProducer(prometheusbridge.NewMetricProducer()),
+	}
 	if cfg.ExportInterval > 0 {
 		opts = append(opts, sdkmetric.WithInterval(cfg.ExportInterval))
 	}
@@ -375,6 +447,19 @@ func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicR
 		opts = append(opts, sdkmetric.WithTimeout(cfg.Timeout))
 	}
 	return opts
+}
+
+// telemetryResource builds the OpenTelemetry resource attached to exported metrics.
+// It sets a default service.name and honors the standard OTEL_SERVICE_NAME /
+// OTEL_RESOURCE_ATTRIBUTES environment variables, so additional attributes (e.g. k8s.*)
+// can be injected without code changes.
+func telemetryResource(ctx context.Context) (*resource.Resource, error) {
+	return resource.New(ctx,
+		resource.WithTelemetrySDK(),
+		resource.WithAttributes(semconv.ServiceName("target-allocator")),
+		// Applied last so environment configuration wins on conflict.
+		resource.WithFromEnv(),
+	)
 }
 
 // temporalitySelector maps a config string to an SDK TemporalitySelector.

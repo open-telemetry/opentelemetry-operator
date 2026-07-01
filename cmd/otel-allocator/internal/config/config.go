@@ -475,6 +475,30 @@ func ValidateConfig(config *Config) error {
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
 		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
 	}
+	return validateTelemetry(config.Telemetry)
+}
+
+// validateTelemetry validates the self-telemetry configuration. The operator sets these
+// values from a validated CRD, but the Target Allocator can also be run standalone with a
+// config file, so we validate here as well for a clear error instead of a runtime failure.
+func validateTelemetry(t TelemetryConfig) error {
+	otlp := t.Metrics.OTLP
+	if otlp == nil {
+		return nil
+	}
+	if otlp.Endpoint == "" {
+		return errors.New("telemetry.metrics.otlp.endpoint must be set")
+	}
+	switch otlp.Protocol {
+	case "", "grpc", "http":
+	default:
+		return fmt.Errorf("telemetry.metrics.otlp.protocol must be 'grpc' or 'http', got %q", otlp.Protocol)
+	}
+	switch otlp.Temporality {
+	case "", "cumulative", "delta", "lowmemory":
+	default:
+		return fmt.Errorf("telemetry.metrics.otlp.temporality must be 'cumulative', 'delta', or 'lowmemory', got %q", otlp.Temporality)
+	}
 	return nil
 }
 
