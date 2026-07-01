@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-07-01T09:45:05Z"
+    createdAt: "2026-07-01T09:52:26Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -833,7 +833,7 @@ spec:
   - admissionReviewVersions:
     - v1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: opentelemetry-operator-pod-webhook
     failurePolicy: Ignore
     generateName: mpod.kb.io
     rules:
