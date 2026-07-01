@@ -1,0 +1,23 @@
+change_type: enhancement
+
+component: operator
+
+note: Add standalone pod webhook deployment for High Availability on OpenShift
+
+issues: [5010]
+
+subtext: |
+  On OpenShift with OLM, the pod mutation webhook (auto-instrumentation and sidecar injection)
+  is now deployed as a standalone Deployment with 2 replicas by default, enabling HA.
+
+  **OpenShift with OLM:**
+  - The standalone webhook deployment is managed by OLM via the CSV
+  - Default: 2 replicas for HA
+  - Pod anti-affinity spreads replicas across different nodes
+  - PodDisruptionBudget with maxUnavailable: 1 ensures availability during node maintenance
+  - Only scaling down is supported via `OPENSHIFT_WEBHOOK_REPLICAS` env var in the Subscription (0 or 1)
+  - TLS certificates are automatically provisioned by OLM
+  - Automatic cleanup when operator is uninstalled (OLM garbage collection)
+
+  **Kubernetes (community bundle):**
+  - No change - pod webhook continues to run as part of the operator deployment

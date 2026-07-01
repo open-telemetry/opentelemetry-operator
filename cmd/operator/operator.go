@@ -227,6 +227,26 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		setupLog.Info("ClusterObservability feature is disabled")
 	}
 
+	// Setup pod-webhook replica controller to maintain desired replica count.
+	// On OpenShift with OLM, this ensures replicas survive upgrades (OLM resets to CSV default).
+	if result.Config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		namespace := os.Getenv("NAMESPACE")
+		if namespace == "" {
+			namespace = "opentelemetry-operator-system"
+		}
+		setupLog.Info("Setting up pod-webhook replica controller",
+			"namespace", namespace,
+			"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
+		if err := (&controllers.CSVWebhookReconciler{
+			Client:          mgr.GetClient(),
+			Namespace:       namespace,
+			DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
+			os.Exit(1)
+		}
+	}
+
 	if result.Config.PrometheusCRAvailability == prometheus.Available && result.Config.CreateServiceMonitorOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {

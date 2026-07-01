@@ -193,6 +193,16 @@ rules:
   - patch
   - update
 - apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - policy
   resources:
   - poddisruptionbudgets

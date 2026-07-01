@@ -258,6 +258,7 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -960,7 +961,7 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle/community
 	$(OPERATOR_SDK) bundle validate ./bundle/openshift
 	rm bundle.Dockerfile
-	git checkout config/manager/kustomization.yaml
+	git checkout config/manager/kustomization.yaml config/overlays/openshift/kustomization.yaml
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
