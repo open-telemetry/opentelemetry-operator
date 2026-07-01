@@ -411,13 +411,9 @@ func MetricsEndpoint(s *v1beta1.Service, logger logr.Logger) (host string, port 
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
-	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
-		host, port, err := parseAddressEndpoint(telemetry.Metrics.Address)
-		if err != nil {
-			return "", 0, err
-		}
-
-		return host, port, nil
+	if telemetry.Metrics.Address != "" {
+		logger.Info("telemetry.metrics.address is deprecated and ignored by the collector, use telemetry.metrics.readers instead",
+			"address", telemetry.Metrics.Address)
 	}
 
 	for _, r := range telemetry.Metrics.Readers {
@@ -459,10 +455,8 @@ func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.Eve
 		}
 	}
 
-	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
-		// The user already set the address or the readers, so we don't need to do anything
+	if len(tel.Metrics.Readers) != 0 {
 		logger.V(1).Info("telemetry configuration already provided by user, skipping defaults",
-			"metricsAddress", tel.Metrics.Address,
 			"readersCount", len(tel.Metrics.Readers))
 		return events, nil
 	}
