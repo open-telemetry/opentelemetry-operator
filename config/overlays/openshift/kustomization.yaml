@@ -3,9 +3,8 @@ kind: Kustomization
 
 resources:
 - ../../default
-- pod-webhook-deployment.yaml
-- pod-webhook-pdb.yaml
-- pod-webhook-service.yaml
+- webhook-deployment.yaml
+- webhook-pdb.yaml
 
 patches:
 - path: manager-patch.yaml
@@ -17,9 +16,16 @@ patches:
 - path: metrics_service_tls_patch.yaml
 - path: manager_auth_proxy_tls_patch.yaml
 - path: remove-cert-manager-annotations.yaml
-- path: pod-webhook-patch.yaml
+- path: webhook-mutating-patch.yaml
   target:
     group: admissionregistration.k8s.io
     kind: MutatingWebhookConfiguration
     name: mutating-webhook-configuration
     version: v1
+- path: webhook-validating-patch.yaml
+  target:
+    group: admissionregistration.k8s.io
+    kind: ValidatingWebhookConfiguration
+    name: validating-webhook-configuration
+    version: v1
+- path: webhook-service-patch.yaml

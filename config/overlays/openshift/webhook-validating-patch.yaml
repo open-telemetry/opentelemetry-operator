@@ -1,0 +1,46 @@
+# Patch validating webhooks to use the dedicated webhook deployment service
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- name: vinstrumentationcreateupdate.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vinstrumentationdelete.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vopampbridgecreateupdate.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vopampbridgedelete.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vopentelemetrycollectorcreateupdatebeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vopentelemetrycollectordeletebeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vtargetallocatorcreateupdatebeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: vtargetallocatordeletebeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
