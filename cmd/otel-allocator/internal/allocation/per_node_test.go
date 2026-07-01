@@ -49,10 +49,10 @@ func TestAllocationPerNode(t *testing.T) {
 		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
 	)
 
-	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
-	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
-	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "", target.HashLabels(thirdLabels, "sample-name"))
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "", target.HashLabels(fourthLabels, "sample-name"))
 
 	targetList := []*target.Item{
 		firstTarget,
@@ -114,10 +114,10 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
 	)
 
-	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
-	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
-	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "", target.HashLabels(thirdLabels, "sample-name"))
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "", target.HashLabels(fourthLabels, "sample-name"))
 
 	targetList := []*target.Item{
 		firstTarget,

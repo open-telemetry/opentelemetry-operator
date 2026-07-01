@@ -166,8 +166,8 @@ func TestAllocationCollision(t *testing.T) {
 		allocator.SetCollectors(cols)
 		firstLabels := labels.New(labels.Label{Name: "test", Value: "test1"})
 		secondLabels := labels.New(labels.Label{Name: "test", Value: "test2"})
-		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
 
 		targetList := []*target.Item{firstTarget, secondTarget}
 
@@ -291,36 +291,6 @@ func TestNewCollector(t *testing.T) {
 	assert.NotNil(t, col.TargetsPerJob)
 	assert.Equal(t, "my-collector", col.Hash())
 	assert.Equal(t, "my-collector", col.String())
-}
-
-func TestWithFilterOption(t *testing.T) {
-	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
-		filterCalled := false
-		mockFilter := &mockFilterImpl{
-			applyFunc: func(_ []*target.Item) []*target.Item {
-				filterCalled = true
-				// drop all targets
-				return []*target.Item{}
-			},
-		}
-		allocator.SetFilter(mockFilter)
-
-		cols := MakeNCollectors(3, 0)
-		allocator.SetCollectors(cols)
-		targets := MakeNNewTargetsWithEmptyCollectors(5, 0)
-		allocator.SetTargets(targets)
-
-		assert.True(t, filterCalled)
-		assert.Empty(t, allocator.TargetItems())
-	})
-}
-
-type mockFilterImpl struct {
-	applyFunc func([]*target.Item) []*target.Item
-}
-
-func (m *mockFilterImpl) Apply(targets []*target.Item) []*target.Item {
-	return m.applyFunc(targets)
 }
 
 func TestRepeatedSetCollectorsIdempotent(t *testing.T) {

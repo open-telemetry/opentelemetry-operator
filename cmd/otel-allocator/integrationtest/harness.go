@@ -31,7 +31,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	taconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
@@ -76,8 +75,7 @@ func startTargetAllocator(t *testing.T, scrapeConfigs []*promconfig.ScrapeConfig
 	log := logr.Discard()
 	ctx, cancel := context.WithCancel(t.Context())
 
-	hook := prehook.New("relabel-config", log)
-	alloc, err := allocation.New("consistent-hashing", log, allocation.WithFilter(hook))
+	alloc, err := allocation.New("consistent-hashing", log)
 	require.NoError(t, err)
 
 	addr := freeLocalAddress(t)
@@ -93,7 +91,8 @@ func startTargetAllocator(t *testing.T, scrapeConfigs []*promconfig.ScrapeConfig
 
 	// Keep the production discovery path (discoverer.Run + reloader), just with a
 	// short reload interval so the test does not wait on the 5s default debounce.
-	discoverer, err := target.NewDiscoverer(log, discoveryManager, hook, srv, alloc.SetTargets, target.WithReloadInterval(10*time.Millisecond))
+	// Relabel filtering now happens inside discovery (selected by the filter strategy).
+	discoverer, err := target.NewDiscoverer(log, discoveryManager, target.RelabelConfigFilterStrategy, srv, alloc.SetTargets, target.WithReloadInterval(10*time.Millisecond))
 	require.NoError(t, err)
 
 	errs := make(chan error, 3)

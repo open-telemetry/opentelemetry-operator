@@ -93,17 +93,11 @@ type allocator struct {
 
 	log logr.Logger
 
-	filter                Filter
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
 	targetsRemaining      metric.Int64Gauge
 	targetsUnassigned     metric.Int64Gauge
-}
-
-// SetFilter sets the filtering hook to use.
-func (a *allocator) SetFilter(filter Filter) {
-	a.filter = filter
 }
 
 // SetFallbackStrategy sets the fallback strategy to use.
@@ -119,10 +113,6 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 	defer func() {
 		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("method", "SetTargets"), attribute.String("strategy", a.strategy.GetName())))
 	}()
-
-	if a.filter != nil {
-		targets = a.filter.Apply(targets)
-	}
 
 	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
 	concurrency := runtime.NumCPU() * 2 // determined experimentally

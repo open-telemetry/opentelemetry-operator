@@ -4,7 +4,6 @@
 package target
 
 import (
-	"encoding/binary"
 	"strconv"
 	"strings"
 	"sync"
@@ -55,26 +54,21 @@ type Item struct {
 	hash          ItemHash
 }
 
-type ItemOption func(*Item)
-
-// WithHash sets a precomputed hash on the item.
-// Use this when the hash has been computed during relabeling to avoid recomputation.
-func WithHash(hash ItemHash) ItemOption {
-	return func(i *Item) {
-		i.hash = hash
-	}
-}
-
 func (t *Item) Hash() ItemHash {
-	if t.hash == 0 {
-		t.hash = ItemHash(LabelsHashWithJobName(t.Labels, t.JobName))
-	}
 	return t.hash
 }
 
+// HashLabels computes the item hash for a fully materialized label set and job name.
+// It delegates to HashFromBuilder so the result is identical to the hash computed while
+// relabeling targets during discovery. Callers that already hold a labels.Builder (e.g. the
+// discoverer's hot path) should use HashFromBuilder directly to avoid allocating a builder.
+func HashLabels(ls labels.Labels, jobName string) ItemHash {
+	return HashFromBuilder(labels.NewBuilder(ls), jobName)
+}
+
 // HashFromBuilder computes a hash from a labels.Builder, skipping meta labels.
-// This is used during relabeling to compute the hash efficiently without materializing
-// the filtered labels.
+// Meta labels are skipped because Prometheus discards them after relabeling, so two targets
+// that differ only in meta labels are the same scrape target and must hash identically.
 func HashFromBuilder(builder *labels.Builder, jobName string) ItemHash {
 	hash := hasherPool.Get().(*xxhash.Digest)
 	hash.Reset()
@@ -117,34 +111,16 @@ func (t *Item) GetEndpointSliceName() string {
 }
 
 // NewItem Creates a new target item.
+// The hash must be computed by the caller (see HashFromBuilder/HashLabels); it identifies the
+// target for allocation and deduplication.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-func NewItem(jobName, targetURL string, itemLabels labels.Labels, collectorName string, opts ...ItemOption) *Item {
-	item := &Item{
+func NewItem(jobName, targetURL string, itemLabels labels.Labels, collectorName string, hash ItemHash) *Item {
+	return &Item{
 		JobName:       jobName,
 		TargetURL:     targetURL,
 		Labels:        itemLabels,
 		CollectorName: collectorName,
+		hash:          hash,
 	}
-	for _, opt := range opts {
-		opt(item)
-	}
-	return item
-}
-
-// LabelsHashWithJobName computes a hash of the labels and the job name.
-// Same logic as Prometheus labels.Hash: https://github.com/prometheus/prometheus/blob/8fd46f74aa0155e4d5aa30654f9c02e564e03743/model/labels/labels.go#L72
-// but adds in the job name since this is not in the labelset from the discovery manager.
-// The scrape manager adds it later. Address is already included in the labels, so it is not needed here.
-func LabelsHashWithJobName(ls labels.Labels, jobName string) uint64 {
-	labelsHash := ls.Hash()
-	var labelsHashBytes [8]byte
-	binary.LittleEndian.PutUint64(labelsHashBytes[:], labelsHash)
-	hash := hasherPool.Get().(*xxhash.Digest)
-	hash.Reset()
-	_, _ = hash.Write(labelsHashBytes[:])
-	_, _ = hash.WriteString(jobName)
-	result := hash.Sum64()
-	hasherPool.Put(hash)
-	return result
 }
