@@ -1,9 +1,0 @@
-change_type: enhancement
-
-component: opamp-bridge
-
-note: "Make standalone OpAMP Bridge manifests and runtime permissions friendlier for OpenShift and namespaced RBAC."
-
-issues: [5277]
-
-subtext:
