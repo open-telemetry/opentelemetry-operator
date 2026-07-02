@@ -11,6 +11,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
+// PrometheusAnnotationsAddedKey is the pod-template annotation the operator
+// stamps when it adds the default prometheus.io/* scrape annotations. The
+// mutate path uses its presence on an existing resource to decide whether the
+// operator is the owner of the prometheus.io/* annotations and may therefore
+// remove them when DisablePrometheusAnnotations is toggled to true. This
+// avoids clobbering prometheus.io/* annotations that the user set out of band.
+const PrometheusAnnotationsAddedKey = "operator.opentelemetry.io/prometheus-annotations-added"
+
 // Annotations return the annotations for OpenTelemetryCollector resources.
 func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
@@ -59,10 +67,20 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 			"prometheus.io/path":   "/metrics",
 		}
 		// Default Prometheus annotations do not override existing
+		stamped := false
 		for kMeta, vMeta := range prometheusAnnotations {
 			if _, ok := podAnnotations[kMeta]; !ok {
 				podAnnotations[kMeta] = vMeta
+				stamped = true
 			}
+		}
+		// Stamp a marker only when the operator actually added at least one
+		// default prometheus.io/* annotation. The mutate path uses the marker
+		// to distinguish operator-stamped prom annotations from prom
+		// annotations the user supplied out of band. Both are removed together
+		// when DisablePrometheusAnnotations is toggled to true.
+		if stamped {
+			podAnnotations[PrometheusAnnotationsAddedKey] = "true"
 		}
 	}
 
