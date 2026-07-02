@@ -16,7 +16,7 @@ import (
 
 const (
 	// podWebhookDeploymentName is the name of the standalone pod webhook deployment managed by OLM.
-	podWebhookDeploymentName = "opentelemetry-operator-pod-webhook"
+	podWebhookDeploymentName = "opentelemetry-operator-webhook"
 )
 
 // CSVWebhookReconciler reconciles the ClusterServiceVersion to update pod-webhook replica count.

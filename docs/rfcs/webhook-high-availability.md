@@ -39,7 +39,7 @@ In production environments, these webhooks are critical infrastructure — if th
 
 ### Architecture
 
-The operator binary supports a `webhook` subcommand that runs only the webhooks without the controllers. This enables deploying the webhooks as a separate deployment:
+The operator binary supports a `webhook-server` subcommand that runs only the webhooks without the controllers. This enables deploying the webhooks as a separate deployment:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -52,23 +52,25 @@ The operator binary supports a `webhook` subcommand that runs only the webhooks 
 │  │  election)               │    │  election)               │  │
 │  │                          │    │                          │  │
 │  │ - CR controllers         │    │ - /mutate-v1-pod         │  │
-│  │                          │    │ - CR defaulting webhooks  │  │
-│  │                          │    │ - CR validating webhooks  │  │
-│  │                          │    │ - CR conversion webhook   │  │
+│  │ - Webhooks (registered   │    │ - CR defaulting webhooks  │  │
+│  │   but no traffic routed  │    │ - CR validating webhooks  │  │
+│  │   to this deployment)    │    │ - CR conversion webhook   │  │
 │  └──────────────────────────┘    └──────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+The controller-manager still registers webhooks (`ENABLE_WEBHOOKS` defaults to `true`), but the kustomize overlay patches the webhook Service selector to route all traffic to the dedicated webhook deployment. Alternatively, `ENABLE_WEBHOOKS=false` can be set on the controller-manager to disable its webhook registration entirely.
+
 ### Webhook Subcommand
 
-The operator binary accepts a `webhook` subcommand:
+The operator binary accepts a `webhook-server` subcommand:
 
 ```bash
 # Run the full operator (controllers + webhooks) — default, backward compatible
 opentelemetry-operator
 
 # Run only the webhooks
-opentelemetry-operator webhook
+opentelemetry-operator webhook-server
 ```
 
 When running in webhook-only mode, the binary:
@@ -111,24 +113,28 @@ The webhook deployment uses `preferredDuringSchedulingIgnoredDuringExecution` po
 
 ### Webhook Subcommand
 
-- `main.go` — adds the `webhook` cobra subcommand that starts only the webhook server
+- `main.go` — adds the `webhook-server` cobra subcommand that starts only the webhook server
 
 ### Webhook Deployment (Kustomize / Helm)
 
 - `config/overlays/openshift/webhook-deployment.yaml` — webhook deployment definition (includes pod anti-affinity)
 - `config/overlays/openshift/webhook-pdb.yaml` — PodDisruptionBudget for the webhook
-- `config/overlays/openshift/kustomization.yaml` — includes webhook deployment and PDB
+- `config/overlays/openshift/webhook-mutating-patch.yaml` — patches MutatingWebhookConfiguration to use webhook service
+- `config/overlays/openshift/webhook-validating-patch.yaml` — patches ValidatingWebhookConfiguration to use webhook service
+- `config/overlays/openshift/webhook-service-patch.yaml` — changes webhook service selector to target webhook deployment pods
+- `config/overlays/openshift/kustomization.yaml` — includes webhook deployment, PDB, and all webhook patches
 
 ### Files Modified
 
-- `main.go` — webhook subcommand
-- `Makefile` — patches webhookdefinitions after bundle generation
-- `internal/controllers/webhook_controller.go` — replica controller for upgrade survival (OpenShift)
-- `internal/config/env.go` — reads `WEBHOOK_REPLICAS` env var
+- `main.go` — `webhook-server` subcommand
+- `internal/controllers/csv_webhook_controller.go` — CSV replica controller for upgrade survival (OpenShift)
+- `internal/config/env.go` — reads `OPENSHIFT_WEBHOOK_REPLICAS` env var
+
+The kustomize overlay structure (`config/manifests/openshift/kustomization.yaml` referencing `config/overlays/openshift/`) causes `operator-sdk generate bundle` to automatically set `deploymentName` to the webhook deployment in the OpenShift CSV. No post-generation Makefile patching is needed.
 
 ### RBAC
 
-The operator already has RBAC permissions for Deployments (used by other controllers), so no additional RBAC is needed. The webhook replica controller reuses existing permissions.
+The CSV webhook replica controller requires RBAC for `operators.coreos.com/clusterserviceversions` with verbs `get`, `list`, `watch`, `update`, `patch`. This is a new RBAC requirement specific to the OpenShift OLM integration.
 
 ## OpenShift with OLM
 
@@ -142,7 +148,7 @@ The CSV includes both deployments. OLM handles:
 - Webhook configuration CA bundle injection
 - Cleanup on uninstall
 
-The `Makefile` bundle target patches all webhookdefinitions in the CSV to point to the webhook deployment instead of the controller-manager. This is needed because `operator-sdk generate` always sets all webhooks' `deploymentName` to the default controller-manager deployment.
+The kustomize overlay structure (`config/overlays/openshift/`) causes `operator-sdk generate bundle` to automatically set all webhooks' `deploymentName` to the webhook deployment in the OpenShift CSV.
 
 ### OLM Scaling Behavior
 
@@ -224,9 +230,9 @@ reinstall.
 
 ### Webhook Replica Controller
 
-The `internal/controllers/webhook_controller.go` watches the webhook deployment and scales it down to the configured replica count (from `WEBHOOK_REPLICAS` env var). Only scale-down is supported (0 or 1). Scale-up beyond CSV default is ignored.
+The `internal/controllers/csv_webhook_controller.go` watches ClusterServiceVersion resources and modifies the webhook deployment replica count within the CSV spec. The desired replica count is read from the `OPENSHIFT_WEBHOOK_REPLICAS` env var (default: 2). The controller accepts any replica count, but in practice OLM typically reverts scale-up (see OLM Scaling Behavior above).
 
-To reduce the webhook replicas, set the `WEBHOOK_REPLICAS` environment variable in the Subscription:
+To reduce the webhook replicas, set the `OPENSHIFT_WEBHOOK_REPLICAS` environment variable in the Subscription:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
@@ -241,11 +247,11 @@ spec:
   sourceNamespace: openshift-marketplace
   config:
     env:
-    - name: WEBHOOK_REPLICAS
+    - name: OPENSHIFT_WEBHOOK_REPLICAS
       value: "1"
 ```
 
-The operator includes a controller that watches the webhook deployment and scales it down to the configured value. After an upgrade (when OLM resets replicas to the CSV default of 2), the operator automatically scales it back down to the configured value (0 or 1).
+The operator includes a controller that watches ClusterServiceVersion resources and adjusts the webhook deployment replica count in the CSV spec. After an upgrade (when OLM resets replicas to the CSV default of 2), the operator automatically scales it back to the configured value.
 
 ## Alternatives Considered
 
