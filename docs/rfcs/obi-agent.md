@@ -50,9 +50,10 @@ An `Instrumentation` CR with `spec.obi: {}` could allow namespace owners to opt 
 
 ## Custom collector image requirement
 
-The OBI receiver is not yet available in a standard collector distribution such as `otelcol-contrib`. Users must build their own collector image using the [OTel Collector Builder (ocb)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder). Tracking issue: [opentelemetry-collector-releases#1490](https://github.com/open-telemetry/opentelemetry-collector-releases/issues/1490).
+Previously it was only possible to use the obi receiver by building a custom collector image.
 
-This is acceptable for an alpha feature gate. Once OBI lands in a standard distribution, the operator can default the image version via `versions.txt` like other managed components.
+The obi receiver has (as of 2026-07-02) been [added](https://github.com/open-telemetry/opentelemetry-collector-releases/pull/1386) to the
+`otelcol-contrib` collector distribution; once a new release is cut; this should be available for users to utilize with the otel operator.
 
 ## Use cases
 
