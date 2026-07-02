@@ -186,3 +186,5 @@ spec:
   prometheusCR:
     enabled: true
   resources: {}
+  telemetry:
+    metrics: {}

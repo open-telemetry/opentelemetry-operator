@@ -29,8 +29,39 @@ The Target Allocator uses a configuration file (by default under `/conf/targetal
 | `https`                            | Whether to expose the target allocator endpoint over https                    |                                               |                      |
 | `allow_insecure_auth_secrets`      | Serve auth secret values over plain HTTP without mTLS                         | `false`                                       | `ALLOW_INSECURE_AUTH_SECRETS` |
 | `collector_not_ready_grace_period` | Wait time before assigning jobs to a new collector.                           | 30s                                           |                      |
+| `telemetry`                        | Self-telemetry configuration, including optional OTLP metric export (see below)|                                              |                      |
 
 Additional configuration options are present under [./internal/config/config.go](./internal/config/config.go).
+
+### Self-telemetry
+
+The Target Allocator always exposes its own metrics on the Prometheus `/metrics` endpoint. It can
+additionally push them over OTLP by configuring `telemetry.metrics.otlp`. When set, an OTLP exporter
+is added alongside the Prometheus endpoint; the metrics registered directly on the Prometheus registry
+(Prometheus service discovery internals, Go runtime and process collectors) are bridged into the OTLP
+export so both surfaces expose the same metric set. The `service.name` resource attribute defaults to
+`target-allocator` and can be overridden with the standard `OTEL_SERVICE_NAME` /
+`OTEL_RESOURCE_ATTRIBUTES` environment variables.
+
+```yaml
+telemetry:
+  metrics:
+    otlp:
+      endpoint: https://example.com:4318   # base URL (HTTP, /v1/metrics appended) or host:port (gRPC)
+      protocol: http                        # "grpc" (default) or "http"
+      temporality: delta                    # "cumulative" (default), "delta", or "lowmemory"
+      export_interval: 30s                  # default 60s
+      timeout: 15s                          # default 10s
+      insecure: false                       # disable TLS (local dev)
+      headers:
+        Authorization: "Api-Token ${env:DT_API_TOKEN}"
+```
+
+Header values support `${env:VAR}` references, which are expanded from the Target Allocator's
+process environment at runtime. Use this to keep secrets (such as an API token) out of the
+ConfigMap: reference an environment variable here and source that variable from a Secret on the
+Target Allocator pod. The `endpoint` field supports the same expansion. Both the `grpc` and `http`
+protocols accept either a full URL (with scheme) or a bare `host:port` endpoint.
 
 ## Even Distribution of Prometheus Targets
 
