@@ -1299,7 +1299,7 @@ No changes.
 ### 🚀 New components 🚀
 
 - `target allocator`: Introduce TargetAllocator CRD (#2422)
-  See the [CRD changelog](./docs/crd-changelog.md) for more information.
+  See the [CRD changelog](./docs/reference/crd-changelog.md) for more information.
 
 ### 💡 Enhancements 💡
 
@@ -2111,7 +2111,7 @@ This release fixes an important bug that caused the operator to crash when prome
 
 ### 🚀 New components 🚀
 
-- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/crd-changelog.md) for detailed information. (#2620, #1907)
+- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/reference/crd-changelog.md) for detailed information. (#2620, #1907)
   Users are expected to migrate to `otelcol.v1beta1.opentelemetry.io`.
   The support for `otelcol.v1alpha1.opentelemetry.io` will be removed in the future.
   Follow [migration guide](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version) for upgrading already created collector instances.
@@ -2568,7 +2568,7 @@ This version brings stable semantic convention for network and HTTP. It includes
   :x: `protocol` which is now inferred from endpoint
   capabilities `[]string` => `map[Capability]bool` for enhanced configuration validation
 - `operator`: Enable Target Allocator Rewrite by default (#2208)
-  See [the documentation](/README.md#target-allocator) for details.
+  See [the documentation](/docs/target-allocator/README.md) for details.
   Use the `--feature-gates=-operator.collector.rewritetargetallocator` command line option to switch back to the old behaviour.
 
 ### 💡 Enhancements 💡

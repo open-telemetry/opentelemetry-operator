@@ -1,6 +1,6 @@
-# Debug tips to the OpenTelemetry Operator
+# Troubleshooting
 
-A tip during a troubleshooting process is always welcome. Therefore, we prepared this documentation to help you identify possible issues and improve the application's reliability.
+This page collects debug tips for identifying common issues and improving the operator's reliability.
 
 ## Customizing Logs Output
 By the default the Operator's log format is console like you can see below:
