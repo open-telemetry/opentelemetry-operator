@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-07-01T11:19:28Z"
+    createdAt: "2026-07-02T11:55:42Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -587,6 +587,8 @@ spec:
                   value: /var/run/tls/server/tls.crt
                 - name: METRICS_TLS_KEY_FILE
                   value: /var/run/tls/server/tls.key
+                - name: ENABLE_WEBHOOKS
+                  value: "false"
                 - name: ENABLE_GO_AUTO_INSTRUMENTATION
                   value: "true"
                 - name: OPENSHIFT_CREATE_DASHBOARD
@@ -601,7 +603,7 @@ spec:
                   value: "true"
                 - name: TLS_CONFIGURE_OPERANDS
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.153.0
+                image: ghcr.io/pavolloffay/opentelemetry-operator:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -630,9 +632,6 @@ spec:
                 - mountPath: /var/run/tls/server
                   name: opentelemetry-operator-metrics-cert
                   readOnly: true
-                - mountPath: /tmp/k8s-webhook-server/serving-certs
-                  name: cert
-                  readOnly: true
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
@@ -640,10 +639,6 @@ spec:
                 secret:
                   defaultMode: 420
                   secretName: opentelemetry-operator-metrics
-              - name: cert
-                secret:
-                  defaultMode: 420
-                  secretName: opentelemetry-operator-controller-manager-service-cert
       - label:
           app.kubernetes.io/component: webhook
           app.kubernetes.io/name: opentelemetry-operator
@@ -681,7 +676,7 @@ spec:
                   value: "true"
                 - name: ENABLE_GO_AUTO_INSTRUMENTATION
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.153.0
+                image: ghcr.io/pavolloffay/opentelemetry-operator:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz

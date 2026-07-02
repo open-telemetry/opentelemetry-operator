@@ -13,6 +13,7 @@ patches:
     kind: Deployment
     name: controller-manager
     version: v1
+- path: remove-webhook-from-manager.yaml
 - path: metrics_service_tls_patch.yaml
 - path: manager_auth_proxy_tls_patch.yaml
 - path: remove-cert-manager-annotations.yaml
@@ -29,3 +30,7 @@ patches:
     name: validating-webhook-configuration
     version: v1
 - path: webhook-service-patch.yaml
+images:
+- name: controller
+  newName: ghcr.io/pavolloffay/opentelemetry-operator
+  newTag: latest
