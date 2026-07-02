@@ -223,12 +223,6 @@ The OBI receiver parser returns RBAC rules via the existing `GetRBACRules()` hoo
 
 On OpenShift the collector pods will not start without an SCC that permits `hostPID` and the required security context. This follows the same pattern as existing privileged receivers (filelog, hostmetrics) — the cluster administrator creates the SCC and binds it to the collector ServiceAccount as a prerequisite. The operator does not reconcile the SCC in this phase; automation can be added later if there is sufficient demand.
 
-## Versioning
-
-No prebuilt OBI distribution image is currently available. For this phase users must supply their own image via `spec.image`; the operator does not provide or default one.
-
-Once an official OBI image is published, versioning will follow the same pattern as other operator-managed components: a `obi=vX.Y.Z` entry in `versions.txt` compiled in via ldflags, used as the default image when `spec.image` is unset.
-
 ## Rollout plan
 
 ### Phase 1: OBI receiver support
