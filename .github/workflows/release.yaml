@@ -25,7 +25,7 @@ jobs:
         id: get-versions
         run: |
           echo "desired_version=$(grep -v '#' versions.txt | grep operator= | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
-          echo "current_version=$(git describe --tags --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
+          echo "current_version=$(git describe --tags --abbrev=0 --match='v*' | sed 's/^v//')" >> $GITHUB_OUTPUT
 
   release:
     permissions:
