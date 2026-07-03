@@ -34,10 +34,10 @@ var (
 	logger                  = logf.Log.WithName("server-unit-tests")
 	baseLabelSet            = labels.New(labels.Label{Name: "test_label", Value: "test-value"})
 	testJobLabelSetTwo      = labels.New(labels.Label{Name: "test_label", Value: "test-value2"})
-	baseTargetItem          = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	secondTargetItem        = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	testJobTargetItemTwo    = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
-	testJobTwoTargetItemTwo = target.NewItem("test-job2", "test-url3", testJobLabelSetTwo, "test-collector2")
+	baseTargetItem          = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector", target.HashLabels(baseLabelSet, "test-job"))
+	secondTargetItem        = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector", target.HashLabels(baseLabelSet, "test-job"))
+	testJobTargetItemTwo    = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2", target.HashLabels(testJobLabelSetTwo, "test-job"))
+	testJobTwoTargetItemTwo = target.NewItem("test-job2", "test-url3", testJobLabelSetTwo, "test-collector2", target.HashLabels(testJobLabelSetTwo, "test-job2"))
 )
 
 func TestServer_LivenessProbeHandler(t *testing.T) {
@@ -578,7 +578,7 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "one job",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.New(), ""),
+				0: target.NewItem("job1", "", labels.New(), "", 0),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -588,11 +588,11 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "multiple jobs",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.New(), ""),
-				1: target.NewItem("job2", "", labels.New(), ""),
-				2: target.NewItem("job3", "", labels.New(), ""),
-				3: target.NewItem("job3", "", labels.New(), ""),
-				4: target.NewItem("job3", "", labels.New(), ""),
+				0: target.NewItem("job1", "", labels.New(), "", 0),
+				1: target.NewItem("job2", "", labels.New(), "", 0),
+				2: target.NewItem("job3", "", labels.New(), "", 0),
+				3: target.NewItem("job3", "", labels.New(), "", 0),
+				4: target.NewItem("job3", "", labels.New(), "", 0),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -646,7 +646,7 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 		{
 			description: "one job",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.New(), ""),
+				0: target.NewItem("job1", "", labels.New(), "", 0),
 			},
 			expectedCode: http.StatusOK,
 			Golden:       "jobs_one.html",
@@ -654,11 +654,11 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 		{
 			description: "multiple jobs",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "1.1.1.1:8080", labels.New(), ""),
-				1: target.NewItem("job2", "1.1.1.2:8080", labels.New(), ""),
-				2: target.NewItem("job3", "1.1.1.3:8080", labels.New(), ""),
-				3: target.NewItem("job3", "1.1.1.4:8080", labels.New(), ""),
-				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), ""),
+				0: target.NewItem("job1", "1.1.1.1:8080", labels.New(), "", 0),
+				1: target.NewItem("job2", "1.1.1.2:8080", labels.New(), "", 0),
+				2: target.NewItem("job3", "1.1.1.3:8080", labels.New(), "", 0),
+				3: target.NewItem("job3", "1.1.1.4:8080", labels.New(), "", 0),
+				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), "", 0),
 			},
 			expectedCode: http.StatusOK,
 			Golden:       "jobs_multiple.html",
@@ -1184,7 +1184,7 @@ func TestServer_TargetsHandlerURLEncodedJob(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	jobName := "serviceMonitor/ns/app/0"
 	encodedJob := url.QueryEscape(jobName)
-	targetWithSlash := target.NewItem(jobName, "test-url", baseLabelSet, "test-collector")
+	targetWithSlash := target.NewItem(jobName, "test-url", baseLabelSet, "test-collector", target.HashLabels(baseLabelSet, jobName))
 
 	s, err := NewServer(logger, leastWeighted, "")
 	require.NoError(t, err)

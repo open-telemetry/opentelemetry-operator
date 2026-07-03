@@ -13,6 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -22,9 +23,9 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 var targetCounts = []int{1000, 10000, 100000, 800000}
@@ -53,13 +54,13 @@ func BenchmarkProcessTargets(b *testing.B) {
 }
 
 // BenchmarkProcessTargetsWithRelabelConfig is BenchmarkProcessTargets with a relabel config set. The relabel config
-// does not actually modify any records, but does force the prehook to perform any necessary conversions along the way.
+// does not actually modify any records, but does force the discoverer to perform any necessary conversions along the way.
 func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	for _, numTargets := range targetCounts {
 		tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-		prehookConfig := make(map[string][]*relabel.Config, len(tsets))
+		relabelConfig := make(map[string][]*relabel.Config, len(tsets))
 		for jobName := range tsets {
 			// keep all targets in half the jobs, drop the rest
 			jobNrStr := strings.Split(jobName, "-")[1]
@@ -71,7 +72,7 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 			} else {
 				action = "drop"
 			}
-			prehookConfig[jobName] = []*relabel.Config{
+			relabelConfig[jobName] = []*relabel.Config{
 				{
 					Action:       action,
 					Regex:        relabel.MustNewRegexp(".*"),
@@ -82,7 +83,7 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 
 		for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 			b.Run(fmt.Sprintf("%s/%d", strategy, numTargets), func(b *testing.B) {
-				targetDiscoverer, err := createTestDiscoverer(strategy, prehookConfig)
+				targetDiscoverer, err := createTestDiscoverer(strategy, relabelConfig)
 				require.NoError(b, err)
 				targetDiscoverer.UpdateTsets(tsets)
 				b.ResetTimer()
@@ -167,13 +168,11 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	return tsets
 }
 
-func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) (*target.Discoverer, error) {
+func createTestDiscoverer(allocationStrategy string, relabelConfig map[string][]*relabel.Config) (*target.Discoverer, error) {
 	ctx := context.Background()
 	logger := ctrl.Log.WithName(fmt.Sprintf("bench-%s", allocationStrategy))
 	ctrl.SetLogger(logr.New(log.NullLogSink{}))
-	allocatorPrehook := prehook.New("relabel-config", logger)
-	allocatorPrehook.SetConfig(prehookConfig)
-	allocator, err := allocation.New(allocationStrategy, logger, allocation.WithFilter(allocatorPrehook))
+	allocator, err := allocation.New(allocationStrategy, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -184,9 +183,31 @@ func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
 	discoveryManager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	targetDiscoverer, err := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+
+	// Enable relabel-config filtering only when there are configs to apply, so the no-relabel
+	// benchmark measures the unfiltered path.
+	filterStrategy := ""
+	if len(relabelConfig) > 0 {
+		filterStrategy = target.RelabelConfigFilterStrategy
+	}
+	targetDiscoverer, err := target.NewDiscoverer(logger, discoveryManager, filterStrategy, srv, allocator.SetTargets)
 	if err != nil {
 		return nil, err
+	}
+
+	// The relabel configs are delivered to the discoverer the same way they are in production:
+	// as part of the scrape configs via ApplyConfig.
+	if len(relabelConfig) > 0 {
+		scrapeConfigs := make([]*promconfig.ScrapeConfig, 0, len(relabelConfig))
+		for jobName, cfg := range relabelConfig {
+			scrapeConfigs = append(scrapeConfigs, &promconfig.ScrapeConfig{
+				JobName:        jobName,
+				RelabelConfigs: cfg,
+			})
+		}
+		if err := targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, scrapeConfigs); err != nil {
+			return nil, err
+		}
 	}
 	return targetDiscoverer, nil
 }

@@ -29,13 +29,19 @@ import (
 
 const labelBuilderPreallocSize = 100
 
+// RelabelConfigFilterStrategy is the filter strategy that drops targets while they are being
+// created, based on the scrape config's relabel_configs. It's the only filtering strategy
+// currently supported; any other value disables target filtering.
+const RelabelConfigFilterStrategy = "relabel-config"
+
 type Discoverer struct {
 	log                         logr.Logger
-	manager                     *discovery.Manager
+	manager                     discoveryManager
 	close                       chan struct{}
 	mtxScrape                   sync.Mutex // Guards the fields below.
 	configsMap                  map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
-	hook                        discoveryHook
+	relabelCfg                  map[string][]*relabel.Config
+	filterRelabelConfig         bool
 	scrapeConfigsHash           hash.Hash
 	scrapeConfigsUpdater        scrapeConfigsUpdater
 	targetSets                  map[string][]*targetgroup.Group
@@ -59,15 +65,26 @@ func WithReloadInterval(d time.Duration) DiscovererOption {
 
 const defaultReloadInterval = 5 * time.Second
 
-type discoveryHook interface {
-	SetConfig(map[string][]*relabel.Config)
-}
-
 type scrapeConfigsUpdater interface {
 	UpdateScrapeConfigResponse(map[string]*promconfig.ScrapeConfig) error
 }
 
-func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item), opts ...DiscovererOption) (*Discoverer, error) {
+// discoveryManager is the subset of *discovery.Manager the Discoverer depends on, so
+// tests that inject target sets directly (via UpdateTsets) can supply a fake instead
+// of running real service discovery.
+type discoveryManager interface {
+	ApplyConfig(cfg map[string]discovery.Configs) error
+	SyncCh() <-chan map[string][]*targetgroup.Group
+}
+
+func NewDiscoverer(
+	log logr.Logger,
+	manager discoveryManager,
+	filterStrategy string,
+	scrapeConfigsUpdater scrapeConfigsUpdater,
+	setTargets func(targets []*Item),
+	opts ...DiscovererOption,
+) (*Discoverer, error) {
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	targetsDiscovered, err := meter.Float64Gauge("opentelemetry_allocator_targets", metric.WithDescription("Number of targets discovered."))
 	if err != nil {
@@ -89,7 +106,8 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		close:                       make(chan struct{}),
 		triggerReload:               make(chan struct{}, 1),
 		configsMap:                  make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
-		hook:                        hook,
+		relabelCfg:                  make(map[string][]*relabel.Config),
+		filterRelabelConfig:         filterStrategy == RelabelConfigFilterStrategy,
 		scrapeConfigsHash:           nil, // we want the first update to succeed even if the config is empty
 		scrapeConfigsUpdater:        scrapeConfigsUpdater,
 		processTargetsCallBack:      setTargets,
@@ -115,7 +133,13 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 		for _, scrapeConfig := range configs {
 			jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
-			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
+			// When the relabel-config filter strategy is enabled, relabeling is applied as targets
+			// are created (see processTargetGroups). We add the no-sharding config here so it's
+			// accounted for in the same place as the user's configs. When filtering is disabled,
+			// we leave relabelCfg empty so no relabeling/filtering is done during discovery.
+			if m.filterRelabelConfig {
+				relabelCfg[scrapeConfig.JobName] = addNoShardingConfig(scrapeConfig.RelabelConfigs)
+			}
 		}
 	}
 
@@ -134,9 +158,10 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 		m.scrapeConfigsHash = hash
 	}
 
-	if m.hook != nil {
-		m.hook.SetConfig(relabelCfg)
-	}
+	m.mtxScrape.Lock()
+	m.relabelCfg = relabelCfg
+	m.mtxScrape.Unlock()
+
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 
@@ -191,49 +216,67 @@ func (m *Discoverer) Reload() {
 		m.processTargetsDuration.Record(context.Background(), time.Since(begin).Seconds())
 	}()
 
-	// count targets and preallocate
-	targetCount := 0
-	for _, groups := range m.targetSets {
-		for _, group := range groups {
-			targetCount += len(group.Targets)
-		}
-	}
-	targets := make([]*Item, targetCount)
-
-	targetsAssigned := 0
+	// Process each job's target groups in parallel, collecting the targets kept per job.
+	// Relabeling, applied while creating the targets, can drop some of them, so the number of
+	// targets per job isn't known up front. Each job writes into its own slice and we
+	// concatenate them once all jobs are done.
+	jobResults := make([][]*Item, len(m.targetSets))
+	jobIndex := 0
 	for jobName, groups := range m.targetSets {
+		relabelCfg := m.relabelCfg[jobName]
 		wg.Add(1)
 		// Run the sync in parallel as these take a while and at high load can't catch up.
-		go func(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
-			m.processTargetGroups(jobName, groups, intoTargets)
-			wg.Done()
-		}(jobName, groups, targets[targetsAssigned:])
-		for _, group := range groups {
-			targetsAssigned += len(group.Targets)
-		}
+		go func(idx int, jobName string, groups []*targetgroup.Group, relabelCfg []*relabel.Config) {
+			defer wg.Done()
+			jobResults[idx] = m.processTargetGroups(jobName, groups, relabelCfg)
+		}(jobIndex, jobName, groups, relabelCfg)
+		jobIndex++
 	}
 	m.mtxScrape.Unlock()
 	wg.Wait()
+
+	targetCount := 0
+	for _, result := range jobResults {
+		targetCount += len(result)
+	}
+	targets := make([]*Item, 0, targetCount)
+	for _, result := range jobResults {
+		targets = append(targets, result...)
+	}
 	m.processTargetsCallBack(targets)
 }
 
-// processTargetGroups processes the target groups and returns a map of targets.
-func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
+// processTargetGroups processes the target groups for a single job and returns the targets to be
+// scraped. The job's relabel configuration is applied as each target is created: targets dropped
+// by relabeling are excluded from the result, and for the targets that are kept the hash is
+// computed from the relabeled labels while the builder is still available, avoiding a later
+// recomputation.
+func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, relabelCfg []*relabel.Config) []*Item {
 	// the builder for group labels
 	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
 
 	// a slice for sorting target label names, we allocate it here to avoid doing it in the hot loop
 	targetLabelNames := make([]model.LabelName, 0, labelBuilderPreallocSize)
 
+	// the builder used to apply relabeling to each target
+	relabelBuilder := labels.NewBuilder(labels.EmptyLabels())
+
 	begin := time.Now()
 	defer func() {
 		m.processTargetGroupsDuration.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("job.name", jobName)))
 	}()
+
+	// preallocate assuming no targets are dropped by relabeling
+	targetCount := 0
+	for _, tg := range groups {
+		targetCount += len(tg.Targets)
+	}
+	targets := make([]*Item, 0, targetCount)
+
 	var count float64
-	index := 0
-	// Reusable slice for sorted group labels.
+	// Reusable slice for the sorted group labels, copied out of the builder once per group so the
+	// per-target merge below can reuse (and overwrite) the builder without losing the group labels.
 	groupSlice := make([]labels.Label, 0, labelBuilderPreallocSize)
-	// Overwrite target for group labels — reuses internal buffer across groups.
 	var groupLabels labels.Labels
 
 	for _, tg := range groups {
@@ -242,7 +285,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			groupBuilder.Add(string(ln), string(lv))
 		}
 		groupBuilder.Sort()
-		// Overwrite reuses the builder's internal buffer (no allocation after first group).
+		// Overwrite reuses the builder's internal buffer (no allocation after the first group).
 		groupBuilder.Overwrite(&groupLabels)
 		groupSlice = groupSlice[:0]
 		groupLabels.Range(func(l labels.Label) {
@@ -251,19 +294,52 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 
 		for _, t := range tg.Targets {
 			count++
-			// Reuse groupBuilder for per-target merged labels.
+			// Merge the sorted group labels with the target's labels into a single, globally sorted
+			// label set. Reusing groupBuilder is safe because groupSlice holds an independent copy of
+			// the group labels. The order matters: downstream consumers (and the conformance suite)
+			// rely on Item.Labels honoring Prometheus' sorted labels.Labels invariant.
 			targetBuilder := &groupBuilder
 			targetBuilder.Reset()
-
 			targetLabelNames = targetLabelNames[:0]
 			mergeLabels(targetBuilder, groupSlice, t, targetLabelNames)
+			itemLabels := targetBuilder.Labels()
 
-			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
-			intoTargets[index] = item
-			index++
+			// Apply relabeling, then compute the target hash from the (possibly relabeled) labels
+			// while we still have the builder, skipping meta labels. Targets dropped by relabeling
+			// are excluded. We hash from the builder in both cases so the hash is computed once,
+			// here, rather than lazily later.
+			relabelBuilder.Reset(itemLabels)
+			if len(relabelCfg) > 0 {
+				if keepTarget := relabel.ProcessBuilder(relabelBuilder, relabelCfg...); !keepTarget {
+					continue
+				}
+			}
+			hash := HashFromBuilder(relabelBuilder, jobName)
+
+			targets = append(targets, NewItem(jobName, string(t[model.AddressLabel]), itemLabels, "", hash))
 		}
 	}
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
+	return targets
+}
+
+const disableShardingLabelName = "__tmp_disable_sharding"
+
+// addNoShardingConfig adds a relabel config to disable sharding for the given job. This is needed because the scrape
+// configs generated by prometheus-operator by default depend on a `SHARD` environment variable, even in non-sharded
+// Prometheus deployments. We don't want to set this variable on all collector deployments, so we instead disable
+// the feature.
+func addNoShardingConfig(cfg []*relabel.Config) []*relabel.Config {
+	noShardingRelabelConfig := relabel.DefaultRelabelConfig
+	noShardingRelabelConfig.Replacement = "true" // the value doesn't matter, it just needs to be non-empty
+	noShardingRelabelConfig.TargetLabel = disableShardingLabelName
+
+	// we need to drop the temporary label at the end
+	dropTmpLabelConfig := relabel.DefaultRelabelConfig
+	dropTmpLabelConfig.Action = relabel.LabelDrop
+	dropTmpLabelConfig.Regex = relabel.MustNewRegexp(disableShardingLabelName)
+	output := append([]*relabel.Config{&noShardingRelabelConfig}, cfg...)
+	return append(output, &dropTmpLabelConfig)
 }
 
 // mergeLabels merges sorted group labels with target labels into the builder.

@@ -28,7 +28,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
@@ -38,9 +37,6 @@ var setupLog = ctrl.Log.WithName("setup")
 
 func main() {
 	var (
-		// allocatorPrehook will be nil if filterStrategy is not set or
-		// unrecognized. No filtering will be used in this case.
-		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
 		collectorWatcher *collector.Watcher
@@ -88,8 +84,7 @@ func main() {
 	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
 	otel.SetMeterProvider(meterProvider)
 
-	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -123,7 +118,7 @@ func main() {
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer, targetErr := target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	targetDiscoverer, targetErr := target.NewDiscoverer(log, discoveryManager, cfg.FilterStrategy, srv, allocator.SetTargets)
 	if targetErr != nil {
 		panic(targetErr)
 	}
