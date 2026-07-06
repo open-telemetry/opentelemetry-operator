@@ -452,6 +452,15 @@ This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetry">telemetry</a></b></td>
+        <td>object</td>
+        <td>
+          Telemetry defines the self-telemetry configuration for the TargetAllocator.
+When set, the TargetAllocator exports its own metrics via OTLP in addition
+to the Prometheus /metrics endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
@@ -12081,13 +12090,23 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 </table>
 
 
+<<<<<<< HEAD
 ### TargetAllocator.spec.sessionAffinityConfig
+=======
+### TargetAllocator.spec.telemetry
+>>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 <sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
 
 
 
+<<<<<<< HEAD
 SessionAffinityConfig specifies the session affinity configurations for the Service.
 This is only applicable to Service resources.
+=======
+Telemetry defines the self-telemetry configuration for the TargetAllocator.
+When set, the TargetAllocator exports its own metrics via OTLP in addition
+to the Prometheus /metrics endpoint.
+>>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 
 <table>
     <thead>
@@ -12099,22 +12118,38 @@ This is only applicable to Service resources.
         </tr>
     </thead>
     <tbody><tr>
+<<<<<<< HEAD
         <td><b><a href="#targetallocatorspecsessionaffinityconfigclientip">clientIP</a></b></td>
         <td>object</td>
         <td>
           clientIP contains the configurations of Client IP based session affinity.<br/>
+=======
+        <td><b><a href="#targetallocatorspectelemetrymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics export settings for the TargetAllocator's own telemetry.<br/>
+>>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
+<<<<<<< HEAD
 ### TargetAllocator.spec.sessionAffinityConfig.clientIP
 <sup><sup>[↩ Parent](#targetallocatorspecsessionaffinityconfig)</sup></sup>
 
 
 
 clientIP contains the configurations of Client IP based session affinity.
+=======
+### TargetAllocator.spec.telemetry.metrics
+<sup><sup>[↩ Parent](#targetallocatorspectelemetry)</sup></sup>
+
+
+
+Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
+>>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 
 <table>
     <thead>
@@ -12126,14 +12161,92 @@ clientIP contains the configurations of Client IP based session affinity.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
+        <td><b><a href="#targetallocatorspectelemetrymetricsotlp">otlp</a></b></td>
+        <td>object</td>
         <td>
-          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
-The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
-Default value is 10800(for 3 hours).<br/>
+          OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
+When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.otlp
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetrics)</sup></sup>
+
+
+
+OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
+When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the OTLP receiver address (e.g. "https://example.com:4318" for HTTP,
+"example.com:4317" for gRPC).<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>exportInterval</b></td>
+        <td>string</td>
+        <td>
+          ExportInterval is the time between two consecutive exports.
+Defaults to 60s.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers</b></td>
+        <td>map[string]string</td>
+        <td>
+          Headers are additional key/value pairs sent with every export request,
+e.g. for authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS. Only suitable for local development.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol selects the transport: "grpc" (default) or "http".<br/>
           <br/>
-            <i>Format</i>: int32<br/>
+            <i>Enum</i>: grpc, http<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>temporality</b></td>
+        <td>enum</td>
+        <td>
+          Temporality sets the aggregation temporality for exported metrics.
+Valid values are "cumulative" (default), "delta", and "lowmemory".
+"delta" exports all instruments as delta; "lowmemory" uses delta for
+counters and histograms and cumulative for gauges.<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, lowmemory<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the max duration for a single export attempt.
+Defaults to 10s.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
