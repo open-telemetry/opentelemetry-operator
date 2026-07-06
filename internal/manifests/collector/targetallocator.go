@@ -63,6 +63,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			AllowInsecureAuthSecrets:     taSpec.AllowInsecureAuthSecrets,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
 			Mtls:                         taSpec.Mtls,
+			Telemetry:                    taSpec.Telemetry,
 		},
 	}, nil
 }
