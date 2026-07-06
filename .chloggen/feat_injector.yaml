@@ -21,4 +21,10 @@ subtext: |
   For .NET and Python, the injector detects the libc flavor (glibc/musl) of the application on its own,
   making the `instrumentation.opentelemetry.io/otel-dotnet-auto-runtime` and
   `instrumentation.opentelemetry.io/otel-python-platform` annotations unnecessary.
-  The injector binary is only available for the amd64 and arm64 variants of the auto-instrumentation images.
+
+  The injector only publishes binaries for amd64 and arm64, so only those variants of the
+  auto-instrumentation images ship it. With the feature gate enabled, pods scheduled on other
+  architectures the images are built for (s390x, ppc64le) will not be instrumented; for Java and
+  Python the instrumentation init container fails, preventing the pod from starting. The operator
+  cannot reliably determine the target architecture of a pod at admission time, so heterogeneous
+  clusters should only enable the gate once the injector supports all required architectures.
