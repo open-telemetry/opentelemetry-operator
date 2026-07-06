@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-dotnet: "true"
+  labels:
+    app: my-dotnet
+spec:
+  containers:
+  - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: ASPNETCORE_URLS
+      value: http://+:8080
+    - name: OTEL_METRIC_EXPORT_INTERVAL
+      value: "30000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: LD_PRELOAD
+      value: /otel-auto-instrumentation-dotnet/libotelinject.so
+    - name: DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX
+      value: /otel-auto-instrumentation-dotnet
+    - name: OTEL_SERVICE_NAME
+      value: my-dotnet
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://deployment-collector:4318
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: b3multi
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+    - mountPath: /otel-auto-instrumentation-dotnet
+      name: opentelemetry-auto-instrumentation-dotnet
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-dotnet
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-dotnet
+    ready: true
+  phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

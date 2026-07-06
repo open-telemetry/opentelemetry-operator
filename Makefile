@@ -482,6 +482,12 @@ e2e-instrumentation-default: e2e-instrumentation
 e2e-instrumentation: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
 
+# instrumentation end-to-end tests with activation via the opentelemetry-injector,
+# requires the operator to run with the operator.autoinstrumentation.injector feature gate
+.PHONY: e2e-instrumentation-injector
+e2e-instrumentation-injector: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation-injector --report-name e2e-instrumentation-injector
+
 # no-crds end-to-tests
 .PHONY: e2e-no-crds
 e2e-no-crds: chainsaw
