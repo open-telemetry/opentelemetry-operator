@@ -55,11 +55,11 @@ var (
 	// activation to the opentelemetry-injector (https://github.com/open-telemetry/opentelemetry-injector).
 	// Instead of setting runtime-specific environment variables (e.g. JAVA_TOOL_OPTIONS) directly on
 	// containers, the injector shared object is loaded into application processes via LD_PRELOAD and
-	// sets those variables in-process. Currently Java and .NET are supported.
+	// sets those variables in-process. Currently Java, .NET, Node.js and Python are supported.
 	EnableInstrumentationInjector = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.injector",
 		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("use the opentelemetry-injector LD_PRELOAD object to activate auto-instrumentation instead of setting runtime-specific environment variables directly (currently Java and .NET)"),
+		featuregate.WithRegisterDescription("use the opentelemetry-injector LD_PRELOAD object to activate auto-instrumentation instead of setting runtime-specific environment variables directly (currently Java, .NET, Node.js and Python)"),
 		featuregate.WithRegisterFromVersion("v0.155.0"),
 	)
 	// UseCollectorDefaultTelemetryShape, when enabled (default at beta), makes
