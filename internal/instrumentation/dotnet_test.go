@@ -650,3 +650,335 @@ func TestInjectDotNetSDK(t *testing.T) {
 		})
 	}
 }
+
+func TestInjectDotNetSDKWithInjector(t *testing.T) {
+	withInstrumentationInjectorGate(t)
+
+	tests := []struct {
+		name string
+		v1alpha1.DotNet
+		pod      corev1.Pod
+		runtime  string
+		expected corev1.Pod
+		err      error
+	}{
+		{
+			name:   "LD_PRELOAD not defined",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-dotnet",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-dotnet/libotelinject.so",
+								},
+								{
+									Name:  "DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:    "musl runtime annotation is not needed for env var selection",
+			DotNet:  v1alpha1.DotNet{Image: "foo/bar:1"},
+			runtime: dotNetRuntimeLinuxMusl,
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-dotnet",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-dotnet/libotelinject.so",
+								},
+								{
+									Name:  "DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-dotnet",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so:/otel-auto-instrumentation-dotnet/libotelinject.so",
+								},
+								{
+									Name:  "DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined as ValueFrom",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envLdPreload),
+		},
+		{
+			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom is allowed",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:      "DOTNET_STARTUP_HOOKS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-dotnet",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:      "DOTNET_STARTUP_HOOKS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-dotnet/libotelinject.so",
+								},
+								{
+									Name:  "DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	injector := sdkInjector{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pod := test.pod
+
+			var containers []*corev1.Container
+			for i := range pod.Spec.Containers {
+				containers = append(containers, &pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectDotNetSDK(test.DotNet, &pod, containers, test.runtime, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			for i := range pod.Spec.Containers {
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, &pod.Spec.Containers[i], test.runtime)
+			}
+			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
+		})
+	}
+}

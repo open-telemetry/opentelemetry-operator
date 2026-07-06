@@ -5,7 +5,7 @@ change_type: enhancement
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add experimental support for activating Java auto-instrumentation via the opentelemetry-injector, behind the `operator.autoinstrumentation.injector` feature gate.
+note: Add experimental support for activating Java and .NET auto-instrumentation via the opentelemetry-injector, behind the `operator.autoinstrumentation.injector` feature gate.
 
 # One or more tracking issues related to the change
 issues: [2375]
@@ -15,6 +15,9 @@ issues: [2375]
 # Use pipe (|) for multiline entries.
 subtext: |
   When the feature gate is enabled, the operator injects the [opentelemetry-injector](https://github.com/open-telemetry/opentelemetry-injector)
-  shared object into application containers via `LD_PRELOAD` instead of setting `JAVA_TOOL_OPTIONS` directly.
-  The injector adds the `-javaagent` flag in-process, only for processes that are actually JVMs.
-  The injector binary is only available for the amd64 and arm64 variants of the Java auto-instrumentation image.
+  shared object into application containers via `LD_PRELOAD` instead of setting runtime-specific
+  environment variables (`JAVA_TOOL_OPTIONS`, `CORECLR_*`/`DOTNET_*`) directly. The injector sets those
+  variables in-process, only for processes that actually run the matching runtime. For .NET, the injector
+  detects the libc flavor (glibc/musl) and CPU architecture of the application on its own, making the
+  `instrumentation.opentelemetry.io/otel-dotnet-auto-runtime` annotation unnecessary.
+  The injector binary is only available for the amd64 and arm64 variants of the auto-instrumentation images.

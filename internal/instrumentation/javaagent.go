@@ -17,7 +17,7 @@ const (
 	envLdPreload          = "LD_PRELOAD"
 	envJvmAgentPath       = "JVM_AUTO_INSTRUMENTATION_AGENT_PATH"
 	javaAgent             = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
-	javaInjectorLibName   = "libotelinject.so"
+	injectorLibName       = "libotelinject.so"
 	javaInitContainerName = initContainerName + "-java"
 	javaVolumeName        = volumeName + "-java"
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
@@ -58,7 +58,7 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 
 		command := []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
 		if featuregate.EnableInstrumentationInjector.IsEnabled() {
-			command = []string{"cp", "/javaagent.jar", "/" + javaInjectorLibName, javaInstrMountPath + "/"}
+			command = []string{"cp", "/javaagent.jar", "/" + injectorLibName, javaInstrMountPath + "/"}
 		}
 
 		initContainer := corev1.Container{
@@ -145,7 +145,7 @@ func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) 
 // The injector is loaded into every process in the container via LD_PRELOAD and
 // appends the -javaagent flag to JAVA_TOOL_OPTIONS in-process, only for JVMs.
 func getInjectorJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java, containerMountPath string) []corev1.EnvVar {
-	ldPreloadValue := containerMountPath + "/" + javaInjectorLibName
+	ldPreloadValue := containerMountPath + "/" + injectorLibName
 	if idx := getIndexOfEnv(container.Env, envLdPreload); idx > -1 {
 		ldPreloadValue = container.Env[idx].Value + ":" + ldPreloadValue
 	}

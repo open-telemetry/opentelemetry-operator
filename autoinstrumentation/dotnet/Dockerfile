@@ -9,10 +9,12 @@
 #    CORECLR_PROFILER_PATH=%InstallationLocation%/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so # for musl based images
 #    DOTNET_ADDITIONAL_DEPS=%InstallationLocation%/AdditionalDeps
 #    DOTNET_SHARED_STORE=%InstallationLocation%/store
-#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll 
+#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation%
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
+ARG TARGETARCH
+ARG injector_version=0.9.2
 
 FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
 
@@ -28,7 +30,31 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip &&\
     rm opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip opentelemetry-dotnet-instrumentation-linux-musl-x64.zip &&\
     chmod -R go+r .
 
-FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+# The opentelemetry-injector expects separate glibc and musl installation
+# roots (<prefix>/glibc, <prefix>/musl), while this image ships a single
+# merged installation with both native profiler builds next to the shared
+# managed assemblies. Map the injector layout onto the merged one with
+# symlinked directories.
+RUN mkdir .glibc .musl &&\
+    for f in *; do ln -s ../$f .glibc/$f && ln -s ../$f .musl/$f; done &&\
+    mv .glibc glibc && mv .musl musl
 
+FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS base
 
 COPY --from=downloader /autoinstrumentation /autoinstrumentation
+
+# The opentelemetry-injector shared object activates the instrumentation via
+# LD_PRELOAD when the operator.autoinstrumentation.injector feature gate is
+# enabled. It is placed inside /autoinstrumentation so the init container
+# copies it together with the instrumentation itself.
+FROM base AS injector-amd64
+ARG injector_version
+ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_amd64.so /autoinstrumentation/libotelinject.so
+RUN chmod go+r /autoinstrumentation/libotelinject.so
+
+FROM base AS injector-arm64
+ARG injector_version
+ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_arm64.so /autoinstrumentation/libotelinject.so
+RUN chmod go+r /autoinstrumentation/libotelinject.so
+
+FROM injector-$TARGETARCH

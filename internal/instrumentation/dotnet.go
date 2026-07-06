@@ -10,9 +10,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
+	envDotNetAgentPathPrefix            = "DOTNET_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX"
 	envDotNetCoreClrEnableProfiling     = "CORECLR_ENABLE_PROFILING"
 	envDotNetCoreClrProfiler            = "CORECLR_PROFILER"
 	envDotNetCoreClrProfilerPath        = "CORECLR_PROFILER_PATH"
@@ -42,7 +44,14 @@ const (
 func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Container, runtime string) error {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
-	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
+	// In injector mode the instrumentation is activated via LD_PRELOAD; the
+	// injector resolves conflicts with pre-existing CORECLR_*/DOTNET_* values
+	// in-process, so only LD_PRELOAD needs to be validated here.
+	envsToValidate := []string{envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore}
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		envsToValidate = []string{envLdPreload}
+	}
+	err := validateContainerEnv(container.Env, envsToValidate...)
 	if err != nil {
 		return err
 	}
@@ -111,6 +120,11 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod *corev1.Pod, containers []*
 }
 
 func injectDefaultDotNetEnvVars(container *corev1.Container, runtime string) {
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		injectInjectorDotNetEnvVars(container)
+		return
+	}
+
 	coreClrProfilerPath := ""
 	switch runtime {
 	case "", dotNetRuntimeLinuxGlibc:
@@ -132,6 +146,31 @@ func injectDefaultDotNetEnvVars(container *corev1.Container, runtime string) {
 	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, false)
 
 	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, true)
+}
+
+// injectInjectorDotNetEnvVars activates the .NET instrumentation via the
+// opentelemetry-injector shared object instead of setting the CORECLR_*/DOTNET_*
+// environment variables on the container. The injector is loaded into every
+// process in the container via LD_PRELOAD and sets those variables in-process,
+// only for .NET applications, detecting the libc flavor (glibc/musl) and CPU
+// architecture of the process on its own. This makes the
+// instrumentation.opentelemetry.io/otel-dotnet-auto-runtime annotation
+// unnecessary.
+func injectInjectorDotNetEnvVars(container *corev1.Container) {
+	ldPreloadValue := dotnetInstrMountPath + "/" + injectorLibName
+	if idx := getIndexOfEnv(container.Env, envLdPreload); idx > -1 {
+		ldPreloadValue = container.Env[idx].Value + ":" + ldPreloadValue
+	}
+	container.Env = appendOrReplace(container.Env,
+		corev1.EnvVar{
+			Name:  envLdPreload,
+			Value: ldPreloadValue,
+		},
+		corev1.EnvVar{
+			Name:  envDotNetAgentPathPrefix,
+			Value: dotnetInstrMountPath,
+		},
+	)
 }
 
 // setDotNetEnvVar function sets env var to the container if not exist already.
