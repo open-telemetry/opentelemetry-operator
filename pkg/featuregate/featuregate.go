@@ -51,6 +51,17 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
+	// EnableInstrumentationInjector is the feature gate that switches auto-instrumentation
+	// activation to the opentelemetry-injector (https://github.com/open-telemetry/opentelemetry-injector).
+	// Instead of setting runtime-specific environment variables (e.g. JAVA_TOOL_OPTIONS) directly on
+	// containers, the injector shared object is loaded into application processes via LD_PRELOAD and
+	// sets those variables in-process. Currently only Java is supported.
+	EnableInstrumentationInjector = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.injector",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("use the opentelemetry-injector LD_PRELOAD object to activate auto-instrumentation instead of setting runtime-specific environment variables directly (currently Java only)"),
+		featuregate.WithRegisterFromVersion("v0.155.0"),
+	)
 	// UseCollectorDefaultTelemetryShape, when enabled (default at beta), makes
 	// the operator-injected Prometheus telemetry reader use collector defaults
 	// for without_type_suffix, without_units, and without_scope_info — metric

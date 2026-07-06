@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add experimental support for activating Java auto-instrumentation via the opentelemetry-injector, behind the `operator.autoinstrumentation.injector` feature gate.
+
+# One or more tracking issues related to the change
+issues: [2375]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  When the feature gate is enabled, the operator injects the [opentelemetry-injector](https://github.com/open-telemetry/opentelemetry-injector)
+  shared object into application containers via `LD_PRELOAD` instead of setting `JAVA_TOOL_OPTIONS` directly.
+  The injector adds the `-javaagent` flag in-process, only for processes that are actually JVMs.
+  The injector binary is only available for the amd64 and arm64 variants of the Java auto-instrumentation image.
