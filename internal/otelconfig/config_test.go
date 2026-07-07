@@ -1595,166 +1595,175 @@ func TestAddPrometheusMetricsEndpointPreservesShapeWhenGateDisabled(t *testing.T
 	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
-func TestGetTelemetryWithLegacyResource(t *testing.T) {
-	svc := v1beta1.Service{
-		Telemetry: &v1beta1.AnyConfig{
-			Object: map[string]any{
-				"metrics":  map[string]any{"level": "detailed"},
-				"resource": map[string]any{"service.name": "my-collector"},
-			},
-		},
-	}
-
-	tel := GetTelemetry(&svc, logr.Discard())
-	require.NotNil(t, tel)
-	assert.Equal(t, "detailed", tel.Metrics.Level)
-	assert.JSONEq(t, `{"service.name":"my-collector"}`, string(tel.Resource))
-}
-
-func TestGetTelemetryWithDeclarativeResource(t *testing.T) {
-	svc := v1beta1.Service{
-		Telemetry: &v1beta1.AnyConfig{
-			Object: map[string]any{
-				"metrics": map[string]any{"level": "detailed"},
-				"resource": map[string]any{
-					"attributes": []any{
-						map[string]any{"name": "service.name", "value": "my-collector"},
-						map[string]any{"name": "deployment.environment.name", "value": "production"},
+func TestGetTelemetryResourceFormats(t *testing.T) {
+	tests := []struct {
+		name             string
+		service          v1beta1.Service
+		expectedResource string // JSON; empty means nil
+	}{
+		{
+			name: "no resource field",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "basic"},
 					},
 				},
 			},
 		},
-	}
-
-	tel := GetTelemetry(&svc, logr.Discard())
-	require.NotNil(t, tel, "GetTelemetry must not return nil for declarative resource format")
-	assert.Equal(t, "detailed", tel.Metrics.Level)
-}
-
-func TestServiceApplyDefaultsPreservesLegacyResource(t *testing.T) {
-	cfg := &v1beta1.Config{
-		Service: v1beta1.Service{
-			Telemetry: &v1beta1.AnyConfig{
-				Object: map[string]any{
-					"resource": map[string]any{"service.name": "my-collector"},
+		{
+			name: "legacy key-value resource",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics":  map[string]any{"level": "detailed"},
+						"resource": map[string]any{"service.name": "my-collector"},
+					},
 				},
 			},
+			expectedResource: `{"service.name":"my-collector"}`,
 		},
-	}
-
-	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
-	require.NoError(t, err)
-
-	assert.Equal(t, map[string]any{"service.name": "my-collector"}, cfg.Service.Telemetry.Object["resource"])
-
-	tel := GetTelemetry(&cfg.Service, logr.Discard())
-	require.NotNil(t, tel)
-	require.Len(t, tel.Metrics.Readers, 1, "default Prometheus reader should be injected")
-	assert.JSONEq(t, `{"service.name":"my-collector"}`, string(tel.Resource))
-}
-
-func TestServiceApplyDefaultsPreservesDeclarativeResource(t *testing.T) {
-	declResource := map[string]any{
-		"attributes": []any{
-			map[string]any{"name": "deployment.environment.name", "value": "production"},
-		},
-	}
-	cfg := &v1beta1.Config{
-		Service: v1beta1.Service{
-			Telemetry: &v1beta1.AnyConfig{
-				Object: map[string]any{
-					"resource": declResource,
-					"metrics": map[string]any{
-						"readers": []any{
-							map[string]any{"periodic": map[string]any{
-								"interval": 60000,
-								"exporter": map[string]any{"otlp": map[string]any{
-									"protocol": "grpc", "endpoint": "otel-collector:4317", "insecure": true,
-								}},
-							}},
+		{
+			name: "declarative attributes resource",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "detailed"},
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "service.name", "value": "my-collector"},
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
 						},
 					},
 				},
 			},
+			expectedResource: `{"attributes":[{"name":"service.name","value":"my-collector"},{"name":"deployment.environment.name","value":"production"}]}`,
 		},
 	}
 
-	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tel := GetTelemetry(&tt.service, logr.Discard())
+			require.NotNil(t, tel)
 
-	assert.Equal(t, declResource, cfg.Service.Telemetry.Object["resource"])
+			if tt.expectedResource == "" {
+				assert.Nil(t, tel.Resource)
+			} else {
+				assert.JSONEq(t, tt.expectedResource, string(tel.Resource))
+			}
 
-	tel := GetTelemetry(&cfg.Service, logr.Discard())
-	require.NotNil(t, tel, "GetTelemetry must not return nil for declarative resource format")
+			ac, err := TelemetryToAnyConfig(tel)
+			require.NoError(t, err)
+			if tt.expectedResource == "" {
+				assert.Nil(t, ac.Object["resource"])
+			} else {
+				roundTripped, err := json.Marshal(ac.Object["resource"])
+				require.NoError(t, err)
+				assert.JSONEq(t, tt.expectedResource, string(roundTripped))
+			}
+		})
+	}
 }
 
-func TestServiceApplyDefaultsDoesNotClobberDeclarativeResourceAndReaders(t *testing.T) {
-	declResource := map[string]any{
-		"attributes": []any{
-			map[string]any{"name": "deployment.environment.name", "value": "production"},
-		},
-	}
-	otlpReader := map[string]any{"periodic": map[string]any{
+func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
+	otlpPeriodicReader := map[string]any{"periodic": map[string]any{
 		"interval": 60000,
 		"exporter": map[string]any{"otlp": map[string]any{
 			"protocol": "grpc", "endpoint": "otel-collector:4317", "insecure": true,
 		}},
 	}}
-	cfg := &v1beta1.Config{
-		Service: v1beta1.Service{
-			Telemetry: &v1beta1.AnyConfig{
-				Object: map[string]any{
-					"resource": declResource,
-					"metrics": map[string]any{
-						"level":   "detailed",
-						"readers": []any{otlpReader},
+
+	tests := []struct {
+		name                string
+		service             v1beta1.Service
+		expectedResource    string // JSON; empty means nil
+		expectedReaderCount int
+	}{
+		{
+			name: "legacy resource gets default Prometheus reader",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{"service.name": "my-collector"},
 					},
 				},
 			},
+			expectedResource:    `{"service.name":"my-collector"}`,
+			expectedReaderCount: 1,
 		},
-	}
-
-	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
-	require.NoError(t, err)
-
-	telObj := cfg.Service.Telemetry.Object
-	assert.Equal(t, declResource, telObj["resource"])
-	assert.Equal(t, map[string]any{
-		"level":   "detailed",
-		"readers": []any{otlpReader},
-	}, telObj["metrics"])
-}
-
-func TestTelemetryToAnyConfigPreservesLegacyResource(t *testing.T) {
-	tel := &Telemetry{
-		Metrics:  MetricsConfig{Level: "basic"},
-		Resource: json.RawMessage(`{"service.name":"my-collector"}`),
-	}
-
-	ac, err := TelemetryToAnyConfig(tel)
-	require.NoError(t, err)
-	assert.Equal(t, map[string]any{"service.name": "my-collector"}, ac.Object["resource"])
-}
-
-func TestGetTelemetryRoundTripPreservesDeclarativeResource(t *testing.T) {
-	declResource := map[string]any{
-		"attributes": []any{
-			map[string]any{"name": "service.name", "value": "my-collector"},
-		},
-	}
-	svc := v1beta1.Service{
-		Telemetry: &v1beta1.AnyConfig{
-			Object: map[string]any{
-				"resource": declResource,
-				"metrics":  map[string]any{"level": "basic"},
+		{
+			name: "declarative resource gets default Prometheus reader",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
 			},
+			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+			expectedReaderCount: 1,
+		},
+		{
+			name: "existing readers not replaced with default",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+						"metrics": map[string]any{
+							"readers": []any{otlpPeriodicReader},
+						},
+					},
+				},
+			},
+			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+			expectedReaderCount: 1,
+		},
+		{
+			name: "existing readers and level not clobbered",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+						"metrics": map[string]any{
+							"level":   "detailed",
+							"readers": []any{otlpPeriodicReader},
+						},
+					},
+				},
+			},
+			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+			expectedReaderCount: 1,
 		},
 	}
 
-	tel := GetTelemetry(&svc, logr.Discard())
-	require.NotNil(t, tel, "GetTelemetry must not return nil for declarative resource format")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &v1beta1.Config{Service: tt.service}
+			_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
+			require.NoError(t, err)
 
-	ac, err := TelemetryToAnyConfig(tel)
-	require.NoError(t, err)
-	assert.Equal(t, declResource, ac.Object["resource"])
+			tel := GetTelemetry(&cfg.Service, logr.Discard())
+			require.NotNil(t, tel)
+
+			if tt.expectedResource == "" {
+				assert.Nil(t, tel.Resource)
+			} else {
+				assert.JSONEq(t, tt.expectedResource, string(tel.Resource))
+			}
+			require.Len(t, tel.Metrics.Readers, tt.expectedReaderCount)
+		})
+	}
 }
