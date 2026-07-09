@@ -4,7 +4,7 @@ change_type: bug_fix
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Always include webhook port in the operator NetworkPolicy regardless of ENABLE_WEBHOOKS setting, fixing CR creation failures when webhooks run in a separate deployment.
+note: Fix NetworkPolicy and operand network policy defaulting when webhooks run in a separate deployment.
 
 # One or more tracking issues related to the change
 issues: [5288]
