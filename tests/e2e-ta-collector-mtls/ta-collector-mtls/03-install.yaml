@@ -80,7 +80,7 @@ spec:
 
               echo "ConfigMap response: $CM_RESPONSE"
 
-              INITIAL_DATE=$(echo "$CM_RESPONSE" | sed -n 's/.*"initial-date":"\([^"]*\)".*/\1/p')
+              INITIAL_DATE=$(echo "$CM_RESPONSE" | tr -d '\n' | sed -n 's/.*"initial-date":[[:space:]]*"\([^"]*\)".*/\1/p')
 
               if [ -z "$INITIAL_DATE" ] || [ "$INITIAL_DATE" = "null" ]; then
                 echo "ERROR: Failed to get initial certificate date from ConfigMap"
