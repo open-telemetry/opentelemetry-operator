@@ -462,6 +462,12 @@ func (*scopedApplier) Delete(name string) error {
 	return fmt.Errorf("standalone mode does not support deleting ConfigMap %s", name)
 }
 
+// Restart triggers a rolling restart of the managed workload by patching the pod template
+// restart annotation, identical to `kubectl rollout restart`.
+func (s *scopedApplier) Restart(ctx context.Context) error {
+	return s.client.triggerRollout(ctx, s.agent.Namespace, s.agent.WorkloadRef.Kind, s.agent.WorkloadRef.Name)
+}
+
 // ListInstances reports this standalone workload's current ConfigMap data as effective OpAMP config.
 func (s *scopedApplier) ListInstances() ([]operator.CollectorInstance, error) {
 	configMap := make(map[string]operator.ConfigFile, len(s.agent.Config))
