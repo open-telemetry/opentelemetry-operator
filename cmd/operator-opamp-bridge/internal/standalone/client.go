@@ -28,7 +28,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
 )
 
-
 // Client implements operator.ConfigApplier for standalone mode.
 // ConfigMaps are the primary managed objects.
 type Client struct {

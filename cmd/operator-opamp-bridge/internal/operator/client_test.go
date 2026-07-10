@@ -378,11 +378,11 @@ func TestClient_getCollectorPods(t *testing.T) {
 
 // managedCollector creates a v1beta1 OpenTelemetryCollector with the managed label set,
 // which makes it visible to listOpenTelemetryCollectors.
-func managedCollector(name, namespace string, mode v1beta1.Mode) *v1beta1.OpenTelemetryCollector {
+func managedCollector(name string, mode v1beta1.Mode) *v1beta1.OpenTelemetryCollector {
 	return &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: "default",
 			Labels:    map[string]string{ManagedLabelKey: "true"},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -392,7 +392,7 @@ func managedCollector(name, namespace string, mode v1beta1.Mode) *v1beta1.OpenTe
 }
 
 func TestClient_Restart_Deployment(t *testing.T) {
-	col := managedCollector("test-col", "default", v1beta1.ModeDeployment)
+	col := managedCollector("test-col", v1beta1.ModeDeployment)
 	workloadName := naming.Collector(col.Name)
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
 
@@ -414,7 +414,7 @@ func TestClient_Restart_Deployment(t *testing.T) {
 }
 
 func TestClient_Restart_DaemonSet(t *testing.T) {
-	col := managedCollector("test-col", "default", v1beta1.ModeDaemonSet)
+	col := managedCollector("test-col", v1beta1.ModeDaemonSet)
 	workloadName := naming.Collector(col.Name)
 	ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
 
@@ -431,7 +431,7 @@ func TestClient_Restart_DaemonSet(t *testing.T) {
 }
 
 func TestClient_Restart_StatefulSet(t *testing.T) {
-	col := managedCollector("test-col", "default", v1beta1.ModeStatefulSet)
+	col := managedCollector("test-col", v1beta1.ModeStatefulSet)
 	workloadName := naming.Collector(col.Name)
 	sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
 
@@ -448,7 +448,7 @@ func TestClient_Restart_StatefulSet(t *testing.T) {
 }
 
 func TestClient_Restart_SidecarSkipped(t *testing.T) {
-	col := managedCollector("test-col", "default", v1beta1.ModeSidecar)
+	col := managedCollector("test-col", v1beta1.ModeSidecar)
 
 	fakeClient := getFakeClient(t)
 	require.NoError(t, fakeClient.Create(context.Background(), col))
@@ -465,8 +465,8 @@ func TestClient_Restart_NoCollectors(t *testing.T) {
 
 func TestClient_Restart_PartialFailure(t *testing.T) {
 	// Two collectors: one with its workload present, one without.
-	col1 := managedCollector("col-ok", "default", v1beta1.ModeDeployment)
-	col2 := managedCollector("col-missing", "default", v1beta1.ModeDeployment)
+	col1 := managedCollector("col-ok", v1beta1.ModeDeployment)
+	col2 := managedCollector("col-missing", v1beta1.ModeDeployment)
 	workload1 := naming.Collector(col1.Name)
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: workload1, Namespace: "default"}}
 
