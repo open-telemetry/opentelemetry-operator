@@ -6,7 +6,7 @@ advantage of the new features.
 ## TargetAllocator.opentelemetry.io/v1alpha1
 
 The target allocator is an application that can allocate Prometheus scrape targets to OpenTelemetry Collectors using the prometheus receiver,
-allowing transparent horizontal scaling for Prometheus metrics collection. You can learn more in the target allocator's [README](../cmd/otel-allocator/README.md).
+allowing transparent horizontal scaling for Prometheus metrics collection. You can learn more in the target allocator's [README](../target-allocator/README.md).
 
 Until now, it could be enabled via the `targetAllocator` sub-resource in the OpenTelemetryCollector CR. This was, and continues to be fine for
 simpler use cases. Some users needed to customize the target allocator further, and embedding all the required attributes in the
