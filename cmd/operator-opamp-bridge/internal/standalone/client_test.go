@@ -24,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	bridgemanager "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/manager"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
 )
 
 const validCollectorConfig = `receivers:
@@ -342,14 +343,14 @@ func TestListRequiredPermissionsScopesWatchesToConfiguredNamespaces(t *testing.T
 
 func TestClientCheckPermissionsRejectsMissingConfiguredResourcePermission(t *testing.T) {
 	c := newTestClient(getPermissionReviewClient(t, func(attrs authorizationv1.ResourceAttributes) bool {
-		return attrs.Verb != "update" || attrs.Resource != "deployments" || attrs.Name != "standalone-collector"
+		return attrs.Verb != "patch" || attrs.Resource != "deployments" || attrs.Name != "standalone-collector"
 	}))
 
 	err := c.CheckPermissions(context.Background(), []config.StandaloneAgentConfig{testAgentConfig()}, true)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "standalone permission check failed")
-	assert.Contains(t, err.Error(), "missing update permission for apps/deployments default/standalone-collector")
+	assert.Contains(t, err.Error(), "missing patch permission for apps/deployments default/standalone-collector")
 }
 
 func TestPermissionsCheckerRejectsDeniedPermission(t *testing.T) {
@@ -397,7 +398,7 @@ service:
 
 	updatedDeploy := &appsv1.Deployment{}
 	require.NoError(t, k8s.Get(context.Background(), client.ObjectKey{Name: "standalone-collector", Namespace: "default"}, updatedDeploy))
-	assert.NotEmpty(t, updatedDeploy.Spec.Template.Annotations[restartAnnotation])
+	assert.NotEmpty(t, updatedDeploy.Spec.Template.Annotations[rollout.RestartAnnotation])
 }
 
 func TestScopedApplierApplyRejectsInvalidCollectorConfig(t *testing.T) {

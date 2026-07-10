@@ -454,7 +454,7 @@ func (agent *Agent) Shutdown() {
 }
 
 // onCommand is called when the OpAMP server sends a ServerToAgentCommand.
-// Currently only CommandType_Restart is handled; all other command types are logged and ignored.
+// Only CommandType_Restart is handled; all other command types return an error to the server.
 func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
 	switch command.GetType() {
 	case protobufs.CommandType_CommandType_Restart:
@@ -465,8 +465,9 @@ func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAg
 		}
 		return nil
 	default:
-		agent.logger.Info("Received unsupported command type, ignoring", "type", command.GetType().String())
-		return nil
+		err := fmt.Errorf("unsupported command type: %s", command.GetType().String())
+		agent.logger.Error(err, "Received unsupported command type")
+		return err
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
@@ -26,11 +25,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	bridgemanager "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/manager"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
 )
 
-const (
-	restartAnnotation = "kubectl.kubernetes.io/restartedAt"
-)
 
 // Client implements operator.ConfigApplier for standalone mode.
 // ConfigMaps are the primary managed objects.
@@ -239,7 +236,7 @@ func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfig
 		}
 		perms = append(perms, bridgemanager.Permission{Verb: "get", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
 		if remoteConfigEnabled {
-			perms = append(perms, bridgemanager.Permission{Verb: "update", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
+			perms = append(perms, bridgemanager.Permission{Verb: "patch", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
 		}
 		for _, entry := range agent.Config {
 			if entry.Kind != config.StandaloneConfigEntryKindConfigMap {
@@ -329,57 +326,9 @@ func (c *Client) applyConfigMapFile(namespace, workloadType, workloadName string
 	}
 	c.log.Info("Updated ConfigMap key", "name", entry.Name, "namespace", namespace, "key", entry.Key)
 
-	if err := c.triggerRollout(context.Background(), namespace, workloadType, workloadName); err != nil {
+	if err := rollout.TriggerRollout(context.Background(), c.k8sClient, namespace, workloadType, workloadName); err != nil {
 		return fmt.Errorf("failed to trigger rollout for %s/%s: %w", namespace, workloadName, err)
 	}
-	return nil
-}
-
-// triggerRollout updates the workload pod template restart annotation so Kubernetes rolls out the new ConfigMap content.
-func (c *Client) triggerRollout(ctx context.Context, namespace, workloadType, workloadName string) error {
-	restartVal := time.Now().Format(time.RFC3339)
-
-	switch strings.ToLower(workloadType) {
-	case "deployment":
-		deploy := &appsv1.Deployment{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, deploy); err != nil {
-			return fmt.Errorf("failed to get Deployment %s/%s for rollout: %w", namespace, workloadName, err)
-		}
-		if deploy.Spec.Template.Annotations == nil {
-			deploy.Spec.Template.Annotations = map[string]string{}
-		}
-		deploy.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, deploy); err != nil {
-			return fmt.Errorf("failed to trigger rollout for Deployment %s/%s: %w", namespace, workloadName, err)
-		}
-	case "daemonset":
-		ds := &appsv1.DaemonSet{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, ds); err != nil {
-			return fmt.Errorf("failed to get DaemonSet %s/%s for rollout: %w", namespace, workloadName, err)
-		}
-		if ds.Spec.Template.Annotations == nil {
-			ds.Spec.Template.Annotations = map[string]string{}
-		}
-		ds.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, ds); err != nil {
-			return fmt.Errorf("failed to trigger rollout for DaemonSet %s/%s: %w", namespace, workloadName, err)
-		}
-	case "statefulset":
-		sts := &appsv1.StatefulSet{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, sts); err != nil {
-			return fmt.Errorf("failed to get StatefulSet %s/%s for rollout: %w", namespace, workloadName, err)
-		}
-		if sts.Spec.Template.Annotations == nil {
-			sts.Spec.Template.Annotations = map[string]string{}
-		}
-		sts.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, sts); err != nil {
-			return fmt.Errorf("failed to trigger rollout for StatefulSet %s/%s: %w", namespace, workloadName, err)
-		}
-	default:
-		return fmt.Errorf("unsupported workload type %q", workloadType)
-	}
-
 	c.log.Info("Triggered workload rollout", "workloadType", workloadType, "name", workloadName, "namespace", namespace)
 	return nil
 }
@@ -465,7 +414,14 @@ func (*scopedApplier) Delete(name string) error {
 // Restart triggers a rolling restart of the managed workload by patching the pod template
 // restart annotation, identical to `kubectl rollout restart`.
 func (s *scopedApplier) Restart(ctx context.Context) error {
-	return s.client.triggerRollout(ctx, s.agent.Namespace, s.agent.WorkloadRef.Kind, s.agent.WorkloadRef.Name)
+	if err := rollout.TriggerRollout(ctx, s.client.k8sClient, s.agent.Namespace, s.agent.WorkloadRef.Kind, s.agent.WorkloadRef.Name); err != nil {
+		return err
+	}
+	s.client.log.Info("Triggered workload rollout restart",
+		"workloadType", s.agent.WorkloadRef.Kind,
+		"name", s.agent.WorkloadRef.Name,
+		"namespace", s.agent.Namespace)
+	return nil
 }
 
 // ListInstances reports this standalone workload's current ConfigMap data as effective OpAMP config.

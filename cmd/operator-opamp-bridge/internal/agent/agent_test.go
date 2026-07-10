@@ -1428,7 +1428,8 @@ func TestAgent_onCommand_UnknownType(t *testing.T) {
 		Type: protobufs.CommandType_CommandType_Restart + 99,
 	})
 
-	require.NoError(t, err, "unknown command types should be silently ignored")
+	require.Error(t, err, "unknown command types should be returned as an error to the server")
+	assert.Contains(t, err.Error(), "unsupported command type")
 	assert.Equal(t, 0, applier.restartCalled, "Restart must not be called for unknown commands")
 }
 

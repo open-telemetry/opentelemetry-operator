@@ -5,13 +5,13 @@ package operator
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -29,8 +30,6 @@ const (
 	ResourceIdentifierValue = "operator-opamp-bridge"
 	ReportingLabelKey       = "opentelemetry.io/opamp-reporting"
 	ManagedLabelKey         = "opentelemetry.io/opamp-managed"
-
-	restartAnnotation = "kubectl.kubernetes.io/restartedAt"
 )
 
 type ConfigApplier interface {
@@ -226,9 +225,9 @@ func (c Client) Delete(key string) error {
 	return c.k8sClient.Delete(ctx, &result)
 }
 
-// Restart triggers a rolling restart of every managed collector's underlying workload by
-// patching the pod template restart annotation, mirroring `kubectl rollout restart`.
-// All collectors with the managed label are restarted; errors are joined and returned.
+// Restart triggers a rolling restart of all managed collector workloads.
+// Sidecar mode collectors are skipped (they have no standalone workload).
+// All other collectors are restarted via rollout.TriggerRollout; errors are joined and returned.
 func (c Client) Restart(ctx context.Context) error {
 	collectors, err := c.listOpenTelemetryCollectors()
 	if err != nil {
@@ -237,73 +236,20 @@ func (c Client) Restart(ctx context.Context) error {
 	var errs []error
 	for i := range collectors {
 		col := &collectors[i]
+		mode := strings.ToLower(string(col.Col.Spec.Mode))
+		if mode == "sidecar" {
+			c.log.Info("Skipping restart for sidecar mode collector - no standalone workload",
+				"name", col.GetName(), "namespace", col.GetNamespace())
+			continue
+		}
 		workloadName := naming.Collector(col.GetName())
-		if err := c.triggerRollout(ctx, col.GetNamespace(), string(col.Col.Spec.Mode), workloadName); err != nil {
+		if err := rollout.TriggerRollout(ctx, c.k8sClient, col.GetNamespace(), mode, workloadName); err != nil {
 			errs = append(errs, err)
-		}
-	}
-	// errors.Join returns nil when errs is empty
-	var joinedErr error
-	for _, e := range errs {
-		if joinedErr == nil {
-			joinedErr = e
 		} else {
-			joinedErr = fmt.Errorf("%w; %w", joinedErr, e)
+			c.log.Info("Triggered workload rollout restart", "mode", mode, "name", workloadName, "namespace", col.GetNamespace())
 		}
 	}
-	return joinedErr
-}
-
-// triggerRollout patches the pod template restart annotation on the collector's managed workload,
-// causing Kubernetes to perform a rolling restart identical to `kubectl rollout restart`.
-// Sidecar mode collectors have no standalone workload, so they are skipped.
-func (c Client) triggerRollout(ctx context.Context, namespace, mode, workloadName string) error {
-	restartVal := time.Now().Format(time.RFC3339)
-	switch strings.ToLower(mode) {
-	case "deployment":
-		deploy := &appsv1.Deployment{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, deploy); err != nil {
-			return fmt.Errorf("failed to get Deployment %s/%s for restart: %w", namespace, workloadName, err)
-		}
-		if deploy.Spec.Template.Annotations == nil {
-			deploy.Spec.Template.Annotations = map[string]string{}
-		}
-		deploy.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, deploy); err != nil {
-			return fmt.Errorf("failed to restart Deployment %s/%s: %w", namespace, workloadName, err)
-		}
-	case "daemonset":
-		ds := &appsv1.DaemonSet{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, ds); err != nil {
-			return fmt.Errorf("failed to get DaemonSet %s/%s for restart: %w", namespace, workloadName, err)
-		}
-		if ds.Spec.Template.Annotations == nil {
-			ds.Spec.Template.Annotations = map[string]string{}
-		}
-		ds.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, ds); err != nil {
-			return fmt.Errorf("failed to restart DaemonSet %s/%s: %w", namespace, workloadName, err)
-		}
-	case "statefulset":
-		sts := &appsv1.StatefulSet{}
-		if err := c.k8sClient.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: namespace}, sts); err != nil {
-			return fmt.Errorf("failed to get StatefulSet %s/%s for restart: %w", namespace, workloadName, err)
-		}
-		if sts.Spec.Template.Annotations == nil {
-			sts.Spec.Template.Annotations = map[string]string{}
-		}
-		sts.Spec.Template.Annotations[restartAnnotation] = restartVal
-		if err := c.k8sClient.Update(ctx, sts); err != nil {
-			return fmt.Errorf("failed to restart StatefulSet %s/%s: %w", namespace, workloadName, err)
-		}
-	case "sidecar":
-		c.log.Info("Skipping restart for sidecar mode collector — no standalone workload", "name", workloadName, "namespace", namespace)
-		return nil
-	default:
-		return fmt.Errorf("unsupported collector mode %q for restart", mode)
-	}
-	c.log.Info("Triggered workload rollout restart", "mode", mode, "name", workloadName, "namespace", namespace)
-	return nil
+	return stderrors.Join(errs...)
 }
 
 // ListInstances returns all collectors that are visible to OpAMP as effective config entries.

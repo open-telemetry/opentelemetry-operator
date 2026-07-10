@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +24,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var clientLogger = logr.Discard()
@@ -36,7 +40,7 @@ func getFakeClient(t *testing.T, lists ...client.ObjectList) client.WithWatch {
 		s.AddKnownTypes(v1beta1.GroupVersion, &v1beta1.OpenTelemetryCollector{}, &v1beta1.OpenTelemetryCollectorList{})
 		s.AddKnownTypes(v1.SchemeGroupVersion, &v1.Pod{}, &v1.PodList{})
 		metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
-		return nil
+		return appsv1.AddToScheme(s)
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
@@ -370,4 +374,113 @@ func TestClient_getCollectorPods(t *testing.T) {
 			assert.Equalf(t, tt.want, got, "getCollectorPods(%v)", tt.args.selector)
 		})
 	}
+}
+
+// managedCollector creates a v1beta1 OpenTelemetryCollector with the managed label set,
+// which makes it visible to listOpenTelemetryCollectors.
+func managedCollector(name, namespace string, mode v1beta1.Mode) *v1beta1.OpenTelemetryCollector {
+	return &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    map[string]string{ManagedLabelKey: "true"},
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: mode,
+		},
+	}
+}
+
+func TestClient_Restart_Deployment(t *testing.T) {
+	col := managedCollector("test-col", "default", v1beta1.ModeDeployment)
+	workloadName := naming.Collector(col.Name)
+	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
+
+	fakeClient := getFakeClient(t)
+	require.NoError(t, fakeClient.Create(context.Background(), col))
+	require.NoError(t, fakeClient.Create(context.Background(), deploy))
+
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	before := time.Now().Truncate(time.Second)
+	require.NoError(t, c.Restart(context.Background()))
+
+	result := &appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workloadName, Namespace: "default"}, result))
+	val := result.Spec.Template.Annotations[rollout.RestartAnnotation]
+	assert.NotEmpty(t, val)
+	parsed, err := time.Parse(time.RFC3339, val)
+	require.NoError(t, err)
+	assert.False(t, parsed.Before(before))
+}
+
+func TestClient_Restart_DaemonSet(t *testing.T) {
+	col := managedCollector("test-col", "default", v1beta1.ModeDaemonSet)
+	workloadName := naming.Collector(col.Name)
+	ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
+
+	fakeClient := getFakeClient(t)
+	require.NoError(t, fakeClient.Create(context.Background(), col))
+	require.NoError(t, fakeClient.Create(context.Background(), ds))
+
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	require.NoError(t, c.Restart(context.Background()))
+
+	result := &appsv1.DaemonSet{}
+	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workloadName, Namespace: "default"}, result))
+	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
+}
+
+func TestClient_Restart_StatefulSet(t *testing.T) {
+	col := managedCollector("test-col", "default", v1beta1.ModeStatefulSet)
+	workloadName := naming.Collector(col.Name)
+	sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
+
+	fakeClient := getFakeClient(t)
+	require.NoError(t, fakeClient.Create(context.Background(), col))
+	require.NoError(t, fakeClient.Create(context.Background(), sts))
+
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	require.NoError(t, c.Restart(context.Background()))
+
+	result := &appsv1.StatefulSet{}
+	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workloadName, Namespace: "default"}, result))
+	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
+}
+
+func TestClient_Restart_SidecarSkipped(t *testing.T) {
+	col := managedCollector("test-col", "default", v1beta1.ModeSidecar)
+
+	fakeClient := getFakeClient(t)
+	require.NoError(t, fakeClient.Create(context.Background(), col))
+
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	require.NoError(t, c.Restart(context.Background()))
+}
+
+func TestClient_Restart_NoCollectors(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	require.NoError(t, c.Restart(context.Background()))
+}
+
+func TestClient_Restart_PartialFailure(t *testing.T) {
+	// Two collectors: one with its workload present, one without.
+	col1 := managedCollector("col-ok", "default", v1beta1.ModeDeployment)
+	col2 := managedCollector("col-missing", "default", v1beta1.ModeDeployment)
+	workload1 := naming.Collector(col1.Name)
+	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: workload1, Namespace: "default"}}
+
+	fakeClient := getFakeClient(t)
+	require.NoError(t, fakeClient.Create(context.Background(), col1))
+	require.NoError(t, fakeClient.Create(context.Background(), col2))
+	require.NoError(t, fakeClient.Create(context.Background(), deploy))
+
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+	err := c.Restart(context.Background())
+	require.Error(t, err, "partial failure must be reported")
+
+	// The workload that exists must still have been patched.
+	result := &appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workload1, Namespace: "default"}, result))
+	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
 }
