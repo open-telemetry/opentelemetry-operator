@@ -147,8 +147,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.TLS.UseClusterProfile, _ = f.GetBool("tls-cluster-profile")
 			case "tls-configure-operands":
 				cfg.TLS.ConfigureOperands, _ = f.GetBool("tls-configure-operands")
-			case "min-tls-version":
-				cfg.TLS.MinVersion, _ = f.GetString("min-tls-version")
+			case "tls-min-version":
+				cfg.TLS.MinVersion, _ = f.GetString("tls-min-version")
 			case "tls-cipher-suites":
 				cfg.TLS.CipherSuites, _ = f.GetStringSlice("tls-cipher-suites")
 			case "zap-message-key":
