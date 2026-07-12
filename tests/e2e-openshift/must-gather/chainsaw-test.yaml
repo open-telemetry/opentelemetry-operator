@@ -42,6 +42,6 @@ spec:
         - name: otelnamespace
           value: opentelemetry-operator-system
         - name: MUSTGATHER_IMG
-          value: ($MUSTGATHER_IMG)
+          value: (env('MUSTGATHER_IMG'))
         timeout: 5m
         content: ./check_must_gather.sh
