@@ -1,0 +1,13 @@
+change_type: bug_fix
+component: collector
+issues: [5317]
+
+note: "Register the `kubelet_stats`, `k8s_objects`, and `resource_detection` snake-case component names alongside their original spellings when generating RBAC from a Collector CR, so either spelling produces the permissions (and, for `kubelet_stats`, the `K8S_NODE_NAME` env var) the component needs."
+
+subtext: |
+  These components were renamed to snake_case in
+  opentelemetry-collector-contrib (#47957 for kubeletstats, #47440 for
+  k8sobjects, #48525 for resourcedetection) while keeping the original
+  names accepted, but the operator only parsed the original spelling and
+  emitted no RBAC for configs using the new names. This extends the
+  k8s_attributes fix (#4983) to the remaining renamed components.
