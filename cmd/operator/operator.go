@@ -349,10 +349,10 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 		}))
 	}
 
-	if cfg.EnableWebhooks {
-		//nolint:gosec // disable G115
-		policyOpts = append(policyOpts, operatornetworkpolicy.WithWebhookPort(int32(cfg.WebhookPort)))
-	}
+	// Always include the webhook port in the NetworkPolicy even when ENABLE_WEBHOOKS=false,
+	// because webhooks may run in a separate deployment that shares the same pod selector.
+	//nolint:gosec // disable G115
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithWebhookPort(int32(cfg.WebhookPort)))
 	if cfg.MetricsAddr != "" {
 		_, portStr, errParse := net.SplitHostPort(cfg.MetricsAddr)
 		if errParse != nil {
