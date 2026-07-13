@@ -495,6 +495,8 @@ github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5 h1:9Pe6iVOMjt
 github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5/go.mod h1:K3FoNLgNBFYbFuG+Kr8usAnQxj1w84XogyUp2M8rK8k=
 github.com/openshift/library-go v0.0.0-20260713084045-a99049bdd190 h1:gz2C+rsMNTbPDgF4KDl2pOgoLqpXN6z152Mfy+5lh5E=
 github.com/openshift/library-go v0.0.0-20260713084045-a99049bdd190/go.mod h1:8d0qQEDq2kpIZmaE1tKpvZ4pLeQZT+mW2JpqAh3iZIc=
+github.com/openshift/library-go v0.0.0-20260713143403-795ac1a480b5 h1:85yhDVpru8taEfEzDapuOb4nHWhLuik6/Qz1Kkn2nvg=
+github.com/openshift/library-go v0.0.0-20260713143403-795ac1a480b5/go.mod h1:8d0qQEDq2kpIZmaE1tKpvZ4pLeQZT+mW2JpqAh3iZIc=
 github.com/operator-framework/api v0.44.0 h1:UPPNVVI2HJyfH17cnL/8PADV4DCaNLqfL08e+AyYrO8=
 github.com/operator-framework/api v0.44.0/go.mod h1:H46wpymo4j3kJZraarbuBUPLF5OzTCw4u0n2xb9sMNQ=
 github.com/operator-framework/operator-lib v0.19.0 h1:az6ogYj21rtU0SF9uYctRLyKp2dtlqTsmpfehFy6Ce8=
