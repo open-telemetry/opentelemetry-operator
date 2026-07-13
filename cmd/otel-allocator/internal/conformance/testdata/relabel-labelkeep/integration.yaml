@@ -1,0 +1,11 @@
+# Consumed only by cmd/otel-allocator/integrationtest. labelkeep retains b1/b2
+# (and the scrape internals); the non-matching label a must be gone.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {b1: bar, b2: baz}
+expect_absent:
+  - metric: widgets_total
+    labels: {a: foo}

@@ -18,6 +18,10 @@ spec:
         app.kubernetes.io/component: opamp-bridge
     spec:
       serviceAccountName: otel-opamp-bridge-standalone
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: bridge
           image: operator-opamp-bridge:latest
@@ -32,6 +36,13 @@ spec:
             - name: config
               mountPath: /conf
               readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           livenessProbe:
             httpGet:
               path: /healthz

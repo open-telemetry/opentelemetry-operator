@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 NOTES_FILE=/tmp/notes.md
 # Note: We expect the versions to not have the `v` prefix here

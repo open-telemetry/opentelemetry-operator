@@ -51,3 +51,4 @@ zap:
   level-format: uppercase
 enable-webhooks: true
 enable-instrumentation-crds: true
+openshift-webhook-replicas: 2

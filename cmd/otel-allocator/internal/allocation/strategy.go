@@ -22,16 +22,6 @@ var strategies = map[string]Strategy{
 
 type Option func(Allocator)
 
-type Filter interface {
-	Apply([]*target.Item) []*target.Item
-}
-
-func WithFilter(filter Filter) Option {
-	return func(allocator Allocator) {
-		allocator.SetFilter(filter)
-	}
-}
-
 func WithFallbackStrategy(fallbackStrategy string) Option {
 	strategy, ok := strategies[fallbackStrategy]
 	if fallbackStrategy != "" && !ok {
@@ -63,7 +53,6 @@ type Allocator interface {
 	TargetItems() map[target.ItemHash]*target.Item
 	Collectors() map[string]*Collector
 	GetTargetsForCollectorAndJob(collector, job string) []*target.Item
-	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
 }
 

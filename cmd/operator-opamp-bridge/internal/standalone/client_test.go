@@ -321,6 +321,25 @@ func TestClientCheckPermissionsAllowsConfiguredStandaloneResources(t *testing.T)
 	require.NoError(t, err)
 }
 
+func TestListRequiredPermissionsScopesWatchesToConfiguredNamespaces(t *testing.T) {
+	otherNamespaceAgent := testAgentConfig()
+	otherNamespaceAgent.Namespace = "observability"
+
+	perms, err := ListRequiredPermissions([]config.StandaloneAgentConfig{
+		testAgentConfig(),
+		otherNamespaceAgent,
+	}, false)
+
+	require.NoError(t, err)
+	for _, perm := range perms {
+		if perm.Verb != "list" && perm.Verb != "watch" {
+			continue
+		}
+		assert.NotEmpty(t, perm.Namespace)
+		assert.Contains(t, []string{"default", "observability"}, perm.Namespace)
+	}
+}
+
 func TestClientCheckPermissionsRejectsMissingConfiguredResourcePermission(t *testing.T) {
 	c := newTestClient(getPermissionReviewClient(t, func(attrs authorizationv1.ResourceAttributes) bool {
 		return attrs.Verb != "update" || attrs.Resource != "deployments" || attrs.Name != "standalone-collector"

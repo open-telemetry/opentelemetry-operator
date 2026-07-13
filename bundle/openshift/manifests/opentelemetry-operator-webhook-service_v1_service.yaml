@@ -11,7 +11,7 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
+    app.kubernetes.io/component: webhook
     app.kubernetes.io/name: opentelemetry-operator
-    control-plane: controller-manager
 status:
   loadBalancer: {}

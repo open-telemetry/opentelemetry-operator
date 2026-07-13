@@ -1,0 +1,11 @@
+# Patch the webhook service to point to the dedicated webhook deployment
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  namespace: system
+spec:
+  selector:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/component: webhook
+    control-plane: null

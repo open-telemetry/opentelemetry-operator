@@ -1,0 +1,8 @@
+# Consumed only by cmd/otel-allocator/integrationtest. The sd-tags job parses a
+# packed label into foo=bar, which must reach the emitted metric.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {foo: bar} # job sd-tags

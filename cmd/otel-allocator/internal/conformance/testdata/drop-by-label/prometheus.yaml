@@ -1,0 +1,12 @@
+# Two targets, a keep rule on a regular (non-address) label: only the target with
+# keepme="yes" survives. Address-independent, so it is also usable end-to-end by
+# the integration suite (which asserts the dropped target emits no metric).
+scrape_configs:
+  - job_name: drop-by-label
+    static_configs:
+      - targets: ['10.60.0.1:9100']
+        labels: {keepme: "yes", who: alice}
+      - targets: ['10.60.0.2:9100']
+        labels: {keepme: "no", who: bob}
+    relabel_configs:
+      - {source_labels: [keepme], regex: 'yes', action: keep}

@@ -1,0 +1,20 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: networkpolicy
+spec:
+  concurrent: false
+  steps:
+  - name: Assert operator network policy
+    try:
+    - assert:
+        file: 00-assert-operator-pod.yaml
+    - assert:
+        file: 00-assert-operator-network-policy.yaml
+
+  - name: Verify operand network policies
+    try:
+    - apply:
+        file: 01-install-collector.yaml
+    - assert:
+        file: 01-assert-collector.yaml

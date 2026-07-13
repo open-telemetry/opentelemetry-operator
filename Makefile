@@ -100,6 +100,21 @@ else
 GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
+# Unit-test coverage profile. Generated automatically in CI (where the workflow
+# uploads coverage.out to Codecov) and on demand locally with
+# `make test GOTEST_COVER=true`. coverage.out is matched by the *.out entry in
+# .gitignore. -covermode=atomic is required for correct counts under -race.
+GOTEST_COVER ?= $(if $(CI),true,)
+ifeq ($(GOTEST_COVER),true)
+GOTEST_COVER_OPTS = -coverprofile=coverage.out -covermode=atomic
+# The target allocator integration tests live in a separate module (so the
+# collector/receiver deps stay out of the TA binary) and exercise the real TA
+# code from the main module. -coverpkg attributes that coverage to the
+# otel-allocator packages; the profile is written to the repo root ($(CURDIR))
+# because the recipe cds into the module directory.
+GOTEST_COVER_INTEGRATION_OPTS = -coverprofile=$(CURDIR)/coverage-integration.out -covermode=atomic -coverpkg=github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/...
+endif
+
 START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.35
@@ -258,6 +273,7 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -386,16 +402,26 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
-# Run tests
+# Run tests, including the in-process target allocator integration tests (they need
+# no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+	$(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
 # Run this after adding/changing fixtures or bumping the prometheus dependency.
 .PHONY: ta-conformance-regen
 ta-conformance-regen: promtool
 	PROMTOOL=$(PROMTOOL) go test -count=1 ./cmd/otel-allocator/internal/conformance/... -update
+
+# Run only the in-process target allocator + prometheus receiver integration tests.
+# They live in a separate Go module so the collector/receiver dependency graph stays
+# out of the target allocator binary, but they are in-process (no cluster/network) and
+# `make test` runs them too; this target is for iterating on them in isolation.
+.PHONY: ta-integration-test
+ta-integration-test: gotestsum
+	cd cmd/otel-allocator/integrationtest && $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_INTEGRATION_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
@@ -799,7 +825,7 @@ CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.4.0
+GOVULNCHECK_VERSION ?= v1.6.0
 PROMTOOL ?= $(LOCALBIN)/promtool
 # promtool is the golden source for the target-allocator conformance suite. It must match
 # the prometheus/prometheus library the operator links against, so derive the release version
@@ -950,7 +976,7 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle/community
 	$(OPERATOR_SDK) bundle validate ./bundle/openshift
 	rm bundle.Dockerfile
-	git checkout config/manager/kustomization.yaml
+	git checkout config/manager/kustomization.yaml config/overlays/openshift/kustomization.yaml
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes

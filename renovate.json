@@ -142,7 +142,16 @@
     },
     {
       "matchManagers": ["gomod"],
-      "matchFileNames": ["tests/test-e2e-apps/**/go.mod", "apis/go.mod"],
+      "matchFileNames": ["tests/test-e2e-apps/**/go.mod"],
+      "enabled": false
+    },
+    {
+      "description": "Never bump the in-repo module references (resolved via local replace directives)",
+      "matchManagers": ["gomod"],
+      "matchDepNames": [
+        "github.com/open-telemetry/opentelemetry-operator",
+        "github.com/open-telemetry/opentelemetry-operator/apis"
+      ],
       "enabled": false
     },
     {
@@ -175,6 +184,15 @@
       "matchManagers": ["gomod"],
       "matchPackageNames": ["go.opentelemetry.io/otel{,/**}"],
       "groupName": "opentelemetry"
+    },
+    {
+      "description": "Keep the unpublished otel-allocator integration test module on its own update stream, independent of the published apis/main modules it follows via local replace",
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["cmd/otel-allocator/integrationtest/go.mod"],
+      "groupName": "otel-allocator integration test module",
+      "additionalBranchPrefix": "integrationtest-",
+      "commitMessageSuffix": "(integrationtest)",
+      "postUpdateOptions": ["gomodTidy"]
     },
     {
       "matchManagers": ["github-actions"],

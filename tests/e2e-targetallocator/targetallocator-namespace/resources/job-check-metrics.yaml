@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: check-metrics
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine/curl:latest
           env:
             - name: endpoint
               value: ($endpoint)

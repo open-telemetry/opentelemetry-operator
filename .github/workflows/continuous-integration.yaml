@@ -24,13 +24,13 @@ jobs:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       id: setup-go
       with:
-        go-version: "~1.26.4"
+        go-version: "~1.26.5"
 
     - name: Cache tools
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
@@ -43,6 +43,25 @@ jobs:
         KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT: "true"  # Get control plane output in case of envtest errors
       run: make ci
 
+    # `make ci` runs `make test` with CI set, which writes coverage.out (main
+    # module) and coverage-integration.out (target allocator integration tests).
+    # Reporting must never gate a merge: a Codecov hiccup (or a fork PR without
+    # upload credentials) shouldn't fail the required unit-tests check, so these
+    # steps are best-effort, mirroring the e2e workflow's upload job. The two
+    # profiles use distinct flags so coverage is attributable per source.
+    - name: Upload unit-test coverage to Codecov
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      continue-on-error: true
+      with:
+        files: ./coverage.out
+        flags: unittests
+    - name: Upload integration-test coverage to Codecov
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      continue-on-error: true
+      with:
+        files: ./coverage-integration.out
+        flags: integration
+
   lint:
     name: Code standards (linting)
     runs-on: ubuntu-latest
@@ -53,13 +72,13 @@ jobs:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       id: setup-go
       with:
-        go-version: "~1.26.4"
+        go-version: "~1.26.5"
 
     - name: Cache tools
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
@@ -67,7 +86,7 @@ jobs:
     - name: Install tools
       run: make install-tools
 
-    - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           /home/runner/.cache/golangci-lint
@@ -93,20 +112,20 @@ jobs:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
-        go-version: "~1.26.4"
+        go-version: "~1.26.5"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
       with:
         languages: go
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      uses: github/codeql-action/autobuild@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      uses: github/codeql-action/analyze@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
 
   govulncheck:
     name: Govulncheck
@@ -118,13 +137,13 @@ jobs:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       id: setup-go
       with:
-        go-version: "~1.26.4"
+        go-version: "~1.26.5"
 
     - name: Cache tools
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
