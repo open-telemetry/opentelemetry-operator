@@ -35,6 +35,11 @@ var componentParsers = []components.Parser{
 	// must generate the same RBAC for either spelling (#4922).
 	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
 	components.NewBuilder[ResourceDetectionConfig]().WithName("resourcedetection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
+	// resource_detection is the snake-case alias introduced in
+	// open-telemetry/opentelemetry-collector-contrib#48525. Both names
+	// resolve to the same processor in the collector, so the operator
+	// must generate the same RBAC for either spelling.
+	components.NewBuilder[ResourceDetectionConfig]().WithName("resource_detection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
 }
 
 func init() {
