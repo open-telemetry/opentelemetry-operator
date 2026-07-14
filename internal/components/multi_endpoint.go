@@ -64,6 +64,10 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
+func (m *MultiPortReceiver) ParserAliases() []string {
+	return nil
+}
+
 func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error) {
 	// Apply options to build the DefaultConfig
 	defaultCfg := &DefaultConfig{}

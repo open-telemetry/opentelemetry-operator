@@ -120,17 +120,12 @@ var componentParsers = []components.Parser{
 		WithProtocol(corev1.ProtocolTCP).
 		WithTargetPort(3100).
 		MustBuild(),
-	components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
-		WithRbacGen(generateKubeletStatsRbacRules).
-		WithEnvVarGen(generateKubeletStatsEnvVars).
-		MustBuild(),
-	// kubelet_stats is the snake-case alias introduced in
-	// open-telemetry/opentelemetry-collector-contrib#47957. Both names
-	// resolve to the same receiver in the collector, so the operator must
-	// generate the same RBAC and env vars for either spelling.
+	// kubelet_stats, formerly kubeletstats
+	// (open-telemetry/opentelemetry-collector-contrib#47957).
 	components.NewBuilder[kubeletStatsConfig]().WithName("kubelet_stats").
 		WithRbacGen(generateKubeletStatsRbacRules).
 		WithEnvVarGen(generateKubeletStatsEnvVars).
+		WithAlias("kubeletstats").
 		MustBuild(),
 	components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
 		WithRbacGen(generatek8seventsRbacRules).
@@ -138,15 +133,11 @@ var componentParsers = []components.Parser{
 	components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
 		WithRbacGen(generatek8sclusterRbacRules).
 		MustBuild(),
-	components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
-		WithRbacGen(generatek8sobjectsRbacRules).
-		MustBuild(),
-	// k8s_objects is the snake-case alias introduced in
-	// open-telemetry/opentelemetry-collector-contrib#47440. Both names
-	// resolve to the same receiver in the collector, so the operator must
-	// generate the same RBAC for either spelling.
+	// k8s_objects, formerly k8sobjects
+	// (open-telemetry/opentelemetry-collector-contrib#47440).
 	components.NewBuilder[k8sobjectsConfig]().WithName("k8s_objects").
 		WithRbacGen(generatek8sobjectsRbacRules).
+		WithAlias("k8sobjects").
 		MustBuild(),
 	NewPrometheusParser(),
 	NewScraperParser("sshcheck"),
@@ -183,5 +174,8 @@ var componentParsers = []components.Parser{
 func init() {
 	for _, parser := range componentParsers {
 		Register(parser.ParserType(), parser)
+		for _, alias := range parser.ParserAliases() {
+			Register(alias, parser)
+		}
 	}
 }
