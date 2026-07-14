@@ -15,9 +15,10 @@ import (
 type AllocatorProvider func(log logr.Logger, opts ...Option) Allocator
 
 var strategies = map[string]Strategy{
-	leastWeightedStrategyName:     newleastWeightedStrategy(),
-	consistentHashingStrategyName: newConsistentHashingStrategy(),
-	perNodeStrategyName:           newPerNodeStrategy(),
+	leastWeightedStrategyName:             newleastWeightedStrategy(),
+	consistentHashingStrategyName:         newConsistentHashingStrategy(),
+	consistentHashingEndpointStrategyName: newConsistentHashingEndpointStrategy(),
+	perNodeStrategyName:                   newPerNodeStrategy(),
 }
 
 type Option func(Allocator)

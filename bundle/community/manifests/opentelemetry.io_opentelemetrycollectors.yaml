@@ -3163,6 +3163,7 @@ spec:
                     enum:
                     - least-weighted
                     - consistent-hashing
+                    - consistent-hashing-endpoint
                     - per-node
                     type: string
                   enabled:
@@ -8091,6 +8092,7 @@ spec:
                     enum:
                     - least-weighted
                     - consistent-hashing
+                    - consistent-hashing-endpoint
                     - per-node
                     type: string
                   allowInsecureAuthSecrets:
