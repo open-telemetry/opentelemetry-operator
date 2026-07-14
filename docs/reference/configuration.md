@@ -138,26 +138,8 @@ These fields are read from YAML only and have no CLI or environment variable equ
 | `operator-op-amp-bridge-configmap-entry` | ConfigMap key for OpAMP bridge config |
 | `create-rbac-permissions` | Deprecated; use CLI `--create-rbac-permissions` only |
 
-## Runtime-only fields
-
-The operator sets these at startup from cluster autodetection. They are not user-configurable through file, env, or CLI:
-
-- `open-shift-routes-availability`
-- `gateway-apis-availability`
-- `prometheus-cr-availability`
-- `cert-manager-availability`
-- `target-allocator-availability`
-- `collector-availability`
-- `opampbridge-availability`
-
 HTTP(S) proxy settings (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) are captured from the operator pod environment and propagated to managed workloads; they are not part of the YAML schema.
-
-## Helm chart
-
-When deploying with Helm, set `manager.config` in chart values to inject a YAML snippet mounted via `--config-file`. Precedence matches the standalone operator: chart defaults, then file, then env, then any extra manager args.
 
 ## Source of truth
 
 Configuration structs and defaults: [`internal/config/config.go`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/internal/config/config.go).
-
-Future auto-generated flag documentation is tracked in [docs/rfcs/documentation.md](https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/rfcs/documentation.md) (Phase 3).
