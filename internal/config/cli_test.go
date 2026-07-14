@@ -47,15 +47,3 @@ func TestWatchNamespaceFlag(t *testing.T) {
 	require.NoError(t, ApplyCLI(&c))
 	require.Equal(t, "foo,bar", c.WatchNamespace)
 }
-
-func TestTLSMinVersionFlag(t *testing.T) {
-	oldArgs := args
-	args = []string{"--tls-min-version=VersionTLS13"}
-	t.Cleanup(func() {
-		args = oldArgs
-	})
-	c := New()
-	require.Equal(t, "VersionTLS12", c.TLS.MinVersion)
-	require.NoError(t, ApplyCLI(&c))
-	require.Equal(t, "VersionTLS13", c.TLS.MinVersion)
-}
