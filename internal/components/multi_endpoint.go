@@ -64,7 +64,7 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func (m *MultiPortReceiver) ParserAliases() []string {
+func (*MultiPortReceiver) ParserAliases() []string {
 	return nil
 }
 
