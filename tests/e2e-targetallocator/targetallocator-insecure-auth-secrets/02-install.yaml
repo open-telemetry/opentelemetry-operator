@@ -11,7 +11,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: check-secret
-        image: mirror.gcr.io/curlimages/curl:latest
+        image: mirror.gcr.io/alpine/curl:latest
         args:
         - /bin/sh
         - -c
