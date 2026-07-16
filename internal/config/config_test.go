@@ -29,6 +29,7 @@ func TestToStringMap(t *testing.T) {
 		"auto-instrumentation-python-image":       "",
 		"cert-manager-availability":               "0",
 		"collector-availability":                  "0",
+		"clusterobservability-collector-image":    "",
 		"collector-configmap-entry":               "",
 		"collector-image":                         "myexample:1.0",
 		"create-rbac-permissions":                 "0",

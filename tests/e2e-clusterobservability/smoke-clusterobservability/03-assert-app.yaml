@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traces-demo
+status:
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: traces-demo
+spec:
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-nodejs'] | length(@)): 1
+status:
+  phase: Running
