@@ -1105,7 +1105,7 @@ catalog-push: ## Push a catalog image.
 
 # Tool versions for supply chain securitya
 # renovate: datasource=github-releases depName=sigstore/cosign
-COSIGN_VERSION ?= v2.6.4
+COSIGN_VERSION ?= v3.1.2
 COSIGN ?= $(LOCALBIN)/cosign
 UPLOAD ?= true
 
