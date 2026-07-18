@@ -1,7 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: e2e-test-app-bridge-server
-status:
-  readyReplicas: 1
-  replicas: 1

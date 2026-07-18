@@ -155,6 +155,162 @@ spec:
                           receivers:
                             - jaeger
                             - otlp
+    # ---------------------------------------------------------------------------
+    # Scenario 1: Bridge accepts CommandType_Restart and the managed collector
+    #             gets the kubectl.kubernetes.io/restartedAt annotation set,
+    #             proving TriggerRollout was called.
+    # ---------------------------------------------------------------------------
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: "scenario 1: restart command triggers collector rollout"
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              #!/bin/bash
+              set -eu
+              # The bridge server runs from a scratch image with no shell tools.
+              # Use the Kubernetes API proxy to reach the service from the host.
+              PROXY_PORT=18321
+              kubectl proxy --port=$PROXY_PORT &>/dev/null &
+              PROXY_PID=$!
+              sleep 1
+              curl -fsS -X POST \
+                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/send-command" \
+                -H "Content-Type: application/json" \
+                -d '{"command_type":"restart"}'
+              STATUS=$?
+              kill $PROXY_PID 2>/dev/null || true
+              exit $STATUS
+        # Poll until the restartedAt annotation appears on the collector Deployment.
+        - script:
+            timeout: 60s
+            content: |
+              #!/bin/bash
+              set -eu
+              for _ in $(seq 1 30); do
+                val=$(kubectl get deployment simplest-collector -n "$NAMESPACE" \
+                  -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}' 2>/dev/null || true)
+                if [ -n "$val" ]; then
+                  printf '%s' "$val"
+                  exit 0
+                fi
+                sleep 1
+              done
+              echo "restartedAt annotation never appeared" >&2
+              exit 1
+            outputs:
+              - name: restartedAt
+                value: ($stdout)
+        - assert:
+            resource:
+              (length($restartedAt) > `0`): true
+
+    # ---------------------------------------------------------------------------
+    # Scenario 3: Bridge remains healthy and connected after processing the
+    #             restart command (bridge itself does not restart; it only
+    #             triggers a rollout on the managed collector).
+    # ---------------------------------------------------------------------------
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: "scenario 3: bridge remains healthy after restart command"
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              last=""
+              for _ in $(seq 1 30); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -q '"healthy":true' && \
+                     printf '%s' "$last" | grep -q "\"$NAMESPACE/simplest\":"; then
+                    printf '%s' "$last"
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+              printf '%s\n' "$last" >&2
+              exit 1
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.health.healthy): true
+
+    # ---------------------------------------------------------------------------
+    # Scenario 2: Bridge rejects unknown command types.
+    #             The managed collector annotation must NOT change.
+    # ---------------------------------------------------------------------------
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: "scenario 2: unknown command is rejected, collector not restarted"
+      try:
+        # Record the current restartedAt timestamp before sending the unknown command.
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              kubectl get deployment simplest-collector -n "$NAMESPACE" \
+                -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}'
+            outputs:
+              - name: restartedAtBefore
+                value: ($stdout)
+        - script:
+            timeout: 30s
+            content: |
+              #!/bin/bash
+              set -eu
+              PROXY_PORT=18321
+              kubectl proxy --port=$PROXY_PORT &>/dev/null &
+              PROXY_PID=$!
+              sleep 1
+              curl -fsS -X POST \
+                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/send-command" \
+                -H "Content-Type: application/json" \
+                -d '{"command_type":"unknown_xyz"}'
+              STATUS=$?
+              kill $PROXY_PID 2>/dev/null || true
+              exit $STATUS
+        - sleep:
+            duration: 3s
+        # Verify the annotation has not changed - unknown command must not trigger a rollout.
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              kubectl get deployment simplest-collector -n "$NAMESPACE" \
+                -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}'
+            outputs:
+              - name: restartedAtAfter
+                value: ($stdout)
+        - assert:
+            resource:
+              ($restartedAtBefore == $restartedAtAfter): true
+        # Bridge must have logged the expected "unsupported command type" error.
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              kubectl logs -l app.kubernetes.io/name=test-opamp-bridge -n "$NAMESPACE" \
+                | grep -q "unsupported command type"
+
+    # ---------------------------------------------------------------------------
+    # Final: Ensure no unexpected errors in bridge logs.
+    #        The "unsupported command type" error from scenario 2 is expected
+    #        so filter it out before scanning for unexpected errors.
+    # ---------------------------------------------------------------------------
     - name: Ensure no errors in bridge logs
       try:
         - script:
@@ -162,9 +318,9 @@ spec:
               #!/bin/bash
               logs=$(kubectl logs -l app.kubernetes.io/name=test-opamp-bridge -n $NAMESPACE)
               echo "$logs"
-              # Check for any "level":"error" or "bad handshake"
-              if echo "$logs" | grep -qiE "\"level\":\"error\"|bad handshake"; then
-                echo "Found an error in the logs!"
+              filtered=$(printf '%s\n' "$logs" | grep -v "unsupported command type")
+              if printf '%s\n' "$filtered" | grep -qiE '"level":"error"|bad handshake'; then
+                echo "Found an unexpected error in the logs!"
                 exit 1
               fi
-              echo "No errors found."
+              echo "No unexpected errors found."
