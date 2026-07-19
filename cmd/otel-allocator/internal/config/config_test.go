@@ -972,6 +972,80 @@ func TestGetSecretsAllowList(t *testing.T) {
 	}
 }
 
+func TestLoadAllocationStrategyConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	configContent := `
+collector_namespace: default
+config:
+  scrape_configs:
+    - job_name: prometheus
+allocation_strategy: per-node
+allocation_strategy_config:
+  consistent_hashing: {}
+  least_weighted: {}
+  per_node:
+    fallback_strategy:
+      name: consistent-hashing
+      consistent_hashing: {}
+`
+	configPath := filepath.Join(tempDir, "config.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0o600))
+
+	cfg := CreateDefaultConfig()
+	require.NoError(t, LoadFromFile(configPath, &cfg))
+
+	assert.Equal(t, "per-node", cfg.AllocationStrategy)
+	assert.Equal(t, AllocationStrategyConfig{
+		PerNode: PerNodeStrategyConfig{
+			FallbackStrategy: &FallbackStrategyConfig{Name: "consistent-hashing"},
+		},
+	}, cfg.AllocationStrategyConfig)
+}
+
+func TestGetTargetAllocatorFallbackStrategy(t *testing.T) {
+	testCases := []struct {
+		name     string
+		config   Config
+		expected *FallbackStrategyConfig
+	}{
+		{
+			name:     "neither set",
+			config:   Config{},
+			expected: nil,
+		},
+		{
+			name:     "only deprecated top-level option set",
+			config:   Config{AllocationFallbackStrategy: "consistent-hashing"},
+			expected: &FallbackStrategyConfig{Name: "consistent-hashing"},
+		},
+		{
+			name: "only strategy-specific option set",
+			config: Config{
+				AllocationStrategyConfig: AllocationStrategyConfig{
+					PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: "least-weighted"}},
+				},
+			},
+			expected: &FallbackStrategyConfig{Name: "least-weighted"},
+		},
+		{
+			name: "strategy-specific option takes precedence over deprecated option",
+			config: Config{
+				AllocationFallbackStrategy: "consistent-hashing",
+				AllocationStrategyConfig: AllocationStrategyConfig{
+					PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: "least-weighted"}},
+				},
+			},
+			expected: &FallbackStrategyConfig{Name: "least-weighted"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.config.GetTargetAllocatorFallbackStrategy())
+		})
+	}
+}
+
 func TestConfigLoadPriority(t *testing.T) {
 	// Helper function to create a dummy kube config for tests
 	createDummyKubeConfig := func(t *testing.T, dir string) string {

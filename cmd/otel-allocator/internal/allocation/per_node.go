@@ -4,6 +4,7 @@
 package allocation
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -18,15 +19,30 @@ type perNodeStrategy struct {
 	fallbackStrategy Strategy
 }
 
-func newPerNodeStrategy() Strategy {
+// newPerNodeStrategy constructs a per-node strategy. The fallbackStrategy, which may be nil, is used to
+// assign targets the per-node strategy can't assign on its own.
+func newPerNodeStrategy(fallbackStrategy Strategy) Strategy {
 	return &perNodeStrategy{
 		collectorByNode:  make(map[string]*Collector),
-		fallbackStrategy: nil,
+		fallbackStrategy: fallbackStrategy,
 	}
 }
 
-func (s *perNodeStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {
-	s.fallbackStrategy = fallbackStrategy
+// buildPerNodeStrategy builds the configured fallback strategy and injects it into the per-node strategy.
+func buildPerNodeStrategy(config StrategyConfig) (Strategy, error) {
+	var fallbackStrategy Strategy
+	if fallbackConfig := config.PerNode.FallbackStrategy; fallbackConfig != nil {
+		// A per-node fallback would fail on exactly the targets the primary strategy failed on.
+		if fallbackConfig.Name == perNodeStrategyName {
+			return nil, errors.New("the per-node strategy can't be used as its own fallback")
+		}
+		fallback, err := buildFallbackStrategy(*fallbackConfig)
+		if err != nil {
+			return nil, fmt.Errorf("building per-node fallback strategy: %w", err)
+		}
+		fallbackStrategy = fallback
+	}
+	return newPerNodeStrategy(fallbackStrategy), nil
 }
 
 func (*perNodeStrategy) GetName() string {

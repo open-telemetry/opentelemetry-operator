@@ -93,7 +93,9 @@ func TestAllocationPerNode(t *testing.T) {
 // Tests that four targets, with one of them missing node labels, are all assigned.
 func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := New("per-node", loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
+	s, _ := New("per-node", loggerPerNode, WithStrategyConfig(StrategyConfig{
+		PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: consistentHashingStrategyName}},
+	}))
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)

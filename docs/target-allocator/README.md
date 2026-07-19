@@ -23,7 +23,8 @@ The Target Allocator uses a configuration file (by default under `/conf/targetal
 | `kube_config_file_path`            | Path to the file on the pod containing the Kube config.                       | "~/.kube/config"                              | `KUBECONFIG`         |
 | `config`                           | Prometheus configuration block                                                |                                               |                      |
 | `allocation_strategy`              | Allocation strategy to apply to job assignments                               | `consistent-hashing`                          |                      |
-| `allocation_fallback_strategy`     | Fallback allocation strategy for job assignments                              |                                               |                      |
+| `allocation_strategy_config`       | Per-strategy configuration options, keyed by strategy name (e.g. `per_node`)  |                                               |                      |
+| `allocation_fallback_strategy`     | Deprecated. Use `allocation_strategy_config.per_node.fallback_strategy`        |                                               |                      |
 | `filter_strategy`                  | Filter strategy to apply to metrics                                           | `relabel-config`                              |                      |
 | `prometheus_cr`                    | Whether to watch Prometheus Custom Resources                                  |                                               |                      |
 | `https`                            | Whether to expose the target allocator endpoint over https                    |                                               |                      |
@@ -76,6 +77,21 @@ to use it with a collector running as a DaemonSet.
 
 > [!WARNING]
 > The per-node strategy ignores targets not assigned to a Node, like for example control plane components.
+
+By default, targets which can't be assigned to a Node are left unassigned. To instead assign them using a different
+strategy, set a fallback strategy:
+
+```yaml
+allocation_strategy: per-node
+allocation_strategy_config:
+  per_node:
+    fallback_strategy:
+      name: consistent-hashing
+```
+
+The `fallback_strategy` section takes the fallback strategy's `name` alongside the options for that strategy, keyed
+by strategy name just like `allocation_strategy_config` itself. A strategy used as a fallback can't have a fallback
+of its own, so fallback chains are bounded to a single level.
 
 [consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
 ## Discovery of Prometheus Custom Resources
