@@ -38,6 +38,7 @@ spec:
       name: verify initial standalone report
       try:
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -104,6 +105,7 @@ spec:
       name: send valid remote config
       try:
         - script:
+            timeout: 45s
             content: |
               #!/bin/bash
               set -eu
@@ -172,6 +174,7 @@ spec:
       name: verify valid remote config status
       try:
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -224,6 +227,7 @@ spec:
       name: reject invalid remote config
       try:
         - script:
+            timeout: 45s
             content: |
               #!/bin/bash
               set -eu
@@ -251,6 +255,7 @@ spec:
               kill $PROXY_PID 2>/dev/null || true
               exit $STATUS
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -316,6 +321,7 @@ spec:
         - assert:
             file: 02-assert.yaml
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu

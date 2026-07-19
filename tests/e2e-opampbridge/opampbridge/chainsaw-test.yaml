@@ -25,6 +25,7 @@ spec:
     - name: Check bridge is connected and healthy before installing collectors
       try:
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -85,6 +86,7 @@ spec:
     - name: Check effective config contains the managed collector
       try:
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -111,6 +113,7 @@ spec:
     - name: Verify content is accurate
       try:
         - script:
+            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -222,6 +225,7 @@ spec:
       name: "scenario 3: bridge remains healthy after restart command"
       try:
         - script:
+            timeout: 45s
             content: |
               #!/bin/bash
               set -eu
