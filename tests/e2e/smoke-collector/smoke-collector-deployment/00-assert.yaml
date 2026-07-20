@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: smoke-collector-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: 0.121.0
+    app.kubernetes.io/version: ($collectorVersion)
 spec:
   template:
     metadata:

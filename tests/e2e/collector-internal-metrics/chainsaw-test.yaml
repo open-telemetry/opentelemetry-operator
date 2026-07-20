@@ -1,0 +1,87 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: collector-internal-metrics
+spec:
+  steps:
+    - name: Install collector with all pipeline types
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+    - name: Generate telemetry (traces, metrics, logs)
+      try:
+        - apply:
+            file: 01-generate-telemetry.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: Validate collector internal metrics
+      try:
+        - command:
+            entrypoint: kubectl
+            args:
+              - get
+              - pod
+              - -n
+              - ${NAMESPACE}
+              - -l
+              - app.kubernetes.io/name=internal-metrics-collector
+              - -o
+              - jsonpath={.items[0].metadata.name}
+            outputs:
+              - name: podName
+                value: ($stdout)
+        - script:
+            env:
+              - name: podName
+                value: ($podName)
+            shell: /bin/bash
+            timeout: 90s
+            content: |
+              for i in {1..12}; do
+                echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
+                if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics 2>/dev/null); then
+                  echo "Successfully fetched metrics on attempt $i" >&2
+                  echo "$metrics_output"
+                  exit 0
+                fi
+                echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
+                sleep 5
+              done
+              echo "Failed to fetch metrics after 12 attempts" >&2
+              exit 1
+            outputs:
+              - name: metrics
+                value: (x_metrics_decode($stdout))
+            check:
+              ($error == null): true
+        - assert:
+            resource:
+              # Process and runtime metrics (existence check)
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_uptime']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_cpu_seconds']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_memory_rss']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_runtime_heap_alloc_bytes']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_runtime_total_alloc_bytes']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_runtime_total_sys_memory_bytes']) > `0`): true
+              # Exporter metrics (value > 1 proves data flowed)
+              ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_log_records'].value | [0] > `1`): true
+              # Receiver accepted metrics (value > 1 proves data was received)
+              ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_log_records'].value | [0] > `1`): true
+              # Receiver refused metrics (existence check - values may be 0)
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_receiver_refused_spans']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_receiver_refused_metric_points']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_receiver_refused_log_records']) > `0`): true
+              # Processor metrics (value > 1 proves data was processed)
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_spans'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_metric_points'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_log_records'].value | [0] > `1`): true
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/name=internal-metrics-collector
+            container: otc-container

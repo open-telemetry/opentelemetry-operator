@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim@sha256:63ebabdcde24cc8134304a6f50719cf1e22bb4e9f7148ac4ef967c7680187356 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim@sha256:89ce6291bde9acdf59594e79fb8277c6d84c46e4b1f5bf126a4f18766e4bd597 AS build
 ARG TARGETARCH
 WORKDIR /source
 
@@ -19,7 +19,7 @@ WORKDIR /source/DiceRoller
 RUN dotnet publish -a $TARGETARCH -c Release -o /app --no-restore
 
 # Stage 2: Create the runtime image
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:e78fda31142e28746a6908e288e0d40346793f691ca99d8d150bcbe95c0ef035
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:9822a6201c64c9f38b8a190832a7ae21cd30150d509b3ea170fd83b4f4e6166a
 
 # Environment variables for .NET runtime behavior
 ENV DOTNET_ROLL_FORWARD=Major
