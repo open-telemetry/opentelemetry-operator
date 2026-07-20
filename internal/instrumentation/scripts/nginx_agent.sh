@@ -35,6 +35,14 @@ sed "s,__agent_log_dir__,${nginx_agent_log_dir},g" \
 echo "${OTEL_NGINX_AGENT_CONF}" > /opt/opentelemetry-webserver/source-conf/opentelemetry_agent.conf
 sed -i "s,<<SID-PLACEHOLDER>>,${OTEL_NGINX_SERVICE_INSTANCE_ID},g" \
     /opt/opentelemetry-webserver/source-conf/opentelemetry_agent.conf
+for runtime_var in OTEL_NODE_IP OTEL_POD_IP; do
+    runtime_val=$(printenv "$runtime_var" || true)
+    if [ -n "$runtime_val" ]; then
+        escaped_runtime_val=$(printf '%s' "$runtime_val" | sed 's,[\\/&|],\\&,g')
+        sed -i "s,\\$(${runtime_var}),${escaped_runtime_val},g" \
+            /opt/opentelemetry-webserver/source-conf/opentelemetry_agent.conf
+    fi
+done
 
 # Inject directives at the top of the user's nginx config:
 #   - load_module so nginx loads the OTel module

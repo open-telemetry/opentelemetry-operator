@@ -132,7 +132,7 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 			// User-controlled value is passed as a positional arg (read as $1
 			// in the script) so it is never parsed by the shell.
 			Args: []string{nginxAgentScript, "--", getNginxConfFile(nginxSpec.ConfigFile)},
-			Env: []corev1.EnvVar{
+			Env: append([]corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
 					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, container, otlpEndpoint, resourceMap),
@@ -145,7 +145,7 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 						},
 					},
 				},
-			},
+			}, nginxSpec.Env...),
 			Resources: nginxSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{
 				{

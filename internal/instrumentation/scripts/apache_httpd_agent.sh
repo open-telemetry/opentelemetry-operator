@@ -35,6 +35,14 @@ sed "s/__agent_log_dir__/${agent_log_dir}/g" \
 echo "${OTEL_APACHE_AGENT_CONF}" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf
 sed -i "s/<<SID-PLACEHOLDER>>/${APACHE_SERVICE_INSTANCE_ID}/g" \
     /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf
+for runtime_var in OTEL_NODE_IP OTEL_POD_IP; do
+    runtime_val=$(printenv "$runtime_var" || true)
+    if [ -n "$runtime_val" ]; then
+        escaped_runtime_val=$(printf '%s' "$runtime_val" | sed 's/[\\/&|]/\\&/g')
+        sed -i "s|\\$(${runtime_var})|${escaped_runtime_val}|g" \
+            /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf
+    fi
+done
 
 # Wire the OTel agent config into the user's httpd.conf via Include directive.
 printf '\nInclude %s/opentemetry_agent.conf\n' "$apache_conf_dir" \
