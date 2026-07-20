@@ -20,30 +20,52 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
+func strPtr(s string) *string { return &s }
+
+func grpcPeriodicReader(endpoint string, extra ...func(*config.OTLPGrpcExporterConfig)) *config.PeriodicMetricReader {
+	cfg := &config.OTLPGrpcExporterConfig{Endpoint: endpoint}
+	for _, fn := range extra {
+		fn(cfg)
+	}
+	return &config.PeriodicMetricReader{Exporter: config.MetricExporter{OTLPGrpc: cfg}}
+}
+
+func httpPeriodicReader(endpoint string, extra ...func(*config.OTLPHttpExporterConfig)) *config.PeriodicMetricReader {
+	cfg := &config.OTLPHttpExporterConfig{Endpoint: endpoint}
+	for _, fn := range extra {
+		fn(cfg)
+	}
+	return &config.PeriodicMetricReader{Exporter: config.MetricExporter{OTLPHttp: cfg}}
+}
+
 func TestNewOTLPMetricReader(t *testing.T) {
 	tests := []struct {
 		name string
-		cfg  *config.OTLPExporterConfig
+		cfg  *config.PeriodicMetricReader
 	}{
 		{
 			name: "grpc default",
-			cfg:  &config.OTLPExporterConfig{Endpoint: "example.com:4317", Insecure: true},
+			cfg:  grpcPeriodicReader("example.com:4317", func(c *config.OTLPGrpcExporterConfig) { c.Tls = &config.GrpcTlsConfig{Insecure: true} }),
 		},
 		{
 			name: "grpc explicit delta",
-			cfg:  &config.OTLPExporterConfig{Protocol: "grpc", Endpoint: "example.com:4317", Temporality: "delta", Insecure: true},
+			cfg:  grpcPeriodicReader("example.com:4317", func(c *config.OTLPGrpcExporterConfig) { c.TemporalityPreference = "delta"; c.Tls = &config.GrpcTlsConfig{Insecure: true} }),
 		},
 		{
 			name: "http base url",
-			cfg:  &config.OTLPExporterConfig{Protocol: "http", Endpoint: "http://example.com:4318", Insecure: true, ExportInterval: 15 * time.Second, Timeout: 5 * time.Second},
+			cfg: &config.PeriodicMetricReader{
+				Interval: 15000,
+				Timeout:  5000,
+				Exporter: config.MetricExporter{OTLPHttp: &config.OTLPHttpExporterConfig{Endpoint: "http://example.com:4318"}},
+			},
 		},
 		{
 			name: "http with signal path already present",
-			cfg:  &config.OTLPExporterConfig{Protocol: "http", Endpoint: "http://example.com:4318/v1/metrics", Insecure: true},
+			cfg:  httpPeriodicReader("http://example.com:4318/v1/metrics"),
 		},
 		{
 			name: "grpc with URL scheme",
-			cfg:  &config.OTLPExporterConfig{Protocol: "grpc", Endpoint: "http://example.com:4317", Insecure: true},
+			cfg:  grpcPeriodicReader("http://example.com:4317", func(c *config.OTLPGrpcExporterConfig) { c.Tls = &config.GrpcTlsConfig{Insecure: true} }),
 		},
 	}
 	for _, tt := range tests {
@@ -63,9 +85,9 @@ func TestNewOTLPMetricReader(t *testing.T) {
 func TestTemporalitySelector(t *testing.T) {
 	assert.Equal(t, metricdata.DeltaTemporality, temporalitySelector("delta")(sdkmetric.InstrumentKindCounter))
 	assert.Equal(t, metricdata.CumulativeTemporality, temporalitySelector("cumulative")(sdkmetric.InstrumentKindCounter))
-	// lowmemory: delta for counters, cumulative for gauges.
-	assert.Equal(t, metricdata.DeltaTemporality, temporalitySelector("lowmemory")(sdkmetric.InstrumentKindCounter))
-	assert.Equal(t, metricdata.CumulativeTemporality, temporalitySelector("lowmemory")(sdkmetric.InstrumentKindObservableGauge))
+	// low_memory: delta for counters, cumulative for gauges.
+	assert.Equal(t, metricdata.DeltaTemporality, temporalitySelector("low_memory")(sdkmetric.InstrumentKindCounter))
+	assert.Equal(t, metricdata.CumulativeTemporality, temporalitySelector("low_memory")(sdkmetric.InstrumentKindObservableGauge))
 	// unset defaults to cumulative.
 	assert.Equal(t, metricdata.CumulativeTemporality, temporalitySelector("")(sdkmetric.InstrumentKindCounter))
 }
@@ -77,7 +99,8 @@ func TestExpandEnvRefs(t *testing.T) {
 	// Unset variable expands to empty.
 	assert.Equal(t, "prefix-", expandEnvRefs("prefix-${env:TA_TEST_UNSET}"))
 
-	headers := expandHeaders(map[string]string{"Authorization": "Api-Token ${env:TA_TEST_TOKEN}"})
+	val := "Api-Token ${env:TA_TEST_TOKEN}"
+	headers := expandHeaders([]config.NameValuePair{{Name: "Authorization", Value: &val}})
 	assert.Equal(t, "Api-Token secret-value", headers["Authorization"])
 	assert.Nil(t, expandHeaders(nil))
 }
@@ -109,12 +132,15 @@ func TestOTLPExportEndToEnd(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	reader, err := newOTLPMetricReader(ctx, &config.OTLPExporterConfig{
-		Protocol:       "http",
-		Endpoint:       srv.URL,
-		Insecure:       true,
-		ExportInterval: 100 * time.Millisecond,
-		Headers:        map[string]string{"Authorization": "Api-Token ${env:TA_TEST_TOKEN}"},
+	authVal := "Api-Token ${env:TA_TEST_TOKEN}"
+	reader, err := newOTLPMetricReader(ctx, &config.PeriodicMetricReader{
+		Interval: 100,
+		Exporter: config.MetricExporter{
+			OTLPHttp: &config.OTLPHttpExporterConfig{
+				Endpoint: srv.URL,
+				Headers:  []config.NameValuePair{{Name: "Authorization", Value: &authVal}},
+			},
+		},
 	})
 	require.NoError(t, err)
 
@@ -150,3 +176,4 @@ func TestTelemetryResource(t *testing.T) {
 	}
 	assert.True(t, found, "service.name attribute must be set")
 }
+
