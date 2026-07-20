@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -109,7 +110,7 @@ func newOTLPMetricReader(ctx context.Context, cfg *config.PeriodicMetricReader) 
 	if exp.OTLPHttp != nil {
 		return newHTTPMetricReader(ctx, exp.OTLPHttp, readerOpts)
 	}
-	return nil, fmt.Errorf("periodic metric reader: must configure otlp_grpc or otlp_http exporter")
+	return nil, errors.New("periodic metric reader: must configure otlp_grpc or otlp_http exporter")
 }
 
 // newGRPCMetricReader creates a PeriodicExportingMetricReader backed by an OTLP/gRPC exporter.
@@ -308,4 +309,3 @@ func temporalitySelector(t string) sdkmetric.TemporalitySelector {
 		return sdkmetric.DefaultTemporalitySelector
 	}
 }
-
