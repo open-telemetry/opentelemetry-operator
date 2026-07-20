@@ -105,7 +105,7 @@ spec:
       name: send valid remote config
       try:
         - script:
-            timeout: 45s
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
@@ -120,18 +120,14 @@ spec:
               EOF
               )
 
-              PROXY_PORT=18421
-              kubectl proxy --port=$PROXY_PORT &>/dev/null &
-              PROXY_PID=$!
-              sleep 1
-              printf '%s' "$remote_config" | curl -fsS \
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-valid-remote-config \
+                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --restart=Never --rm -i \
+                --command -- curl -fsS \
                 -X POST \
-                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/push-config-to-agent" \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
                 -H "Content-Type: application/json" \
                 --data-binary @-
-              STATUS=$?
-              kill $PROXY_PID 2>/dev/null || true
-              exit $STATUS
         - assert:
             timeout: 30s
             resource:
@@ -227,7 +223,7 @@ spec:
       name: reject invalid remote config
       try:
         - script:
-            timeout: 45s
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
@@ -242,18 +238,14 @@ spec:
               EOF
               )
 
-              PROXY_PORT=18421
-              kubectl proxy --port=$PROXY_PORT &>/dev/null &
-              PROXY_PID=$!
-              sleep 1
-              printf '%s' "$remote_config" | curl -fsS \
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-invalid-remote-config \
+                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --restart=Never --rm -i \
+                --command -- curl -fsS \
                 -X POST \
-                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/push-config-to-agent" \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
                 -H "Content-Type: application/json" \
                 --data-binary @-
-              STATUS=$?
-              kill $PROXY_PID 2>/dev/null || true
-              exit $STATUS
         - script:
             timeout: 75s
             content: |

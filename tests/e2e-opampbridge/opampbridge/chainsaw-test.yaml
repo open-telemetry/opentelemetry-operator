@@ -171,23 +171,17 @@ spec:
       name: "scenario 1: restart command triggers collector rollout"
       try:
         - script:
-            timeout: 30s
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
-              # The bridge server runs from a scratch image with no shell tools.
-              # Use the Kubernetes API proxy to reach the service from the host.
-              PROXY_PORT=18321
-              kubectl proxy --port=$PROXY_PORT &>/dev/null &
-              PROXY_PID=$!
-              sleep 1
-              curl -fsS -X POST \
-                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/send-command" \
+              kubectl run -n "$NAMESPACE" send-restart-cmd \
+                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --restart=Never --rm -i \
+                --command -- curl -fsS -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/send-command" \
                 -H "Content-Type: application/json" \
                 -d '{"command_type":"restart"}'
-              STATUS=$?
-              kill $PROXY_PID 2>/dev/null || true
-              exit $STATUS
         # Poll until the restartedAt annotation appears on the collector Deployment.
         - script:
             timeout: 60s
@@ -272,21 +266,17 @@ spec:
               - name: restartedAtBefore
                 value: ($stdout)
         - script:
-            timeout: 30s
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
-              PROXY_PORT=18321
-              kubectl proxy --port=$PROXY_PORT &>/dev/null &
-              PROXY_PID=$!
-              sleep 1
-              curl -fsS -X POST \
-                "http://127.0.0.1:$PROXY_PORT/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/send-command" \
+              kubectl run -n "$NAMESPACE" send-unknown-cmd \
+                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --restart=Never --rm -i \
+                --command -- curl -fsS -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/send-command" \
                 -H "Content-Type: application/json" \
                 -d '{"command_type":"unknown_xyz"}'
-              STATUS=$?
-              kill $PROXY_PID 2>/dev/null || true
-              exit $STATUS
         - sleep:
             duration: 3s
         # Verify the annotation has not changed - unknown command must not trigger a rollout.
