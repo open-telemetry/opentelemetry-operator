@@ -43,16 +43,21 @@ func setupMeterProvider(ctx context.Context, cfg *config.Config) (prometheus.Gat
 	}
 	meterProviderOpts := []sdkmetric.Option{sdkmetric.WithReader(metricExporter)}
 
-	if cfg.Telemetry.Metrics.OTLP != nil {
-		otlpReader, otlpErr := newOTLPMetricReader(ctx, cfg.Telemetry.Metrics.OTLP)
-		if otlpErr != nil {
-			return nil, nil, otlpErr
+	if cfg.Telemetry.Metrics != nil {
+		for _, reader := range cfg.Telemetry.Metrics.Readers {
+			if reader.Periodic == nil {
+				continue
+			}
+			otlpReader, otlpErr := newOTLPMetricReader(ctx, reader.Periodic)
+			if otlpErr != nil {
+				return nil, nil, otlpErr
+			}
+			res, resErr := telemetryResource(ctx)
+			if resErr != nil {
+				return nil, nil, resErr
+			}
+			meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader), sdkmetric.WithResource(res))
 		}
-		res, resErr := telemetryResource(ctx)
-		if resErr != nil {
-			return nil, nil, resErr
-		}
-		meterProviderOpts = append(meterProviderOpts, sdkmetric.WithReader(otlpReader), sdkmetric.WithResource(res))
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(meterProviderOpts...)
@@ -77,75 +82,90 @@ func expandEnvRefs(s string) string {
 	})
 }
 
-// expandHeaders returns a copy of headers with ${env:VAR} references expanded in
-// every value.
-func expandHeaders(headers map[string]string) map[string]string {
+// expandHeaders returns a map of expanded header values from a slice of NameValuePairs,
+// with ${env:VAR} references substituted in each value.
+func expandHeaders(headers []config.NameValuePair) map[string]string {
 	if len(headers) == 0 {
 		return nil
 	}
 	expanded := make(map[string]string, len(headers))
-	for k, v := range headers {
-		expanded[k] = expandEnvRefs(v)
+	for _, h := range headers {
+		if h.Value == nil {
+			continue
+		}
+		expanded[h.Name] = expandEnvRefs(*h.Value)
 	}
 	return expanded
 }
 
-// newOTLPMetricReader creates a PeriodicExportingMetricReader backed by either
-// an OTLP/gRPC or OTLP/HTTP exporter depending on cfg.Protocol.
-func newOTLPMetricReader(ctx context.Context, cfg *config.OTLPExporterConfig) (sdkmetric.Reader, error) {
-	temporality := temporalitySelector(cfg.Temporality)
+// newOTLPMetricReader creates a PeriodicExportingMetricReader from a PeriodicMetricReader
+// config. It dispatches to gRPC or HTTP based on which exporter is configured.
+func newOTLPMetricReader(ctx context.Context, cfg *config.PeriodicMetricReader) (sdkmetric.Reader, error) {
 	readerOpts := periodicReaderOptions(cfg)
-	endpoint := expandEnvRefs(cfg.Endpoint)
-	headers := expandHeaders(cfg.Headers)
-	switch cfg.Protocol {
-	case "http":
-		// WithEndpointURL does not append /v1/metrics automatically. We do it here
-		// so the endpoint convention matches the OTel collector's otlphttp exporter
-		// (where users specify the base URL, not the full signal path).
-		// Skip if the caller already included the signal path.
-		endpoint = strings.TrimRight(endpoint, "/")
-		if !strings.HasSuffix(endpoint, "/v1/metrics") {
-			endpoint += "/v1/metrics"
-		}
-		opts := []otlpmetrichttp.Option{
-			otlpmetrichttp.WithEndpointURL(endpoint),
-			otlpmetrichttp.WithTemporalitySelector(temporality),
-		}
-		if cfg.Insecure {
-			opts = append(opts, otlpmetrichttp.WithInsecure())
-		}
-		if len(headers) > 0 {
-			opts = append(opts, otlpmetrichttp.WithHeaders(headers))
-		}
-		exp, err := otlpmetrichttp.New(ctx, opts...)
-		if err != nil {
-			return nil, err
-		}
-		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
-	default: // "grpc"
-		opts := []otlpmetricgrpc.Option{
-			otlpmetricgrpc.WithTemporalitySelector(temporality),
-		}
-		// Accept both a full URL (with scheme, consistent with the HTTP protocol and
-		// the collector's otlp exporter) and a bare host:port. WithEndpointURL requires
-		// a scheme; WithEndpoint expects host:port.
-		if strings.Contains(endpoint, "://") {
-			opts = append(opts, otlpmetricgrpc.WithEndpointURL(endpoint))
-		} else {
-			opts = append(opts, otlpmetricgrpc.WithEndpoint(endpoint))
-		}
-		if cfg.Insecure {
-			opts = append(opts, otlpmetricgrpc.WithInsecure())
-		}
-		if len(headers) > 0 {
-			opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
-		}
-		exp, err := otlpmetricgrpc.New(ctx, opts...)
-		if err != nil {
-			return nil, err
-		}
-		return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
+	exp := cfg.Exporter
+	if exp.OTLPGrpc != nil {
+		return newGRPCMetricReader(ctx, exp.OTLPGrpc, readerOpts)
 	}
+	if exp.OTLPHttp != nil {
+		return newHTTPMetricReader(ctx, exp.OTLPHttp, readerOpts)
+	}
+	return nil, fmt.Errorf("periodic metric reader: must configure otlp_grpc or otlp_http exporter")
+}
+
+// newGRPCMetricReader creates a PeriodicExportingMetricReader backed by an OTLP/gRPC exporter.
+func newGRPCMetricReader(ctx context.Context, cfg *config.OTLPGrpcExporterConfig, readerOpts []sdkmetric.PeriodicReaderOption) (sdkmetric.Reader, error) {
+	temporality := temporalitySelector(cfg.TemporalityPreference)
+	headers := expandHeaders(cfg.Headers)
+	endpoint := expandEnvRefs(cfg.Endpoint)
+
+	opts := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithTemporalitySelector(temporality),
+	}
+	// Accept both a full URL (with scheme) and a bare host:port.
+	// WithEndpointURL requires a scheme; WithEndpoint expects host:port.
+	if strings.Contains(endpoint, "://") {
+		opts = append(opts, otlpmetricgrpc.WithEndpointURL(endpoint))
+	} else if endpoint != "" {
+		opts = append(opts, otlpmetricgrpc.WithEndpoint(endpoint))
+	}
+	if cfg.Tls != nil && cfg.Tls.Insecure {
+		opts = append(opts, otlpmetricgrpc.WithInsecure())
+	}
+	if len(headers) > 0 {
+		opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
+	}
+	exp, err := otlpmetricgrpc.New(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
+}
+
+// newHTTPMetricReader creates a PeriodicExportingMetricReader backed by an OTLP/HTTP exporter.
+// The endpoint URL scheme (http:// vs https://) determines whether TLS is used.
+// /v1/metrics is appended automatically unless the endpoint already includes it.
+func newHTTPMetricReader(ctx context.Context, cfg *config.OTLPHttpExporterConfig, readerOpts []sdkmetric.PeriodicReaderOption) (sdkmetric.Reader, error) {
+	temporality := temporalitySelector(cfg.TemporalityPreference)
+	headers := expandHeaders(cfg.Headers)
+	endpoint := expandEnvRefs(cfg.Endpoint)
+
+	endpoint = strings.TrimRight(endpoint, "/")
+	if !strings.HasSuffix(endpoint, "/v1/metrics") {
+		endpoint += "/v1/metrics"
+	}
+
+	opts := []otlpmetrichttp.Option{
+		otlpmetrichttp.WithEndpointURL(endpoint),
+		otlpmetrichttp.WithTemporalitySelector(temporality),
+	}
+	if len(headers) > 0 {
+		opts = append(opts, otlpmetrichttp.WithHeaders(headers))
+	}
+	exp, err := otlpmetrichttp.New(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return sdkmetric.NewPeriodicReader(exp, readerOpts...), nil
 }
 
 // deltaSumKey identifies a single data point for cumulative→delta tracking.
@@ -237,8 +257,9 @@ func (d *deltaProducer) Produce(ctx context.Context) ([]metricdata.ScopeMetrics,
 	return sms, err
 }
 
-// periodicReaderOptions builds PeriodicReaderOptions from the export interval and timeout config.
-func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicReaderOption {
+// periodicReaderOptions builds PeriodicReaderOptions from the interval and timeout config.
+// Interval and Timeout are in milliseconds, matching the otelconf spec.
+func periodicReaderOptions(cfg *config.PeriodicMetricReader) []sdkmetric.PeriodicReaderOption {
 	opts := []sdkmetric.PeriodicReaderOption{
 		// Bridge the metrics registered directly on the default Prometheus registry
 		// (Prometheus service discovery internals, Go runtime and process collectors)
@@ -253,11 +274,11 @@ func periodicReaderOptions(cfg *config.OTLPExporterConfig) []sdkmetric.PeriodicR
 		// receives delta monotonic sums (cumulative is rejected by DT).
 		sdkmetric.WithProducer(newDeltaProducer(prometheusbridge.NewMetricProducer())),
 	}
-	if cfg.ExportInterval > 0 {
-		opts = append(opts, sdkmetric.WithInterval(cfg.ExportInterval))
+	if cfg.Interval > 0 {
+		opts = append(opts, sdkmetric.WithInterval(time.Duration(cfg.Interval)*time.Millisecond))
 	}
 	if cfg.Timeout > 0 {
-		opts = append(opts, sdkmetric.WithTimeout(cfg.Timeout))
+		opts = append(opts, sdkmetric.WithTimeout(time.Duration(cfg.Timeout)*time.Millisecond))
 	}
 	return opts
 }
@@ -276,15 +297,15 @@ func telemetryResource(ctx context.Context) (*resource.Resource, error) {
 }
 
 // temporalitySelector maps a config string to an SDK TemporalitySelector.
-// "delta" → all instruments delta; "lowmemory" → delta for counters/histograms,
-// cumulative for gauges; anything else → cumulative (SDK default).
+// Accepts otelconf-compatible values: "delta", "low_memory", "cumulative" (or empty for default).
 func temporalitySelector(t string) sdkmetric.TemporalitySelector {
 	switch t {
 	case "delta":
 		return sdkmetric.DeltaTemporalitySelector
-	case "lowmemory":
+	case "low_memory":
 		return sdkmetric.LowMemoryTemporalitySelector
 	default:
 		return sdkmetric.DefaultTemporalitySelector
 	}
 }
+

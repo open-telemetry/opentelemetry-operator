@@ -114,39 +114,83 @@ type HTTPSServerConfig struct {
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
-// TelemetryConfig mirrors the collector's service.telemetry structure for the Target Allocator.
+// TelemetryConfig holds the self-telemetry settings for the Target Allocator.
+// The Metrics field follows the OTel declarative configuration spec (MeterProvider
+// section), which means a telemetry YAML fragment can be validated with
+// otelconf.ParseYAML for compatibility checking.
 type TelemetryConfig struct {
-	Metrics MetricsConfig `yaml:"metrics,omitempty"`
+	Metrics *MetricsConfig `yaml:"metrics,omitempty"`
 }
 
-// MetricsConfig holds metric-export settings for the Target Allocator's own telemetry.
+// MetricsConfig mirrors otelconf's MeterProvider schema for the readers list.
 type MetricsConfig struct {
-	// OTLP configures an optional OTLP metric exporter. When set, metrics are
-	// exported via OTLP in addition to the existing Prometheus /metrics endpoint.
-	OTLP *OTLPExporterConfig `yaml:"otlp,omitempty"`
+	// Readers configures one or more metric readers, following the OTel
+	// declarative configuration spec.
+	Readers []MetricReader `yaml:"readers,omitempty"`
 }
 
-// OTLPExporterConfig holds connection settings for the OTLP metric exporter.
-type OTLPExporterConfig struct {
-	// Endpoint is the OTLP receiver base URL or address.
-	// For HTTP, provide the base URL without the signal path
-	// (e.g. "https://example.com/api/v2/otlp"); /v1/metrics is appended automatically.
-	// For gRPC, provide host:port (e.g. "example.com:4317").
-	Endpoint string `yaml:"endpoint"`
-	// Protocol selects the transport: "grpc" (default) or "http".
-	Protocol string `yaml:"protocol,omitempty"`
+// MetricReader mirrors otelconf's MetricReader type.
+type MetricReader struct {
+	Periodic *PeriodicMetricReader `yaml:"periodic,omitempty"`
+}
+
+// PeriodicMetricReader mirrors otelconf's PeriodicMetricReader type.
+// Interval and Timeout are in milliseconds, matching the otelconf spec.
+type PeriodicMetricReader struct {
+	// Interval is the delay between consecutive exports in milliseconds (default 60000).
+	Interval int `yaml:"interval,omitempty"`
+	// Timeout is the maximum allowed export duration in milliseconds (default 30000).
+	Timeout int `yaml:"timeout,omitempty"`
+	// Exporter configures the push exporter for this reader.
+	Exporter MetricExporter `yaml:"exporter"`
+}
+
+// MetricExporter mirrors otelconf's PushMetricExporter type.
+type MetricExporter struct {
+	// OTLPGrpc configures an OTLP/gRPC metric exporter.
+	OTLPGrpc *OTLPGrpcExporterConfig `yaml:"otlp_grpc,omitempty"`
+	// OTLPHttp configures an OTLP/HTTP metric exporter.
+	OTLPHttp *OTLPHttpExporterConfig `yaml:"otlp_http,omitempty"`
+}
+
+// OTLPGrpcExporterConfig mirrors otelconf's OTLPGrpcMetricExporter type.
+type OTLPGrpcExporterConfig struct {
+	// Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.
+	Endpoint string `yaml:"endpoint,omitempty"`
 	// Headers are additional key/value pairs sent with every export request.
-	Headers map[string]string `yaml:"headers,omitempty"`
+	// Values support ${env:VAR} substitution.
+	Headers []NameValuePair `yaml:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default),
+	// "delta", or "low_memory".
+	TemporalityPreference string `yaml:"temporality_preference,omitempty"`
+	// Tls configures TLS for the gRPC connection.
+	Tls *GrpcTlsConfig `yaml:"tls,omitempty"`
+}
+
+// OTLPHttpExporterConfig mirrors otelconf's OTLPHttpMetricExporter type.
+type OTLPHttpExporterConfig struct {
+	// Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").
+	// /v1/metrics is appended automatically unless already present.
+	// Values support ${env:VAR} substitution.
+	Endpoint string `yaml:"endpoint,omitempty"`
+	// Headers are additional key/value pairs sent with every export request.
+	// Values support ${env:VAR} substitution.
+	Headers []NameValuePair `yaml:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default),
+	// "delta", or "low_memory".
+	TemporalityPreference string `yaml:"temporality_preference,omitempty"`
+}
+
+// NameValuePair mirrors otelconf's NameStringValuePair type for HTTP/gRPC headers.
+type NameValuePair struct {
+	Name  string  `yaml:"name"`
+	Value *string `yaml:"value"`
+}
+
+// GrpcTlsConfig mirrors otelconf's GrpcTls type.
+type GrpcTlsConfig struct {
 	// Insecure disables TLS — only suitable for local development.
 	Insecure bool `yaml:"insecure,omitempty"`
-	// Temporality sets the aggregation temporality: "cumulative" (default), "delta", or "lowmemory".
-	// "delta" exports all instruments as delta; "lowmemory" uses delta for counters and
-	// histograms and cumulative for gauges.
-	Temporality string `yaml:"temporality,omitempty"`
-	// ExportInterval is the time between two consecutive exports (default 60s).
-	ExportInterval time.Duration `yaml:"export_interval,omitempty"`
-	// Timeout is the max duration for a single export attempt (default 10s).
-	Timeout time.Duration `yaml:"timeout,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
@@ -482,22 +526,37 @@ func ValidateConfig(config *Config) error {
 // values from a validated CRD, but the Target Allocator can also be run standalone with a
 // config file, so we validate here as well for a clear error instead of a runtime failure.
 func validateTelemetry(t TelemetryConfig) error {
-	otlp := t.Metrics.OTLP
-	if otlp == nil {
+	if t.Metrics == nil {
 		return nil
 	}
-	if otlp.Endpoint == "" {
-		return errors.New("telemetry.metrics.otlp.endpoint must be set")
-	}
-	switch otlp.Protocol {
-	case "", "grpc", "http":
-	default:
-		return fmt.Errorf("telemetry.metrics.otlp.protocol must be 'grpc' or 'http', got %q", otlp.Protocol)
-	}
-	switch otlp.Temporality {
-	case "", "cumulative", "delta", "lowmemory":
-	default:
-		return fmt.Errorf("telemetry.metrics.otlp.temporality must be 'cumulative', 'delta', or 'lowmemory', got %q", otlp.Temporality)
+	for i, reader := range t.Metrics.Readers {
+		if reader.Periodic == nil {
+			continue
+		}
+		exp := reader.Periodic.Exporter
+		if exp.OTLPGrpc == nil && exp.OTLPHttp == nil {
+			return fmt.Errorf("telemetry.metrics.readers[%d].periodic: must configure otlp_grpc or otlp_http exporter", i)
+		}
+		if exp.OTLPGrpc != nil {
+			if exp.OTLPGrpc.Endpoint == "" {
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_grpc: endpoint must be set", i)
+			}
+			switch exp.OTLPGrpc.TemporalityPreference {
+			case "", "cumulative", "delta", "low_memory":
+			default:
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_grpc: temporality_preference must be 'cumulative', 'delta', or 'low_memory', got %q", i, exp.OTLPGrpc.TemporalityPreference)
+			}
+		}
+		if exp.OTLPHttp != nil {
+			if exp.OTLPHttp.Endpoint == "" {
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_http: endpoint must be set", i)
+			}
+			switch exp.OTLPHttp.TemporalityPreference {
+			case "", "cumulative", "delta", "low_memory":
+			default:
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_http: temporality_preference must be 'cumulative', 'delta', or 'low_memory', got %q", i, exp.OTLPHttp.TemporalityPreference)
+			}
+		}
 	}
 	return nil
 }
