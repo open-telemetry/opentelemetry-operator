@@ -8,7 +8,18 @@ spec:
   steps:
   - name: Install collector and configmap
     try:
+    - script:
+        content: |
+          VERSION=$(kubectl logs deployment/opentelemetry-operator-controller-manager \
+            -n opentelemetry-operator-system | \
+            grep -o '"collector-image":"[^"]*"' | head -1 | \
+            grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          printf '%s' "$VERSION"
+        outputs:
+          - name: collectorVersion
+            value: ($stdout)
     - apply:
+        template: true
         file: 00-install-collector.yaml
   - name: Install app with sidecar
     try:
@@ -48,8 +59,8 @@ spec:
             echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
             if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics 2>/dev/null); then
               # Check if we have received any log records
-              if echo "$metrics_output" | grep -q "otelcol_receiver_accepted_log_records_total"; then
-                log_count=$(echo "$metrics_output" | grep "otelcol_receiver_accepted_log_records_total" | grep -v "#" | awk '{print $2}' | head -1)
+              if echo "$metrics_output" | grep -q "otelcol_receiver_accepted_log_records"; then
+                log_count=$(echo "$metrics_output" | grep "otelcol_receiver_accepted_log_records" | grep -v "#" | awk '{print $2}' | head -1)
                 if [ -n "$log_count" ] && [ "$log_count" -gt 0 ] 2>/dev/null; then
                   echo "Successfully fetched metrics on attempt $i with $log_count log records" >&2
                   echo "$metrics_output"
@@ -73,7 +84,7 @@ spec:
           ($error == null): true
     - assert:
         resource:
-          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_log_records_total'].value | [0] > `0`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_log_records'].value | [0] > `0`): true
     catch:
     - podLogs:
         selector: app=log-generator

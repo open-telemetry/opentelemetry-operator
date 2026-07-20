@@ -34,20 +34,14 @@ spec:
                 range=$(kubectl get namespace $NAMESPACE \
                   -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}')
               fi
-              echo "${range%%[/-]*}"
-            outputs:
-              - name: expected_fsgroup
-                value: (to_number($stdout))
-        - assert:
-            resource:
-              apiVersion: apps/v1
-              kind: StatefulSet
-              metadata:
-                name: fsgroup-test-collector
-              spec:
-                template:
-                  spec:
-                    (securityContext.fsGroup == $expected_fsgroup): true
+              expected="${range%%[/-]*}"
+              actual=$(kubectl get statefulset fsgroup-test-collector -n $NAMESPACE \
+                -o jsonpath='{.spec.template.spec.securityContext.fsGroup}')
+              if [[ "$actual" != "$expected" ]]; then
+                echo "fsGroup mismatch: expected=$expected actual=$actual" >&2
+                exit 1
+              fi
+              echo "fsGroup=$actual matches namespace UID range"
     - name: cleanup
       try:
         - script:
