@@ -36,6 +36,7 @@ spec:
             env:
               - name: podName
                 value: ($podName)
+            shell: /bin/bash
             timeout: 90s
             content: |
               for i in {1..12}; do
@@ -77,9 +78,9 @@ spec:
               (length($metrics[?as_string(metric."__name__") == 'otelcol_receiver_refused_metric_points']) > `0`): true
               (length($metrics[?as_string(metric."__name__") == 'otelcol_receiver_refused_log_records']) > `0`): true
               # Processor metrics (value > 1 proves data was processed)
-              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_accepted_spans'].value | [0] > `1`): true
-              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_accepted_metric_points'].value | [0] > `1`): true
-              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_accepted_log_records'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_spans'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_metric_points'].value | [0] > `1`): true
+              ($metrics[?as_string(metric."__name__") == 'otelcol_processor_memory_limiter_accepted_log_records'].value | [0] > `1`): true
       catch:
         - podLogs:
             selector: app.kubernetes.io/name=internal-metrics-collector
