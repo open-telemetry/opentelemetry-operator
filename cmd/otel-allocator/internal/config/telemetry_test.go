@@ -10,10 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	otelconf "go.opentelemetry.io/contrib/otelconf"
+	"go.opentelemetry.io/contrib/otelconf"
 )
-
-func strPtr(s string) *string { return &s }
 
 func grpcReader(endpoint, temporality string) TelemetryConfig {
 	return TelemetryConfig{Metrics: &MetricsConfig{Readers: []MetricReader{{
@@ -101,4 +99,3 @@ func TestTelemetryDeclarativeCompatibility(t *testing.T) {
 	require.NotNil(t, httpReader.Periodic.Exporter.OTLPHttp)
 	assert.Equal(t, "https://ingest.example.com/api/v2/otlp", string(*httpReader.Periodic.Exporter.OTLPHttp.Endpoint))
 }
-

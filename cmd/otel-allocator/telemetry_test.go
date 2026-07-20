@@ -20,8 +20,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-func strPtr(s string) *string { return &s }
-
 func grpcPeriodicReader(endpoint string, extra ...func(*config.OTLPGrpcExporterConfig)) *config.PeriodicMetricReader {
 	cfg := &config.OTLPGrpcExporterConfig{Endpoint: endpoint}
 	for _, fn := range extra {
@@ -49,7 +47,10 @@ func TestNewOTLPMetricReader(t *testing.T) {
 		},
 		{
 			name: "grpc explicit delta",
-			cfg:  grpcPeriodicReader("example.com:4317", func(c *config.OTLPGrpcExporterConfig) { c.TemporalityPreference = "delta"; c.Tls = &config.GrpcTlsConfig{Insecure: true} }),
+			cfg: grpcPeriodicReader("example.com:4317", func(c *config.OTLPGrpcExporterConfig) {
+				c.TemporalityPreference = "delta"
+				c.Tls = &config.GrpcTlsConfig{Insecure: true}
+			}),
 		},
 		{
 			name: "http base url",
@@ -176,4 +177,3 @@ func TestTelemetryResource(t *testing.T) {
 	}
 	assert.True(t, found, "service.name attribute must be set")
 }
-
