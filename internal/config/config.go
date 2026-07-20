@@ -204,7 +204,7 @@ func New() Config {
 		AutoInstrumentationDotNetImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet),
 		AutoInstrumentationGoImage:          fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo),
 		AutoInstrumentationApacheHttpdImage: fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd),
-		AutoInstrumentationNginxImage:       fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx),
+		AutoInstrumentationNginxImage:       fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nginx:%s", v.AutoInstrumentationNginx),
 		LabelsFilter:                        []string{},
 		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
 		CreateRBACPermissions:               autoRBAC.NotAvailable,

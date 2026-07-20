@@ -171,3 +171,8 @@ func setContainersFromAnnotation(inst *instrumentationWithContainers, annotation
 	inst.Containers = append(inst.Containers, languageContainers...)
 	return nil
 }
+
+func initContainerUserEnv(required []corev1.EnvVar, languageEnv, commonEnv []corev1.EnvVar) []corev1.EnvVar {
+	env := append(required, languageEnv...)
+	return appendIfNotSet(env, commonEnv...)
+}
