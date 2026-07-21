@@ -66,15 +66,15 @@
     },
     {
       "customType": "regex",
-      "description": "Update opentelemetry-injector version in the auto-instrumentation Dockerfiles",
+      "description": "Update the opentelemetry-injector version included in the auto-instrumentation images",
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "open-telemetry/opentelemetry-injector",
       "extractVersionTemplate": "^v?(?<version>.*)$",
       "fileMatch": [
-        "(^|/)autoinstrumentation/[^/]+/Dockerfile$"
+        "(^|/)autoinstrumentation/injector_version\\.txt$"
       ],
       "matchStrings": [
-        "ARG injector_version=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        "^(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\\s*$"
       ]
     },
     {
@@ -139,7 +139,6 @@
     {
       "matchManagers": ["regex"],
       "matchPackageNames": ["open-telemetry/opentelemetry-injector"],
-      "groupName": "opentelemetry-injector",
       "commitMessageTopic": "opentelemetry-injector version"
     },
     {

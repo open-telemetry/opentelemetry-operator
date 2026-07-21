@@ -10,7 +10,11 @@
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be available in the image.
 ARG TARGETARCH
-ARG injector_version=0.9.2
+# Version of the opentelemetry-injector release to include, without the "v"
+# prefix. There is no default; the canonical value lives in
+# autoinstrumentation/injector_version.txt and must be passed in as a build-arg:
+#   --build-arg injector_version=$(cat ../injector_version.txt)
+ARG injector_version
 
 FROM python:3.14@sha256:311ea5bb79f1a238ee9e38f8d5f09cb3b4b244575cf49e27cf365ea7e60f11d4 AS build
 

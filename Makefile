@@ -24,6 +24,7 @@ INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -o '"@opentelemetry/auto-instrum
 INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentation==[^ ]*' autoinstrumentation/python/requirements.txt | cut -d'=' -f3)"
 INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
 INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
+INSTRUMENTATION_INJECTOR_VERSION ?= "$(shell cat autoinstrumentation/injector_version.txt)"
 
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
@@ -670,25 +671,29 @@ container-must-gather-push:
 .PHONY: container-instrumentation-java
 container-instrumentation-java:
 	docker build --load -t ${INSTRUMENTATION_JAVA_IMG} autoinstrumentation/java \
-		--build-arg version=${INSTRUMENTATION_JAVA_VERSION}
+		--build-arg version=${INSTRUMENTATION_JAVA_VERSION} \
+		--build-arg injector_version=${INSTRUMENTATION_INJECTOR_VERSION}
 
 # Build Node.js auto-instrumentation container image
 .PHONY: container-instrumentation-nodejs
 container-instrumentation-nodejs:
 	docker build --load -t ${INSTRUMENTATION_NODEJS_IMG} autoinstrumentation/nodejs \
-		--build-arg version=${INSTRUMENTATION_NODEJS_VERSION}
+		--build-arg version=${INSTRUMENTATION_NODEJS_VERSION} \
+		--build-arg injector_version=${INSTRUMENTATION_INJECTOR_VERSION}
 
 # Build Python auto-instrumentation container image
 .PHONY: container-instrumentation-python
 container-instrumentation-python:
 	docker build --load -t ${INSTRUMENTATION_PYTHON_IMG} autoinstrumentation/python \
-		--build-arg version=${INSTRUMENTATION_PYTHON_VERSION}
+		--build-arg version=${INSTRUMENTATION_PYTHON_VERSION} \
+		--build-arg injector_version=${INSTRUMENTATION_INJECTOR_VERSION}
 
 # Build .NET auto-instrumentation container image
 .PHONY: container-instrumentation-dotnet
 container-instrumentation-dotnet:
 	docker build --load -t ${INSTRUMENTATION_DOTNET_IMG} autoinstrumentation/dotnet \
-		--build-arg version=${INSTRUMENTATION_DOTNET_VERSION}
+		--build-arg version=${INSTRUMENTATION_DOTNET_VERSION} \
+		--build-arg injector_version=${INSTRUMENTATION_INJECTOR_VERSION}
 
 # Build Apache HTTPD auto-instrumentation container image
 .PHONY: container-instrumentation-apache-httpd
