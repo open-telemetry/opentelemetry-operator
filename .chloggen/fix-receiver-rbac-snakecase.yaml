@@ -2,12 +2,15 @@ change_type: bug_fix
 component: collector
 issues: [5317]
 
-note: "Register the `kubelet_stats`, `k8s_objects`, and `resource_detection` snake-case component names alongside their original spellings when generating RBAC from a Collector CR, so either spelling produces the permissions (and, for `kubelet_stats`, the `K8S_NODE_NAME` env var) the component needs."
+note: "Register the snake-case spellings of several renamed receivers (`kubelet_stats`, `k8s_objects`, `resource_detection`, `fluent_forward`, `tcp_log`, `udp_log`, `ssh_check`, `cloud_foundry`, `http_check`, `flink_metrics`) alongside their original spellings when generating RBAC and service ports from a Collector CR, so either spelling produces the same result."
 
 subtext: |
-  These components were renamed to snake_case in
-  opentelemetry-collector-contrib (#47957 for kubeletstats, #47440 for
-  k8sobjects, #48525 for resourcedetection) while keeping the original
-  names accepted, but the operator only parsed the original spelling and
-  emitted no RBAC for configs using the new names. This extends the
-  k8s_attributes fix (#4983) to the remaining renamed components.
+  These components were renamed to snake_case in opentelemetry-collector-contrib
+  (#47957 kubeletstats, #47440 k8sobjects, #48525 resourcedetection, #47930
+  fluentforward, #47369 tcplog, #47370 udplog, #47515 sshcheck, #47932
+  cloudfoundry, #47505 httpcheck, #47929 flinkmetrics) while keeping the
+  original names accepted, but the operator only recognized one spelling per
+  component, so configs using the other spelling got no RBAC/ports or the
+  wrong service port name. This extends the k8s_attributes fix (#4983) to
+  the remaining renamed components, and makes `NewScraperParser` accept
+  aliases so future renames of this kind are a one-line fix.

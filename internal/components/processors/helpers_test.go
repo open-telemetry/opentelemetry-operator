@@ -48,9 +48,9 @@ func TestDownstreamParsers(t *testing.T) {
 		parserName    string
 	}{
 		{"k8s_attributes", "k8s_attributes", "__k8s_attributes"},
-		{"k8sattributes deprecated alias", "k8sattributes", "__k8s_attributes"},
+		{"k8sattributes", "k8sattributes", "__k8s_attributes"},
 		{"resource_detection", "resource_detection", "__resource_detection"},
-		{"resourcedetection deprecated alias", "resourcedetection", "__resource_detection"},
+		{"resourcedetection", "resourcedetection", "__resource_detection"},
 	} {
 		t.Run(tt.processorName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
