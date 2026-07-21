@@ -83,6 +83,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
+	if strategyConfig := allocationStrategyConfigToMap(taSpec.AllocationStrategyConfig); len(strategyConfig) > 0 {
+		taConfig["allocation_strategy_config"] = strategyConfig
+	}
+
 	filterStrategy := v1beta1.TargetAllocatorFilterStrategyRelabelConfig
 	if taSpec.FilterStrategy != nil {
 		filterStrategy = *taSpec.FilterStrategy
@@ -279,6 +283,21 @@ func convertHeaders(headers []v1beta1.NameValuePair) []taNameValue {
 		out[i] = taNameValue{Name: h.Name, Value: h.Value}
 	}
 	return out
+}
+
+// allocationStrategyConfigToMap translates the CRD's allocation strategy configuration into the snake_case
+// map structure expected by the target allocator's configuration file. It returns an empty map when no
+// strategy-specific options are set.
+func allocationStrategyConfigToMap(cfg v1beta1.TargetAllocatorAllocationStrategyConfig) map[string]any {
+	strategyConfig := map[string]any{}
+	if fallback := cfg.PerNode.FallbackStrategy; fallback != nil {
+		strategyConfig["per_node"] = map[string]any{
+			"fallback_strategy": map[string]any{
+				"name": fallback.Name,
+			},
+		}
+	}
+	return strategyConfig
 }
 
 func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {
