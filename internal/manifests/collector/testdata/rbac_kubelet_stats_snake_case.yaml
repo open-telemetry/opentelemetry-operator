@@ -1,0 +1,11 @@
+receivers:
+  kubelet_stats:
+    auth_type: serviceAccount
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    metrics:
+      receivers: [kubelet_stats]
+      exporters: [otlp]
