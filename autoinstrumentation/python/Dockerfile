@@ -10,11 +10,6 @@
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be available in the image.
 ARG TARGETARCH
-# Version of the opentelemetry-injector release to include, without the "v"
-# prefix. There is no default; the canonical value lives in
-# autoinstrumentation/injector_version.txt and must be passed in as a build-arg:
-#   --build-arg injector_version=$(cat ../injector_version.txt)
-ARG injector_version
 
 FROM python:3.14@sha256:311ea5bb79f1a238ee9e38f8d5f09cb3b4b244575cf49e27cf365ea7e60f11d4 AS build
 
@@ -51,18 +46,19 @@ RUN ln -s opentelemetry/instrumentation/auto_instrumentation/sitecustomize.py /a
 # LD_PRELOAD when the operator.autoinstrumentation.injector feature gate is
 # enabled. It is only published for amd64 and arm64, so the other
 # architectures this image is built for (s390x, ppc64le) ship without it.
-FROM base AS injector-amd64
+FROM base AS injector
+ARG TARGETARCH
+# Version of the opentelemetry-injector release to include, without the "v"
+# prefix. There is no default; the canonical value lives in
+# autoinstrumentation/injector_version.txt and must be passed in as a build-arg:
+#   --build-arg injector_version=$(cat ../injector_version.txt)
 ARG injector_version
-ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_amd64.so /libotelinject.so
+ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_${TARGETARCH}.so /libotelinject.so
 RUN chmod go+r /libotelinject.so
 
-FROM base AS injector-arm64
-ARG injector_version
-ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_arm64.so /libotelinject.so
-RUN chmod go+r /libotelinject.so
-
+FROM injector AS injector-amd64
+FROM injector AS injector-arm64
 FROM base AS injector-s390x
-
 FROM base AS injector-ppc64le
 
 FROM injector-$TARGETARCH
