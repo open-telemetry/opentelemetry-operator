@@ -121,7 +121,7 @@ spec:
               )
 
               printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-valid-remote-config \
-                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --image=mirror.gcr.io/alpine/curl:latest \
                 --restart=Never --rm -i \
                 --command -- curl -fsS \
                 -X POST \
@@ -239,7 +239,7 @@ spec:
               )
 
               printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-invalid-remote-config \
-                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --image=mirror.gcr.io/alpine/curl:latest \
                 --restart=Never --rm -i \
                 --command -- curl -fsS \
                 -X POST \

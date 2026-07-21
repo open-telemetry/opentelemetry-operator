@@ -74,15 +74,15 @@ spec:
         - sleep:
             duration: 3s
     - try:
-      - assert:
-          # specify resource inline
-          resource:
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: test-opamp-bridge
-            status:
-              readyReplicas: 1
+        - assert:
+            # specify resource inline
+            resource:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: test-opamp-bridge
+              status:
+                readyReplicas: 1
     - name: Check effective config contains the managed collector
       try:
         - script:
@@ -176,7 +176,7 @@ spec:
               #!/bin/bash
               set -eu
               kubectl run -n "$NAMESPACE" send-restart-cmd \
-                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --image=mirror.gcr.io/alpine/curl:latest \
                 --restart=Never --rm -i \
                 --command -- curl -fsS -X POST \
                 "http://e2e-test-app-bridge-server:4321/agents/send-command" \
@@ -271,7 +271,7 @@ spec:
               #!/bin/bash
               set -eu
               kubectl run -n "$NAMESPACE" send-unknown-cmd \
-                --image=mirror.gcr.io/curlimages/curl:8.20.0 \
+                --image=mirror.gcr.io/alpine/curl:latest \
                 --restart=Never --rm -i \
                 --command -- curl -fsS -X POST \
                 "http://e2e-test-app-bridge-server:4321/agents/send-command" \
