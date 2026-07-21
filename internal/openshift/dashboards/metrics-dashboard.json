@@ -225,7 +225,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(otelcol_processor_accepted_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_accepted_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -233,13 +233,13 @@
               "refId": "A"
             },
             {
-              "expr": "rate(otelcol_processor_dropped_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_dropped_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "interval": "",
               "legendFormat": "{{processor}}/{{service}}/{{namespace}} | dropped",
               "refId": "B"
             },
             {
-              "expr": "rate(otelcol_processor_refused_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_refused_metric_points{processor=~\"$metric processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "interval": "",
               "legendFormat": "{{processor}}/{{service}}/{{namespace}} | refused",
               "refId": "C"
@@ -498,7 +498,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(otelcol_processor_accepted_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_accepted_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -506,13 +506,13 @@
               "refId": "A"
             },
             {
-              "expr": "rate(otelcol_processor_dropped_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_dropped_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "interval": "",
               "legendFormat": "{{processor}}/{{service}}/{{namespace}} | dropped",
               "refId": "B"
             },
             {
-              "expr": "rate(otelcol_processor_refused_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
+              "expr": "rate(otelcol_processor_memory_limiter_refused_spans{processor=~\"$span processor\",namespace=~\"$namespace\",service=~\"$collector instance\"}[1m])",
               "interval": "",
               "legendFormat": "{{processor}}/{{service}}/{{namespace}} | refused",
               "refId": "C"
@@ -946,7 +946,7 @@
         "multi": true,
         "name": "span processor",
         "options": [],
-        "query": "label_values(otelcol_processor_accepted_spans, processor)",
+        "query": "label_values(otelcol_processor_memory_limiter_accepted_spans, processor)",
         "refresh": 2,
         "regex": "",
         "sort": 2,
@@ -969,7 +969,7 @@
         "multi": true,
         "name": "metric processor",
         "options": [],
-        "query": "label_values(otelcol_processor_accepted_metric_points, processor)",
+        "query": "label_values(otelcol_processor_memory_limiter_accepted_metric_points, processor)",
         "refresh": 2,
         "regex": "",
         "sort": 2,
