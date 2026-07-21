@@ -103,6 +103,51 @@ filter_strategy: relabel-config
 			})
 		}
 	})
+	t.Run("should return target allocator config map with allocation strategy config", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: per-node
+allocation_strategy_config:
+  per_node:
+    fallback_strategy:
+      name: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+		}
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.AllocationStrategy = v1beta1.TargetAllocatorAllocationStrategyPerNode
+		targetAllocator.Spec.AllocationStrategyConfig = v1beta1.TargetAllocatorAllocationStrategyConfig{
+			PerNode: v1beta1.TargetAllocatorPerNodeStrategyConfig{
+				FallbackStrategy: &v1beta1.TargetAllocatorFallbackStrategyConfig{
+					Name: v1beta1.TargetAllocatorFallbackAllocationStrategyConsistentHashing,
+				},
+			},
+		}
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
 	t.Run("should return target allocator config map without collector", func(t *testing.T) {
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing

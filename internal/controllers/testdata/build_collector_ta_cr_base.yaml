@@ -178,6 +178,8 @@ metadata:
   namespace: test
 spec:
   allocationStrategy: consistent-hashing
+  allocationStrategyConfig:
+    perNode: {}
   filterStrategy: relabel-config
   global: null
   networkPolicy: {}
