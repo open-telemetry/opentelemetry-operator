@@ -1,20 +1,9 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 //go:build e2e
 
-package e2e_ta_standalone
+package tastandalone
 
 import (
 	"context"
@@ -24,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/testing/e2e"
 )
 
 // TestStandaloneTargetAllocator validates the standalone TA with consistent-hashing:
@@ -32,18 +23,18 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 	type initialAssignmentKey struct{}
 
 	feat := features.New("standalone TA with consistent-hashing strategy").
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var ns string
-			ctx, ns = setupTestNamespace(ctx, t)
+			ctx, ns = setupTestNamespace(ctx, t, cfg)
 
 			taConfig := newTAConfig("consistent-hashing").withStaticTargets(testTargets).build()
-			deployTA(t, ctx, ns, taConfig)
-			waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
+			deployTA(t, ctx, cfg, ns, taConfig)
+			e2e.WaitForDeployment(ctx, t, cfg, ns, "target-allocator", testTimeout)
 
-			deployCollectors(t, ctx, ns, 2)
-			waitForStatefulSetReady(t, ctx, ns, "collector", 2)
+			deployCollectors(t, ctx, cfg, ns, 2)
+			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 2, testTimeout)
 
-			assignment := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
+			assignment := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 2)
 			return context.WithValue(ctx, initialAssignmentKey{}, assignment)
 		}).
 		Assess("targets distributed across collectors", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
@@ -60,45 +51,45 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			assert.True(t, hasTargets, "at least one collector should have targets")
 			return ctx
 		}).
-		Assess("scale up preserves consistency", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Assess("scale up preserves consistency", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := nsFromCtx(ctx)
 			initialAssignment := ctx.Value(initialAssignmentKey{}).(map[string][]string)
 
-			scaleStatefulSet(t, ctx, ns, "collector", 3)
-			waitForStatefulSetReady(t, ctx, ns, "collector", 3)
+			scaleStatefulSet(t, ctx, cfg, ns, "collector", 3)
+			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 3, testTimeout)
 
-			afterScaleUp := waitForTargetDistribution(t, ctx, ns, "test-targets", 3)
+			afterScaleUp := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 3)
 			assert.Len(t, allAssignedTargets(afterScaleUp), len(testTargets), "all targets assigned after scale-up")
 
 			stayed := countStayedTargets(initialAssignment, afterScaleUp)
 			assert.GreaterOrEqual(t, stayed, 3, "at least 3/6 targets should stay (consistent hashing)")
 			return ctx
 		}).
-		Assess("scale down reassigns targets", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Assess("scale down reassigns targets", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := nsFromCtx(ctx)
 
-			scaleStatefulSet(t, ctx, ns, "collector", 2)
-			waitForStatefulSetReady(t, ctx, ns, "collector", 2)
+			scaleStatefulSet(t, ctx, cfg, ns, "collector", 2)
+			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 2, testTimeout)
 
-			afterScaleDown := waitForTargetDistribution(t, ctx, ns, "test-targets", 2)
+			afterScaleDown := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 2)
 			assert.Len(t, allAssignedTargets(afterScaleDown), len(testTargets), "all targets assigned after scale-down")
 			assert.Empty(t, afterScaleDown["collector-2"], "collector-2 should have no targets after scale-down")
 			return ctx
 		}).
-		Assess("HTTP API contract", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Assess("HTTP API contract", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := nsFromCtx(ctx)
 			proxyBase := taProxyBase(ns)
 
-			body := kubectlGetRaw(t, ctx, proxyBase+"/jobs")
+			body := kubectlGetRaw(t, ctx, cfg, proxyBase+"/jobs")
 			assert.Contains(t, string(body), "test-targets", "/jobs should list test-targets")
 
-			body = kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
+			body = kubectlGetRaw(t, ctx, cfg, proxyBase+"/scrape_configs")
 			assert.Contains(t, string(body), "test-targets", "/scrape_configs should list test-targets")
 
-			kubectlGetRaw(t, ctx, proxyBase+"/livez")
-			kubectlGetRaw(t, ctx, proxyBase+"/readyz")
+			kubectlGetRaw(t, ctx, cfg, proxyBase+"/livez")
+			kubectlGetRaw(t, ctx, cfg, proxyBase+"/readyz")
 
-			body, err := clientset.CoreV1().RESTClient().Get().
+			body, err := e2e.ClientSet(t, cfg).CoreV1().RESTClient().Get().
 				AbsPath(proxyBase+"/jobs/test-targets/targets").
 				Param("collector_id", "nonexistent").
 				DoRaw(ctx)

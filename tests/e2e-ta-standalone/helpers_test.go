@@ -1,20 +1,9 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 //go:build e2e
 
-package e2e_ta_standalone
+package tastandalone
 
 import (
 	"context"
@@ -24,7 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -35,20 +24,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/testing/e2e"
 )
 
+// Infrastructure shared with the other e2e suites (namespace lifecycle, readiness
+// waits, client construction, target-allocator RBAC, repo-root resolution) lives in
+// internal/testing/e2e and is used through the e2e.* helpers below. This file keeps
+// only what is specific to the standalone target allocator: kustomize-based deployment,
+// the collector StatefulSet, the TA HTTP allocation API, scaling, and the config
+// builder.
+
 var (
-	testenv          env.Environment
-	clientset        *kubernetes.Clientset
-	restCfg          *rest.Config
-	taImg            string
-	collectorImg     string
-	kustomizeBin     string
-	kustomizeBaseDir string
+	testenv      env.Environment
+	taImg        string
+	collectorImg string
+	kustomizeBin string
 
 	collectorLabel = map[string]string{"app": "otel-collector"}
 	testTargets    = []string{
@@ -74,38 +67,11 @@ func TestMain(m *testing.M) {
 		kustomizeBin = "kustomize"
 	}
 
-	wd, err := os.Getwd()
+	cfg, err := envconf.NewFromFlags()
 	if err != nil {
-		log.Fatalf("failed to get working directory: %v", err)
+		log.Fatalf("failed to parse e2e flags: %v", err)
 	}
-	kustomizeBaseDir = filepath.Join(wd, "..", "..", "config", "target-allocator")
-	if _, statErr := os.Stat(filepath.Join(kustomizeBaseDir, "kustomization.yaml")); statErr != nil {
-		log.Fatalf("kustomize base not found at %s: %v", kustomizeBaseDir, statErr)
-	}
-
-	var envErr error
-	testenv, envErr = env.NewFromFlags()
-	if envErr != nil {
-		log.Fatalf("failed to create test environment: %v", envErr)
-	}
-
-	testenv.Setup(func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-		kubeconfig := cfg.KubeconfigFile()
-		if kubeconfig == "" {
-			kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
-		}
-		var setupErr error
-		restCfg, setupErr = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if setupErr != nil {
-			return ctx, fmt.Errorf("failed to build kubeconfig: %w", setupErr)
-		}
-		clientset, setupErr = kubernetes.NewForConfig(restCfg)
-		if setupErr != nil {
-			return ctx, fmt.Errorf("failed to create kubernetes client: %w", setupErr)
-		}
-		return ctx, nil
-	})
-
+	testenv = env.NewWithConfig(cfg)
 	os.Exit(testenv.Run(m))
 }
 
@@ -121,27 +87,20 @@ func nsFromCtx(ctx context.Context) string {
 	return ctx.Value(nsContextKey{}).(string)
 }
 
-// setupTestNamespace creates a unique namespace for the current test feature,
-// stores its name in the context, registers a t.Cleanup for teardown, and
-// returns the updated context and namespace name.
-func setupTestNamespace(ctx context.Context, t *testing.T) (context.Context, string) {
+// setupTestNamespace creates a unique namespace for the current test feature, stores
+// its name in the context, registers a t.Cleanup for teardown, and returns the updated
+// context and namespace name. Cluster RBAC is created (and cleaned up) per binding by
+// e2e.BindTargetAllocatorClusterRole, so namespace teardown only removes the namespace.
+func setupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (nsCtx context.Context, ns string) {
 	t.Helper()
-	ns := envconf.RandomName("ta-test", 16)
-	_, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: ns},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err, "create namespace")
+	ns = envconf.RandomName("ta-test", 16)
+	e2e.CreateNamespace(ctx, t, cfg, ns)
 	t.Logf("created namespace %s", ns)
-	updatedCtx := context.WithValue(ctx, nsContextKey{}, ns)
 	t.Cleanup(func() {
-		cleanCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		_ = clientset.RbacV1().ClusterRoleBindings().Delete(cleanCtx, ns, metav1.DeleteOptions{})
-		_ = clientset.RbacV1().ClusterRoles().Delete(cleanCtx, ns, metav1.DeleteOptions{})
-		_ = clientset.CoreV1().Namespaces().Delete(cleanCtx, ns, metav1.DeleteOptions{})
-		t.Logf("cleaned up namespace %s and cluster RBAC", ns)
+		e2e.DeleteNamespace(context.WithoutCancel(ctx), t, cfg, ns)
+		t.Logf("cleaned up namespace %s", ns)
 	})
-	return updatedCtx, ns
+	return context.WithValue(ctx, nsContextKey{}, ns), ns
 }
 
 // ---------------------------------------------------------------------------
@@ -210,14 +169,20 @@ func (b *TAConfigBuilder) build() string {
 // TA deployment helpers
 // ---------------------------------------------------------------------------
 
-// deployTA applies all resources from config/target-allocator/ into ns,
-// then overwrites the ConfigMap with test-specific content.
-// The kustomize overlay is a sibling of the base directory; --load-restrictor=LoadRestrictionsNone
-// is required because kustomize v5 otherwise blocks references outside the overlay root.
-func deployTA(t *testing.T, ctx context.Context, ns, taConfig string) {
+// deployTA applies the namespaced target-allocator resources from
+// config/target-allocator/ into ns, binds the shared target-allocator ClusterRole to
+// the TA ServiceAccount, then overwrites the ConfigMap with test-specific content.
+//
+// The overlay references only the namespaced base resources (ServiceAccount, ConfigMap,
+// Deployment, Service); the cluster-scoped ClusterRole/ClusterRoleBinding are provided
+// by e2e.BindTargetAllocatorClusterRole instead, so the cluster RBAC is shared with the
+// other e2e suites and cleaned up per binding. The overlay is a sibling of the base
+// directory; --load-restrictor=LoadRestrictionsNone is required because kustomize v5
+// otherwise blocks references outside the overlay root.
+func deployTA(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, taConfig string) {
 	t.Helper()
 
-	absBase, err := filepath.Abs(kustomizeBaseDir)
+	absBase, err := filepath.Abs(filepath.Join(e2e.RepoRoot(t), "config", "target-allocator"))
 	require.NoError(t, err)
 
 	// Temp overlay as a sibling of the base directory to avoid a kustomize cycle.
@@ -236,35 +201,15 @@ kind: Kustomization
 namespace: %[1]s
 
 resources:
-  - %[4]s
+  - %[4]s/serviceaccount.yaml
+  - %[4]s/configmap.yaml
+  - %[4]s/deployment.yaml
+  - %[4]s/service.yaml
 
 images:
   - name: target-allocator
     newName: %[2]s
     newTag: "%[3]s"
-
-patches:
-  # Make cluster-scoped resources unique per test namespace to avoid collisions.
-  - target:
-      kind: ClusterRole
-      name: target-allocator
-    patch: |
-      - op: replace
-        path: /metadata/name
-        value: %[1]s
-  - target:
-      kind: ClusterRoleBinding
-      name: target-allocator
-    patch: |
-      - op: replace
-        path: /metadata/name
-        value: %[1]s
-      - op: replace
-        path: /roleRef/name
-        value: %[1]s
-      - op: replace
-        path: /subjects/0/namespace
-        value: %[1]s
 `, ns, imgName, imgTag, relBase)
 
 	err = os.WriteFile(filepath.Join(overlayDir, "kustomization.yaml"), []byte(overlayContent), 0o600)
@@ -282,17 +227,23 @@ patches:
 	require.NoError(t, err, "kubectl apply failed: %s", string(applyOut))
 	t.Logf("applied TA manifests:\n%s", string(applyOut))
 
+	// The standalone TA needs the project's target-allocator ClusterRole bound to its
+	// ServiceAccount; the operator does not create this RBAC for a standalone TA.
+	e2e.BindTargetAllocatorClusterRole(ctx, t, cfg, ns, "target-allocator")
+
 	// The base kustomization includes a ConfigMap with default content.
 	// Overwrite it immediately with test-specific config before the pod starts.
-	cm, err := clientset.CoreV1().ConfigMaps(ns).Get(ctx, "target-allocator", metav1.GetOptions{})
+	cs := e2e.ClientSet(t, cfg)
+	cm, err := cs.CoreV1().ConfigMaps(ns).Get(ctx, "target-allocator", metav1.GetOptions{})
 	require.NoError(t, err, "get TA ConfigMap")
 	cm.Data = map[string]string{"targetallocator.yaml": taConfig}
-	_, err = clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	_, err = cs.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 	require.NoError(t, err, "update TA ConfigMap with test config")
 }
 
-func deployCollectors(t *testing.T, ctx context.Context, ns string, replicas int32) {
+func deployCollectors(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string, replicas int32) {
 	t.Helper()
+	cs := e2e.ClientSet(t, cfg)
 
 	collectorConfig := `receivers:
   prometheus:
@@ -317,13 +268,13 @@ service:
                 host: 0.0.0.0
                 port: 8888
 `
-	_, err := clientset.CoreV1().ConfigMaps(ns).Create(ctx, &corev1.ConfigMap{
+	_, err := cs.CoreV1().ConfigMaps(ns).Create(ctx, &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "collector-config"},
 		Data:       map[string]string{"collector.yaml": collectorConfig},
 	}, metav1.CreateOptions{})
 	require.NoError(t, err)
 
-	_, err = clientset.AppsV1().StatefulSets(ns).Create(ctx, &appsv1.StatefulSet{
+	_, err = cs.AppsV1().StatefulSets(ns).Create(ctx, &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "collector"},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:    &replicas,
@@ -359,48 +310,23 @@ service:
 }
 
 // ---------------------------------------------------------------------------
-// Wait helpers
+// Target distribution polling
 // ---------------------------------------------------------------------------
 
-func waitForDeploymentReady(t *testing.T, ctx context.Context, ns, name string, replicas int32) {
-	t.Helper()
-	t.Logf("waiting for deployment %s/%s → %d ready replicas", ns, name, replicas)
-	err := wait.PollUntilContextTimeout(ctx, pollInterval, testTimeout, true, func(ctx context.Context) (bool, error) {
-		d, err := clientset.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return false, nil
-		}
-		return d.Status.ReadyReplicas >= replicas, nil
-	})
-	require.NoError(t, err, "deployment %s did not become ready", name)
-}
-
-func waitForStatefulSetReady(t *testing.T, ctx context.Context, ns, name string, replicas int32) {
-	t.Helper()
-	t.Logf("waiting for statefulset %s/%s → %d ready replicas", ns, name, replicas)
-	err := wait.PollUntilContextTimeout(ctx, pollInterval, testTimeout, true, func(ctx context.Context) (bool, error) {
-		ss, err := clientset.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return false, nil
-		}
-		return ss.Status.ReadyReplicas >= replicas, nil
-	})
-	require.NoError(t, err, "statefulset %s did not become ready", name)
-}
-
-func waitForTargetDistribution(t *testing.T, ctx context.Context, ns, jobName string, expectedCollectors int) map[string][]string {
-	return waitForTargetDistributionWithPredicate(t, ctx, ns, jobName, expectedCollectors, func(a map[string][]string) bool {
+func waitForTargetDistribution(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, jobName string, expectedCollectors int) map[string][]string {
+	return waitForTargetDistributionWithPredicate(t, ctx, cfg, ns, jobName, expectedCollectors, func(a map[string][]string) bool {
 		return len(allAssignedTargets(a)) == len(testTargets)
 	})
 }
 
-func waitForTargetDistributionWithPredicate(t *testing.T, ctx context.Context, ns, jobName string, expectedCollectors int, done func(map[string][]string) bool) map[string][]string {
+func waitForTargetDistributionWithPredicate(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, jobName string, expectedCollectors int, done func(map[string][]string) bool) map[string][]string {
 	t.Helper()
+	cs := e2e.ClientSet(t, cfg)
 	proxyBase := taProxyBase(ns)
 
 	var assignment map[string][]string
 	err := wait.PollUntilContextTimeout(ctx, pollInterval, discoveryTimeout, true, func(ctx context.Context) (bool, error) {
-		assignment = getTargetAssignment(t, ctx, proxyBase, jobName, expectedCollectors)
+		assignment = getTargetAssignment(t, ctx, cs, proxyBase, jobName, expectedCollectors)
 		if assignment == nil {
 			return false, nil
 		}
@@ -426,13 +352,13 @@ func taProxyBase(ns string) string {
 
 // getTargetAssignment queries all expectedCollectors and returns a map of
 // collectorID → assigned target addresses. Returns nil if any API call fails,
-// signalling that the caller should retry.
-func getTargetAssignment(t *testing.T, ctx context.Context, proxyBase, jobName string, expectedCollectors int) map[string][]string {
+// signaling that the caller should retry.
+func getTargetAssignment(t *testing.T, ctx context.Context, cs *kubernetes.Clientset, proxyBase, jobName string, expectedCollectors int) map[string][]string {
 	t.Helper()
 	result := make(map[string][]string)
-	for i := 0; i < expectedCollectors; i++ {
+	for i := range expectedCollectors {
 		collectorID := fmt.Sprintf("collector-%d", i)
-		body, err := clientset.CoreV1().RESTClient().Get().
+		body, err := cs.CoreV1().RESTClient().Get().
 			AbsPath(fmt.Sprintf("%s/jobs/%s/targets", proxyBase, jobName)).
 			Param("collector_id", collectorID).
 			DoRaw(ctx)
@@ -455,7 +381,7 @@ func parseTargetAddresses(body []byte) []string {
 				addresses = append(addresses, addr)
 			}
 		}
-		sort.Strings(addresses)
+		slices.Sort(addresses)
 		return addresses
 	}
 	var items map[string]struct {
@@ -468,15 +394,15 @@ func parseTargetAddresses(body []byte) []string {
 				addresses = append(addresses, addr)
 			}
 		}
-		sort.Strings(addresses)
+		slices.Sort(addresses)
 		return addresses
 	}
 	return nil
 }
 
-func kubectlGetRaw(t *testing.T, ctx context.Context, path string) []byte {
+func kubectlGetRaw(t *testing.T, ctx context.Context, cfg *envconf.Config, path string) []byte {
 	t.Helper()
-	body, err := clientset.CoreV1().RESTClient().Get().AbsPath(path).DoRaw(ctx)
+	body, err := e2e.ClientSet(t, cfg).CoreV1().RESTClient().Get().AbsPath(path).DoRaw(ctx)
 	require.NoError(t, err, "GET %s failed", path)
 	return body
 }
@@ -485,13 +411,14 @@ func kubectlGetRaw(t *testing.T, ctx context.Context, path string) []byte {
 // Scale helpers
 // ---------------------------------------------------------------------------
 
-func scaleStatefulSet(t *testing.T, ctx context.Context, ns, name string, replicas int32) {
+func scaleStatefulSet(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, name string, replicas int32) {
 	t.Helper()
 	t.Logf("scaling statefulset %s/%s → %d", ns, name, replicas)
-	scale, err := clientset.AppsV1().StatefulSets(ns).GetScale(ctx, name, metav1.GetOptions{})
+	cs := e2e.ClientSet(t, cfg)
+	scale, err := cs.AppsV1().StatefulSets(ns).GetScale(ctx, name, metav1.GetOptions{})
 	require.NoError(t, err)
 	scale.Spec.Replicas = replicas
-	_, err = clientset.AppsV1().StatefulSets(ns).UpdateScale(ctx, name, scale, metav1.UpdateOptions{})
+	_, err = cs.AppsV1().StatefulSets(ns).UpdateScale(ctx, name, scale, metav1.UpdateOptions{})
 	require.NoError(t, err)
 }
 
@@ -510,7 +437,7 @@ func allAssignedTargets(assignment map[string][]string) []string {
 	for tgt := range seen {
 		result = append(result, tgt)
 	}
-	sort.Strings(result)
+	slices.Sort(result)
 	return result
 }
 
@@ -537,7 +464,7 @@ func countStayedTargets(before, after map[string][]string) int {
 // Utilities
 // ---------------------------------------------------------------------------
 
-func splitImageNameTag(img string) (string, string) {
+func splitImageNameTag(img string) (name, tag string) {
 	if idx := strings.LastIndex(img, ":"); idx > 0 {
 		return img[:idx], img[idx+1:]
 	}
