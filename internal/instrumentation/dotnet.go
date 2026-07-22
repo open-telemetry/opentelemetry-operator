@@ -22,23 +22,18 @@ const (
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
 	dotNetCoreClrEnableProfilingEnabled = "1"
 	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-	// The image's native profiler binaries live under architecture-agnostic linux/linux-musl
-	// directories; the actual amd64 or arm64 binary is selected when the multi-arch image is
-	// pulled, not by this webhook. See autoinstrumentation/dotnet/Dockerfile.
-	dotNetCoreClrProfilerGlibcPath = "/otel-auto-instrumentation-dotnet/linux/OpenTelemetry.AutoInstrumentation.Native.so"
-	dotNetCoreClrProfilerMuslPath  = "/otel-auto-instrumentation-dotnet/linux-musl/OpenTelemetry.AutoInstrumentation.Native.so"
-	dotNetAdditionalDepsPath       = "/otel-auto-instrumentation-dotnet/AdditionalDeps"
-	dotNetOTelAutoHomePath         = "/otel-auto-instrumentation-dotnet"
-	dotNetSharedStorePath          = "/otel-auto-instrumentation-dotnet/store"
-	dotNetStartupHookPath          = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
-	dotnetVolumeName               = volumeName + "-dotnet"
-	dotnetInitContainerName        = initContainerName + "-dotnet"
-	dotnetInstrMountPath           = "/otel-auto-instrumentation-dotnet"
+	dotNetCoreClrProfilerGlibcPath      = "/otel-auto-instrumentation-dotnet/linux/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetCoreClrProfilerMuslPath       = "/otel-auto-instrumentation-dotnet/linux-musl/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation-dotnet/AdditionalDeps"
+	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation-dotnet"
+	dotNetSharedStorePath               = "/otel-auto-instrumentation-dotnet/store"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotnetVolumeName                    = volumeName + "-dotnet"
+	dotnetInitContainerName             = initContainerName + "-dotnet"
+	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
 )
 
 // Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
-// Both values work on amd64 and arm64 nodes: the image is multi-arch and the operator does not
-// need to know the target pod's CPU architecture.
 const (
 	dotNetRuntimeLinuxGlibc = "linux-x64"
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
