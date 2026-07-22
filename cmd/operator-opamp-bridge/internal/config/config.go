@@ -93,6 +93,7 @@ type Config struct {
 	Endpoint          string                         `yaml:"endpoint"`
 	TLS               *v1alpha1.OpAMPBridgeTLSConfig `yaml:"tls,omitempty"`
 	Headers           Headers                        `yaml:"headers,omitempty"`
+	Proxy             *ProxyConfig                   `yaml:"proxy,omitempty"`
 	Capabilities      map[Capability]bool            `yaml:"capabilities"`
 	HeartbeatInterval time.Duration                  `yaml:"heartbeatInterval,omitempty"`
 	Name              string                         `yaml:"name,omitempty"`
@@ -110,6 +111,11 @@ type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
 	NonIdentifyingAttributes map[string]string `yaml:"non_identifying_attributes"`
+}
+
+type ProxyConfig struct {
+	URL     string  `yaml:"url,omitempty"`
+	Headers Headers `yaml:"headers,omitempty"`
 }
 
 type StandaloneConfig struct {
@@ -259,6 +265,7 @@ func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig) *Config
 		instanceId:         uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/%s/%s/%s", agent.Namespace, agent.WorkloadRef.Kind, agent.WorkloadRef.Name, agent.Type)),
 		ComponentsAllowed:  cloneStringSliceMap(base.ComponentsAllowed),
 		Endpoint:           base.Endpoint,
+		Proxy:              cloneProxyConfig(base.Proxy),
 		Headers:            headers,
 		Capabilities:       capabilities,
 		HeartbeatInterval:  base.HeartbeatInterval,
@@ -268,6 +275,20 @@ func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig) *Config
 		},
 		Mode: standaloneMode,
 	}
+}
+
+func cloneProxyConfig(in *ProxyConfig) *ProxyConfig {
+	if in == nil {
+		return nil
+	}
+	out := &ProxyConfig{
+		URL: in.URL,
+	}
+	if in.Headers != nil {
+		out.Headers = Headers{}
+		maps.Copy(out.Headers, in.Headers)
+	}
+	return out
 }
 
 func cloneStringSliceMap(in map[string][]string) map[string][]string {
@@ -287,6 +308,9 @@ func (c *Config) Validate() error {
 	// documented default. This keeps logs/state consistent with the flag default.
 	if c.Mode == "" {
 		c.Mode = defaultMode
+	}
+	if err := c.validateProxyConfig(); err != nil {
+		return err
 	}
 	switch c.Mode {
 	case operatorMode, standaloneMode:
@@ -346,6 +370,43 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+func (c *Config) validateProxyConfig() error {
+	if c.Proxy == nil {
+		return nil
+	}
+	if strings.TrimSpace(c.Proxy.URL) == "" {
+		if len(c.Proxy.Headers) > 0 {
+			return errors.New("proxy.headers requires proxy.url")
+		}
+		return nil
+	}
+	proxyURL, err := parseProxyURL(c.Proxy.URL)
+	if err != nil {
+		return fmt.Errorf("invalid proxy.url %q: %w", c.Proxy.URL, err)
+	}
+	switch strings.ToLower(proxyURL.Scheme) {
+	case "socks5", "socks5h":
+		if len(c.Proxy.Headers) > 0 {
+			return fmt.Errorf("proxy.headers cannot be used with %q proxy URLs; use URL userinfo for SOCKS username/password authentication", proxyURL.Scheme)
+		}
+	}
+	return nil
+}
+
+func parseProxyURL(rawURL string) (*url.URL, error) {
+	proxyURL, err := url.Parse(rawURL)
+	if err != nil || proxyURL.Scheme == "" || proxyURL.Host == "" {
+		proxyURL, err = url.Parse("http://" + rawURL)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if proxyURL.Hostname() == "" {
+		return nil, url.InvalidHostError(rawURL)
+	}
+	return proxyURL, nil
 }
 
 func supportedStandaloneWorkloadKind(workloadKind string) bool {
