@@ -761,6 +761,15 @@ spec:
                 x-kubernetes-list-type: atomic
               priorityClassName:
                 type: string
+              proxy:
+                properties:
+                  headers:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  url:
+                    type: string
+                type: object
               replicas:
                 format: int32
                 maximum: 1

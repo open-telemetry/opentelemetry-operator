@@ -1545,3 +1545,60 @@ func TestAgent_Start_TLSConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestAgent_Start_ProxyConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		proxy        *config.ProxyConfig
+		wantURL      string
+		wantHeaders  []string
+		wantNoHeader bool
+	}{
+		{
+			name:         "no explicit proxy",
+			wantNoHeader: true,
+		},
+		{
+			name: "HTTP proxy with headers",
+			proxy: &config.ProxyConfig{
+				URL: "http://proxy.example.com:8080",
+				Headers: config.Headers{
+					"Proxy-Authorization": "Basic proxy-token",
+				},
+			},
+			wantURL:     "http://proxy.example.com:8080",
+			wantHeaders: []string{"Basic proxy-token"},
+		},
+		{
+			name: "SOCKS proxy without headers",
+			proxy: &config.ProxyConfig{
+				URL: "socks5://user:pass@proxy.example.com:1080",
+			},
+			wantURL:      "socks5://user:pass@proxy.example.com:1080",
+			wantNoHeader: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockOpampClient{}
+			conf := config.NewConfig(logr.Discard())
+			conf.Endpoint = "wss://127.0.0.1:4320/v1/opamp"
+			conf.Proxy = tt.proxy
+			applier := getFakeApplier(t, conf)
+			mp := newMockProxy(nil, nil, nil)
+			agent := NewAgent(l, applier, conf, mockClient, mp)
+
+			err := agent.Start()
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.wantURL, mockClient.settings.ProxyURL)
+			if tt.wantNoHeader {
+				assert.Empty(t, mockClient.settings.ProxyHeaders)
+			} else {
+				assert.Equal(t, tt.wantHeaders, mockClient.settings.ProxyHeaders.Values("Proxy-Authorization"))
+			}
+			agent.Shutdown()
+		})
+	}
+}
