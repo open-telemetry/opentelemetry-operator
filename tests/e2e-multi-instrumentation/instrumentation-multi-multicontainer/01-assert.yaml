@@ -378,6 +378,12 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: metadata.name
+    - name: OTEL_SERVICE_NAME
+      value: apache-httpd-app
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
     name: otel-agent-attach-apache
     volumeMounts:
     - mountPath: /opt/opentelemetry-webserver/agent
