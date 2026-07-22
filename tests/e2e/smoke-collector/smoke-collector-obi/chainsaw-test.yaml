@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-collector-obi
+# Smoke test for an OBI (eBPF) collector deployed as a DaemonSet with
+# privileged securityContext, hostPID, and user-managed RBAC. Validates that
+# the operator reconciles the CR into the correct DaemonSet spec without
+# requiring actual eBPF instrumentation or target workloads.
+spec:
+  steps:
+    - name: setup-scc
+      description: on OpenShift, create an SCC that allows privileged containers and hostPID
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                echo "OpenShift detected — creating SCC for privileged OBI collector"
+                kubectl apply -f scc.yaml
+                oc adm policy add-scc-to-user obi-privileged -z obi-collector -n $NAMESPACE
+              else
+                echo "Not OpenShift — skipping SCC setup"
+              fi
+    - name: install
+      description: install RBAC and an OBI collector in daemonset mode
+      try:
+        - apply:
+            template: true
+            file: 00-install.yaml
+        - assert:
+            template: true
+            file: 00-assert.yaml
+      finally:
+        - script:
+            timeout: 1m
+            content: |
+              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
+              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                kubectl delete scc obi-privileged --ignore-not-found
+              fi
