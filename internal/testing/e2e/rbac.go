@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,9 +34,7 @@ func BindTargetAllocatorClusterRole(ctx context.Context, t *testing.T, cfg *envc
 	c := CRClient(t, cfg)
 
 	clusterRole, err := os.Open(filepath.Join(RepoRoot(t), "config", "target-allocator", "clusterrole.yaml"))
-	if err != nil {
-		t.Fatalf("open clusterrole.yaml: %v", err)
-	}
+	require.NoError(t, err, "open clusterrole.yaml")
 	defer clusterRole.Close()
 	applyManifests(ctx, t, c, clusterRole, "")
 
@@ -51,12 +51,11 @@ func BindTargetAllocatorClusterRole(ctx context.Context, t *testing.T, cfg *envc
 			Namespace: ns,
 		}},
 	}
-	if err := c.Create(ctx, binding); err != nil {
-		t.Fatalf("create clusterrolebinding %s: %v", binding.Name, err)
-	}
+	require.NoError(t, c.Create(ctx, binding), "create clusterrolebinding %s", binding.Name)
 	t.Cleanup(func() {
-		if err := c.Delete(context.WithoutCancel(ctx), binding); err != nil && !apierrors.IsNotFound(err) {
-			t.Errorf("delete clusterrolebinding %s: %v", binding.Name, err)
+		err := c.Delete(context.WithoutCancel(ctx), binding)
+		if !apierrors.IsNotFound(err) {
+			assert.NoError(t, err, "delete clusterrolebinding %s", binding.Name)
 		}
 	})
 }

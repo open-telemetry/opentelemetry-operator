@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,12 +38,11 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 	dec := utilyaml.NewYAMLOrJSONDecoder(r, 4096)
 	for {
 		raw := map[string]any{}
-		if err := dec.Decode(&raw); err != nil {
-			if errors.Is(err, io.EOF) {
-				return
-			}
-			t.Fatalf("decode manifest: %v", err)
+		err := dec.Decode(&raw)
+		if errors.Is(err, io.EOF) {
+			return
 		}
+		require.NoError(t, err, "decode manifest")
 		if len(raw) == 0 {
 			continue
 		}
@@ -50,9 +50,8 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 		if forceNS != "" {
 			u.SetNamespace(forceNS)
 		}
-		if err := c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership); err != nil {
-			t.Fatalf("apply %s %q: %v", u.GetKind(), u.GetName(), err)
-		}
+		err = c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership)
+		require.NoError(t, err, "apply %s %q", u.GetKind(), u.GetName())
 	}
 }
 
@@ -60,16 +59,15 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 func CreateNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
 	t.Helper()
 	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	if err := CRClient(t, cfg).Create(ctx, obj); err != nil {
-		t.Fatalf("create namespace %s: %v", ns, err)
-	}
+	require.NoError(t, CRClient(t, cfg).Create(ctx, obj), "create namespace %s", ns)
 }
 
 // DeleteNamespace deletes ns (ignoring not-found), used for test cleanup.
 func DeleteNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
 	t.Helper()
 	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	if err := CRClient(t, cfg).Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-		t.Fatalf("delete namespace %s: %v", ns, err)
+	err := CRClient(t, cfg).Delete(ctx, obj)
+	if !apierrors.IsNotFound(err) {
+		require.NoError(t, err, "delete namespace %s", ns)
 	}
 }

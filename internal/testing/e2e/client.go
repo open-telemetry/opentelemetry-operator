@@ -8,6 +8,7 @@ package e2e
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,9 +25,7 @@ const fieldManager = "opentelemetry-operator-e2e"
 func CRClient(t *testing.T, cfg *envconf.Config) crclient.Client {
 	t.Helper()
 	c, err := crclient.New(cfg.Client().RESTConfig(), crclient.Options{Scheme: clientgoscheme.Scheme})
-	if err != nil {
-		t.Fatalf("controller-runtime client: %v", err)
-	}
+	require.NoError(t, err, "create controller-runtime client")
 	return c
 }
 
@@ -35,9 +34,7 @@ func CRClient(t *testing.T, cfg *envconf.Config) crclient.Client {
 func ClientSet(t *testing.T, cfg *envconf.Config) *kubernetes.Clientset {
 	t.Helper()
 	cs, err := clientSet(cfg)
-	if err != nil {
-		t.Fatalf("clientset: %v", err)
-	}
+	require.NoError(t, err, "create clientset")
 	return cs
 }
 

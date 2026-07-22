@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // RepoRoot walks up from the test's working directory to the repository root,
@@ -17,17 +19,13 @@ import (
 func RepoRoot(t *testing.T) string {
 	t.Helper()
 	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
+	require.NoError(t, err, "getwd")
 	for {
 		if _, err := os.Stat(filepath.Join(dir, "config", "target-allocator", "clusterrole.yaml")); err == nil {
 			return dir
 		}
 		parent := filepath.Dir(dir)
-		if parent == dir {
-			t.Fatalf("could not locate repo root (config/target-allocator) from %s", dir)
-		}
+		require.NotEqual(t, dir, parent, "could not locate repo root (config/target-allocator)")
 		dir = parent
 	}
 }

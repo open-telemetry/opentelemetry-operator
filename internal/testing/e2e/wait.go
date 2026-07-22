@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sobj "sigs.k8s.io/e2e-framework/klient/k8s"
@@ -24,16 +25,15 @@ func WaitForStatefulSet(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 	ss := &appsv1.StatefulSet{}
 	ss.SetName(name)
 	ss.SetNamespace(ns)
-	if err := wait.For(
+	err := wait.For(
 		conditions.New(cfg.Client().Resources()).ResourceMatch(ss, func(obj k8sobj.Object) bool {
 			return obj.(*appsv1.StatefulSet).Status.ReadyReplicas >= replicas
 		}),
 		wait.WithContext(ctx),
 		wait.WithTimeout(timeout),
 		wait.WithInterval(2*time.Second),
-	); err != nil {
-		t.Fatalf("statefulset %s/%s not ready: %v", ns, name, err)
-	}
+	)
+	require.NoError(t, err, "statefulset %s/%s not ready", ns, name)
 }
 
 // WaitForDeployment blocks until the named Deployment reports Available. The
@@ -45,7 +45,7 @@ func WaitForDeployment(ctx context.Context, t *testing.T, cfg *envconf.Config, n
 	dep := &appsv1.Deployment{}
 	dep.SetName(name)
 	dep.SetNamespace(ns)
-	if err := wait.For(
+	err := wait.For(
 		conditions.New(cfg.Client().Resources()).ResourceMatch(dep, func(obj k8sobj.Object) bool {
 			for _, cond := range obj.(*appsv1.Deployment).Status.Conditions {
 				if cond.Type == appsv1.DeploymentAvailable && cond.Status == corev1.ConditionTrue {
@@ -57,7 +57,6 @@ func WaitForDeployment(ctx context.Context, t *testing.T, cfg *envconf.Config, n
 		wait.WithContext(ctx),
 		wait.WithTimeout(timeout),
 		wait.WithInterval(2*time.Second),
-	); err != nil {
-		t.Fatalf("deployment %s/%s not available: %v", ns, name, err)
-	}
+	)
+	require.NoError(t, err, "deployment %s/%s not available", ns, name)
 }
