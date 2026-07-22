@@ -98,6 +98,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 		return warnings, err
 	}
 
+	// TODO(iypetrov): adjust the check?
 	// validate that cert-manager is available when mTLS requires it
 	if manifestutils.IsTAMTLSEnabled(ta) &&
 		(ta.Spec.Mtls.UseCertManager == nil || *ta.Spec.Mtls.UseCertManager) &&

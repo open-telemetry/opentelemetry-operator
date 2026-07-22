@@ -268,6 +268,48 @@ type TargetAllocatorMTLS struct {
 	// +optional
 	// +kubebuilder:default:=true
 	UseCertManager *bool `json:"useCertManager,omitempty"`
+	// TLS references user-provided Secrets containing the certificates used for mTLS. It allows
+	// managing the certificates outside of the operator (e.g. without cert-manager) and is only
+	// consulted when UseCertManager is set to false.
+	// +optional
+	TLS *TargetAllocatorTLS `json:"tls,omitempty"`
+}
+
+// TargetAllocatorTLS references user-provided Secrets holding the certificates used for mTLS
+// between the target allocator and the collector.
+type TargetAllocatorTLS struct {
+	// CertificateAuthorityCertificate references a Secret containing the CA certificate used to
+	// verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
+	// server and client certificate Secrets.
+	// +optional
+	CertificateAuthorityCertificate *CertificateReference `json:"certificateAuthorityCertificate,omitempty"`
+	// ServerCertificate references a Secret containing the server certificate and key used by the
+	// target allocator when exposing its HTTPS server.
+	// +optional
+	ServerCertificate *CertificateReference `json:"serverCertificate,omitempty"`
+	// ClientCertificate references a Secret containing the client certificate and key used by the
+	// collector when talking to the target allocator's HTTPS server.
+	// +optional
+	ClientCertificate *CertificateReference `json:"clientCertificate,omitempty"`
+}
+
+// CertificateReference points to a certificate (and optionally its private key) stored in a Secret.
+type CertificateReference struct {
+	// SecretName is the name of the Secret, in the same namespace as the workload, holding the
+	// certificate data.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+	// DataKeyCertificate is the key within the Secret's data that holds the certificate.
+	// Defaults to tls.crt.
+	// +optional
+	// +kubebuilder:default:=tls.crt
+	DataKeyCertificate string `json:"dataKeyCertificate,omitempty"`
+	// DataKeyKey is the key within the Secret's data that holds the private key.
+	// Defaults to tls.key. It is not required for CA certificate references.
+	// +optional
+	// +kubebuilder:default:=tls.key
+	DataKeyKey string `json:"dataKeyKey,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
