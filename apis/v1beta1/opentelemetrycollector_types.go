@@ -276,7 +276,7 @@ type TargetAllocatorMTLS struct {
 }
 
 // TargetAllocatorTLS references user-provided Secrets holding the certificates used for mTLS
-// between the target allocator and the collector. Each reference is independent, so a single Secret
+// between the target allocator and the collector. Each reference is independent, so different Secrets
 // may back the CA, certificate and key. The referenced keys are projected into the pods via subPath
 // volume mounts, which means certificate rotation requires the pods to be restarted.
 type TargetAllocatorTLS struct {
