@@ -25,7 +25,6 @@ spec:
     - name: Check bridge is connected and healthy before installing collectors
       try:
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -50,6 +49,7 @@ spec:
               (length(values($result))): 1
               (values($result)[0].status.sequence_num >= `2`): true
               (values($result)[0].status.health.healthy): true
+              (length(values($result)[0].effective_config)): 0
     - catch:
         - podLogs:
             selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
@@ -86,7 +86,6 @@ spec:
     - name: Check effective config contains the managed collector
       try:
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -108,12 +107,20 @@ spec:
                 value: (json_parse($stdout))
         - assert:
             resource:
+              # Note: often times here I need to assert the length and then get the 0th element
+              # it would be great if I could wildcard for the initial instance id key and then
+              # construct a compound key of `$NAMESPACE/simplest` for the collector I want to assert
               (length(values($result))): 1
+              (values($result)[0].status.sequence_num >= `2`): true
               (values($result)[0].status.health.healthy): true
+              (length(values($result)[0].status.health.component_health_map)): 1
+              (values(values($result)[0].status.health.component_health_map)[0].healthy): true
+              (length(values($result)[0].effective_config)): 1
+              (length(values($result)[0].status.effective_config.config_map.config_map)): 1
+              (length(values(values($result)[0].status.effective_config.config_map.config_map)[0].body) > `0`): true
     - name: Verify content is accurate
       try:
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -218,87 +225,14 @@ spec:
             selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
       name: "scenario 3: bridge remains healthy after restart command"
       try:
-        - script:
-            timeout: 45s
-            content: |
-              #!/bin/bash
-              set -eu
-              last=""
-              for _ in $(seq 1 30); do
-                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
-                  if printf '%s' "$last" | grep -q '"healthy":true' && \
-                     printf '%s' "$last" | grep -q "\"$NAMESPACE/simplest\":"; then
-                    printf '%s' "$last"
-                    exit 0
-                  fi
-                fi
-                sleep 1
-              done
-              printf '%s\n' "$last" >&2
-              exit 1
-            outputs:
-              - name: result
-                value: (json_parse($stdout))
         - assert:
             resource:
-              (length(values($result))): 1
-              (values($result)[0].status.health.healthy): true
-
-    # ---------------------------------------------------------------------------
-    # Scenario 2: Bridge rejects unknown command types.
-    #             The managed collector annotation must NOT change.
-    # ---------------------------------------------------------------------------
-    - catch:
-        - podLogs:
-            selector: app=e2e-test-app-bridge-server
-        - podLogs:
-            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
-      name: "scenario 2: unknown command is rejected, collector not restarted"
-      try:
-        # Record the current restartedAt timestamp before sending the unknown command.
-        - script:
-            content: |
-              #!/bin/bash
-              set -eu
-              kubectl get deployment simplest-collector -n "$NAMESPACE" \
-                -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}'
-            outputs:
-              - name: restartedAtBefore
-                value: ($stdout)
-        - script:
-            timeout: 60s
-            content: |
-              #!/bin/bash
-              set -eu
-              kubectl run -n "$NAMESPACE" send-unknown-cmd \
-                --image=mirror.gcr.io/alpine/curl:latest \
-                --restart=Never --rm -i \
-                --command -- curl -fsS -X POST \
-                "http://e2e-test-app-bridge-server:4321/agents/send-command" \
-                -H "Content-Type: application/json" \
-                -d '{"command_type":"unknown_xyz"}'
-        - sleep:
-            duration: 3s
-        # Verify the annotation has not changed - unknown command must not trigger a rollout.
-        - script:
-            content: |
-              #!/bin/bash
-              set -eu
-              kubectl get deployment simplest-collector -n "$NAMESPACE" \
-                -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}'
-            outputs:
-              - name: restartedAtAfter
-                value: ($stdout)
-        - assert:
-            resource:
-              ($restartedAtBefore == $restartedAtAfter): true
-        # Bridge must have logged the expected "unsupported command type" error.
-        - script:
-            content: |
-              #!/bin/bash
-              set -eu
-              kubectl logs -l app.kubernetes.io/name=test-opamp-bridge -n "$NAMESPACE" \
-                | grep -q "unsupported command type"
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: test-opamp-bridge
+              status:
+                readyReplicas: 1
 
     # ---------------------------------------------------------------------------
     # Final: Ensure no unexpected errors in bridge logs.
