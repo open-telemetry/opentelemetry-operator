@@ -26,7 +26,7 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-telemetry/opamp-go v0.23.0
-	github.com/openshift/api v0.0.0-20260619095050-5346161d1bf2
+	github.com/openshift/api v0.0.0-20260715165912-72066cc9718b
 	github.com/operator-framework/api v0.44.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.92.0
@@ -58,7 +58,7 @@ require (
 	k8s.io/client-go v0.36.2
 	k8s.io/component-base v0.36.2
 	k8s.io/klog/v2 v2.140.0
-	k8s.io/utils v0.0.0-20260626114624-be93311217bd
+	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/gateway-api v1.6.0
 	sigs.k8s.io/yaml v1.6.0
@@ -217,7 +217,7 @@ require (
 require (
 	github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished
 	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
-	github.com/openshift/library-go v0.0.0-20260713143403-795ac1a480b5
+	github.com/openshift/library-go v0.0.0-20260721103755-0c9fbc9f043a
 	sigs.k8s.io/e2e-framework v0.7.0
 )
 
