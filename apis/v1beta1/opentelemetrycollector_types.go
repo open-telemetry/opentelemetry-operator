@@ -276,11 +276,13 @@ type TargetAllocatorMTLS struct {
 }
 
 // TargetAllocatorTLS references user-provided Secrets holding the certificates used for mTLS
-// between the target allocator and the collector.
+// between the target allocator and the collector. Each reference is independent, so a single Secret
+// may back the CA, certificate and key. The referenced keys are projected into the pods via subPath
+// volume mounts, which means certificate rotation requires the pods to be restarted.
 type TargetAllocatorTLS struct {
 	// CertificateAuthorityCertificate references a Secret containing the CA certificate used to
 	// verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
-	// server and client certificate Secrets.
+	// server and client certificate Secrets under the ca.crt key.
 	// +optional
 	CertificateAuthorityCertificate *CertificateReference `json:"certificateAuthorityCertificate,omitempty"`
 	// ServerCertificate references a Secret containing the server certificate and key used by the

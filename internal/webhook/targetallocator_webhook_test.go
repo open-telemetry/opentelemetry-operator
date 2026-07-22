@@ -360,7 +360,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
 		},
 		{
-			name: "mTLS with useCertManager false but separate CA certificate is unsupported",
+			name: "mTLS with useCertManager false and a separate CA certificate",
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
@@ -374,7 +374,6 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "not supported yet",
 		},
 		{
 			name: "mTLS with useCertManager true and cert-manager available",

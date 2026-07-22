@@ -5,6 +5,7 @@ package manifestutils
 
 import (
 	"errors"
+	"path/filepath"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -39,11 +40,12 @@ func IsTAMTLSUserProvided(ta *v1alpha1.TargetAllocator) bool {
 		!*ta.Spec.Mtls.UseCertManager
 }
 
-// TAServerCertificateVolume builds the volume that mounts the target allocator's server certificate.
-// When certificates are user-provided it references the user's Secret and maps its keys to the fixed
-// filenames the target allocator config expects; otherwise it references the cert-manager Secret.
-func TAServerCertificateVolume(ta *v1alpha1.TargetAllocator) corev1.Volume {
-	return taCertificateVolume(
+// TAServerCertificateVolumes builds the volumes and volume mounts that provide the target allocator's
+// server certificate (and the CA used to verify collector clients). With cert-manager it mounts the
+// operator-managed Secret at /tls; with user-provided certificates it projects each referenced Secret
+// key onto the corresponding file under /tls via subPath mounts.
+func TAServerCertificateVolumes(ta *v1alpha1.TargetAllocator) ([]corev1.Volume, []corev1.VolumeMount) {
+	return taCertificateVolumes(
 		ta,
 		naming.TAServerCertificate(ta.Name),
 		naming.TAServerCertificateSecretName(ta.Name),
@@ -51,11 +53,12 @@ func TAServerCertificateVolume(ta *v1alpha1.TargetAllocator) corev1.Volume {
 	)
 }
 
-// TAClientCertificateVolume builds the volume that mounts the collector's client certificate.
-// When certificates are user-provided it references the user's Secret and maps its keys to the fixed
-// filenames the prometheus receiver config expects; otherwise it references the cert-manager Secret.
-func TAClientCertificateVolume(ta *v1alpha1.TargetAllocator, otelcolName string) corev1.Volume {
-	return taCertificateVolume(
+// TAClientCertificateVolumes builds the volumes and volume mounts that provide the collector's client
+// certificate (and the CA used to verify the target allocator server). With cert-manager it mounts the
+// operator-managed Secret at /tls; with user-provided certificates it projects each referenced Secret
+// key onto the corresponding file under /tls via subPath mounts.
+func TAClientCertificateVolumes(ta *v1alpha1.TargetAllocator, otelcolName string) ([]corev1.Volume, []corev1.VolumeMount) {
+	return taCertificateVolumes(
 		ta,
 		naming.TAClientCertificate(otelcolName),
 		naming.TAClientCertificateSecretName(otelcolName),
@@ -63,38 +66,83 @@ func TAClientCertificateVolume(ta *v1alpha1.TargetAllocator, otelcolName string)
 	)
 }
 
-// taCertificateVolume builds a Secret-backed volume for an mTLS certificate. When certificates are
-// user-provided, the volume references the user's Secret with Items mapping the user's data keys
-// onto the fixed /tls filenames (the CA certificate is expected to be bundled in the same Secret,
-// keyed by ca.crt). Otherwise it references the cert-manager-managed Secret, which already stores
-// the standard keys.
-func taCertificateVolume(ta *v1alpha1.TargetAllocator, volumeName, certManagerSecretName string, ref *v1beta1.CertificateReference) corev1.Volume {
-	if !IsTAMTLSUserProvided(ta) || ref == nil {
-		return corev1.Volume{
+// taCertificateVolumes returns the volumes and mounts for one side of the mTLS connection.
+//
+// In the cert-manager case it mounts the single operator-managed Secret at /tls, which already stores
+// the standard ca.crt/tls.crt/tls.key keys.
+//
+// In the user-provided case (useCertManager=false) it builds one Secret volume per distinct referenced
+// Secret name and one subPath VolumeMount per file, so that the leaf certificate/key come from certRef
+// and the CA certificate comes from either a dedicated CertificateAuthorityCertificate reference or,
+// when that isn't set, from the ca.crt key of the leaf Secret. Because references are independent, the
+// same Secret may back the CA, certificate and key.
+func taCertificateVolumes(ta *v1alpha1.TargetAllocator, volumeName, certManagerSecretName string, certRef *v1beta1.CertificateReference) ([]corev1.Volume, []corev1.VolumeMount) {
+	if !IsTAMTLSUserProvided(ta) || certRef == nil {
+		volumes := []corev1.Volume{{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: certManagerSecretName,
 				},
 			},
+		}}
+		mounts := []corev1.VolumeMount{{
+			Name:      volumeName,
+			MountPath: constants.TACollectorTLSDirPath,
+		}}
+		return volumes, mounts
+	}
+
+	// The CA certificate is served from its own reference when provided, otherwise it is expected to
+	// be bundled in the leaf Secret under the ca.crt key.
+	caRef := caCertificateReference(ta)
+	caSecretName := certRef.SecretName
+	caKey := constants.TACollectorCAFileName
+	if caRef != nil {
+		caSecretName = caRef.SecretName
+		caKey = dataKeyCertificate(caRef)
+	}
+
+	files := []mtlsFile{
+		{secretName: caSecretName, key: caKey, path: constants.TACollectorCAFileName},
+		{secretName: certRef.SecretName, key: dataKeyCertificate(certRef), path: constants.TACollectorTLSCertFileName},
+		{secretName: certRef.SecretName, key: dataKeyKey(certRef), path: constants.TACollectorTLSKeyFileName},
+	}
+
+	var volumes []corev1.Volume
+	var mounts []corev1.VolumeMount
+	seenSecret := map[string]string{} // secret name -> volume name
+	for _, f := range files {
+		volName, ok := seenSecret[f.secretName]
+		if !ok {
+			// Derive a stable, unique volume name per distinct Secret.
+			volName = naming.DNSName(naming.Truncate("%s-%d", 63, volumeName, len(volumes)))
+			seenSecret[f.secretName] = volName
+			volumes = append(volumes, corev1.Volume{
+				Name: volName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: f.secretName,
+					},
+				},
+			})
 		}
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      volName,
+			MountPath: filepath.Join(constants.TACollectorTLSDirPath, f.path),
+			SubPath:   f.key,
+			ReadOnly:  true,
+		})
 	}
+	return volumes, mounts
+}
 
-	items := []corev1.KeyToPath{
-		{Key: dataKeyCertificate(ref), Path: constants.TACollectorTLSCertFileName},
-		{Key: dataKeyKey(ref), Path: constants.TACollectorTLSKeyFileName},
-		{Key: constants.TACollectorCAFileName, Path: constants.TACollectorCAFileName},
-	}
-
-	return corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: ref.SecretName,
-				Items:      items,
-			},
-		},
-	}
+// mtlsFile describes a single certificate file to project into /tls: which Secret and key it comes
+// from, and the fixed filename it must be mounted as.
+type mtlsFile struct {
+	secretName string
+	key        string
+	path       string
 }
 
 // taTLS returns the user-provided TLS configuration, or nil when it isn't set.
@@ -144,8 +192,8 @@ func dataKeyKey(ref *v1beta1.CertificateReference) string {
 
 // ValidateTAMTLS validates the target allocator mTLS configuration. When mTLS relies on cert-manager
 // it requires cert-manager to be available. When cert-manager is disabled it requires the user to
-// provide the server and client certificate Secrets, and rejects the currently-unsupported separate
-// CA certificate reference (the CA is expected to be bundled in the leaf Secrets).
+// provide the server and client certificate Secrets; the CA certificate may either be referenced
+// separately or bundled in the leaf Secrets under the ca.crt key.
 func ValidateTAMTLS(ta *v1alpha1.TargetAllocator, certManagerAvailable bool) error {
 	if !IsTAMTLSEnabled(ta) {
 		return nil
@@ -161,9 +209,6 @@ func ValidateTAMTLS(ta *v1alpha1.TargetAllocator, certManagerAvailable bool) err
 	// User-provided certificates: both leaf certificates must be referenced.
 	if taServerCertificateReference(ta) == nil || taClientCertificateReference(ta) == nil {
 		return errors.New("mTLS is enabled with useCertManager set to false; tls.serverCertificate and tls.clientCertificate must both reference a Secret")
-	}
-	if caCertificateReference(ta) != nil {
-		return errors.New("mTLS with a separate tls.certificateAuthorityCertificate is not supported yet; bundle the CA certificate under the ca.crt key inside the server and client Secrets instead")
 	}
 	return nil
 }

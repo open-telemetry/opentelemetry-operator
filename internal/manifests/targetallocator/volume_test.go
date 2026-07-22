@@ -15,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
@@ -149,19 +148,13 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		}
 
 		volumes := Volumes(cfg, ta)
-		expectedVolume := corev1.Volume{
-			Name: naming.TAServerCertificate(ta.Name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: "my-server-secret",
-					Items: []corev1.KeyToPath{
-						{Key: constants.TACollectorTLSCertFileName, Path: constants.TACollectorTLSCertFileName},
-						{Key: constants.TACollectorTLSKeyFileName, Path: constants.TACollectorTLSKeyFileName},
-						{Key: constants.TACollectorCAFileName, Path: constants.TACollectorCAFileName},
-					},
-				},
-			},
+		// The leaf Secret backs a single volume; the key→file mapping lives on the container mount.
+		var found bool
+		for _, v := range volumes {
+			if v.Secret != nil && v.Secret.SecretName == "my-server-secret" {
+				found = true
+			}
 		}
-		assert.Contains(t, volumes, expectedVolume)
+		assert.True(t, found, "expected a volume backed by the user-provided server secret")
 	})
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -132,10 +131,8 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 			ContainerPort: 8443,
 			Protocol:      corev1.ProtocolTCP,
 		})
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      naming.TAServerCertificate(instance.Name),
-			MountPath: constants.TACollectorTLSDirPath,
-		})
+		_, serverMounts := manifestutils.TAServerCertificateVolumes(&instance)
+		volumeMounts = append(volumeMounts, serverMounts...)
 	}
 
 	envVars = append(envVars, cfg.ProxyEnvVars...)

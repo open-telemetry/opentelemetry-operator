@@ -39,7 +39,8 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector, ta *v1al
 	}}
 
 	if manifestutils.IsTAMTLSEnabled(ta) {
-		volumes = append(volumes, manifestutils.TAClientCertificateVolume(ta, otelcol.Name))
+		clientVolumes, _ := manifestutils.TAClientCertificateVolumes(ta, otelcol.Name)
+		volumes = append(volumes, clientVolumes...)
 	}
 
 	if len(otelcol.Spec.Volumes) > 0 {

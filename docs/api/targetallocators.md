@@ -9672,7 +9672,7 @@ consulted when UseCertManager is set to false.
         <td>
           CertificateAuthorityCertificate references a Secret containing the CA certificate used to
 verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
-server and client certificate Secrets.<br/>
+server and client certificate Secrets under the ca.crt key.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9702,7 +9702,7 @@ target allocator when exposing its HTTPS server.<br/>
 
 CertificateAuthorityCertificate references a Secret containing the CA certificate used to
 verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
-server and client certificate Secrets.
+server and client certificate Secrets under the ca.crt key.
 
 <table>
     <thead>
