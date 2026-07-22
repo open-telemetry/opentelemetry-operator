@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
@@ -133,5 +134,42 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			},
 		}
 		assert.NotContains(t, volumes, unexpectedVolume)
+	})
+
+	t.Run("mTLS with user-provided client certificate secret", func(t *testing.T) {
+		otelcol := v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-collector",
+			},
+		}
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
+
+		ta := &v1alpha1.TargetAllocator{}
+		ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
+			Enabled:        true,
+			UseCertManager: new(false),
+			TLS: &v1beta1.TargetAllocatorTLS{
+				ServerCertificate: &v1beta1.CertificateReference{SecretName: "my-server-secret"},
+				ClientCertificate: &v1beta1.CertificateReference{SecretName: "my-client-secret"},
+			},
+		}
+
+		volumes := Volumes(cfg, otelcol, ta)
+		expectedVolume := corev1.Volume{
+			Name: naming.TAClientCertificate(otelcol.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "my-client-secret",
+					Items: []corev1.KeyToPath{
+						{Key: constants.TACollectorTLSCertFileName, Path: constants.TACollectorTLSCertFileName},
+						{Key: constants.TACollectorTLSKeyFileName, Path: constants.TACollectorTLSKeyFileName},
+						{Key: constants.TACollectorCAFileName, Path: constants.TACollectorCAFileName},
+					},
+				},
+			},
+		}
+		assert.Contains(t, volumes, expectedVolume)
 	})
 }

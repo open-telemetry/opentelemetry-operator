@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Allow enabling mTLS between the target allocator and the collector using user-provided certificate Secrets, without requiring cert-manager.
+
+# One or more tracking issues related to the change
+issues: [3982]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  When `spec.targetAllocator.mtls.useCertManager` is set to `false`, the new `mtls.tls` block can
+  reference Secrets holding the target allocator's server certificate and the collector's client
+  certificate. Each Secret must contain the CA certificate under the `ca.crt` key; the certificate
+  and key data keys default to `tls.crt`/`tls.key` and can be overridden per reference.
