@@ -1483,3 +1483,25 @@ func TestAgent_Start_TLSConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestAgent_Start_ProxyConfig(t *testing.T) {
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	conf.Endpoint = "wss://127.0.0.1:4320/v1/opamp"
+	conf.Proxy = &config.ProxyConfig{
+		URL: "http://proxy.example.com:8080",
+		Headers: config.Headers{
+			"Proxy-Authorization": "Basic proxy-token",
+		},
+	}
+	applier := getFakeApplier(t, conf)
+	mp := newMockProxy(nil, nil, nil)
+	agent := NewAgent(l, applier, conf, mockClient, mp)
+
+	err := agent.Start()
+	require.NoError(t, err)
+
+	assert.Equal(t, "http://proxy.example.com:8080", mockClient.settings.ProxyURL)
+	assert.Equal(t, []string{"Basic proxy-token"}, mockClient.settings.ProxyHeaders.Values("Proxy-Authorization"))
+	agent.Shutdown()
+}

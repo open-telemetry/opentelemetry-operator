@@ -52,6 +52,10 @@ description:
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
+proxy:
+  url: socks5://proxy.example.com:1080
+  headers:
+    Proxy-Authorization: proxy-token
 `,
 	}
 	tests := []struct {
@@ -89,6 +93,10 @@ headers:
 					Image:    tc.image,
 					Endpoint: "ws://opamp-server:4320/v1/opamp",
 					Headers:  map[string]string{"authorization": "access-12345-token"},
+					Proxy: &v1alpha1.OpAMPBridgeProxyConfig{
+						URL:     "socks5://proxy.example.com:1080",
+						Headers: map[string]string{"Proxy-Authorization": "proxy-token"},
+					},
 					Description: &v1alpha1.AgentDescription{
 						NonIdentifyingAttributes: map[string]string{
 							"hello": "world",

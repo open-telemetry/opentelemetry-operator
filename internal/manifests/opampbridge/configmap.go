@@ -35,6 +35,10 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		config["headers"] = params.OpAMPBridge.Spec.Headers
 	}
 
+	if params.OpAMPBridge.Spec.Proxy != nil {
+		config["proxy"] = params.OpAMPBridge.Spec.Proxy
+	}
+
 	if params.OpAMPBridge.Spec.Capabilities != nil {
 		config["capabilities"] = params.OpAMPBridge.Spec.Capabilities
 	}
