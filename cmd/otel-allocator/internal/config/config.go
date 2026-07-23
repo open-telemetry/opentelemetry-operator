@@ -537,6 +537,9 @@ func validateTelemetry(t TelemetryConfig) error {
 		if exp.OTLPGrpc == nil && exp.OTLPHttp == nil {
 			return fmt.Errorf("telemetry.metrics.readers[%d].periodic: must configure otlp_grpc or otlp_http exporter", i)
 		}
+		if exp.OTLPGrpc != nil && exp.OTLPHttp != nil {
+			return fmt.Errorf("telemetry.metrics.readers[%d].periodic: otlp_grpc and otlp_http are mutually exclusive, configure only one", i)
+		}
 		if exp.OTLPGrpc != nil {
 			if exp.OTLPGrpc.Endpoint == "" {
 				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_grpc: endpoint must be set", i)

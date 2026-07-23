@@ -101,6 +101,8 @@ func expandHeaders(headers []config.NameValuePair) map[string]string {
 
 // newOTLPMetricReader creates a PeriodicExportingMetricReader from a PeriodicMetricReader
 // config. It dispatches to gRPC or HTTP based on which exporter is configured.
+// Exactly one of otlp_grpc or otlp_http must be set; validation in validateTelemetry
+// enforces this before we reach here.
 func newOTLPMetricReader(ctx context.Context, cfg *config.PeriodicMetricReader) (sdkmetric.Reader, error) {
 	readerOpts := periodicReaderOptions(cfg)
 	exp := cfg.Exporter
@@ -187,6 +189,13 @@ type prevSumPoint struct {
 // TemporalitySelector to SDK-native instruments; external Producer output is
 // forwarded as-is. For the Prometheus bridge this means counters arrive as
 // cumulative sums, which DT rejects. This wrapper fixes that gap.
+//
+// The prev map grows to one entry per unique {scope, metric, attribute-set}
+// combination that has ever been observed. For a stable Prometheus scrape target
+// (fixed label cardinality, no ephemeral label values such as pod IPs) this set
+// is bounded in practice. High-cardinality label churn would cause unbounded
+// growth; in that case the Prometheus scrape target itself would already be a
+// problem, so this is an acceptable tradeoff for the current use case.
 type deltaProducer struct {
 	inner sdkmetric.Producer
 	mu    sync.Mutex
@@ -285,13 +294,22 @@ func periodicReaderOptions(cfg *config.PeriodicMetricReader) []sdkmetric.Periodi
 }
 
 // telemetryResource builds the OpenTelemetry resource attached to exported metrics.
-// It sets a default service.name and honors the standard OTEL_SERVICE_NAME /
-// OTEL_RESOURCE_ATTRIBUTES environment variables, so additional attributes (e.g. k8s.*)
-// can be injected without code changes.
+// It sets service.name ("target-allocator") and service.instance.id (pod hostname)
+// so that metrics from different TA replicas can be distinguished in a backend.
+// The standard OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES environment variables
+// are honored and win on conflict, allowing additional attributes (e.g. k8s.*) to
+// be injected without code changes.
 func telemetryResource(ctx context.Context) (*resource.Resource, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
 	return resource.New(ctx,
 		resource.WithTelemetrySDK(),
-		resource.WithAttributes(semconv.ServiceName("target-allocator")),
+		resource.WithAttributes(
+			semconv.ServiceName("target-allocator"),
+			semconv.ServiceInstanceID(hostname),
+		),
 		// Applied last so environment configuration wins on conflict.
 		resource.WithFromEnv(),
 	)
