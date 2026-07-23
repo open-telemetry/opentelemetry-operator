@@ -1,0 +1,31 @@
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: obi-unprivileged
+  annotations:
+    kubernetes.io/description: 'Allows OBI collectors to run with fine-grained eBPF capabilities without full privileges'
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+allowHostPorts: false
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: true
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: true
+allowedCapabilities:
+  - BPF
+  - SYS_PTRACE
+  - NET_RAW
+  - CHECKPOINT_RESTORE
+  - DAC_READ_SEARCH
+  - PERFMON
+volumes:
+  - emptyDir
+  - hostPath
+  - configMap
+  - secret
+  - downwardAPI
+  - projected
