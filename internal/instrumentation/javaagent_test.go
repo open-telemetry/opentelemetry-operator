@@ -9,9 +9,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestInjectJavaagent(t *testing.T) {
@@ -415,6 +418,363 @@ func TestInjectJavaagent(t *testing.T) {
 					continue
 				}
 				injector.injectDefaultJavaEnvVars(&pod.Spec.InitContainers[i], test.Java)
+			}
+			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
+		})
+	}
+}
+
+// withInstrumentationInjectorGate temporarily enables the
+// operator.autoinstrumentation.injector gate and restores it on cleanup.
+func withInstrumentationInjectorGate(t *testing.T) {
+	t.Helper()
+	registry := colfeaturegate.GlobalRegistry()
+	original := featuregate.EnableInstrumentationInjector.IsEnabled()
+	require.NoError(t, registry.Set(featuregate.EnableInstrumentationInjector.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, registry.Set(featuregate.EnableInstrumentationInjector.ID(), original))
+	})
+}
+
+func TestInjectJavaagentWithInjector(t *testing.T) {
+	withInstrumentationInjectorGate(t)
+
+	tests := []struct {
+		name string
+		v1alpha1.Java
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
+	}{
+		{
+			name: "LD_PRELOAD not defined",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/libotelinject.so", "/otel-auto-instrumentation-java/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-java-test-container/libotelinject.so",
+								},
+								{
+									Name:  "JVM_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-java-test-container/javaagent.jar",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "LD_PRELOAD defined",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/libotelinject.so", "/otel-auto-instrumentation-java/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so:/otel-auto-instrumentation-java-test-container/libotelinject.so",
+								},
+								{
+									Name:  "JVM_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-java-test-container/javaagent.jar",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "LD_PRELOAD defined as ValueFrom",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envLdPreload),
+		},
+		{
+			name: "JAVA_TOOL_OPTIONS defined as ValueFrom is allowed",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Env: []corev1.EnvVar{
+								{
+									Name:      "JAVA_TOOL_OPTIONS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/libotelinject.so", "/otel-auto-instrumentation-java/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:      "JAVA_TOOL_OPTIONS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-java-test-container/libotelinject.so",
+								},
+								{
+									Name:  "JVM_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-java-test-container/javaagent.jar",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "extensions are passed via JAVA_TOOL_OPTIONS",
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+				{Image: "ex/ex:0", Dir: "/ex0"},
+			}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/libotelinject.so", "/otel-auto-instrumentation-java/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-extension-0",
+							Image:   "ex/ex:0",
+							Command: []string{"cp", "-r", "/ex0/.", "/otel-auto-instrumentation-java/extensions"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-java-test-container/libotelinject.so",
+								},
+								{
+									Name:  "JVM_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-java-test-container/javaagent.jar",
+								},
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	injector := sdkInjector{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pod := test.pod
+
+			var containers []*corev1.Container
+			for i := range pod.Spec.Containers {
+				containers = append(containers, &pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectJavaagent(test.Java, &pod, containers, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			for i := range pod.Spec.Containers {
+				injector.injectDefaultJavaEnvVars(&pod.Spec.Containers[i], test.Java)
 			}
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)

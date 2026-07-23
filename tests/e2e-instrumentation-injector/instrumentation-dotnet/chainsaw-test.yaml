@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: instrumentation-dotnet-injector
+spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=my-dotnet
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /rolldice
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "120"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        Name: process.cpu.time
+        Description: Total CPU seconds broken down by different states.
+    - name: catchPodLabelSelector
+      value: app=my-dotnet
+    - name: catchContainer
+      value: otc-container
+  steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-collector.yaml
+    - apply:
+        file: 00-install-instrumentation.yaml
+    - sleep:
+        duration: 1s
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-dotnet
+  - name: Make a request to the app
+    use:
+      template: ../../step-templates/app-http-request.yaml
+  - name: Wait for telemetry data
+    use:
+      template: ../../step-templates/wait-for-telemetry.yaml
+  - name: Check the instrumented app has sent the telemetry data successfully
+    use:
+      template: ../../step-templates/validate-collector-metrics.yaml

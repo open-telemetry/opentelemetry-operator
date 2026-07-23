@@ -260,3 +260,273 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		})
 	}
 }
+
+func TestInjectNodeJSSDKWithInjector(t *testing.T) {
+	withInstrumentationInjectorGate(t)
+
+	tests := []struct {
+		name string
+		v1alpha1.NodeJS
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
+	}{
+		{
+			name:   "LD_PRELOAD not defined",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-nodejs/libotelinject.so",
+								},
+								{
+									Name:  "NODEJS_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so:/otel-auto-instrumentation-nodejs/libotelinject.so",
+								},
+								{
+									Name:  "NODEJS_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined as ValueFrom",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envLdPreload),
+		},
+		{
+			name:   "NODE_OPTIONS defined as ValueFrom is allowed",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:      "NODE_OPTIONS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:      "NODE_OPTIONS",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-nodejs/libotelinject.so",
+								},
+								{
+									Name:  "NODEJS_AUTO_INSTRUMENTATION_AGENT_PATH",
+									Value: "/otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	injector := sdkInjector{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pod := test.pod
+
+			var containers []*corev1.Container
+			for i := range pod.Spec.Containers {
+				containers = append(containers, &pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectNodeJSSDK(test.NodeJS, &pod, containers, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			for i := range pod.Spec.Containers {
+				injector.injectDefaultNodeJSEnvVars(&pod.Spec.Containers[i])
+			}
+			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
+		})
+	}
+}

@@ -66,6 +66,19 @@
     },
     {
       "customType": "regex",
+      "description": "Update the opentelemetry-injector version included in the auto-instrumentation images",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "open-telemetry/opentelemetry-injector",
+      "extractVersionTemplate": "^v?(?<version>.*)$",
+      "fileMatch": [
+        "(^|/)autoinstrumentation/injector_version\\.txt$"
+      ],
+      "matchStrings": [
+        "^(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\\s*$"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Update kind node images in kind config files",
       "datasourceTemplate": "docker",
       "depNameTemplate": "kindest/node",
@@ -122,6 +135,11 @@
       "matchFileNames": ["autoinstrumentation/nodejs/package.json"],
       "matchPackageNames": ["@opentelemetry/auto-instrumentations-node"],
       "commitMessageTopic": "OpenTelemetry nodejs agent version"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["open-telemetry/opentelemetry-injector"],
+      "commitMessageTopic": "opentelemetry-injector version"
     },
     {
       "matchManagers": ["pip_requirements"],

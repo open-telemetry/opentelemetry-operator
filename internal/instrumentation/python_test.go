@@ -897,3 +897,377 @@ func allContainers(pod *corev1.Pod) []*corev1.Container {
 	}
 	return containers
 }
+
+func TestInjectPythonSDKWithInjector(t *testing.T) {
+	withInstrumentationInjectorGate(t)
+
+	injectorInitCommand := []string{
+		"sh", "-c",
+		"mkdir -p /otel-auto-instrumentation-python/glibc /otel-auto-instrumentation-python/musl && " +
+			"cp -r /autoinstrumentation/. /otel-auto-instrumentation-python/glibc && " +
+			"cp -r /autoinstrumentation-musl/. /otel-auto-instrumentation-python/musl && " +
+			"cp /libotelinject.so /otel-auto-instrumentation-python/",
+	}
+	injectorDefaultEnv := []corev1.EnvVar{
+		{
+			Name:  "LD_PRELOAD",
+			Value: "/otel-auto-instrumentation-python/libotelinject.so",
+		},
+		{
+			Name:  "PYTHON_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+			Value: "/otel-auto-instrumentation-python",
+		},
+		{
+			Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+			Value: "http/protobuf",
+		},
+		{
+			Name:  "OTEL_TRACES_EXPORTER",
+			Value: "otlp",
+		},
+		{
+			Name:  "OTEL_METRICS_EXPORTER",
+			Value: "otlp",
+		},
+		{
+			Name:  "OTEL_LOGS_EXPORTER",
+			Value: "otlp",
+		},
+	}
+
+	tests := []struct {
+		name string
+		v1alpha1.Python
+		pod      corev1.Pod
+		platform string
+		expected corev1.Pod
+		err      error
+	}{
+		{
+			name:   "LD_PRELOAD not defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-python",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: injectorInitCommand,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: injectorDefaultEnv,
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:     "musl platform annotation is not needed for env var selection",
+			Python:   v1alpha1.Python{Image: "foo/bar:1"},
+			platform: "musl",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-python",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: injectorInitCommand,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: injectorDefaultEnv,
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-python",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: injectorInitCommand,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/lib/other.so:/otel-auto-instrumentation-python/libotelinject.so",
+								},
+								{
+									Name:  "PYTHON_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-python",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "LD_PRELOAD defined as ValueFrom",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      "LD_PRELOAD",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envLdPreload),
+		},
+		{
+			name:   "PYTHONPATH defined as ValueFrom is allowed",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:      "PYTHONPATH",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-python",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: injectorInitCommand,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:      "PYTHONPATH",
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+								{
+									Name:  "LD_PRELOAD",
+									Value: "/otel-auto-instrumentation-python/libotelinject.so",
+								},
+								{
+									Name:  "PYTHON_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX",
+									Value: "/otel-auto-instrumentation-python",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	injector := sdkInjector{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pod := test.pod
+
+			containers := allContainers(&pod)
+
+			err := injectPythonSDK(test.Python, &pod, containers, test.platform, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			for i := range pod.Spec.Containers {
+				injector.injectDefaultPythonEnvVars(&pod.Spec.Containers[i])
+			}
+			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
+		})
+	}
+}

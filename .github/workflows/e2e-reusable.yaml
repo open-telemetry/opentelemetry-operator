@@ -73,6 +73,7 @@ jobs:
         - e2e-autoscale
         - e2e-instrumentation-default
         - e2e-instrumentation
+        - e2e-instrumentation-injector
         - e2e-no-crds
         - e2e-opampbridge
         - e2e-pdb
@@ -93,6 +94,8 @@ jobs:
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation
           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+        - group: e2e-instrumentation-injector
+          setup: "add-operator-arg OPERATOR_ARG=--feature-gates=operator.autoinstrumentation.injector add-instrumentation-params add-instrumentation-images prepare-e2e"
         - group: e2e-multi-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-multi-instrumentation

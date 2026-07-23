@@ -9,10 +9,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
 	envPythonPath                    = "PYTHONPATH"
+	envPythonAgentPathPrefix         = "PYTHON_AUTO_INSTRUMENTATION_AGENT_PATH_PREFIX"
 	envOtelTracesExporter            = "OTEL_TRACES_EXPORTER"
 	envOtelMetricsExporter           = "OTEL_METRICS_EXPORTER"
 	envOtelLogsExporter              = "OTEL_LOGS_EXPORTER"
@@ -43,7 +45,12 @@ func pythonPlatformSrc(platform string) (string, error) {
 func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Container, platform string) error {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
-	err := validateContainerEnv(container.Env, envPythonPath)
+	// In injector mode the instrumentation is activated via LD_PRELOAD instead of PYTHONPATH.
+	envToValidate := envPythonPath
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		envToValidate = envLdPreload
+	}
+	err := validateContainerEnv(container.Env, envToValidate)
 	if err != nil {
 		return err
 	}
@@ -56,14 +63,18 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 	// inject Python instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, pythonSpec.Env...)
 
-	idx := getIndexOfEnv(container.Env, envPythonPath)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envPythonPath,
-			Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-		})
-	} else if idx > -1 {
-		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		injectInjectorPythonEnvVars(container)
+	} else {
+		idx := getIndexOfEnv(container.Env, envPythonPath)
+		if idx == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envPythonPath,
+				Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+			})
+		} else if idx > -1 {
+			container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+		}
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -71,6 +82,30 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 		MountPath: pythonInstrMountPath,
 	})
 	return nil
+}
+
+// injectInjectorPythonEnvVars activates the Python instrumentation via the
+// opentelemetry-injector shared object instead of setting PYTHONPATH on the
+// container. The injector is loaded into every process in the container via
+// LD_PRELOAD and prepends the instrumentation to PYTHONPATH in-process, only
+// for Python processes, detecting the libc flavor (glibc/musl) of the process
+// on its own. This makes the instrumentation.opentelemetry.io/otel-python-platform
+// annotation unnecessary.
+func injectInjectorPythonEnvVars(container *corev1.Container) {
+	ldPreloadValue := pythonInstrMountPath + "/" + injectorLibName
+	if idx := getIndexOfEnv(container.Env, envLdPreload); idx > -1 {
+		ldPreloadValue = container.Env[idx].Value + ":" + ldPreloadValue
+	}
+	container.Env = appendOrReplace(container.Env,
+		corev1.EnvVar{
+			Name:  envLdPreload,
+			Value: ldPreloadValue,
+		},
+		corev1.EnvVar{
+			Name:  envPythonAgentPathPrefix,
+			Value: pythonInstrMountPath,
+		},
+	)
 }
 
 func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName, platform string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
@@ -83,10 +118,21 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 	if isInitContainerMissing(pod, pythonInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 
+		command := []string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath}
+		if featuregate.EnableInstrumentationInjector.IsEnabled() {
+			// The injector chooses between the glibc and musl installations at
+			// runtime, so both are copied, together with the injector itself.
+			command = []string{
+				"sh", "-c",
+				fmt.Sprintf("mkdir -p %[3]s/%[4]s %[3]s/%[5]s && cp -r %[1]s %[3]s/%[4]s && cp -r %[2]s %[3]s/%[5]s && cp /%[6]s %[3]s/",
+					glibcLinuxAutoInstrumentationSrc, muslLinuxAutoInstrumentationSrc, pythonInstrMountPath, glibcLinux, muslLinux, injectorLibName),
+			}
+		}
+
 		initContainer := corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath},
+			Command:   command,
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,

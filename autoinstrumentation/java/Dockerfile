@@ -4,10 +4,33 @@
 #  - Grant the necessary access to the jar. `chmod -R go+r /javaagent.jar`
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
-FROM busybox@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+ARG TARGETARCH
+
+FROM busybox@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS base
 
 ARG version
 
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /javaagent.jar
 
 RUN chmod -R go+r /javaagent.jar
+
+# The opentelemetry-injector shared object activates the agent via LD_PRELOAD
+# when the operator.autoinstrumentation.injector feature gate is enabled.
+# It is only published for amd64 and arm64, so the other architectures this
+# image is built for (s390x, ppc64le) ship without it.
+FROM base AS injector
+ARG TARGETARCH
+# Version of the opentelemetry-injector release to include, without the "v"
+# prefix. There is no default; the canonical value lives in
+# autoinstrumentation/injector_version.txt and must be passed in as a build-arg:
+#   --build-arg injector_version=$(cat ../injector_version.txt)
+ARG injector_version
+ADD https://github.com/open-telemetry/opentelemetry-injector/releases/download/v$injector_version/libotelinject_${TARGETARCH}.so /libotelinject.so
+RUN chmod go+r /libotelinject.so
+
+FROM injector AS injector-amd64
+FROM injector AS injector-arm64
+FROM base AS injector-s390x
+FROM base AS injector-ppc64le
+
+FROM injector-$TARGETARCH

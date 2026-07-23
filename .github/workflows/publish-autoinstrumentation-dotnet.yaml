@@ -5,12 +5,14 @@ on:
     paths:
       - "autoinstrumentation/dotnet/**"
       - ".github/workflows/publish-autoinstrumentation-dotnet.yaml"
+      - "autoinstrumentation/injector_version.txt"
     branches:
       - main
   pull_request:
     paths:
       - "autoinstrumentation/dotnet/**"
       - ".github/workflows/publish-autoinstrumentation-dotnet.yaml"
+      - "autoinstrumentation/injector_version.txt"
   workflow_dispatch:
 
 concurrency:
@@ -35,8 +37,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Read version
-        run: echo "VERSION=$(cat autoinstrumentation/dotnet/version.txt)" >> $GITHUB_ENV
+      - name: Read versions
+        run: |
+          echo "VERSION=$(cat autoinstrumentation/dotnet/version.txt)" >> $GITHUB_ENV
+          echo "INJECTOR_VERSION=$(cat autoinstrumentation/injector_version.txt)" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
@@ -75,7 +79,9 @@ jobs:
           context: autoinstrumentation/dotnet
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name == 'push' }}
-          build-args: version=${{ env.VERSION }}
+          build-args: |
+            version=${{ env.VERSION }}
+            injector_version=${{ env.INJECTOR_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=publish-autoinstrumentation-dotnet

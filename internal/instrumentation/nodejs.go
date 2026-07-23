@@ -7,11 +7,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
 	envNodeOptions          = "NODE_OPTIONS"
+	envNodeJSAgentPath      = "NODEJS_AUTO_INSTRUMENTATION_AGENT_PATH"
 	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+	nodejsAgentPath         = nodejsInstrMountPath + "/autoinstrumentation.js"
 	nodejsInitContainerName = initContainerName + "-nodejs"
 	nodejsVolumeName        = volumeName + "-nodejs"
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
@@ -20,7 +23,12 @@ const (
 func injectNodeJSSDKToContainer(nodeJSSpec v1alpha1.NodeJS, container *corev1.Container) error {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
-	err := validateContainerEnv(container.Env, envNodeOptions)
+	// In injector mode the instrumentation is activated via LD_PRELOAD instead of NODE_OPTIONS.
+	envToValidate := envNodeOptions
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		envToValidate = envLdPreload
+	}
+	err := validateContainerEnv(container.Env, envToValidate)
 	if err != nil {
 		return err
 	}
@@ -74,6 +82,10 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod *corev1.Pod, containers []*
 }
 
 func getDefaultNodeJSEnvVars(container *corev1.Container) []corev1.EnvVar {
+	if featuregate.EnableInstrumentationInjector.IsEnabled() {
+		return getInjectorNodeJSEnvVars(container)
+	}
+
 	idx := getIndexOfEnv(container.Env, envNodeOptions)
 	if idx == -1 {
 		return []corev1.EnvVar{
@@ -96,4 +108,26 @@ func getDefaultNodeJSEnvVars(container *corev1.Container) []corev1.EnvVar {
 		}
 	}
 	return []corev1.EnvVar{}
+}
+
+// getInjectorNodeJSEnvVars activates the Node.js instrumentation via the
+// opentelemetry-injector shared object instead of setting --require in
+// NODE_OPTIONS on the container. The injector is loaded into every process in
+// the container via LD_PRELOAD and prepends the --require flag to NODE_OPTIONS
+// in-process, only for Node.js processes.
+func getInjectorNodeJSEnvVars(container *corev1.Container) []corev1.EnvVar {
+	ldPreloadValue := nodejsInstrMountPath + "/" + injectorLibName
+	if idx := getIndexOfEnv(container.Env, envLdPreload); idx > -1 {
+		ldPreloadValue = container.Env[idx].Value + ":" + ldPreloadValue
+	}
+	return []corev1.EnvVar{
+		{
+			Name:  envLdPreload,
+			Value: ldPreloadValue,
+		},
+		{
+			Name:  envNodeJSAgentPath,
+			Value: nodejsAgentPath,
+		},
+	}
 }

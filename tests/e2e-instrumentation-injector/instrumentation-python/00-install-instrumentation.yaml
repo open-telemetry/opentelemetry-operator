@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: python
+spec:
+  env:
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+  exporter:
+    endpoint: http://deployment-collector:4317
+  propagators:
+    - jaeger
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
+  python:
+    env:
+      - name: OTEL_LOG_LEVEL
+        value: "debug"
+      - name: OTEL_TRACES_EXPORTER
+        value: otlp
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://deployment-collector:4318
+      # Disabling system_metrics instrumenation as the test app is built using Alpine
+      # Instrumentation with metrics is tested in test instrumenation-python-musl
+      - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+        value: "system_metrics"

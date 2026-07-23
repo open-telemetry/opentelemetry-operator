@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-python-injector
+spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=my-python
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "240"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        http.method: Str(GET)
+        k8s.container.name: Str(myapp)
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: catchContainer
+      value: otc-container
+  steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: Setup instrumentation and collector
+    try:
+    - apply:
+        file: 00-install-collector.yaml
+    - apply:
+        file: 00-install-instrumentation.yaml
+    - sleep:
+        duration: 1s
+  - name: Install test app
+    try:
+    - apply:
+        bindings:
+          - name: APP_IMAGE_TAG
+            value: main
+          - name: APP_IMAGE
+            value: (join(':', ['ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python', $APP_IMAGE_TAG]))
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-python
+  - name: Make a request to the app
+    use:
+      template: ../../step-templates/app-http-request.yaml
+  - name: Wait for telemetry data
+    use:
+      template: ../../step-templates/wait-for-telemetry.yaml
+  - name: Check the instrumented app has sent the telemetry data successfully
+    use:
+      template: ../../step-templates/validate-collector-spans.yaml

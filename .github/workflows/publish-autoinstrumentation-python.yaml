@@ -5,12 +5,14 @@ on:
     paths:
       - "autoinstrumentation/python/**"
       - ".github/workflows/publish-autoinstrumentation-python.yaml"
+      - "autoinstrumentation/injector_version.txt"
     branches:
       - main
   pull_request:
     paths:
       - "autoinstrumentation/python/**"
       - ".github/workflows/publish-autoinstrumentation-python.yaml"
+      - "autoinstrumentation/injector_version.txt"
   workflow_dispatch:
 
 concurrency:
@@ -35,8 +37,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Read version
-        run: echo VERSION=$(head -n 1 autoinstrumentation/python/requirements.txt | cut -d '=' -f3) >> $GITHUB_ENV
+      - name: Read versions
+        run: |
+          echo VERSION=$(head -n 1 autoinstrumentation/python/requirements.txt | cut -d '=' -f3) >> $GITHUB_ENV
+          echo "INJECTOR_VERSION=$(cat autoinstrumentation/injector_version.txt)" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
@@ -75,7 +79,9 @@ jobs:
           context: autoinstrumentation/python
           platforms: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
           push: ${{ github.event_name == 'push' }}
-          build-args: version=${{ env.VERSION }}
+          build-args: |
+            version=${{ env.VERSION }}
+            injector_version=${{ env.INJECTOR_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=publish-autoinstrumentation-python
