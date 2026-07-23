@@ -15,13 +15,10 @@ import (
 )
 
 func TestInjectJavaagent(t *testing.T) {
-	allowPrivilegeEscalation := false
-	runAsNonRoot := true
-	runAsUser := int64(1000)
 	testSecurityContext := &corev1.SecurityContext{
-		AllowPrivilegeEscalation: &allowPrivilegeEscalation,
-		RunAsNonRoot:             &runAsNonRoot,
-		RunAsUser:                &runAsUser,
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(int64(1000)),
 		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 	}
 
