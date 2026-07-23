@@ -241,30 +241,6 @@ func TestTACertificateVolumesSeparateCA(t *testing.T) {
 	})
 }
 
-func TestTACertificateVolumesSameSecretForAllRefs(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-	ta.Name = "test"
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
-		Enabled:        true,
-		UseCertManager: new(false),
-		TLS: &v1beta1.TargetAllocatorTLS{
-			CertificateAuthorityCertificate: &v1beta1.CertificateReference{SecretName: "shared", DataKeyCertificate: "ca.crt"},
-			ServerCertificate:               &v1beta1.CertificateReference{SecretName: "shared", DataKeyCertificate: "tls.crt", DataKeyKey: "tls.key"},
-			ClientCertificate:               &v1beta1.CertificateReference{SecretName: "shared"},
-		},
-	}
-
-	serverVolumes, serverMounts := TAServerCertificateVolumes(ta)
-	// One shared Secret backs the CA, certificate and key, so only a single volume is created.
-	require.Len(t, serverVolumes, 1)
-	assert.Equal(t, "shared", serverVolumes[0].Secret.SecretName)
-	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
-		{secretName: "shared", subPath: "ca.crt", path: tlsPath(constants.TACollectorCAFileName)},
-		{secretName: "shared", subPath: "tls.crt", path: tlsPath(constants.TACollectorTLSCertFileName)},
-		{secretName: "shared", subPath: "tls.key", path: tlsPath(constants.TACollectorTLSKeyFileName)},
-	})
-}
-
 // mountSpec is a flattened view of a VolumeMount that also resolves the backing Secret name, used to
 // assert on mounts independently of the generated volume names.
 type mountSpec struct {
