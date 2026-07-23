@@ -44,7 +44,12 @@ spec:
       obi:
         discovery:
           instrument:
-            - k8s_namespace: obi-target-does-not-exist
+            - k8s_namespace: ($namespace)
+              k8s_pod_annotations:
+                obi.instrument: "true"
+        attributes:
+          kubernetes:
+            enable: "true"
     exporters:
       debug:
         verbosity: detailed

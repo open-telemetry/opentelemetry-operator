@@ -5,9 +5,33 @@ metadata:
   name: smoke-collector-obi
 # Smoke test for an OBI (eBPF) collector deployed as a DaemonSet with
 # privileged securityContext, hostPID, and user-managed RBAC. Validates that
-# the operator reconciles the CR into the correct DaemonSet spec without
-# requiring actual eBPF instrumentation or target workloads.
+# the operator reconciles the CR into the correct DaemonSet spec and that the
+# OBI receiver successfully produces traces from a target workload.
 spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=obi-target
+    - name: appPort
+      value: "80"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "240"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        k8s.namespace.name
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: catchContainer
+      value: otc-container
   steps:
     - name: setup-scc
       description: on OpenShift, create an SCC that allows privileged containers and hostPID
@@ -22,7 +46,7 @@ spec:
               else
                 echo "Not OpenShift — skipping SCC setup"
               fi
-    - name: install
+    - name: install-collector
       description: install RBAC and an OBI collector in daemonset mode
       try:
         - apply:
@@ -31,7 +55,28 @@ spec:
         - assert:
             template: true
             file: 00-assert.yaml
-      finally:
+    - name: install-target-workload
+      description: deploy a target workload annotated for OBI instrumentation
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: send-traffic
+      description: send HTTP traffic to the target workload
+      use:
+        template: ../../../step-templates/app-http-request.yaml
+    - name: wait-for-telemetry
+      description: wait for OBI traces in collector debug output
+      use:
+        template: ../../../step-templates/wait-for-telemetry.yaml
+    - name: validate-collector-spans
+      description: verify collector metrics confirm spans were received and exported
+      use:
+        template: ../../../step-templates/validate-collector-spans.yaml
+    - name: cleanup-cluster-scoped
+      description: clean up cluster-scoped resources
+      try:
         - script:
             timeout: 1m
             content: |
