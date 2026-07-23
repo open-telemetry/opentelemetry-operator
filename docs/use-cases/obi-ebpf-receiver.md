@@ -52,6 +52,7 @@ spec:
   serviceAccount: obi-collector
   hostPID: true # Required to access the processes on the host
   securityContext:
+    runAsUser: 0
     privileged: true
   config:
     receivers:
@@ -110,8 +111,8 @@ spec:
           image: my-app:latest
 ```
 
-For further information; see the [OBI service discovery docs](https://opentelemetry.io/docs/zero-code/obi/configure/service-discovery/).
+For further information, see the [OBI service discovery docs](https://opentelemetry.io/docs/zero-code/obi/configure/service-discovery/).
 
 ## Kubernetes attribute enrichment
 
-Setting `attributes.kubernetes.enable: "true"` adds resource attributes like `k8s.namespace.name`, `k8s.pod.name`, and `service.name` to traces. The collector ServiceAccount needs `get`, `list`, and `watch` on pods, nodes, services, replicationcontrollers, deployments, replicasets, statefulsets, and daemonsets — see the [OBI Kubernetes setup guide](https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/) for the full RBAC requirements.
+Setting `attributes.kubernetes.enable: "true"` adds resource attributes like `k8s.namespace.name`, `k8s.pod.name`, and `service.name` to traces. The collector ServiceAccount needs `list` and `watch` on pods, nodes, services, replicationcontrollers, deployments, replicasets, statefulsets, and daemonsets — see the [OBI Kubernetes setup guide](https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/) for the full RBAC requirements.
