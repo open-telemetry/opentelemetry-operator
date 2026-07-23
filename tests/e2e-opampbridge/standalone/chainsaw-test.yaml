@@ -38,7 +38,6 @@ spec:
       name: verify initial standalone report
       try:
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -170,7 +169,6 @@ spec:
       name: verify valid remote config status
       try:
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -247,7 +245,6 @@ spec:
                 -H "Content-Type: application/json" \
                 --data-binary @-
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
@@ -313,7 +310,6 @@ spec:
         - assert:
             file: 02-assert.yaml
         - script:
-            timeout: 75s
             content: |
               #!/bin/bash
               set -eu
