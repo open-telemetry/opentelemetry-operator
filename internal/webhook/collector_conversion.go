@@ -487,6 +487,8 @@ func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationSt
 	switch strategy {
 	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashing:
 		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
+	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashingEndpoint:
+		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashingEndpoint
 	case v1beta1.TargetAllocatorAllocationStrategyPerNode:
 		return v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyPerNode
 	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
@@ -508,6 +510,8 @@ func tov1beta1TAAllocationStrategy(strategy v1alpha1.OpenTelemetryTargetAllocato
 		return v1beta1.TargetAllocatorAllocationStrategyPerNode
 	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
 		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
+	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashingEndpoint:
+		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashingEndpoint
 	case v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
 		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
 	}
