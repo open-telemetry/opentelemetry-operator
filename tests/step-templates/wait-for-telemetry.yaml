@@ -16,7 +16,11 @@ spec:
             value: ($retrySleep)
           - name: SEARCH_STRINGS_ENV
             value: ($searchStrings)
-        timeout: 2m
+        timeout: 5m
         content: |
           REPO_ROOT=$(git rev-parse --show-toplevel)
           exec "$REPO_ROOT/tests/test-e2e-apps/scripts/check_pod_logs.sh"
+  catch:
+    - podLogs:
+        selector: ($catchPodLabelSelector)
+        container: ($catchContainer)
