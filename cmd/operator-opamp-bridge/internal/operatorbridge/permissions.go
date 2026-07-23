@@ -15,5 +15,11 @@ func ListRequiredPermissions() ([]bridgemanager.Permission, error) {
 		{Verb: "delete", APIGroup: "opentelemetry.io", Resource: "opentelemetrycollectors"},
 		{Verb: "get", Resource: "pods"},
 		{Verb: "list", Resource: "pods"},
+		{Verb: "get", APIGroup: "apps", Resource: "deployments"},
+		{Verb: "patch", APIGroup: "apps", Resource: "deployments"},
+		{Verb: "get", APIGroup: "apps", Resource: "daemonsets"},
+		{Verb: "patch", APIGroup: "apps", Resource: "daemonsets"},
+		{Verb: "get", APIGroup: "apps", Resource: "statefulsets"},
+		{Verb: "patch", APIGroup: "apps", Resource: "statefulsets"},
 	}, nil
 }
