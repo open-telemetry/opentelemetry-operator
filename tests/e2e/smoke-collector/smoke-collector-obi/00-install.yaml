@@ -38,6 +38,7 @@ spec:
   serviceAccount: obi-collector
   hostPID: true
   securityContext:
+    runAsUser: 0
     privileged: true
   config:
     receivers:
