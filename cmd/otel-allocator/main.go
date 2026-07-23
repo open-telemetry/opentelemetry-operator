@@ -17,9 +17,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -77,12 +75,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	metricExporter, promErr := otelprom.New()
-	if promErr != nil {
-		panic(promErr)
+	metricsGatherer, shutdownMeterProvider, mpErr := setupMeterProvider(ctx, cfg)
+	if mpErr != nil {
+		setupLog.Error(mpErr, "Unable to set up metrics")
+		os.Exit(1)
 	}
-	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
-	otel.SetMeterProvider(meterProvider)
+	defer func() {
+		// Flush and close exporters (notably the OTLP reader) on shutdown so the final
+		// batch of metrics is delivered.
+		if shutdownErr := shutdownMeterProvider(context.Background()); shutdownErr != nil {
+			setupLog.Error(shutdownErr, "Error shutting down meter provider")
+		}
+	}()
 
 	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if allocErr != nil {
@@ -104,6 +108,10 @@ func main() {
 	if cfg.AllowInsecureAuthSecrets {
 		httpOptions = append(httpOptions, server.WithInsecureAuthSecrets())
 	}
+	// Serve /metrics from the union of the default registry (Prometheus service discovery,
+	// Go runtime and process collectors) and the dedicated SDK registry (OTel SDK metrics),
+	// as assembled by setupMeterProvider.
+	httpOptions = append(httpOptions, server.WithMetricsGatherer(metricsGatherer))
 	srv, serverErr := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	if serverErr != nil {
 		panic(serverErr)

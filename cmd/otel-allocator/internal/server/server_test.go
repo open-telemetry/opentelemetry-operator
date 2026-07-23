@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -1366,4 +1367,28 @@ func TestServer_EmptyTargetReturnsEmptyList(t *testing.T) {
 	err = json.Unmarshal(bodyBytes, &items)
 	require.NoError(t, err)
 	assert.Empty(t, items)
+}
+
+func TestServer_MetricsHandler(t *testing.T) {
+	// With a custom gatherer, /metrics serves it (covers WithMetricsGatherer + the
+	// gatherer branch of metricsHandler).
+	reg := prometheus.NewRegistry()
+	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "ta_test_metric_total", Help: "test"})
+	reg.MustRegister(counter)
+	counter.Inc()
+
+	s, err := NewServer(logger, nil, "", WithMetricsGatherer(reg))
+	require.NoError(t, err)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", http.NoBody)
+	w := httptest.NewRecorder()
+	s.server.Handler.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "ta_test_metric_total")
+
+	// Without the option, /metrics falls back to the default gatherer (covers the nil branch).
+	sd, err := NewServer(logger, nil, "")
+	require.NoError(t, err)
+	wd := httptest.NewRecorder()
+	sd.server.Handler.ServeHTTP(wd, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", http.NoBody))
+	require.Equal(t, http.StatusOK, wd.Code)
 }

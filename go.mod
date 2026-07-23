@@ -218,6 +218,8 @@ require (
 	github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished
 	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
 	github.com/openshift/library-go v0.0.0-20260721103755-0c9fbc9f043a
+	go.opentelemetry.io/contrib/bridges/prometheus v0.57.0
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0
 	sigs.k8s.io/e2e-framework v0.7.0
 )
 
@@ -281,9 +283,13 @@ require (
 	github.com/stackitcloud/stackit-sdk-go/core v0.26.0 // indirect
 	github.com/vultr/govultr/v3 v3.31.2 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
+	go.opentelemetry.io/contrib/propagators/autoprop v0.69.0 // indirect
+	go.opentelemetry.io/contrib/propagators/aws v1.44.0 // indirect
+	go.opentelemetry.io/contrib/propagators/b3 v1.44.0 // indirect
+	go.opentelemetry.io/contrib/propagators/jaeger v1.44.0 // indirect
+	go.opentelemetry.io/contrib/propagators/ot v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.20.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.20.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.44.0 // indirect
