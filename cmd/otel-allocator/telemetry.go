@@ -188,7 +188,8 @@ type prevSumPoint struct {
 // data points to delta. The OTel SDK's PeriodicReader only applies the
 // TemporalitySelector to SDK-native instruments; external Producer output is
 // forwarded as-is. For the Prometheus bridge this means counters arrive as
-// cumulative sums, which DT rejects. This wrapper fixes that gap.
+// cumulative sums. This wrapper converts them to delta so that backends
+// configured to expect delta temporality receive the correct data.
 //
 // The prev map grows to one entry per unique {scope, metric, attribute-set}
 // combination that has ever been observed. For a stable Prometheus scrape target
@@ -230,8 +231,8 @@ func (d *deltaProducer) Produce(ctx context.Context) ([]metricdata.ScopeMetrics,
 				prev, seen := d.prev[key]
 				d.prev[key] = prevSumPoint{value: dp.Value, t: dp.Time}
 				if !seen {
-					// First observation: emit with delta = current value so DT
-					// sees the counter from the start rather than skipping it.
+					// First observation: emit with delta = current value so the
+					// backend sees the counter from the start rather than skipping it.
 					startTime := dp.StartTime
 					if startTime.IsZero() {
 						startTime = dp.Time
@@ -280,8 +281,8 @@ func periodicReaderOptions(cfg *config.PeriodicMetricReader) []sdkmetric.Periodi
 		//
 		// The bridge always returns CumulativeTemporality for counters, but the
 		// PeriodicReader does not apply the TemporalitySelector to external Producer
-		// output. deltaProducer wraps the bridge and performs the conversion so DT
-		// receives delta monotonic sums (cumulative is rejected by DT).
+		// output. deltaProducer wraps the bridge and converts cumulative monotonic
+		// sums to delta for backends configured to expect delta temporality.
 		sdkmetric.WithProducer(newDeltaProducer(prometheusbridge.NewMetricProducer())),
 	}
 	if cfg.Interval > 0 {
