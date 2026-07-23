@@ -30,14 +30,8 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 	}}
 
 	if manifestutils.IsTAMTLSEnabled(&instance) {
-		volumes = append(volumes, corev1.Volume{
-			Name: naming.TAServerCertificate(instance.Name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: naming.TAServerCertificateSecretName(instance.Name),
-				},
-			},
-		})
+		serverVolumes, _ := manifestutils.TAServerCertificateVolumes(&instance)
+		volumes = append(volumes, serverVolumes...)
 	}
 
 	volumes = append(volumes, instance.Spec.Volumes...)

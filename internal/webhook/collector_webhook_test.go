@@ -1502,7 +1502,27 @@ func TestCollectorMTLSValidation(t *testing.T) {
 			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
 		},
 		{
-			name: "mTLS with useCertManager false and cert-manager not available",
+			name: "mTLS with useCertManager false and user-provided certificates",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled: true,
+						Mtls: &v1beta1.TargetAllocatorMTLS{
+							Enabled:        true,
+							UseCertManager: new(false),
+							TLS: &v1beta1.TargetAllocatorTLS{
+								ServerCertificate: &v1beta1.CertificateReference{SecretName: "server-secret"},
+								ClientCertificate: &v1beta1.CertificateReference{SecretName: "client-secret"},
+							},
+						},
+					},
+					Config: cfg,
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false but missing certificate secrets",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeStatefulSet,
@@ -1513,6 +1533,7 @@ func TestCollectorMTLSValidation(t *testing.T) {
 					Config: cfg,
 				},
 			},
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
 		},
 		{
 			name: "mTLS with useCertManager true and cert-manager available",

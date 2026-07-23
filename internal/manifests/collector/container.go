@@ -19,7 +19,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -64,11 +63,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 
 	if manifestutils.IsTAMTLSEnabled(ta) {
-		volumeMounts = append(volumeMounts,
-			corev1.VolumeMount{
-				Name:      naming.TAClientCertificate(otelcol.Name),
-				MountPath: constants.TACollectorTLSDirPath,
-			})
+		_, clientMounts := manifestutils.TAClientCertificateVolumes(ta, otelcol.Name)
+		volumeMounts = append(volumeMounts, clientMounts...)
 	}
 
 	// ensure that the v1alpha1.OpenTelemetryCollectorSpec.Args are ordered when moved to container.Args,

@@ -98,11 +98,9 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 		return warnings, err
 	}
 
-	// validate that cert-manager is available when mTLS requires it
-	if manifestutils.IsTAMTLSEnabled(ta) &&
-		(ta.Spec.Mtls.UseCertManager == nil || *ta.Spec.Mtls.UseCertManager) &&
-		w.cfg.CertManagerAvailability != certmanager.Available {
-		return warnings, errors.New("mTLS is enabled with useCertManager but cert-manager is not available; install cert-manager and restart the operator, or set useCertManager to false")
+	// validate mTLS configuration (cert-manager availability, or user-provided certificate Secrets)
+	if err := manifestutils.ValidateTAMTLS(ta, w.cfg.CertManagerAvailability == certmanager.Available); err != nil {
+		return warnings, err
 	}
 
 	// if the prometheusCR is enabled, it needs a suite of permissions to function

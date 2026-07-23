@@ -8199,6 +8199,51 @@ spec:
                     properties:
                       enabled:
                         type: boolean
+                      tls:
+                        properties:
+                          certificateAuthorityCertificate:
+                            properties:
+                              dataKeyCertificate:
+                                default: tls.crt
+                                type: string
+                              dataKeyKey:
+                                default: tls.key
+                                type: string
+                              secretName:
+                                minLength: 1
+                                type: string
+                            required:
+                            - secretName
+                            type: object
+                          clientCertificate:
+                            properties:
+                              dataKeyCertificate:
+                                default: tls.crt
+                                type: string
+                              dataKeyKey:
+                                default: tls.key
+                                type: string
+                              secretName:
+                                minLength: 1
+                                type: string
+                            required:
+                            - secretName
+                            type: object
+                          serverCertificate:
+                            properties:
+                              dataKeyCertificate:
+                                default: tls.crt
+                                type: string
+                              dataKeyKey:
+                                default: tls.key
+                                type: string
+                              secretName:
+                                minLength: 1
+                                type: string
+                            required:
+                            - secretName
+                            type: object
+                        type: object
                       useCertManager:
                         default: true
                         type: boolean

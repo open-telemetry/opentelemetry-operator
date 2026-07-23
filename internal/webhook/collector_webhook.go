@@ -25,6 +25,7 @@ import (
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -347,12 +348,12 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	if err != nil {
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}
-	// validate that cert-manager is available when mTLS requires it
-	taSpec := r.Spec.TargetAllocator
-	if taSpec.Mtls != nil && taSpec.Mtls.Enabled &&
-		(taSpec.Mtls.UseCertManager == nil || *taSpec.Mtls.UseCertManager) &&
-		c.cfg.CertManagerAvailability != certmanager.Available {
-		return nil, errors.New("mTLS is enabled with useCertManager but cert-manager is not available; install cert-manager and restart the operator, or set useCertManager to false")
+	// validate mTLS configuration (cert-manager availability, or user-provided certificate Secrets)
+	taForMTLS := &v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{Mtls: r.Spec.TargetAllocator.Mtls},
+	}
+	if err := manifestutils.ValidateTAMTLS(taForMTLS, c.cfg.CertManagerAvailability == certmanager.Available); err != nil {
+		return nil, err
 	}
 
 	// if the prometheusCR is enabled, it needs a suite of permissions to function

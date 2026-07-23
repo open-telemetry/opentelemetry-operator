@@ -333,12 +333,44 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
 		},
 		{
-			name: "mTLS with useCertManager false and cert-manager not available",
+			name: "mTLS with useCertManager false and user-provided certificates",
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
 						Enabled:        true,
 						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{SecretName: "server-secret"},
+							ClientCertificate: &v1beta1.CertificateReference{SecretName: "client-secret"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false but missing certificate secrets",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+					},
+				},
+			},
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
+		},
+		{
+			name: "mTLS with useCertManager false and a separate CA certificate",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate:               &v1beta1.CertificateReference{SecretName: "server-secret"},
+							ClientCertificate:               &v1beta1.CertificateReference{SecretName: "client-secret"},
+							CertificateAuthorityCertificate: &v1beta1.CertificateReference{SecretName: "ca-secret"},
+						},
 					},
 				},
 			},
