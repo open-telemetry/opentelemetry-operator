@@ -19,7 +19,11 @@
 #    backward compatibility with the CORECLR_PROFILER_PATH values used before multi-arch support
 #    was added.
 
-FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
+# Pinned to the build host's native platform: this stage only downloads and unpacks
+# prebuilt, TARGETARCH-selected zips via RUN, so it never needs to run as TARGETPLATFORM.
+# Without this, cross-building (e.g. arm64 output on an amd64 runner) would run wget/unzip
+# under QEMU emulation instead of natively.
+FROM --platform=$BUILDPLATFORM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
 
 ARG TARGETARCH
 ARG version
