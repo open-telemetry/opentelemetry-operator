@@ -93,7 +93,7 @@ func nsFromCtx(ctx context.Context) string {
 // e2e.BindTargetAllocatorClusterRole, so namespace teardown only removes the namespace.
 func setupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (nsCtx context.Context, ns string) {
 	t.Helper()
-	ns = envconf.RandomName("ta-test", 16)
+	ns = e2e.NamespaceFromT(t)
 	e2e.CreateNamespace(ctx, t, cfg, ns)
 	t.Logf("created namespace %s", ns)
 	t.Cleanup(func() {
