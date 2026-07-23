@@ -76,34 +76,6 @@ func TestMain(m *testing.M) {
 }
 
 // ---------------------------------------------------------------------------
-// Namespace lifecycle
-// ---------------------------------------------------------------------------
-
-// nsContextKey is the context key used to store the per-feature namespace name.
-type nsContextKey struct{}
-
-// nsFromCtx retrieves the per-feature namespace stored by setupTestNamespace.
-func nsFromCtx(ctx context.Context) string {
-	return ctx.Value(nsContextKey{}).(string)
-}
-
-// setupTestNamespace creates a unique namespace for the current test feature, stores
-// its name in the context, registers a t.Cleanup for teardown, and returns the updated
-// context and namespace name. Cluster RBAC is created (and cleaned up) per binding by
-// e2e.BindTargetAllocatorClusterRole, so namespace teardown only removes the namespace.
-func setupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (nsCtx context.Context, ns string) {
-	t.Helper()
-	ns = e2e.NamespaceFromT(t)
-	e2e.CreateNamespace(ctx, t, cfg, ns)
-	t.Logf("created namespace %s", ns)
-	t.Cleanup(func() {
-		e2e.DeleteNamespace(context.WithoutCancel(ctx), t, cfg, ns)
-		t.Logf("cleaned up namespace %s", ns)
-	})
-	return context.WithValue(ctx, nsContextKey{}, ns), ns
-}
-
-// ---------------------------------------------------------------------------
 // Config builder
 // ---------------------------------------------------------------------------
 
@@ -179,8 +151,9 @@ func (b *TAConfigBuilder) build() string {
 // other e2e suites and cleaned up per binding. The overlay is a sibling of the base
 // directory; --load-restrictor=LoadRestrictionsNone is required because kustomize v5
 // otherwise blocks references outside the overlay root.
-func deployTA(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, taConfig string) {
+func deployTA(t *testing.T, ctx context.Context, cfg *envconf.Config, taConfig string) {
 	t.Helper()
+	ns := cfg.Namespace()
 
 	absBase, err := filepath.Abs(filepath.Join(e2e.RepoRoot(t), "config", "target-allocator"))
 	require.NoError(t, err)
@@ -241,8 +214,9 @@ images:
 	require.NoError(t, err, "update TA ConfigMap with test config")
 }
 
-func deployCollectors(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string, replicas int32) {
+func deployCollectors(t *testing.T, ctx context.Context, cfg *envconf.Config, replicas int32) {
 	t.Helper()
+	ns := cfg.Namespace()
 	cs := e2e.ClientSet(t, cfg)
 
 	collectorConfig := `receivers:
@@ -313,16 +287,16 @@ service:
 // Target distribution polling
 // ---------------------------------------------------------------------------
 
-func waitForTargetDistribution(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, jobName string, expectedCollectors int) map[string][]string {
-	return waitForTargetDistributionWithPredicate(t, ctx, cfg, ns, jobName, expectedCollectors, func(a map[string][]string) bool {
+func waitForTargetDistribution(t *testing.T, ctx context.Context, cfg *envconf.Config, jobName string, expectedCollectors int) map[string][]string {
+	return waitForTargetDistributionWithPredicate(t, ctx, cfg, jobName, expectedCollectors, func(a map[string][]string) bool {
 		return len(allAssignedTargets(a)) == len(testTargets)
 	})
 }
 
-func waitForTargetDistributionWithPredicate(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, jobName string, expectedCollectors int, done func(map[string][]string) bool) map[string][]string {
+func waitForTargetDistributionWithPredicate(t *testing.T, ctx context.Context, cfg *envconf.Config, jobName string, expectedCollectors int, done func(map[string][]string) bool) map[string][]string {
 	t.Helper()
 	cs := e2e.ClientSet(t, cfg)
-	proxyBase := taProxyBase(ns)
+	proxyBase := taProxyBase(cfg.Namespace())
 
 	var assignment map[string][]string
 	err := wait.PollUntilContextTimeout(ctx, pollInterval, discoveryTimeout, true, func(ctx context.Context) (bool, error) {
@@ -411,8 +385,9 @@ func kubectlGetRaw(t *testing.T, ctx context.Context, cfg *envconf.Config, path 
 // Scale helpers
 // ---------------------------------------------------------------------------
 
-func scaleStatefulSet(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, name string, replicas int32) {
+func scaleStatefulSet(t *testing.T, ctx context.Context, cfg *envconf.Config, name string, replicas int32) {
 	t.Helper()
+	ns := cfg.Namespace()
 	t.Logf("scaling statefulset %s/%s → %d", ns, name, replicas)
 	cs := e2e.ClientSet(t, cfg)
 	scale, err := cs.AppsV1().StatefulSets(ns).GetScale(ctx, name, metav1.GetOptions{})

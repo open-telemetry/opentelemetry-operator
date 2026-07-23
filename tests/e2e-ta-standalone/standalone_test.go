@@ -24,17 +24,16 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 
 	feat := features.New("standalone TA with consistent-hashing strategy").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			var ns string
-			ctx, ns = setupTestNamespace(ctx, t, cfg)
+			ns := e2e.SetupTestNamespace(ctx, t, cfg)
 
 			taConfig := newTAConfig("consistent-hashing").withStaticTargets(testTargets).build()
-			deployTA(t, ctx, cfg, ns, taConfig)
+			deployTA(t, ctx, cfg, taConfig)
 			e2e.WaitForDeployment(ctx, t, cfg, ns, "target-allocator", testTimeout)
 
-			deployCollectors(t, ctx, cfg, ns, 2)
+			deployCollectors(t, ctx, cfg, 2)
 			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 2, testTimeout)
 
-			assignment := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 2)
+			assignment := waitForTargetDistribution(t, ctx, cfg, "test-targets", 2)
 			return context.WithValue(ctx, initialAssignmentKey{}, assignment)
 		}).
 		Assess("targets distributed across collectors", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
@@ -52,13 +51,12 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("scale up preserves consistency", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
 			initialAssignment := ctx.Value(initialAssignmentKey{}).(map[string][]string)
 
-			scaleStatefulSet(t, ctx, cfg, ns, "collector", 3)
-			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 3, testTimeout)
+			scaleStatefulSet(t, ctx, cfg, "collector", 3)
+			e2e.WaitForStatefulSet(ctx, t, cfg, cfg.Namespace(), "collector", 3, testTimeout)
 
-			afterScaleUp := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 3)
+			afterScaleUp := waitForTargetDistribution(t, ctx, cfg, "test-targets", 3)
 			assert.Len(t, allAssignedTargets(afterScaleUp), len(testTargets), "all targets assigned after scale-up")
 
 			stayed := countStayedTargets(initialAssignment, afterScaleUp)
@@ -66,19 +64,16 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("scale down reassigns targets", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			scaleStatefulSet(t, ctx, cfg, "collector", 2)
+			e2e.WaitForStatefulSet(ctx, t, cfg, cfg.Namespace(), "collector", 2, testTimeout)
 
-			scaleStatefulSet(t, ctx, cfg, ns, "collector", 2)
-			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 2, testTimeout)
-
-			afterScaleDown := waitForTargetDistribution(t, ctx, cfg, ns, "test-targets", 2)
+			afterScaleDown := waitForTargetDistribution(t, ctx, cfg, "test-targets", 2)
 			assert.Len(t, allAssignedTargets(afterScaleDown), len(testTargets), "all targets assigned after scale-down")
 			assert.Empty(t, afterScaleDown["collector-2"], "collector-2 should have no targets after scale-down")
 			return ctx
 		}).
 		Assess("HTTP API contract", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
-			proxyBase := taProxyBase(ns)
+			proxyBase := taProxyBase(cfg.Namespace())
 
 			body := kubectlGetRaw(t, ctx, cfg, proxyBase+"/jobs")
 			assert.Contains(t, string(body), "test-targets", "/jobs should list test-targets")

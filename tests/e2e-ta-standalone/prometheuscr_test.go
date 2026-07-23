@@ -58,23 +58,22 @@ type (
 func TestPrometheusCRTargetAllocator(t *testing.T) {
 	feat := features.New("prometheus CR discovery in standalone TA").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			var ns string
-			ctx, ns = setupTestNamespace(ctx, t, cfg)
+			ns := e2e.SetupTestNamespace(ctx, t, cfg)
 
 			mclient := newMonitoringClient(t, cfg)
 
 			// Deploy workload and monitoring CRs BEFORE starting the TA so the informer
 			// picks them up during its first sync.
-			deployMetricsWorkload(t, ctx, cfg, ns)
+			deployMetricsWorkload(t, ctx, cfg)
 			smName := deployServiceMonitor(t, ctx, mclient, ns)
 			pmName := deployPodMonitor(t, ctx, mclient, ns)
 			scName := deployScrapeConfig(t, ctx, mclient, ns)
 
 			taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
-			deployTA(t, ctx, cfg, ns, taConfig)
+			deployTA(t, ctx, cfg, taConfig)
 			e2e.WaitForDeployment(ctx, t, cfg, ns, "target-allocator", testTimeout)
 
-			deployCollectors(t, ctx, cfg, ns, 1)
+			deployCollectors(t, ctx, cfg, 1)
 			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 1, testTimeout)
 
 			return context.WithValue(ctx, promCRStateKey{}, promCRState{
@@ -85,7 +84,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			})
 		}).
 		Assess("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := cfg.Namespace()
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
 
@@ -101,7 +100,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("ServiceMonitor targets disappear after deletion", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := cfg.Namespace()
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
 
@@ -145,8 +144,9 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 
 const metricsAppImage = "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main"
 
-func deployMetricsWorkload(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string) {
+func deployMetricsWorkload(t *testing.T, ctx context.Context, cfg *envconf.Config) {
 	t.Helper()
+	ns := cfg.Namespace()
 	cs := e2e.ClientSet(t, cfg)
 	labels := map[string]string{"app": "metrics-app"}
 	replicas := int32(1)

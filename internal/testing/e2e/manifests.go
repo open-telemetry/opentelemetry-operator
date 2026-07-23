@@ -55,6 +55,23 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 	}
 }
 
+// SetupTestNamespace creates a fresh namespace named after the running test, makes it
+// the config's current namespace (read it back with cfg.Namespace()), and registers a
+// cleanup that deletes it. The config's previous namespace is overwritten, so tests
+// sharing an env.Environment must not run in parallel.
+func SetupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) string {
+	t.Helper()
+	ns := NamespaceFromT(t)
+	CreateNamespace(ctx, t, cfg, ns)
+	t.Logf("created namespace %s", ns)
+	cfg.WithNamespace(ns)
+	t.Cleanup(func() {
+		DeleteNamespace(context.WithoutCancel(ctx), t, cfg, ns)
+		t.Logf("cleaned up namespace %s", ns)
+	})
+	return ns
+}
+
 // CreateNamespace creates ns.
 func CreateNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
 	t.Helper()
