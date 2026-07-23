@@ -148,7 +148,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		}
 
 		volumes := Volumes(cfg, ta)
-		// The leaf Secret backs a single volume; the key→file mapping lives on the container mount.
+
 		var found bool
 		for _, v := range volumes {
 			if v.Secret != nil && v.Secret.SecretName == "my-server-secret" {
