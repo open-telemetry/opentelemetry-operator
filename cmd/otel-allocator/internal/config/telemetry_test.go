@@ -57,6 +57,12 @@ func TestValidateTelemetry(t *testing.T) {
 				OTLPHttp: &OTLPHttpExporterConfig{Endpoint: "http://gw:4318", TemporalityPreference: "lowmemory"},
 			}},
 		}}}}, wantErr: true},
+		{name: "both grpc and http set", cfg: TelemetryConfig{Metrics: &MetricsConfig{Readers: []MetricReader{{Periodic: &PeriodicMetricReader{
+			Exporter: MetricExporter{
+				OTLPGrpc: &OTLPGrpcExporterConfig{Endpoint: "example.com:4317"},
+				OTLPHttp: &OTLPHttpExporterConfig{Endpoint: "http://example.com:4318"},
+			},
+		}}}}}, wantErr: true},
 		{name: "periodic without exporter", cfg: TelemetryConfig{Metrics: &MetricsConfig{Readers: []MetricReader{{
 			Periodic: &PeriodicMetricReader{},
 		}}}}, wantErr: true},

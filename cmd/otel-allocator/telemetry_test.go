@@ -168,12 +168,10 @@ func TestOTLPExportEndToEnd(t *testing.T) {
 func TestTelemetryResource(t *testing.T) {
 	res, err := telemetryResource(context.Background())
 	require.NoError(t, err)
-	found := false
+	attrs := map[string]string{}
 	for _, attr := range res.Attributes() {
-		if attr.Key == semconv.ServiceNameKey {
-			assert.Equal(t, "target-allocator", attr.Value.AsString())
-			found = true
-		}
+		attrs[string(attr.Key)] = attr.Value.AsString()
 	}
-	assert.True(t, found, "service.name attribute must be set")
+	assert.Equal(t, "target-allocator", attrs[string(semconv.ServiceNameKey)], "service.name must be set")
+	assert.NotEmpty(t, attrs[string(semconv.ServiceInstanceIDKey)], "service.instance.id must be set")
 }
