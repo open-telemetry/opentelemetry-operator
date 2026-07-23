@@ -75,6 +75,88 @@ spec:
           exporters: [debug]
 ```
 
+## Unprivileged setup
+
+Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. This is the recommended approach for production environments and is required on clusters that restrict privileged containers:
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: obi-collector
+  namespace: obi-system
+spec:
+  mode: daemonset
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0
+  serviceAccount: obi-collector
+  hostPID: true
+  securityContext:
+    runAsUser: 0
+    readOnlyRootFilesystem: true
+    capabilities:
+      add:
+        - BPF
+        - SYS_PTRACE
+        - NET_RAW
+        - CHECKPOINT_RESTORE
+        - DAC_READ_SEARCH
+        - PERFMON
+      drop:
+        - ALL
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists
+    - effect: NoExecute
+      operator: Exists
+  volumes:
+    - name: var-run-obi
+      emptyDir: {}
+    - name: cgroup
+      hostPath:
+        path: /sys/fs/cgroup
+  volumeMounts:
+    - name: var-run-obi
+      mountPath: /var/run/obi
+    - name: cgroup
+      mountPath: /sys/fs/cgroup
+  config:
+    receivers:
+      obi:
+        discovery:
+          instrument:
+            - k8s_namespace: my-application
+              k8s_pod_annotations:
+                obi.instrument: "true"
+        attributes:
+          kubernetes:
+            enable: "true"
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        traces:
+          receivers: [obi]
+          exporters: [debug]
+```
+
+Each capability serves a specific purpose:
+
+| Capability | Purpose |
+|---|---|
+| `BPF` | Load and run eBPF programs |
+| `SYS_PTRACE` | Access container namespaces and inspect executables |
+| `NET_RAW` | Use socket filters for HTTP request tracing |
+| `CHECKPOINT_RESTORE` | Open ELF files for symbol resolution |
+| `DAC_READ_SEARCH` | Open ELF files across permission boundaries |
+| `PERFMON` | Attach to perf events for eBPF probes |
+
+The `/var/run/obi` emptyDir provides scratch space for the OBI receiver, and the `/sys/fs/cgroup` hostPath mount gives it access to the cgroup hierarchy for process discovery.
+
+On kernels before 5.11, add `SYS_RESOURCE` to allow OBI to increase locked memory. For Go application trace context propagation, or if `kernel.perf_event_paranoid >= 3` (common on Debian), add `SYS_ADMIN`.
+
+The ServiceAccount, ClusterRole, and ClusterRoleBinding are the same as the [privileged setup](#collector-cr) above.
+
 ## Selecting workloads
 
 The `discovery.instrument` list controls which processes OBI attaches to. The example below filters by namespace and pod annotations — only pods matching all fields are instrumented:

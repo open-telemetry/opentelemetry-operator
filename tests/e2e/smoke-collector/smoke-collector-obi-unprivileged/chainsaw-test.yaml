@@ -1,0 +1,136 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-collector-obi-unprivileged
+# Smoke test for an OBI (eBPF) collector deployed as a DaemonSet with
+# fine-grained Linux capabilities instead of a privileged container.
+# Validates that the operator reconciles the unprivileged CR into the
+# correct DaemonSet spec and that the OBI receiver produces traces.
+spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=obi-target
+    - name: appPort
+      value: "80"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "240"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        k8s.namespace.name
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: catchContainer
+      value: otc-container
+  steps:
+    - name: setup-scc
+      description: on OpenShift, create an SCC that allows the OBI capabilities and hostPID
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                echo "OpenShift detected — creating SCC for unprivileged OBI collector"
+                kubectl apply -f scc.yaml
+                oc adm policy add-scc-to-user obi-unprivileged -z obi-collector -n $NAMESPACE
+              else
+                echo "Not OpenShift — skipping SCC setup"
+              fi
+    - name: install-collector
+      description: install RBAC and an unprivileged OBI collector in daemonset mode
+      try:
+        - apply:
+            template: true
+            file: 00-install.yaml
+        - assert:
+            template: true
+            file: 00-assert.yaml
+    - name: install-target-workload
+      description: deploy a target workload annotated for OBI instrumentation
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: send-traffic
+      description: send HTTP traffic to the target workload
+      use:
+        template: ../../../step-templates/app-http-request.yaml
+    - name: wait-for-telemetry
+      description: wait for OBI traces in collector debug output
+      use:
+        template: ../../../step-templates/wait-for-telemetry.yaml
+    - name: validate-collector-spans
+      description: verify collector metrics confirm spans were exported
+      try:
+        - command:
+            entrypoint: kubectl
+            env:
+              - name: COLLECTOR_LABEL_SELECTOR
+                value: ($collectorLabelSelector)
+            args:
+              - get
+              - pod
+              - -n
+              - ${NAMESPACE}
+              - -l
+              - ${COLLECTOR_LABEL_SELECTOR}
+              - -o
+              - jsonpath={.items[0].metadata.name}
+            outputs:
+              - name: collectorPodName
+                value: ($stdout)
+        - script:
+            env:
+              - name: podName
+                value: ($collectorPodName)
+              - name: metricsPort
+                value: ($collectorMetricsPort)
+            shell: /bin/bash
+            timeout: 60s
+            content: |
+              for i in {1..12}; do
+                echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
+                if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:${metricsPort}/proxy/metrics 2>/dev/null); then
+                  echo "Successfully fetched metrics on attempt $i" >&2
+                  echo "$metrics_output"
+                  exit 0
+                fi
+                echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
+                sleep 5
+              done
+              echo "Failed to fetch metrics after 12 attempts" >&2
+              exit 1
+            outputs:
+              - name: metrics
+                value: (x_metrics_decode($stdout))
+            check:
+              ($error == null): true
+        - assert:
+            resource:
+              ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans'].value | [0] > `0`): true
+      catch:
+        - podLogs:
+            selector: ($catchPodLabelSelector)
+            container: ($catchContainer)
+    - name: cleanup-cluster-scoped
+      description: clean up cluster-scoped resources
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
+              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                kubectl delete scc obi-unprivileged --ignore-not-found
+              fi
