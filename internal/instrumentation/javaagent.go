@@ -40,7 +40,7 @@ func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Contai
 	return nil
 }
 
-func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, sc *corev1.SecurityContext) corev1.Pod {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	// We just inject Volumes and init containers for the first processed container.
@@ -48,10 +48,11 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 
 		initContainer := corev1.Container{
-			Name:      javaInitContainerName,
-			Image:     javaSpec.Image,
-			Command:   []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-			Resources: javaSpec.Resources,
+			Name:            javaInitContainerName,
+			Image:           javaSpec.Image,
+			Command:         []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+			Resources:       javaSpec.Resources,
+			SecurityContext: sc,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,
 				MountPath: javaInstrMountPath,
@@ -63,10 +64,11 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 
 		for i, extension := range javaSpec.Extensions {
 			extContainer := corev1.Container{
-				Name:      initContainerName + fmt.Sprintf("-extension-%d", i),
-				Image:     extension.Image,
-				Command:   []string{"cp", "-r", extension.Dir + "/.", javaInstrMountPath + "/extensions"},
-				Resources: javaSpec.Resources,
+				Name:            initContainerName + fmt.Sprintf("-extension-%d", i),
+				Image:           extension.Image,
+				Command:         []string{"cp", "-r", extension.Dir + "/.", javaInstrMountPath + "/extensions"},
+				Resources:       javaSpec.Resources,
+				SecurityContext: sc,
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      volume.Name,
 					MountPath: javaInstrMountPath,
@@ -87,7 +89,8 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*core
 		}
 	}
 	if len(containers) > 0 {
-		*pod = injectJavaagentToPod(javaSpec, *pod, containers[0].Name, instSpec)
+		sc := resolveInitContainerSecurityContext(instSpec.InitContainerSecurityContext, containers[0].SecurityContext)
+		*pod = injectJavaagentToPod(javaSpec, *pod, containers[0].Name, instSpec, sc)
 	}
 	return nil
 }

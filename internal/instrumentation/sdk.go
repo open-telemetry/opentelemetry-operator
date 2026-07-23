@@ -92,8 +92,8 @@ func (i *sdkInjector) injectJava(ctx context.Context, inst instrumentationWithCo
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
 			}
 		}
-		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), javaInitContainerName)
+		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec,
+			resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext))
 	}
 
 	return pod
