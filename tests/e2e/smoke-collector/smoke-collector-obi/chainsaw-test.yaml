@@ -59,8 +59,6 @@ spec:
         - script:
             timeout: 1m
             content: |
-              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
-              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
               if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
                 kubectl delete scc obi-privileged --ignore-not-found
               fi
