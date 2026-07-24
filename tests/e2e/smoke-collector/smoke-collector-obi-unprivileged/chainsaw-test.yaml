@@ -80,55 +80,6 @@ spec:
       use:
         template: ../../../step-templates/wait-for-telemetry.yaml
     - name: validate-collector-spans
-      description: verify collector metrics confirm spans were exported
-      try:
-        - command:
-            entrypoint: kubectl
-            env:
-              - name: COLLECTOR_LABEL_SELECTOR
-                value: ($collectorLabelSelector)
-            args:
-              - get
-              - pod
-              - -n
-              - ${NAMESPACE}
-              - -l
-              - ${COLLECTOR_LABEL_SELECTOR}
-              - -o
-              - jsonpath={.items[0].metadata.name}
-            outputs:
-              - name: collectorPodName
-                value: ($stdout)
-        - script:
-            env:
-              - name: podName
-                value: ($collectorPodName)
-              - name: metricsPort
-                value: ($collectorMetricsPort)
-            shell: /bin/bash
-            timeout: 60s
-            content: |
-              for i in {1..12}; do
-                echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
-                if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:${metricsPort}/proxy/metrics 2>/dev/null); then
-                  echo "Successfully fetched metrics on attempt $i" >&2
-                  echo "$metrics_output"
-                  exit 0
-                fi
-                echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
-                sleep 5
-              done
-              echo "Failed to fetch metrics after 12 attempts" >&2
-              exit 1
-            outputs:
-              - name: metrics
-                value: (x_metrics_decode($stdout))
-            check:
-              ($error == null): true
-        - assert:
-            resource:
-              ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans'].value | [0] > `0`): true
-      catch:
-        - podLogs:
-            selector: ($catchPodLabelSelector)
-            container: ($catchContainer)
+      description: verify collector metrics confirm spans were exported (OBI receiver does not emit otelcol_receiver_accepted_spans)
+      use:
+        template: ../../../step-templates/validate-collector-exporter-spans.yaml
