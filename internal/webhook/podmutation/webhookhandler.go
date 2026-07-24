@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -69,9 +69,7 @@ func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) 
 	ns := corev1.Namespace{}
 	err = p.client.Get(ctx, types.NamespacedName{Name: req.Namespace, Namespace: ""}, &ns)
 	if err != nil {
-		if k8sapierrors.IsForbidden(err) {
-			p.logger.Info("Missing get permission for namespace, namespace annotation will not be inspected", "namespace", req.Namespace, "severity", "warning")
-        }else {
+		if !apierrors.IsForbidden(err) {
 			res := admission.Errored(http.StatusInternalServerError, err)
 			// By default, admission.Errored sets Allowed to false which blocks pod creation even though the failurePolicy=ignore.
 			// Allowed set to true makes sure failure does not block pod creation in case of an error.
@@ -81,6 +79,7 @@ func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) 
 			res.Allowed = true
 			return res
 		}
+		p.logger.Info("Missing get permission for namespace, namespace annotation will not be inspected", "namespace", req.Namespace, "severity", "warning")
 	}
 
 	for _, m := range p.podMutators {

@@ -14,7 +14,7 @@ import (
 	admv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -542,7 +542,7 @@ func TestShouldInjectSidecarWhenWebhookLackNSPermssion(t *testing.T) {
 			limitedClient, _ := client.New(impersonatedCfg, client.Options{})
 			err = limitedClient.Get(context.Background(), client.ObjectKey{Name: tt.ns.Name}, &corev1.Namespace{})
 			// verify that the limited client cannot get the namespace
-			isDendied := k8sapierrors.IsForbidden(err)
+			isDendied := apierrors.IsForbidden(err)
 			assert.True(t, isDendied)
 			// the actual request we see in the webhook
 			req := admission.Request{
