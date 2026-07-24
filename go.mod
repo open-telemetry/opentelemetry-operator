@@ -29,12 +29,12 @@ require (
 	github.com/openshift/api v0.0.0-20260715165912-72066cc9718b
 	github.com/operator-framework/api v0.44.0
 	github.com/operator-framework/operator-lib v0.19.0
-	github.com/prometheus-operator/prometheus-operator v0.92.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.92.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.92.0
+	github.com/prometheus-operator/prometheus-operator v0.92.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.92.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.92.1
 	github.com/prometheus/client_golang v1.24.0
 	github.com/prometheus/common v0.70.0
-	github.com/prometheus/prometheus v0.312.0
+	github.com/prometheus/prometheus v0.313.1
 	github.com/shirou/gopsutil/v4 v4.26.6
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -144,11 +144,11 @@ require (
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru v0.6.0 // indirect
-	github.com/hashicorp/nomad/api v0.0.0-20260528135333-5b027732945f // indirect
+	github.com/hashicorp/nomad/api v0.0.0-20260616181215-ea1ca2d932bf // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
-	github.com/hetznercloud/hcloud-go/v2 v2.41.2 // indirect
+	github.com/hetznercloud/hcloud-go/v2 v2.43.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/ionos-cloud/sdk-go/v6 v6.3.7 // indirect
+	github.com/ionos-cloud/sdk-go/v6 v6.3.8 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
@@ -204,7 +204,7 @@ require (
 	golang.org/x/tools v0.47.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/api v0.286.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260610212136-7ab31c22f7ad // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260615183401-62b3387ff324 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260610212136-7ab31c22f7ad // indirect
 	google.golang.org/grpc v1.82.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
@@ -230,14 +230,14 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.29 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.29 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.30 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.304.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ecs v1.81.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/elasticache v1.52.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.307.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ecs v1.83.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/elasticache v1.54.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.29 // indirect
-	github.com/aws/aws-sdk-go-v2/service/kafka v1.52.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/lightsail v1.54.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/rds v1.118.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/kafka v1.52.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/lightsail v1.56.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/rds v1.119.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.31.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.6 // indirect
@@ -273,7 +273,7 @@ require (
 	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/outscale/osc-sdk-go/v2 v2.34.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
-	github.com/prometheus/client_golang/exp v0.0.0-20260518105423-c9d5bc4c50a9 // indirect
+	github.com/prometheus/client_golang/exp v0.0.0-20260602051030-3537b20ac86b // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/sigv4 v0.4.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
