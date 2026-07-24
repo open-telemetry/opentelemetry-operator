@@ -1,0 +1,18 @@
+endpoint: ws://127.0.0.1:4320/v1/opamp
+proxy:
+  url: "http://proxy.example.com:8080"
+  headers:
+    Proxy-Authorization: "${PROXY_AUTH_HEADER}"
+capabilities:
+  AcceptsRemoteConfig: true
+  ReportsEffectiveConfig: true
+  AcceptsPackages: false
+  ReportsPackageStatuses: false
+  ReportsOwnTraces: true
+  ReportsOwnMetrics: true
+  ReportsOwnLogs: true
+  AcceptsOpAMPConnectionSettings: true
+  AcceptsOtherConnectionSettings: true
+  AcceptsRestartCommand: true
+  ReportsHealth: true
+  ReportsRemoteConfig: true

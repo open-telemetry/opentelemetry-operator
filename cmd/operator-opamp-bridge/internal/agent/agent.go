@@ -214,6 +214,11 @@ func (agent *Agent) Start() error {
 		PackagesStateProvider: nil,
 	}
 
+	if agent.config.Proxy != nil && agent.config.Proxy.URL != "" {
+		settings.ProxyURL = agent.config.Proxy.URL
+		settings.ProxyHeaders = agent.config.Proxy.Headers.ToHTTPHeader()
+	}
+
 	// Configure TLS based on explicit tls settings.
 	if agent.config.TLS != nil {
 		if agent.config.TLS.Insecure {
