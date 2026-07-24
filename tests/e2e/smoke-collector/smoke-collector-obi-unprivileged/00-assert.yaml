@@ -65,5 +65,7 @@ metadata:
   name: obi-collector
 status:
   (image != ''): true
+  (version != ''): true
   scale:
     (replicas >= `1`): true
+    (statusReplicas != ''): true

@@ -10,6 +10,7 @@ spec:
       containers:
         - name: otc-container
           securityContext:
+            runAsUser: 0
             privileged: true
 status:
   numberMisscheduled: 0
@@ -46,5 +47,7 @@ metadata:
   name: obi-collector
 status:
   (image != ''): true
+  (version != ''): true
   scale:
     (replicas >= `1`): true
+    (statusReplicas != ''): true
