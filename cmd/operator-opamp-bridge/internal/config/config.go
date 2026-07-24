@@ -33,6 +33,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 const (
@@ -42,7 +43,6 @@ const (
 )
 
 var (
-	agentVersion  = os.Getenv("OPAMP_VERSION")
 	hostname, _   = os.Hostname()
 	schemeBuilder = k8sruntime.NewSchemeBuilder(registerKnownTypes)
 )
@@ -213,7 +213,7 @@ func (c *Config) GetAgentType() string {
 }
 
 func (*Config) GetAgentVersion() string {
-	return agentVersion
+	return version.OperatorOpAMPBridge()
 }
 
 func (c *Config) GetInstanceId() uuid.UUID {
