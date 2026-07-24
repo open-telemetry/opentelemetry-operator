@@ -8,4 +8,4 @@ component: operator-opamp-bridge
 note: Report the operator-opamp-bridge's own build version as `service.version` in its OpAMP AgentDescription, instead of always sending an empty string.
 
 # One or more tracking issues related to the change
-issues: []
+issues: [5360]
