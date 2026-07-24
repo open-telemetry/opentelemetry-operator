@@ -23,13 +23,13 @@ spec:
               drop:
                 - ALL
           volumeMounts:
-            (contains(@, {name: 'var-run-obi', mountPath: '/var/run/obi'})): true
-            (contains(@, {name: 'cgroup', mountPath: '/sys/fs/cgroup'})): true
+            "(contains(@, {name: 'var-run-obi', mountPath: '/var/run/obi'}))": true
+            "(contains(@, {name: 'cgroup', mountPath: '/sys/fs/cgroup'}))": true
       tolerations:
-        (contains(@, {effect: 'NoSchedule', operator: 'Exists'})): true
-        (contains(@, {effect: 'NoExecute', operator: 'Exists'})): true
+        "(contains(@, {effect: 'NoSchedule', operator: 'Exists'}))": true
+        "(contains(@, {effect: 'NoExecute', operator: 'Exists'}))": true
       volumes:
-        (contains(@, {name: 'var-run-obi', emptyDir: {}})): true
+        "(contains(@, {name: 'var-run-obi', emptyDir: {}}))": true
 status:
   numberMisscheduled: 0
   (desiredNumberScheduled == numberReady): true
