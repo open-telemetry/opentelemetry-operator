@@ -30,6 +30,7 @@ spec:
         (length([?effect == 'NoExecute' && operator == 'Exists']) > `0`): true
       volumes:
         (length([?name == 'var-run-obi']) > `0`): true
+        (length([?name == 'cgroup']) > `0`): true
 status:
   numberMisscheduled: 0
   (desiredNumberScheduled == numberReady): true
