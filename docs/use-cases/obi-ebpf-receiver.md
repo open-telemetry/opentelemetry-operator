@@ -5,7 +5,7 @@ The [OBI receiver](https://github.com/open-telemetry/opentelemetry-collector-con
 
 Starting with collector contrib version `0.156.0`, OBI is included as a collector receiver. This combines OBI's zero-code eBPF instrumentation with the Collector's processing capabilities (tail-based sampling, data filtering, multi-backend export)
 
-Outlined here are examples of the OpenTelemetry Operator `OpenTelemetryCollector` CR can be configured to use the obi receiver.
+Outlined here are examples of how the OpenTelemetry Operator `OpenTelemetryCollector` CR can be configured to use the obi receiver.
 
 For detailed OBI configuration, security requirements, and capability breakdowns, see the [upstream OBI documentation](https://opentelemetry.io/docs/zero-code/obi/).
 
