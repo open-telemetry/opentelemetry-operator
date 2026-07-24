@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obi-target
+spec:
+  selector:
+    matchLabels:
+      app: obi-target
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: obi-target
+      annotations:
+        obi.instrument: "true"
+    spec:
+      containers:
+        - name: nginx
+          image: mirror.gcr.io/library/nginx:stable
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obi-target
+spec:
+  selector:
+    app: obi-target
+  ports:
+    - port: 80
+      targetPort: 80

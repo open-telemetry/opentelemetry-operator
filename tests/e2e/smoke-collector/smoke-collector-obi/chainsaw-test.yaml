@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-collector-obi
+# Smoke test for an OBI (eBPF) collector deployed as a DaemonSet with
+# privileged securityContext, hostPID, and user-managed RBAC. Validates that
+# the operator reconciles the CR into the correct DaemonSet spec and that the
+# OBI receiver successfully produces traces from a target workload.
+spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=obi-target
+    - name: appPort
+      value: "80"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "240"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        k8s.namespace.name
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=obi-collector-collector
+    - name: catchContainer
+      value: otc-container
+  steps:
+    - name: setup-scc
+      description: on OpenShift, create an SCC that allows privileged containers and hostPID
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                echo "OpenShift detected — creating SCC for privileged OBI collector"
+                kubectl apply -f scc.yaml
+                oc adm policy add-scc-to-user obi-privileged -z obi-collector -n $NAMESPACE
+              else
+                echo "Not OpenShift — skipping SCC setup"
+              fi
+    - name: install-collector
+      description: install RBAC and an OBI collector in daemonset mode
+      try:
+        - apply:
+            template: true
+            file: 00-install.yaml
+        - assert:
+            template: true
+            file: 00-assert.yaml
+      finally:
+        - script:
+            timeout: 1m
+            content: |
+              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
+              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                kubectl delete scc obi-privileged --ignore-not-found
+              fi
+    - name: install-target-workload
+      description: deploy a target workload annotated for OBI instrumentation
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: send-traffic
+      description: send HTTP traffic to the target workload
+      use:
+        template: ../../../step-templates/app-http-request.yaml
+    - name: wait-for-telemetry
+      description: wait for OBI traces in collector debug output
+      use:
+        template: ../../../step-templates/wait-for-telemetry.yaml
+    - name: validate-collector-spans
+      description: verify collector metrics confirm spans were exported (OBI receiver does not emit otelcol_receiver_accepted_spans)
+      use:
+        template: ../../../step-templates/validate-collector-exporter-spans.yaml

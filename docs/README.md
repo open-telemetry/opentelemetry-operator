@@ -6,7 +6,7 @@
 - [Auto-instrumentation](auto-instrumentation/README.md)
 - [Target Allocator](target-allocator/README.md)
 - [OpAMP Bridge](opamp-bridge/README.md)
-- [Use cases](use-cases/README.md) (planned)
+- [Use cases](use-cases/README.md)
 - [Reference architectures](architectures/README.md) (planned)
 - [Security](security/README.md) (planned)
 - [Troubleshooting](troubleshooting/README.md)

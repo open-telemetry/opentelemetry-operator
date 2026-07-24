@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: obi-collector-collector
+spec:
+  template:
+    spec:
+      hostPID: true
+      serviceAccountName: obi-collector
+      containers:
+        - name: otc-container
+          securityContext:
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+            capabilities:
+              add:
+                - BPF
+                - SYS_PTRACE
+                - NET_RAW
+                - CHECKPOINT_RESTORE
+                - DAC_READ_SEARCH
+                - PERFMON
+              drop:
+                - ALL
+          volumeMounts:
+            (length([?name == 'var-run-obi' && mountPath == '/var/run/obi']) > `0`): true
+            (length([?name == 'cgroup' && mountPath == '/sys/fs/cgroup']) > `0`): true
+      tolerations:
+        (length([?effect == 'NoSchedule' && operator == 'Exists']) > `0`): true
+        (length([?effect == 'NoExecute' && operator == 'Exists']) > `0`): true
+      volumes:
+        (length([?name == 'var-run-obi']) > `0`): true
+        (length([?name == 'cgroup']) > `0`): true
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('', ['obi-', $namespace]))
+rules:
+  - apiGroups: ['apps']
+    resources: ['replicasets']
+    verbs: ['list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods', 'services', 'nodes']
+    verbs: ['list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('', ['obi-', $namespace]))
+subjects:
+  - kind: ServiceAccount
+    name: obi-collector
+    namespace: ($namespace)
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('', ['obi-', $namespace]))
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: obi-collector
+status:
+  (image != ''): true
+  (version != ''): true
+  scale:
+    (replicas >= `1`): true
+    (statusReplicas != ''): true

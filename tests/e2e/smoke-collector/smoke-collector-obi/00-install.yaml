@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: obi-collector
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('', ['obi-', $namespace]))
+rules:
+  - apiGroups: ['apps']
+    resources: ['replicasets']
+    verbs: ['list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods', 'services', 'nodes']
+    verbs: ['list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('', ['obi-', $namespace]))
+subjects:
+  - kind: ServiceAccount
+    name: obi-collector
+    namespace: ($namespace)
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('', ['obi-', $namespace]))
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: obi-collector
+spec:
+  mode: daemonset
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0
+  serviceAccount: obi-collector
+  hostPID: true
+  securityContext:
+    runAsUser: 0
+    privileged: true
+  config:
+    receivers:
+      obi:
+        discovery:
+          instrument:
+            - k8s_namespace: ($namespace)
+              k8s_pod_annotations:
+                obi.instrument: "true"
+        attributes:
+          kubernetes:
+            enable: "true"
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        traces:
+          receivers: [obi]
+          exporters: [debug]
