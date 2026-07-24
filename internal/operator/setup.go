@@ -17,6 +17,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -100,7 +101,15 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 			DefaultNamespaces: namespaces,
 		},
 	}
-
+	if cfg.WatchNamespace != "" {
+		mgrOptions.Client = client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Namespace{}, // skip watch namespace objects to avoid RBAC issues if the operator is running in namespaced mode
+				},
+			},
+		}
+	}
 	if leaderElection {
 		leaseDuration := time.Second * 137
 		renewDeadline := time.Second * 107
