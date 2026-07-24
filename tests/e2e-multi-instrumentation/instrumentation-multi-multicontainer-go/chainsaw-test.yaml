@@ -15,8 +15,14 @@ spec:
         file: 00-install-collector.yaml
     - apply:
         file: 00-install-instrumentation.yaml
-    - sleep:
-        duration: 1s
+    - script:
+        content: |
+          end=$(( $(date +%s) + 120 ))
+          until kubectl get deployment/deployment-collector -n "$NAMESPACE" >/dev/null 2>&1; do
+            [ "$(date +%s)" -ge "$end" ] && exit 1
+            sleep 2
+          done
+          kubectl rollout status deployment/deployment-collector -n "$NAMESPACE" --timeout=2m
   - name: step-01
     try:
     - script:
