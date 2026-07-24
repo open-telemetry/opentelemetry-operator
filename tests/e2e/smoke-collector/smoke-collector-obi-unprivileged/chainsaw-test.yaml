@@ -55,6 +55,15 @@ spec:
         - assert:
             template: true
             file: 00-assert.yaml
+      finally:
+        - script:
+            timeout: 1m
+            content: |
+              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
+              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
+              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+                kubectl delete scc obi-unprivileged --ignore-not-found
+              fi
     - name: install-target-workload
       description: deploy a target workload annotated for OBI instrumentation
       try:
@@ -123,14 +132,3 @@ spec:
         - podLogs:
             selector: ($catchPodLabelSelector)
             container: ($catchContainer)
-    - name: cleanup-cluster-scoped
-      description: clean up cluster-scoped resources
-      try:
-        - script:
-            timeout: 1m
-            content: |
-              kubectl delete clusterrole obi-$NAMESPACE --ignore-not-found
-              kubectl delete clusterrolebinding obi-$NAMESPACE --ignore-not-found
-              if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
-                kubectl delete scc obi-unprivileged --ignore-not-found
-              fi
