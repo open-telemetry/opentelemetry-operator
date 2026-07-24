@@ -1,8 +1,13 @@
 # eBPF instrumentation with the OBI receiver
 
-The [OBI receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/obireceiver) uses eBPF to automatically instrument applications at the kernel level, producing distributed traces without code changes or language-specific agents. For detailed OBI configuration, security requirements, and capability breakdowns, see the [upstream OBI documentation](https://opentelemetry.io/docs/zero-code/obi/).
+OBI (OpenTelemetry eBPF Instrumentation) uses eBPF to instrument applications at the kernel level. Without any code changes OBI inspects processes and the OS networking stack
+The [OBI receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/obireceiver) uses eBPF to automatically instrument applications at the kernel level, producing distributed traces without code changes or language-specific agents. 
 
-The collector image must include the OBI receiver. The [contrib distribution](https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-contrib) includes it by default since `0.156.0`.
+Starting with collector contrib version `0.156.0`, OBI is included as a collector receiver. This combines OBI's zero-code eBPF instrumentation with the Collector's processing capabilities (tail-based sampling, data filtering, multi-backend export)
+
+Outlined here are examples of the OpenTelemetry Operator `OpenTelemetryCollector` CR can be configured to use the obi receiver.
+
+For detailed OBI configuration, security requirements, and capability breakdowns, see the [upstream OBI documentation](https://opentelemetry.io/docs/zero-code/obi/).
 
 ## Collector CR
 
@@ -77,7 +82,7 @@ spec:
 
 ## Unprivileged setup
 
-Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. This is the recommended approach for production environments and is required on clusters that restrict privileged containers:
+Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. For more information see https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-unprivileged
 
 ```yaml
 apiVersion: opentelemetry.io/v1beta1
@@ -139,21 +144,6 @@ spec:
           receivers: [obi]
           exporters: [debug]
 ```
-
-Each capability serves a specific purpose:
-
-| Capability | Purpose |
-|---|---|
-| `BPF` | Load and run eBPF programs |
-| `SYS_PTRACE` | Access container namespaces and inspect executables |
-| `NET_RAW` | Use socket filters for HTTP request tracing |
-| `CHECKPOINT_RESTORE` | Open ELF files for symbol resolution |
-| `DAC_READ_SEARCH` | Open ELF files across permission boundaries |
-| `PERFMON` | Attach to perf events for eBPF probes |
-
-The `/var/run/obi` emptyDir provides scratch space for the OBI receiver, and the `/sys/fs/cgroup` hostPath mount gives it access to the cgroup hierarchy for process discovery.
-
-On kernels before 5.11, add `SYS_RESOURCE` to allow OBI to increase locked memory. For Go application trace context propagation, or if `kernel.perf_event_paranoid >= 3` (common on Debian), add `SYS_ADMIN`.
 
 The ServiceAccount, ClusterRole, and ClusterRoleBinding are the same as the [privileged setup](#collector-cr) above.
 
