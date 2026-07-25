@@ -20,6 +20,7 @@ We gratefully welcome improvements to documentation as well as to code.
 * `make lint` - Run golangci-lint
 * `make fmt` - Format Go code and auto-fix issues
 * `make vet` - Run go vet
+* `make tidy` - Run `go mod tidy` in every Go module in the repository
 * `make update` - Generate code and manifests based on Go struct definitions for CRDs (includes generate, manifests, bundle, api-docs)
 * `make precommit` - Run all checks: fmt, vet, lint, test, ensure-update-is-noop (run before committing)
 
