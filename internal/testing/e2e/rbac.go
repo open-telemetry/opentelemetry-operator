@@ -22,13 +22,7 @@ import (
 // BindTargetAllocatorClusterRole applies the project's shipped ClusterRole
 // (config/target-allocator/clusterrole.yaml — core target discovery plus the
 // Prometheus CRDs) and binds it to the named ServiceAccount in ns. The ClusterRole is
-// cluster-scoped and shared (server-side-applied); the per-test ClusterRoleBinding is
-// removed on cleanup. It is reused for both the target allocator and an
-// operator-managed oracle Prometheus, which needs the same core discovery access.
-//
-// The operator deliberately does not create the allocator's RBAC itself — the
-// permissions a target allocator needs depend on what the user asks it to discover —
-// so an e2e test that runs the allocator must supply them.
+// shared between tests; the per-test ClusterRoleBinding is removed on cleanup.
 func BindTargetAllocatorClusterRole(ctx context.Context, t *testing.T, cfg *envconf.Config, ns, saName string) {
 	t.Helper()
 	c := CRClient(t, cfg)
