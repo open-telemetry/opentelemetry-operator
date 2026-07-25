@@ -1,0 +1,26 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Apply security context to Java extension init containers
+
+# One or more tracking issues related to the change
+issues: [5335]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Extension init containers injected alongside the Java agent were not receiving
+  a security context. This affected both the explicit `spec.initContainerSecurityContext`
+  field on the Instrumentation CR and the fallback behaviour that inherits the
+  security context from the instrumented application container. Only the main
+  `opentelemetry-auto-instrumentation-java` init container was having its security
+  context set; extension containers were always created with a nil security context.
+  This caused admission failures on clusters with policies that require all
+  containers to drop capabilities or disallow privilege escalation (e.g. OPA
+  Gatekeeper). The security context is now applied to all Java-related init
+  containers at construction time.

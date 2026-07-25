@@ -16,6 +16,8 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 func TestConfigLoadPriority(t *testing.T) {
@@ -406,6 +408,9 @@ func TestGetDescription(t *testing.T) {
 	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.instance.id", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: instanceId.String()},
 	}})
+	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.version", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: version.OperatorOpAMPBridge()},
+	}})
 	assert.Len(t, desc.NonIdentifyingAttributes, 3)
 	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "custom.attribute", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: "custom-value"},
@@ -422,6 +427,9 @@ func TestGetDescriptionNoneSet(t *testing.T) {
 	assert.Len(t, desc.IdentifyingAttributes, 3)
 	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.instance.id", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: instanceId.String()},
+	}})
+	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.version", Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: version.OperatorOpAMPBridge()},
 	}})
 	assert.Len(t, desc.NonIdentifyingAttributes, 2)
 }

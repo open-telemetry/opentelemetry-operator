@@ -34,7 +34,10 @@ spec:
                 -n opentelemetry-operator-system | \
                 grep -o '"collector-image":"[^"]*"' | head -1 | \
                 grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-              printf '%s' "$VERSION"
+              # --collector-image may be pinned to a non-semver tag (e.g. a
+              # ":latest" dev build); fall back to "latest" so the test still
+              # gets a resolvable image instead of a version-less tag.
+              printf '%s' "${VERSION:-latest}"
             outputs:
               - name: collectorVersion
                 value: ($stdout)
