@@ -32,7 +32,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator v0.92.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.92.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.92.0
-	github.com/prometheus/client_golang v1.24.0
+	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/common v0.70.1
 	github.com/prometheus/prometheus v0.312.0
 	github.com/shirou/gopsutil/v4 v4.26.6
@@ -265,7 +265,7 @@ require (
 	github.com/gophercloud/gophercloud/v2 v2.12.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.19.0 // indirect
+	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/michel-laterman/proxy-connect-dialer-go v0.1.0 // indirect
 	github.com/moby/moby/api v1.54.2 // indirect
