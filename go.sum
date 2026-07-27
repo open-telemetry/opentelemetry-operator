@@ -485,8 +485,8 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJwooC2xJA040=
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
-github.com/openshift/api v0.0.0-20260726224011-9bcaa16cb258 h1:H3YE8JauUO8zH06YF4pA8J8mO8ZO7MhB3IkO4mu7XSE=
-github.com/openshift/api v0.0.0-20260726224011-9bcaa16cb258/go.mod h1:k6qH5QOVa5GDln2VVm8Jz4NV3Z7R2SATHFLwGS6Wh3M=
+github.com/openshift/api v0.0.0-20260727141720-967cc4c36c9b h1:KrCRsYw5Pt7jwb2LHL48uEdHjKLKa4TD4brBcdO530A=
+github.com/openshift/api v0.0.0-20260727141720-967cc4c36c9b/go.mod h1:k6qH5QOVa5GDln2VVm8Jz4NV3Z7R2SATHFLwGS6Wh3M=
 github.com/openshift/controller-runtime-common v0.0.0-20260722095319-fea68df23430 h1:c068rCmMU/tUklmy5v3lH+hIAVIn2N56jDhiY5OX4rY=
 github.com/openshift/controller-runtime-common v0.0.0-20260722095319-fea68df23430/go.mod h1:YVDrbC4muEYMejrIZkaQHhlH0bcBusL1UUBkPBxeVrI=
 github.com/openshift/library-go v0.0.0-20260724131744-e4053a935312 h1:zY/1DboFSjayWXzdaTAw3gCLmigBFh7vWLK6DwZ7wZU=
