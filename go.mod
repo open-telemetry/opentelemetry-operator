@@ -24,7 +24,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
-	github.com/oklog/ulid/v2 v2.1.1
+	github.com/oklog/ulid/v2 v2.1.2
 	github.com/open-telemetry/opamp-go v0.23.0
 	github.com/openshift/api v0.0.0-20260726224011-9bcaa16cb258
 	github.com/operator-framework/api v0.44.0
