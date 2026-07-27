@@ -36,7 +36,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
@@ -299,7 +298,7 @@ func (r *TargetAllocatorReconciler) GetOwnedResourceTypes() []client.Object {
 		&networkingv1.NetworkPolicy{},
 	}
 
-	if r.config.PrometheusCRAvailability == prometheus.Available {
+	if r.config.PrometheusCRAvailability.AvailableServiceMonitor() {
 		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
 	}
 

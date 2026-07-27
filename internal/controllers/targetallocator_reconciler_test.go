@@ -185,7 +185,7 @@ func TestGetTargetAllocatorRequestsFromLabel(t *testing.T) {
 func TestTargetAllocatorReconciler_GetOwnedResourceTypes(t *testing.T) {
 	// prepare - a Target Allocator exercising every optional resource the builder can produce
 	cfg := config.New()
-	cfg.PrometheusCRAvailability = prometheus.Available
+	cfg.PrometheusCRAvailability = prometheus.AvailableCRDs{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"}
 	cfg.CertManagerAvailability = certmanager.Available
 	reconciler := NewTargetAllocatorReconciler(
 		fake.NewFakeClient(),

@@ -19,7 +19,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	operatorsetup "github.com/open-telemetry/opentelemetry-operator/internal/operator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -69,7 +68,7 @@ func runWebhookServer(cfg config.Config, configFile string, opts zap.Options, sc
 
 	mgr := result.Manager
 
-	if result.Config.PrometheusCRAvailability == prometheus.Available {
+	if result.Config.PrometheusCRAvailability.Available() {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	}
