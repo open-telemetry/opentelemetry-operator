@@ -299,8 +299,19 @@ func TestMonitoringService(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"level":   "detailed",
-							"address": "0.0.0.0:9090",
+							"level": "detailed",
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
+												"host": "0.0.0.0",
+												"port": 9090,
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},

@@ -308,7 +308,18 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"address": "localhost:9090",
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
+												"host": "localhost",
+												"port": 9090,
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -322,7 +333,18 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"address": "[::]:9090",
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
+												"host": "[::]",
+												"port": 9090,
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -336,7 +358,17 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"address": "localhost",
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
+												"host": "localhost",
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -350,89 +382,31 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"address": "[::]",
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
+												"host": "[::]",
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 		{
-			desc:         "env var and missing port",
-			expectedAddr: "${env:POD_IP}",
+			desc:         "deprecated address is ignored, returns defaults",
+			expectedAddr: "0.0.0.0",
 			expectedPort: 8888,
 			config: v1beta1.Service{
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
 						"metrics": map[string]any{
-							"address": "${env:POD_IP}",
-						},
-					},
-				},
-			},
-		},
-		{
-			desc:         "env var and missing port ipv6",
-			expectedAddr: "[${env:POD_IP}]",
-			expectedPort: 8888,
-			config: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]any{
-						"metrics": map[string]any{
-							"address": "[${env:POD_IP}]",
-						},
-					},
-				},
-			},
-		},
-		{
-			desc:         "env var and with port",
-			expectedAddr: "${POD_IP}",
-			expectedPort: 1234,
-			config: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]any{
-						"metrics": map[string]any{
-							"address": "${POD_IP}:1234",
-						},
-					},
-				},
-			},
-		},
-		{
-			desc:         "env var and with port ipv6",
-			expectedAddr: "[${POD_IP}]",
-			expectedPort: 1234,
-			config: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]any{
-						"metrics": map[string]any{
-							"address": "[${POD_IP}]:1234",
-						},
-					},
-				},
-			},
-		},
-		{
-			desc:        "port is env var",
-			expectedErr: true,
-			config: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]any{
-						"metrics": map[string]any{
-							"address": "localhost:${env:POD_PORT}",
-						},
-					},
-				},
-			},
-		},
-		{
-			desc:        "port is env var ipv6",
-			expectedErr: true,
-			config: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]any{
-						"metrics": map[string]any{
-							"address": "[::]:${env:POD_PORT}",
+							"address": "localhost:9090",
 						},
 					},
 				},
@@ -466,9 +440,9 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 		},
 		{
-			desc:         "configured telemetry",
-			expectedAddr: "1.2.3.4",
-			expectedPort: 4567,
+			desc:         "configured telemetry with only address returns defaults",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
 			config: v1beta1.Service{
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
