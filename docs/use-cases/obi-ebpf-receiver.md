@@ -1,11 +1,12 @@
 # eBPF instrumentation with the OBI receiver
 
-OBI (OpenTelemetry eBPF Instrumentation) uses eBPF to instrument applications at the kernel level. Without any code changes OBI inspects processes and the OS networking stack
-The [OBI receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/obireceiver) uses eBPF to automatically instrument applications at the kernel level, producing distributed traces without code changes or language-specific agents. 
+OBI (OpenTelemetry eBPF Instrumentation) uses eBPF to instrument applications at the kernel level. Without any code changes OBI inspects processes and the OS networking stack.
+
+The [OBI receiver](https://opentelemetry.io/docs/zero-code/obi/configure/collector-receiver/) uses eBPF to automatically instrument applications at the kernel level, producing distributed traces without code changes or language-specific agents.
 
 Starting with collector contrib version `0.156.0`, OBI is included as a collector receiver. This combines OBI's zero-code eBPF instrumentation with the Collector's processing capabilities (tail-based sampling, data filtering, multi-backend export)
 
-Outlined here are examples of how the OpenTelemetry Operator `OpenTelemetryCollector` CR can be configured to use the obi receiver.
+Outlined here are examples of how the OpenTelemetry Operator `OpenTelemetryCollector` CR can be configured to use the OBI receiver.
 
 For detailed OBI configuration, security requirements, and capability breakdowns, see the [upstream OBI documentation](https://opentelemetry.io/docs/zero-code/obi/).
 
@@ -53,7 +54,7 @@ metadata:
   namespace: obi-system
 spec:
   mode: daemonset
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest
   serviceAccount: obi-collector
   hostPID: true # Required to access the processes on the host
   securityContext:
@@ -82,7 +83,8 @@ spec:
 
 ## Unprivileged setup
 
-Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. For more information see https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-unprivileged
+Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. For more information see [Deploy OBI unprivileged]
+(https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-unprivileged).
 
 ```yaml
 apiVersion: opentelemetry.io/v1beta1
@@ -92,7 +94,7 @@ metadata:
   namespace: obi-system
 spec:
   mode: daemonset
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest
   serviceAccount: obi-collector
   hostPID: true
   securityContext:

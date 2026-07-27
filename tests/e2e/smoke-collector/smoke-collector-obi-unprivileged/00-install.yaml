@@ -34,7 +34,7 @@ metadata:
   name: obi-collector
 spec:
   mode: daemonset
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest
   serviceAccount: obi-collector
   hostPID: true
   securityContext:
