@@ -178,6 +178,12 @@ BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../
 MIN_KUBERNETES_VERSION ?= 1.25.0
 MIN_OPENSHIFT_VERSION ?= 4.12
 
+## Directories of all Go modules in the repository, root first. The ./... patterns of
+## the root module do not descend into nested modules, so anything that has to happen
+## per module iterates over this list. Hidden directories (.git, worktrees, ...) are
+## skipped.
+GO_MODULE_DIRS ?= $(shell find . -path './.*' -prune -o -name go.mod -print | sed 's|/go\.mod$$||' | sort)
+
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
@@ -443,6 +449,14 @@ vet:
 .PHONY: lint
 lint: golangci-lint
 	$(GOLANGCI_LINT) run
+
+# Run go mod tidy in every Go module in the repository
+.PHONY: tidy
+tidy:
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "go mod tidy: $$dir"; \
+		(cd $$dir && go mod tidy); \
+	done
 
 # Generate code
 # apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
