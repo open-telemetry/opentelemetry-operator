@@ -15,13 +15,14 @@ name: "Tidy Go modules"
 # The push cannot use GITHUB_TOKEN: pushes made with it do not trigger workflows, which
 # would leave the tidy commit - the new head of the pull request - without any CI runs.
 
-on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-    branches: [ main ]
-    paths:
-      - '**/go.mod'
-      - '**/go.sum'
+# on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
+#   pull_request_target:
+#     types: [opened, synchronize, reopened]
+#     branches: [ main ]
+#     paths:
+#       - '**/go.mod'
+#       - '**/go.sum'
+on: [] # disabled until https://github.com/open-telemetry/admin/issues/772 is resolved
 
 permissions:
   contents: read
