@@ -27,7 +27,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/open-telemetry/opamp-go v0.23.0
 	github.com/openshift/api v0.0.0-20260727141720-967cc4c36c9b
-	github.com/operator-framework/api v0.44.0
+	github.com/operator-framework/api v0.45.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.92.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.92.0
@@ -261,7 +261,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.26.1 // indirect
 	github.com/go-openapi/swag/typeutils v0.26.1 // indirect
 	github.com/go-openapi/swag/yamlutils v0.26.1 // indirect
-	github.com/google/cel-go v0.29.0 // indirect
+	github.com/google/cel-go v0.29.2 // indirect
 	github.com/gophercloud/gophercloud/v2 v2.12.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
