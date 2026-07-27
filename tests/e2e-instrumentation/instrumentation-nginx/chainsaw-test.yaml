@@ -60,3 +60,64 @@ spec:
   - name: Check the instrumented app has sent the telemetry data successfully
     use:
       template: ../../step-templates/validate-collector-spans.yaml
+  - name: Switch to node-IP exporter endpoint
+    try:
+    - apply:
+        file: 02-install-daemonset-collector.yaml
+    - apply:
+        file: 02-update-instrumentation-nodeip.yaml
+    - command:
+        entrypoint: kubectl
+        args:
+          - get
+          - pod
+          - -n
+          - ${NAMESPACE}
+          - -l
+          - app=my-nginx
+          - -o
+          - jsonpath={.items[0].metadata.name}
+        outputs:
+        - name: nginxPodName
+          value: ($stdout)
+    - command:
+        entrypoint: kubectl
+        args:
+          - rollout
+          - restart
+          - deployment/my-nginx
+          - -n
+          - ${NAMESPACE}
+    - wait:
+        apiVersion: v1
+        kind: Pod
+        name: ($nginxPodName)
+        namespace: ($namespace)
+        timeout: 2m
+        for:
+          deletion: {}
+    - assert:
+        file: 02-assert-nodeip.yaml
+    - script:
+        timeout: 2m
+        content: ./02-verify-endpoint-interpolation.sh
+    catch:
+      - podLogs:
+          selector: app=my-nginx
+  - name: Make a request to the app via node-IP endpoint
+    use:
+      template: ../../step-templates/app-http-request.yaml
+  - name: Wait for telemetry data via node-IP endpoint
+    use:
+      template: ../../step-templates/wait-for-telemetry.yaml
+      with:
+        bindings:
+          - name: collectorLabelSelector
+            value: app.kubernetes.io/name=daemonset-collector
+  - name: Check telemetry data via node-IP endpoint
+    use:
+      template: ../../step-templates/validate-collector-spans.yaml
+      with:
+        bindings:
+          - name: collectorLabelSelector
+            value: app.kubernetes.io/name=daemonset-collector

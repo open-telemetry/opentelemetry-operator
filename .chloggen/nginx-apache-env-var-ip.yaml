@@ -5,7 +5,7 @@ change_type: enhancement
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Apache and nginx instrumentations can read OTEL_NODE_IP and OTEL_POD_IP environment variables from their spec and use them to send telemetry data there.
+note: Apache and nginx instrumentations forward Spec env vars to attach init containers so kubelet can expand $(VAR) references in exporter endpoints.
 
 # One or more tracking issues related to the change
 issues: [5333]
