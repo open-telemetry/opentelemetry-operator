@@ -362,7 +362,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 			saname = naming.TargetAllocatorServiceAccount(r.Name)
 		}
 		warnings, err := checkTargetAllocatorPrometheusCRPolicyRules(
-			ctx, c.reviewer, r.GetNamespace(), saname)
+			ctx, c.reviewer, c.cfg.PrometheusCRAvailability, r.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}

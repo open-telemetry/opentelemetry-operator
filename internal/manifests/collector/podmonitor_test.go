@@ -11,7 +11,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -70,7 +69,7 @@ func TestDesiredPodMonitorsPrometheusNotAvailable(t *testing.T) {
 		CollectorImage:              defaultCollectorImage,
 		TargetAllocatorImage:        defaultTaAllocationImage,
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-		PrometheusCRAvailability:    prometheus.NotAvailable,
+		PrometheusCRAvailability:    nil,
 	})
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
