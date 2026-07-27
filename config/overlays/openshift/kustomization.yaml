@@ -30,7 +30,3 @@ patches:
     name: validating-webhook-configuration
     version: v1
 - path: webhook-service-patch.yaml
-images:
-- name: controller
-  newName: quay.io/ozwalsh/opentelemetry-operator
-  newTag: a4f87af5
