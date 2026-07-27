@@ -50,11 +50,6 @@ spec:
         - PERFMON
       drop:
         - ALL
-  tolerations:
-    - effect: NoSchedule
-      operator: Exists
-    - effect: NoExecute
-      operator: Exists
   volumes:
     - name: var-run-obi
       emptyDir: {}
