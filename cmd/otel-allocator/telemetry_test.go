@@ -4,7 +4,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -71,7 +70,7 @@ func TestNewOTLPMetricReader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader, err := newOTLPMetricReader(context.Background(), tt.cfg)
+			reader, err := newOTLPMetricReader(t.Context(), tt.cfg)
 			require.NoError(t, err)
 			require.NotNil(t, reader)
 			// The reader must attach to a meter provider (exercises the Prometheus bridge
@@ -132,7 +131,7 @@ func TestOTLPExportEndToEnd(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	authVal := "Api-Token ${env:TA_TEST_TOKEN}"
 	reader, err := newOTLPMetricReader(ctx, &config.PeriodicMetricReader{
 		Interval: 100,
@@ -164,9 +163,8 @@ func TestOTLPExportEndToEnd(t *testing.T) {
 	assert.Equal(t, "/v1/metrics", gotPath, "exporter should post to the OTLP metrics signal path")
 	assert.Equal(t, "Api-Token secret-value", gotAuth, "env reference in header should be expanded")
 }
-
 func TestTelemetryResource(t *testing.T) {
-	res, err := telemetryResource(context.Background())
+	res, err := telemetryResource(t.Context())
 	require.NoError(t, err)
 	attrs := map[string]string{}
 	for _, attr := range res.Attributes() {
