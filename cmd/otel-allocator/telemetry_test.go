@@ -163,6 +163,7 @@ func TestOTLPExportEndToEnd(t *testing.T) {
 	assert.Equal(t, "/v1/metrics", gotPath, "exporter should post to the OTLP metrics signal path")
 	assert.Equal(t, "Api-Token secret-value", gotAuth, "env reference in header should be expanded")
 }
+
 func TestTelemetryResource(t *testing.T) {
 	res, err := telemetryResource(t.Context())
 	require.NoError(t, err)

@@ -21,8 +21,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-// TestOTLPSelfTelemetryEndToEnd verifies the full self-telemetry OTLP export
-// pipeline in-process, without a Kubernetes cluster.
+// TestOTLPSelfTelemetryEndToEnd verifies the full self-telemetry OTLP export pipeline
 //
 // It registers a Prometheus counter on the default registry — mirroring what
 // the Prometheus SD library does via discovery.CreateAndRegisterSDMetrics —
