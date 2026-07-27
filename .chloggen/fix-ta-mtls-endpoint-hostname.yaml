@@ -2,7 +2,7 @@ change_type: bug_fix
 
 component: target allocator
 
-note: Fix the collector's mTLS-enabled target allocator endpoint using the collector's own name instead of the associated TargetAllocator CR's name
+note: Fix collector mtls with a TargetAllocator CR
 
 issues: [4297]
 
