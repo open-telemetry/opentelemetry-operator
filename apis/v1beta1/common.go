@@ -241,6 +241,14 @@ type OpenTelemetryCommonFields struct {
 	// This is only applicable to Service resources.
 	// +optional
 	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
+	// SessionAffinity specifies the session affinity type for the Service.
+	// This is only applicable to Service resources.
+	// +optional
+	SessionAffinity *v1.ServiceAffinity `json:"sessionAffinity,omitempty"`
+	// SessionAffinityConfig specifies the session affinity configurations for the Service.
+	// This is only applicable to Service resources.
+	// +optional
+	SessionAffinityConfig *v1.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty"`
 	// HostUsers isolates pod processes in a separate user namespace, reducing the risk of privilege escalation.
 	// +optional
 	HostUsers *bool `json:"hostUsers,omitempty"`

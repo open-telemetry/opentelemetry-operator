@@ -553,6 +553,16 @@ func (in *OpenTelemetryCommonFields) DeepCopyInto(out *OpenTelemetryCommonFields
 		*out = new(string)
 		**out = **in
 	}
+	if in.SessionAffinity != nil {
+		in, out := &in.SessionAffinity, &out.SessionAffinity
+		*out = new(v1.ServiceAffinity)
+		**out = **in
+	}
+	if in.SessionAffinityConfig != nil {
+		in, out := &in.SessionAffinityConfig, &out.SessionAffinityConfig
+		*out = new(v1.SessionAffinityConfig)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.HostUsers != nil {
 		in, out := &in.HostUsers, &out.HostUsers
 		*out = new(bool)
