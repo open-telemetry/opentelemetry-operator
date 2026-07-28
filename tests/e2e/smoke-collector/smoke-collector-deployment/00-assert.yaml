@@ -45,6 +45,10 @@ spec:
   ipFamilyPolicy: SingleStack
   ipFamilies:
     - IPv4
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   (length(ports[?name == 'extra-port'])): 1
 ---
 apiVersion: opentelemetry.io/v1beta1
