@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package telemetry
 
 import (
 	"context"
@@ -86,7 +86,7 @@ func TestOTLPSelfTelemetryEndToEnd(t *testing.T) {
 		},
 	}
 
-	_, shutdown, err := setupMeterProvider(t.Context(), cfg)
+	_, shutdown, err := SetupMeterProvider(t.Context(), cfg)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

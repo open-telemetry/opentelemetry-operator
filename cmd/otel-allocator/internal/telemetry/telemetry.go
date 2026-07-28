@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package telemetry
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-// setupMeterProvider builds the Target Allocator's meter provider, sets it as the global
+// SetupMeterProvider builds the Target Allocator's meter provider, sets it as the global
 // provider, and returns the Prometheus gatherer to serve on /metrics plus a shutdown func.
 //
 // The OTel SDK metrics are exported to Prometheus through a dedicated registry rather than
@@ -33,7 +33,7 @@ import (
 // process collectors). That separation lets the OTLP reader pull those Prometheus-only metrics
 // via the Prometheus bridge without double-counting the SDK metrics, which it already collects
 // natively. The /metrics endpoint serves the union of both registries.
-func setupMeterProvider(ctx context.Context, cfg *config.Config) (prometheus.Gatherer, func(context.Context) error, error) {
+func SetupMeterProvider(ctx context.Context, cfg *config.Config) (prometheus.Gatherer, func(context.Context) error, error) {
 	sdkRegistry := prometheus.NewRegistry()
 	metricExporter, err := otelprom.New(otelprom.WithRegisterer(sdkRegistry))
 	if err != nil {

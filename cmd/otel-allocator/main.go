@@ -28,6 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/telemetry"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
@@ -75,7 +76,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	metricsGatherer, shutdownMeterProvider, mpErr := setupMeterProvider(ctx, cfg)
+	metricsGatherer, shutdownMeterProvider, mpErr := telemetry.SetupMeterProvider(ctx, cfg)
 	if mpErr != nil {
 		setupLog.Error(mpErr, "Unable to set up metrics")
 		os.Exit(1)
