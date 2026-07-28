@@ -67,7 +67,7 @@ spec:
         discovery:
           instrument:
             - k8s_namespace: ($namespace)
-              k8s_pod_annotations:
+              k8s_pod_labels:
                 obi.instrument: "true"
         attributes:
           kubernetes:

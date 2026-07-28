@@ -66,7 +66,7 @@ spec:
         discovery:
           instrument:
             - k8s_namespace: my-application
-              k8s_pod_annotations:
+              k8s_pod_labels:
                 obi.instrument: "true"
         attributes:
           kubernetes:
@@ -127,7 +127,7 @@ spec:
         discovery:
           instrument:
             - k8s_namespace: my-application
-              k8s_pod_annotations:
+              k8s_pod_labels:
                 obi.instrument: "true"
         attributes:
           kubernetes:
@@ -146,7 +146,7 @@ The ServiceAccount, ClusterRole, and ClusterRoleBinding are the same as the [pri
 
 ## Selecting workloads
 
-The `discovery.instrument` list controls which processes OBI attaches to. The example below filters by namespace and pod annotations — only pods matching all fields are instrumented:
+The `discovery.instrument` list controls which processes OBI attaches to. The example below filters by namespace and pod labels — only pods matching all fields are instrumented:
 
 ```yaml
 receivers:
@@ -154,14 +154,14 @@ receivers:
     discovery:
       instrument:
         - k8s_namespace: frontend
-          k8s_pod_annotations:
+          k8s_pod_labels:
             obi.instrument: "true"
         - k8s_namespace: backend
-          k8s_pod_annotations:
+          k8s_pod_labels:
             obi.instrument: "true"
 ```
 
-Add the matching annotation to workload pod templates to opt them in:
+Add the matching label to workload pod templates to opt them in:
 
 ```yaml
 apiVersion: apps/v1
@@ -172,13 +172,15 @@ metadata:
 spec:
   template:
     metadata:
-      annotations:
+      labels:
         obi.instrument: "true"
     spec:
       containers:
         - name: my-app
           image: my-app:latest
 ```
+
+You can also use `k8s_pod_annotations` in place of `k8s_pod_labels` to match on pod annotations instead.
 
 For further information, see the [OBI service discovery docs](https://opentelemetry.io/docs/zero-code/obi/configure/service-discovery/).
 

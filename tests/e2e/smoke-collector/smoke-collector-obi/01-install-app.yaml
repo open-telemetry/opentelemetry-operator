@@ -11,7 +11,6 @@ spec:
     metadata:
       labels:
         app: obi-target
-      annotations:
         obi.instrument: "true"
     spec:
       containers:
