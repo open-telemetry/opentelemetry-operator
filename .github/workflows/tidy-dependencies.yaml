@@ -15,14 +15,13 @@ name: "Tidy Go modules"
 # The push cannot use GITHUB_TOKEN: pushes made with it do not trigger workflows, which
 # would leave the tidy commit - the new head of the pull request - without any CI runs.
 
-# on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
-#   pull_request_target:
-#     types: [opened, synchronize, reopened]
-#     branches: [ main ]
-#     paths:
-#       - '**/go.mod'
-#       - '**/go.sum'
-on: [] # disabled until https://github.com/open-telemetry/admin/issues/772 is resolved
+on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - '**/go.mod'
+      - '**/go.sum'
 
 permissions:
   contents: read
@@ -51,8 +50,8 @@ jobs:
       uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
       id: otelbot-token
       with:
-        client-id: ${{ vars.OTELBOT_CLIENT_ID }}
-        private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+        client-id: ${{ vars.OTELBOT_OPERATOR_CLIENT_ID }}
+        private-key: ${{ secrets.OTELBOT_OPERATOR_PRIVATE_KEY }}
         permission-contents: write
 
     # Check out the exact commit that triggered this run, so that a Renovate push racing
