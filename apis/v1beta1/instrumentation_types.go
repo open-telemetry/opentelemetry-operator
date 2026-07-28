@@ -19,11 +19,6 @@ type InstrumentationSpec struct {
 	// +optional
 	Resource Resource `json:"resource,omitempty"`
 
-	// Env defines common env vars.
-	// Precedence: original container env > language-specific env > common env > SDK config.
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
 	// Java defines configuration for Java auto-instrumentation.
 	// +optional
 	Java Java `json:"java,omitempty"`
@@ -74,6 +69,10 @@ type EnvConfig struct {
 	// Sampler defines sampling configuration.
 	// +optional
 	Sampler Sampler `json:"sampler,omitempty"`
+
+	// Env defines common env vars to typically configure OpenTelemetry SDK or instrumentation.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // Exporter defines OTLP exporter configuration.
@@ -184,11 +183,6 @@ type CommonLanguageSpec struct {
 	// +optional
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
-	// Env defines language-specific env vars.
-	// Precedence: original container env > language-specific env > common env > SDK config.
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -241,12 +235,6 @@ type Go struct {
 type ApacheHttpd struct {
 	CommonLanguageSpec `json:",inline"`
 
-	// Attrs defines Apache HTTPD agent specific attributes. The precedence is:
-	// `agent default attributes` > `instrument spec attributes` .
-	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
-	// +optional
-	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
-
 	// Version is the Apache HTTPD server version. One of 2.4 or 2.2. Default is 2.4.
 	// +optional
 	Version string `json:"version,omitempty"`
@@ -262,12 +250,6 @@ type ApacheHttpd struct {
 // Nginx defines Nginx SDK and instrumentation configuration.
 type Nginx struct {
 	CommonLanguageSpec `json:",inline"`
-
-	// Attrs defines Nginx agent specific attributes. The precedence order is:
-	// `agent default attributes` > `instrument spec attributes` .
-	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
-	// +optional
-	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
 
 	// ConfigFile is the location of Nginx configuration file.
 	// Needed only if different from default "/etc/nginx/nginx.conf".
