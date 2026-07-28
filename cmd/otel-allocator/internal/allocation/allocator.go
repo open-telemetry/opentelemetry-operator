@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -126,6 +127,24 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		a.handleTargets(targetsDiff)
+	}
+	a.refreshExistingTargetLabels(targetMap)
+}
+
+// refreshExistingTargetLabels updates the stored labels for targets that already exist (same hash)
+// but were rediscovered with different meta labels, e.g. __meta_kubernetes_pod_name after a pod
+// restart of a hostNetwork DaemonSet, where __address__ (and therefore the target's hash, which
+// excludes meta labels, see target.HashFromBuilder) stays the same across restarts. Such changes
+// never surface as additions/removals in targetsDiff, so they must be applied separately. The
+// existing collector assignment is preserved since the target's identity (hash) is unchanged.
+func (a *allocator) refreshExistingTargetLabels(targetMap map[target.ItemHash]*target.Item) {
+	for hash, newItem := range targetMap {
+		existing, ok := a.targetItems[hash]
+		if !ok || labels.Equal(existing.Labels, newItem.Labels) {
+			continue
+		}
+		newItem.CollectorName = existing.CollectorName
+		a.targetItems[hash] = newItem
 	}
 }
 
