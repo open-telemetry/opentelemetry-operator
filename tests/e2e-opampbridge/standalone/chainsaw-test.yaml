@@ -104,6 +104,7 @@ spec:
       name: send valid remote config
       try:
         - script:
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
@@ -221,6 +222,7 @@ spec:
       name: reject invalid remote config
       try:
         - script:
+            timeout: 60s
             content: |
               #!/bin/bash
               set -eu
