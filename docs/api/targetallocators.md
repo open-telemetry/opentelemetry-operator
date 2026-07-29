@@ -12666,7 +12666,8 @@ OtlpGrpc configures an OTLP/gRPC metric exporter.
         <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.<br/>
+          Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+(e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -12778,7 +12779,8 @@ OtlpHttp configures an OTLP/HTTP metric exporter.
         <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").<br/>
+          Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+(e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").<br/>
         </td>
         <td>true</td>
       </tr><tr>
