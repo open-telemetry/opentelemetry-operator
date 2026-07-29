@@ -12161,24 +12161,124 @@ Metrics defines the metrics export settings for the TargetAllocator's own teleme
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#targetallocatorspectelemetrymetricsotlp">otlp</a></b></td>
-        <td>object</td>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindex">readers</a></b></td>
+        <td>[]object</td>
         <td>
-          OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
-When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.<br/>
+          Readers configures one or more metric readers following the OTel declarative configuration spec.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### TargetAllocator.spec.telemetry.metrics.otlp
+### TargetAllocator.spec.telemetry.metrics.readers[index]
 <sup><sup>[↩ Parent](#targetallocatorspectelemetrymetrics)</sup></sup>
 
 
 
-OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
-When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+TAMetricReader mirrors the OTel declarative configuration MetricReader type.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodic">periodic</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic configures a periodic exporting metric reader.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindex)</sup></sup>
+
+
+
+Periodic configures a periodic exporting metric reader.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures the push exporter for this reader.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>interval</b></td>
+        <td>string</td>
+        <td>
+          Interval is the delay between consecutive exports. Defaults to 60s.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the maximum allowed export duration. Defaults to 30s.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodic)</sup></sup>
+
+
+
+Exporter configures the push exporter for this reader.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc">otlpGrpc</a></b></td>
+        <td>object</td>
+        <td>
+          OtlpGrpc configures an OTLP/gRPC metric exporter.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttp">otlpHttp</a></b></td>
+        <td>object</td>
+        <td>
+          OtlpHttp configures an OTLP/HTTP metric exporter.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporter)</sup></sup>
+
+
+
+OtlpGrpc configures an OTLP/gRPC metric exporter.
 
 <table>
     <thead>
@@ -12193,62 +12293,172 @@ When set, metrics are exported via OTLP in addition to the existing Prometheus /
         <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          Endpoint is the OTLP receiver address (e.g. "https://example.com:4318" for HTTP,
-"example.com:4317" for gRPC).<br/>
+          Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>exportInterval</b></td>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpcheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers are additional key/value pairs sent with every export request.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>temporalityPreference</b></td>
+        <td>enum</td>
+        <td>
+          TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, low_memory<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpctls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          Tls configures TLS for the gRPC connection.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc.headers[index]
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc)</sup></sup>
+
+
+
+TANameValuePair is a name/value pair used for OTLP export headers,
+mirroring the OTel declarative configuration NameStringValuePair type.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          ExportInterval is the time between two consecutive exports.
-Defaults to 60s.<br/>
+          <br/>
         </td>
-        <td>false</td>
+        <td>true</td>
       </tr><tr>
-        <td><b>headers</b></td>
-        <td>map[string]string</td>
+        <td><b>value</b></td>
+        <td>string</td>
         <td>
-          Headers are additional key/value pairs sent with every export request,
-e.g. for authentication.<br/>
+          <br/>
         </td>
-        <td>false</td>
-      </tr><tr>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc.tls
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc)</sup></sup>
+
+
+
+Tls configures TLS for the gRPC connection.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
         <td><b>insecure</b></td>
         <td>boolean</td>
         <td>
           Insecure disables TLS. Only suitable for local development.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>protocol</b></td>
-        <td>enum</td>
-        <td>
-          Protocol selects the transport: "grpc" (default) or "http".<br/>
-          <br/>
-            <i>Enum</i>: grpc, http<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>temporality</b></td>
-        <td>enum</td>
-        <td>
-          Temporality sets the aggregation temporality for exported metrics.
-Valid values are "cumulative" (default), "delta", and "lowmemory".
-"delta" exports all instruments as delta; "lowmemory" uses delta for
-counters and histograms and cumulative for gauges.<br/>
-          <br/>
-            <i>Enum</i>: cumulative, delta, lowmemory<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeout</b></td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpHttp
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporter)</sup></sup>
+
+
+
+OtlpHttp configures an OTLP/HTTP metric exporter.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          Timeout is the max duration for a single export attempt.
-Defaults to 10s.<br/>
+          Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers are additional key/value pairs sent with every export request.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>temporalityPreference</b></td>
+        <td>enum</td>
+        <td>
+          TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, low_memory<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpHttp.headers[index]
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttp)</sup></sup>
+
+
+
+TANameValuePair is a name/value pair used for OTLP export headers,
+mirroring the OTel declarative configuration NameStringValuePair type.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

@@ -2948,34 +2948,78 @@ spec:
                 properties:
                   metrics:
                     properties:
-                      otlp:
-                        properties:
-                          endpoint:
-                            type: string
-                          exportInterval:
-                            type: string
-                          headers:
-                            additionalProperties:
-                              type: string
-                            type: object
-                          insecure:
-                            type: boolean
-                          protocol:
-                            enum:
-                            - grpc
-                            - http
-                            type: string
-                          temporality:
-                            enum:
-                            - cumulative
-                            - delta
-                            - lowmemory
-                            type: string
-                          timeout:
-                            type: string
-                        required:
-                        - endpoint
-                        type: object
+                      readers:
+                        items:
+                          properties:
+                            periodic:
+                              properties:
+                                exporter:
+                                  properties:
+                                    otlpGrpc:
+                                      properties:
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            - value
+                                            type: object
+                                          type: array
+                                        temporalityPreference:
+                                          enum:
+                                          - cumulative
+                                          - delta
+                                          - low_memory
+                                          type: string
+                                        tls:
+                                          properties:
+                                            insecure:
+                                              type: boolean
+                                          type: object
+                                      required:
+                                      - endpoint
+                                      type: object
+                                    otlpHttp:
+                                      properties:
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            - value
+                                            type: object
+                                          type: array
+                                        temporalityPreference:
+                                          enum:
+                                          - cumulative
+                                          - delta
+                                          - low_memory
+                                          type: string
+                                      required:
+                                      - endpoint
+                                      type: object
+                                  type: object
+                                interval:
+                                  type: string
+                                timeout:
+                                  type: string
+                              required:
+                              - exporter
+                              type: object
+                          type: object
+                        type: array
                     type: object
                 type: object
               terminationGracePeriodSeconds:
