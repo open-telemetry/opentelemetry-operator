@@ -152,30 +152,60 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
-	if otlp := taSpec.Telemetry.Metrics.OTLP; otlp != nil {
-		otlpMap := map[string]any{"endpoint": otlp.Endpoint}
-		if otlp.Protocol != "" {
-			otlpMap["protocol"] = otlp.Protocol
+	if len(taSpec.Telemetry.Metrics.Readers) > 0 {
+		readers := make([]any, 0, len(taSpec.Telemetry.Metrics.Readers))
+		for _, r := range taSpec.Telemetry.Metrics.Readers {
+			if r.Periodic == nil {
+				continue
+			}
+			p := r.Periodic
+			exporter := map[string]any{}
+			if g := p.Exporter.OtlpGrpc; g != nil {
+				grpcMap := map[string]any{"endpoint": g.Endpoint}
+				if len(g.Headers) > 0 {
+					headers := make([]map[string]any, len(g.Headers))
+					for i, h := range g.Headers {
+						headers[i] = map[string]any{"name": h.Name, "value": h.Value}
+					}
+					grpcMap["headers"] = headers
+				}
+				if g.TemporalityPreference != "" {
+					grpcMap["temporality_preference"] = g.TemporalityPreference
+				}
+				if g.Tls != nil && g.Tls.Insecure {
+					grpcMap["tls"] = map[string]any{"insecure": true}
+				}
+				exporter["otlp_grpc"] = grpcMap
+			} else if h := p.Exporter.OtlpHttp; h != nil {
+				httpMap := map[string]any{"endpoint": h.Endpoint}
+				if len(h.Headers) > 0 {
+					headers := make([]map[string]any, len(h.Headers))
+					for i, hdr := range h.Headers {
+						headers[i] = map[string]any{"name": hdr.Name, "value": hdr.Value}
+					}
+					httpMap["headers"] = headers
+				}
+				if h.TemporalityPreference != "" {
+					httpMap["temporality_preference"] = h.TemporalityPreference
+				}
+				exporter["otlp_http"] = httpMap
+			}
+			// interval and timeout are in milliseconds per the OTel declarative config spec.
+			periodic := map[string]any{"exporter": exporter}
+			if p.Interval != nil {
+				periodic["interval"] = int(p.Interval.Milliseconds())
+			}
+			if p.Timeout != nil {
+				periodic["timeout"] = int(p.Timeout.Milliseconds())
+			}
+			readers = append(readers, map[string]any{"periodic": periodic})
 		}
-		if len(otlp.Headers) > 0 {
-			otlpMap["headers"] = otlp.Headers
-		}
-		if otlp.Insecure {
-			otlpMap["insecure"] = true
-		}
-		if otlp.Temporality != "" {
-			otlpMap["temporality"] = otlp.Temporality
-		}
-		if otlp.ExportInterval != nil {
-			otlpMap["export_interval"] = otlp.ExportInterval.Duration
-		}
-		if otlp.Timeout != nil {
-			otlpMap["timeout"] = otlp.Timeout.Duration
-		}
-		taConfig["telemetry"] = map[string]any{
-			"metrics": map[string]any{
-				"otlp": otlpMap,
-			},
+		if len(readers) > 0 {
+			taConfig["telemetry"] = map[string]any{
+				"metrics": map[string]any{
+					"readers": readers,
+				},
+			}
 		}
 	}
 
