@@ -162,7 +162,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			Name:        name,
 			Namespace:   instance.Namespace,
 			Labels:      labels,
-			Annotations: instance.Annotations,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Data: map[string]string{
 			targetAllocatorFilename: string(taConfigYAML),

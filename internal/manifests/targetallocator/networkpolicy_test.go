@@ -135,3 +135,36 @@ func TestNetworkPolicy(t *testing.T) {
 		})
 	}
 }
+
+func TestNetworkPolicyResourceAnnotations(t *testing.T) {
+	testConfig := config.Config{}
+	testConfig.Internal.KubeAPIServerPort = 6443
+
+	ta := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ta",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"meta-annotation-key": "meta-annotation-value",
+			},
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodAnnotations: map[string]string{"pod-annotation-key": "pod-annotation-value"},
+			},
+			NetworkPolicy: v1beta1.NetworkPolicy{
+				Enabled: &[]bool{true}[0],
+			},
+		},
+	}
+
+	actual, err := NetworkPolicy(Params{
+		TargetAllocator: ta,
+		Config:          testConfig,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, actual)
+
+	// CR metadata annotations propagate, pod annotations do not
+	assert.Equal(t, map[string]string{"meta-annotation-key": "meta-annotation-value"}, actual.Annotations)
+}
