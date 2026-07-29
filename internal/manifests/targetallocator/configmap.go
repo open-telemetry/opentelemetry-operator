@@ -161,34 +161,13 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			p := r.Periodic
 			exporter := map[string]any{}
 			if g := p.Exporter.OtlpGrpc; g != nil {
-				grpcMap := map[string]any{"endpoint": g.Endpoint}
-				if len(g.Headers) > 0 {
-					headers := make([]map[string]any, len(g.Headers))
-					for i, h := range g.Headers {
-						headers[i] = map[string]any{"name": h.Name, "value": h.Value}
-					}
-					grpcMap["headers"] = headers
-				}
-				if g.TemporalityPreference != "" {
-					grpcMap["temporality_preference"] = g.TemporalityPreference
-				}
+				grpcMap := buildOTLPExporterMap(g.TAOTLPCommonConfig)
 				if g.Tls != nil && g.Tls.Insecure {
 					grpcMap["tls"] = map[string]any{"insecure": true}
 				}
 				exporter["otlp_grpc"] = grpcMap
 			} else if h := p.Exporter.OtlpHttp; h != nil {
-				httpMap := map[string]any{"endpoint": h.Endpoint}
-				if len(h.Headers) > 0 {
-					headers := make([]map[string]any, len(h.Headers))
-					for i, hdr := range h.Headers {
-						headers[i] = map[string]any{"name": hdr.Name, "value": hdr.Value}
-					}
-					httpMap["headers"] = headers
-				}
-				if h.TemporalityPreference != "" {
-					httpMap["temporality_preference"] = h.TemporalityPreference
-				}
-				exporter["otlp_http"] = httpMap
+				exporter["otlp_http"] = buildOTLPExporterMap(h.TAOTLPCommonConfig)
 			}
 			// interval and timeout are in milliseconds per the OTel declarative config spec.
 			periodic := map[string]any{"exporter": exporter}
@@ -225,6 +204,22 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			targetAllocatorFilename: string(taConfigYAML),
 		},
 	}, nil
+}
+
+// buildOTLPExporterMap constructs the common fields shared by otlp_grpc and otlp_http exporters.
+func buildOTLPExporterMap(base v1beta1.TAOTLPCommonConfig) map[string]any {
+	m := map[string]any{"endpoint": base.Endpoint}
+	if len(base.Headers) > 0 {
+		h := make([]map[string]any, len(base.Headers))
+		for i, hdr := range base.Headers {
+			h[i] = map[string]any{"name": hdr.Name, "value": hdr.Value}
+		}
+		m["headers"] = h
+	}
+	if base.TemporalityPreference != "" {
+		m["temporality_preference"] = base.TemporalityPreference
+	}
+	return m
 }
 
 func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {
