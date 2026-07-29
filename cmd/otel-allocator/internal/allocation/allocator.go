@@ -127,6 +127,42 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		a.handleTargets(targetsDiff)
 	}
+	a.refreshExistingTargetLabels(targetMap)
+}
+
+// refreshExistingTargetLabels replaces the stored Item of every target that is present
+// both before and after this update, so that what we serve reflects the latest
+// discovery rather than the first sighting.
+//
+// A target's identity is the hash of its post-relabel labels, which excludes meta
+// labels (see target.HashFromBuilder), mirroring Prometheus: meta labels are
+// discarded when the final label set is computed, so two targets differing only in
+// them are the same scrape target. That means a target can keep its identity while
+// the meta labels discovery reports for it change — a DaemonSet pod with
+// hostNetwork replaced on the same host address, for instance, keeps its address
+// and its relabeled labels while its pod name and UID change. The diff below sees
+// no change for such a target, but Item.Labels is not internal bookkeeping: we
+// serve it verbatim on the HTTP SD endpoint, and the collector turns those meta
+// labels into resource attributes. Keeping the old Item would attribute the new
+// pod's metrics to the departed one, forever, since the hash never moves again.
+//
+// Prometheus does the same thing for the same reason, overwriting a retained
+// target's discovered labels on every sync:
+// https://github.com/prometheus/prometheus/blob/v3.12.0/scrape/scrape.go#L491
+//
+// The collector assignment lives on the Item, so it has to carry over. Dropping it
+// would make the least-weighted strategy treat every surviving target as newly
+// assigned and reshuffle the whole set on each update, and would leave the
+// per-collector target counts unbalanced when the target is eventually removed.
+func (a *allocator) refreshExistingTargetLabels(targetMap map[target.ItemHash]*target.Item) {
+	for hash, newItem := range targetMap {
+		existing, ok := a.targetItems[hash]
+		if !ok {
+			continue
+		}
+		newItem.CollectorName = existing.CollectorName
+		a.targetItems[hash] = newItem
+	}
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
