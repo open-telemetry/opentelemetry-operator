@@ -435,45 +435,85 @@ type TargetAllocatorTelemetry struct {
 }
 
 // TargetAllocatorMetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
+// It mirrors the OTel declarative configuration spec's meter_provider.readers section.
 type TargetAllocatorMetricsConfig struct {
-	// OTLP configures an optional OTLP metric exporter for the TargetAllocator's self-telemetry.
-	// When set, metrics are exported via OTLP in addition to the existing Prometheus /metrics endpoint.
+	// Readers configures one or more metric readers following the OTel declarative configuration spec.
 	// +optional
-	OTLP *TargetAllocatorOTLPConfig `json:"otlp,omitempty"`
+	Readers []TAMetricReader `json:"readers,omitempty"`
 }
 
-// TargetAllocatorOTLPConfig holds connection settings for the TargetAllocator's OTLP self-telemetry exporter.
-type TargetAllocatorOTLPConfig struct {
-	// Endpoint is the OTLP receiver address (e.g. "https://example.com:4318" for HTTP,
-	// "example.com:4317" for gRPC).
+// TAMetricReader mirrors the OTel declarative configuration MetricReader type.
+type TAMetricReader struct {
+	// Periodic configures a periodic exporting metric reader.
+	// +optional
+	Periodic *TAPeriodicMetricReader `json:"periodic,omitempty"`
+}
+
+// TAPeriodicMetricReader mirrors the OTel declarative configuration PeriodicMetricReader type.
+type TAPeriodicMetricReader struct {
+	// Interval is the delay between consecutive exports. Defaults to 60s.
+	// +optional
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Timeout is the maximum allowed export duration. Defaults to 30s.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
+	// Exporter configures the push exporter for this reader.
+	Exporter TAMetricExporter `json:"exporter"`
+}
+
+// TAMetricExporter mirrors the OTel declarative configuration PushMetricExporter type.
+type TAMetricExporter struct {
+	// OtlpGrpc configures an OTLP/gRPC metric exporter.
+	// +optional
+	OtlpGrpc *TAOTLPGrpcExporter `json:"otlpGrpc,omitempty"`
+	// OtlpHttp configures an OTLP/HTTP metric exporter.
+	// +optional
+	OtlpHttp *TAOTLPHttpExporter `json:"otlpHttp,omitempty"`
+}
+
+// TAOTLPGrpcExporter mirrors the OTel declarative configuration OTLPGrpcMetricExporter type.
+type TAOTLPGrpcExporter struct {
+	// Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.
 	// +kubebuilder:validation:Required
 	Endpoint string `json:"endpoint"`
-	// Protocol selects the transport: "grpc" (default) or "http".
+	// Headers are additional key/value pairs sent with every export request.
 	// +optional
-	// +kubebuilder:validation:Enum=grpc;http
-	Protocol string `json:"protocol,omitempty"`
-	// Headers are additional key/value pairs sent with every export request,
-	// e.g. for authentication.
+	Headers []TANameValuePair `json:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
 	// +optional
-	Headers map[string]string `json:"headers,omitempty"`
+	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
+	TemporalityPreference string `json:"temporalityPreference,omitempty"`
+	// Tls configures TLS for the gRPC connection.
+	// +optional
+	Tls *TAGrpcTlsConfig `json:"tls,omitempty"`
+}
+
+// TAOTLPHttpExporter mirrors the OTel declarative configuration OTLPHttpMetricExporter type.
+type TAOTLPHttpExporter struct {
+	// Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").
+	// +kubebuilder:validation:Required
+	Endpoint string `json:"endpoint"`
+	// Headers are additional key/value pairs sent with every export request.
+	// +optional
+	Headers []TANameValuePair `json:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
+	// +optional
+	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
+	TemporalityPreference string `json:"temporalityPreference,omitempty"`
+}
+
+// TANameValuePair is a name/value pair used for OTLP export headers,
+// mirroring the OTel declarative configuration NameStringValuePair type.
+type TANameValuePair struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// TAGrpcTlsConfig mirrors the OTel declarative configuration GrpcTls type.
+type TAGrpcTlsConfig struct {
 	// Insecure disables TLS. Only suitable for local development.
 	// +optional
 	Insecure bool `json:"insecure,omitempty"`
-	// Temporality sets the aggregation temporality for exported metrics.
-	// Valid values are "cumulative" (default), "delta", and "lowmemory".
-	// "delta" exports all instruments as delta; "lowmemory" uses delta for
-	// counters and histograms and cumulative for gauges.
-	// +optional
-	// +kubebuilder:validation:Enum=cumulative;delta;lowmemory
-	Temporality string `json:"temporality,omitempty"`
-	// ExportInterval is the time between two consecutive exports.
-	// Defaults to 60s.
-	// +optional
-	ExportInterval *metav1.Duration `json:"exportInterval,omitempty"`
-	// Timeout is the max duration for a single export attempt.
-	// Defaults to 10s.
-	// +optional
-	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's

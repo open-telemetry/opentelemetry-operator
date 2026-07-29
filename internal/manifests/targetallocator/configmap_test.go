@@ -896,15 +896,21 @@ func TestTelemetryOTLP(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
 			Metrics: v1beta1.TargetAllocatorMetricsConfig{
-				OTLP: &v1beta1.TargetAllocatorOTLPConfig{
-					Endpoint:       "https://ingest.example.com:4318",
-					Protocol:       "http",
-					Headers:        map[string]string{"Authorization": "Api-Token secret"},
-					Insecure:       true,
-					Temporality:    "delta",
-					ExportInterval: &metav1.Duration{Duration: 30 * time.Second},
-					Timeout:        &metav1.Duration{Duration: 15 * time.Second},
-				},
+				Readers: []v1beta1.TAMetricReader{{
+					Periodic: &v1beta1.TAPeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 30 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 15 * time.Second},
+						Exporter: v1beta1.TAMetricExporter{
+							OtlpHttp: &v1beta1.TAOTLPHttpExporter{
+								Endpoint: "https://ingest.example.com:4318",
+								Headers: []v1beta1.TANameValuePair{
+									{Name: "Authorization", Value: "Api-Token secret"},
+								},
+								TemporalityPreference: "delta",
+							},
+						},
+					},
+				}},
 			},
 		}
 		params := Params{
@@ -919,22 +925,32 @@ func TestTelemetryOTLP(t *testing.T) {
 
 		data := actual.Data[targetAllocatorFilename]
 		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "readers:")
+		assert.Contains(t, data, "periodic:")
+		assert.Contains(t, data, "otlp_http:")
 		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
-		assert.Contains(t, data, "protocol: http")
-		assert.Contains(t, data, "Authorization: Api-Token secret")
-		assert.Contains(t, data, "insecure: true")
-		assert.Contains(t, data, "temporality: delta")
-		assert.Contains(t, data, "export_interval: 30s")
-		assert.Contains(t, data, "timeout: 15s")
+		assert.Contains(t, data, "name: Authorization")
+		assert.Contains(t, data, "value: Api-Token secret")
+		assert.Contains(t, data, "temporality_preference: delta")
+		assert.Contains(t, data, "interval: 30000")
+		assert.Contains(t, data, "timeout: 15000")
+		// HTTP exporter has no TLS/insecure field
+		assert.NotContains(t, data, "insecure:")
 	})
 
 	t.Run("should omit optional fields when not set", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
 			Metrics: v1beta1.TargetAllocatorMetricsConfig{
-				OTLP: &v1beta1.TargetAllocatorOTLPConfig{
-					Endpoint: "https://ingest.example.com:4318",
-				},
+				Readers: []v1beta1.TAMetricReader{{
+					Periodic: &v1beta1.TAPeriodicMetricReader{
+						Exporter: v1beta1.TAMetricExporter{
+							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
+								Endpoint: "https://ingest.example.com:4318",
+							},
+						},
+					},
+				}},
 			},
 		}
 		params := Params{
@@ -949,18 +965,81 @@ func TestTelemetryOTLP(t *testing.T) {
 
 		data := actual.Data[targetAllocatorFilename]
 		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "readers:")
+		assert.Contains(t, data, "periodic:")
+		assert.Contains(t, data, "otlp_grpc:") // default protocol
 		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
-		assert.NotContains(t, data, "protocol:")
+		assert.NotContains(t, data, "headers:")
 		assert.NotContains(t, data, "insecure:")
-		assert.NotContains(t, data, "temporality:")
-		assert.NotContains(t, data, "export_interval:")
-		assert.NotContains(t, data, "timeout:")
+		assert.NotContains(t, data, "temporality_preference:")
+		// "interval:" is intentionally not checked here because scrape_interval: appears in collector config
+		assert.NotContains(t, data, "timeout: ")
 	})
 
 	t.Run("no telemetry block when OTLP is nil", func(t *testing.T) {
 		params := Params{
 			Collector:       collectorInstance(),
 			TargetAllocator: targetAllocatorInstance(),
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		assert.NotContains(t, actual.Data[targetAllocatorFilename], "telemetry:")
+	})
+
+	t.Run("grpc with all optional fields", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
+			Metrics: v1beta1.TargetAllocatorMetricsConfig{
+				Readers: []v1beta1.TAMetricReader{{
+					Periodic: &v1beta1.TAPeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 60 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 10 * time.Second},
+						Exporter: v1beta1.TAMetricExporter{
+							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
+								Endpoint: "example.com:4317",
+								Headers: []v1beta1.TANameValuePair{
+									{Name: "X-Token", Value: "abc"},
+								},
+								TemporalityPreference: "delta",
+								Tls:                   &v1beta1.TAGrpcTlsConfig{Insecure: true},
+							},
+						},
+					},
+				}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "otlp_grpc:")
+		assert.Contains(t, data, "endpoint: example.com:4317")
+		assert.Contains(t, data, "name: X-Token")
+		assert.Contains(t, data, "value: abc")
+		assert.Contains(t, data, "temporality_preference: delta")
+		assert.Contains(t, data, "insecure: true")
+		assert.Contains(t, data, "interval: 60000")
+		assert.Contains(t, data, "timeout: 10000")
+	})
+
+	t.Run("non-periodic reader is skipped", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
+			Metrics: v1beta1.TargetAllocatorMetricsConfig{
+				// Periodic is nil — should produce no telemetry block.
+				Readers: []v1beta1.TAMetricReader{{Periodic: nil}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
 			Config:          config.New(),
 			Log:             logr.Discard(),
 		}
