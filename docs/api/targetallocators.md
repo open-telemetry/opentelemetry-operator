@@ -12549,7 +12549,7 @@ Metrics defines the metrics export settings for the TargetAllocator's own teleme
 
 
 
-TAMetricReader mirrors the OTel declarative configuration MetricReader type.
+TAMetricReader configures a metric reader.
 
 <table>
     <thead>
@@ -12702,8 +12702,7 @@ OtlpGrpc configures an OTLP/gRPC metric exporter.
 
 
 
-TANameValuePair is a name/value pair used for OTLP export headers,
-mirroring the OTel declarative configuration NameStringValuePair type.
+TANameValuePair is a name/value pair used for OTLP export headers.
 
 <table>
     <thead>
@@ -12808,8 +12807,7 @@ OtlpHttp configures an OTLP/HTTP metric exporter.
 
 
 
-TANameValuePair is a name/value pair used for OTLP export headers,
-mirroring the OTel declarative configuration NameStringValuePair type.
+TANameValuePair is a name/value pair used for OTLP export headers.
 
 <table>
     <thead>
