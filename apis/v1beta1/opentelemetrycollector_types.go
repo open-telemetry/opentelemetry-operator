@@ -361,21 +361,20 @@ type TargetAllocatorTelemetry struct {
 }
 
 // TargetAllocatorMetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
-// It mirrors the OTel declarative configuration spec's meter_provider.readers section.
 type TargetAllocatorMetricsConfig struct {
 	// Readers configures one or more metric readers following the OTel declarative configuration spec.
 	// +optional
 	Readers []TAMetricReader `json:"readers,omitempty"`
 }
 
-// TAMetricReader mirrors the OTel declarative configuration MetricReader type.
+// TAMetricReader configures a metric reader.
 type TAMetricReader struct {
 	// Periodic configures a periodic exporting metric reader.
 	// +optional
 	Periodic *TAPeriodicMetricReader `json:"periodic,omitempty"`
 }
 
-// TAPeriodicMetricReader mirrors the OTel declarative configuration PeriodicMetricReader type.
+// TAPeriodicMetricReader configures a periodic exporting metric reader.
 type TAPeriodicMetricReader struct {
 	// Interval is the delay between consecutive exports. Defaults to 60s.
 	// +optional
@@ -387,7 +386,7 @@ type TAPeriodicMetricReader struct {
 	Exporter TAMetricExporter `json:"exporter"`
 }
 
-// TAMetricExporter mirrors the OTel declarative configuration PushMetricExporter type.
+// TAMetricExporter selects the push exporter for a metric reader.
 type TAMetricExporter struct {
 	// OtlpGrpc configures an OTLP/gRPC metric exporter.
 	// +optional
@@ -412,7 +411,7 @@ type TAOTLPCommonConfig struct {
 	TemporalityPreference string `json:"temporalityPreference,omitempty"`
 }
 
-// TAOTLPGrpcExporter mirrors the OTel declarative configuration OTLPGrpcMetricExporter type.
+// TAOTLPGrpcExporter configures an OTLP/gRPC metric exporter.
 type TAOTLPGrpcExporter struct {
 	TAOTLPCommonConfig `json:",inline"`
 	// Tls configures TLS for the gRPC connection.
@@ -420,19 +419,18 @@ type TAOTLPGrpcExporter struct {
 	Tls *TAGrpcTlsConfig `json:"tls,omitempty"`
 }
 
-// TAOTLPHttpExporter mirrors the OTel declarative configuration OTLPHttpMetricExporter type.
+// TAOTLPHttpExporter configures an OTLP/HTTP metric exporter.
 type TAOTLPHttpExporter struct {
 	TAOTLPCommonConfig `json:",inline"`
 }
 
-// TANameValuePair is a name/value pair used for OTLP export headers,
-// mirroring the OTel declarative configuration NameStringValuePair type.
+// TANameValuePair is a name/value pair used for OTLP export headers.
 type TANameValuePair struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-// TAGrpcTlsConfig mirrors the OTel declarative configuration GrpcTls type.
+// TAGrpcTlsConfig configures TLS settings for a gRPC OTLP exporter.
 type TAGrpcTlsConfig struct {
 	// Insecure disables TLS. Only suitable for local development.
 	// +optional
