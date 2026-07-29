@@ -397,9 +397,10 @@ type TAMetricExporter struct {
 	OtlpHttp *TAOTLPHttpExporter `json:"otlpHttp,omitempty"`
 }
 
-// TAOTLPGrpcExporter mirrors the OTel declarative configuration OTLPGrpcMetricExporter type.
-type TAOTLPGrpcExporter struct {
-	// Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.
+// TAOTLPCommonConfig holds the fields shared by both gRPC and HTTP OTLP exporters.
+type TAOTLPCommonConfig struct {
+	// Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+	// (e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").
 	// +kubebuilder:validation:Required
 	Endpoint string `json:"endpoint"`
 	// Headers are additional key/value pairs sent with every export request.
@@ -409,6 +410,11 @@ type TAOTLPGrpcExporter struct {
 	// +optional
 	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
 	TemporalityPreference string `json:"temporalityPreference,omitempty"`
+}
+
+// TAOTLPGrpcExporter mirrors the OTel declarative configuration OTLPGrpcMetricExporter type.
+type TAOTLPGrpcExporter struct {
+	TAOTLPCommonConfig `json:",inline"`
 	// Tls configures TLS for the gRPC connection.
 	// +optional
 	Tls *TAGrpcTlsConfig `json:"tls,omitempty"`
@@ -416,16 +422,7 @@ type TAOTLPGrpcExporter struct {
 
 // TAOTLPHttpExporter mirrors the OTel declarative configuration OTLPHttpMetricExporter type.
 type TAOTLPHttpExporter struct {
-	// Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").
-	// +kubebuilder:validation:Required
-	Endpoint string `json:"endpoint"`
-	// Headers are additional key/value pairs sent with every export request.
-	// +optional
-	Headers []TANameValuePair `json:"headers,omitempty"`
-	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
-	// +optional
-	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
-	TemporalityPreference string `json:"temporalityPreference,omitempty"`
+	TAOTLPCommonConfig `json:",inline"`
 }
 
 // TANameValuePair is a name/value pair used for OTLP export headers,

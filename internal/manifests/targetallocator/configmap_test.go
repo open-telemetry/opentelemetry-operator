@@ -902,11 +902,13 @@ func TestTelemetryOTLP(t *testing.T) {
 						Timeout:  &metav1.Duration{Duration: 15 * time.Second},
 						Exporter: v1beta1.TAMetricExporter{
 							OtlpHttp: &v1beta1.TAOTLPHttpExporter{
-								Endpoint: "https://ingest.example.com:4318",
-								Headers: []v1beta1.TANameValuePair{
-									{Name: "Authorization", Value: "Api-Token secret"},
+								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+									Endpoint: "https://ingest.example.com:4318",
+									Headers: []v1beta1.TANameValuePair{
+										{Name: "Authorization", Value: "Api-Token secret"},
+									},
+									TemporalityPreference: "delta",
 								},
-								TemporalityPreference: "delta",
 							},
 						},
 					},
@@ -946,7 +948,9 @@ func TestTelemetryOTLP(t *testing.T) {
 					Periodic: &v1beta1.TAPeriodicMetricReader{
 						Exporter: v1beta1.TAMetricExporter{
 							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
-								Endpoint: "https://ingest.example.com:4318",
+								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+									Endpoint: "https://ingest.example.com:4318",
+								},
 							},
 						},
 					},
@@ -998,12 +1002,14 @@ func TestTelemetryOTLP(t *testing.T) {
 						Timeout:  &metav1.Duration{Duration: 10 * time.Second},
 						Exporter: v1beta1.TAMetricExporter{
 							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
-								Endpoint: "example.com:4317",
-								Headers: []v1beta1.TANameValuePair{
-									{Name: "X-Token", Value: "abc"},
+								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+									Endpoint: "example.com:4317",
+									Headers: []v1beta1.TANameValuePair{
+										{Name: "X-Token", Value: "abc"},
+									},
+									TemporalityPreference: "delta",
 								},
-								TemporalityPreference: "delta",
-								Tls:                   &v1beta1.TAGrpcTlsConfig{Insecure: true},
+								Tls: &v1beta1.TAGrpcTlsConfig{Insecure: true},
 							},
 						},
 					},
