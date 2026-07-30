@@ -25,7 +25,7 @@ metadata:
   namespace: ($namespace)
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: ($namespace).ta-selftelemetry
+    app.kubernetes.io/name: ta-selftelemetry-collector
 status:
   phase: Running
   containerStatuses:
@@ -41,7 +41,7 @@ metadata:
   namespace: ($namespace)
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
-    app.kubernetes.io/instance: ($namespace).ta-selftelemetry
+    app.kubernetes.io/name: ta-selftelemetry-targetallocator
 status:
   phase: Running
   containerStatuses:
