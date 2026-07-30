@@ -5,7 +5,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: ta-selftelemetry
 spec:
-  mode: deployment
+  mode: statefulset
   config:
     receivers:
       prometheus: {}
