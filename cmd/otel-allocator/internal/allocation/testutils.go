@@ -32,7 +32,8 @@ func MakeNNewTargets(n, numCollectors, startingIndex int) []*target.Item {
 			labels.Label{Name: "i", Value: strconv.Itoa(i)},
 			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 		)
-		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, collector)
+		jobName := fmt.Sprintf("test-job-%d", i)
+		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, collector, target.HashLabels(label, jobName))
 		toReturn = append(toReturn, newTarget)
 	}
 	return toReturn
@@ -59,7 +60,8 @@ func MakeNNewTargetsWithEmptyCollectors(n, startingIndex int) []*target.Item {
 			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 			labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
 		)
-		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, "")
+		jobName := fmt.Sprintf("test-job-%d", i)
+		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, "", target.HashLabels(label, jobName))
 		toReturn = append(toReturn, newTarget)
 	}
 	return toReturn
@@ -73,7 +75,7 @@ func MakeNTargetsForJob(n int, jobName string, startingIndex int) []*target.Item
 			labels.Label{Name: "i", Value: strconv.Itoa(i)},
 			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 		)
-		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, "")
+		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, "", target.HashLabels(label, jobName))
 		toReturn = append(toReturn, newTarget)
 	}
 	return toReturn

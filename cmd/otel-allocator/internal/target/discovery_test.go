@@ -64,7 +64,7 @@ func TestDiscovery(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []string)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, func(targets []*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)
@@ -312,7 +312,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
 	require.NoError(t, err)
 
 	for _, tc := range tests {
@@ -403,7 +403,7 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []*Item)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, func(targets []*Item) {
 		var result []*Item
 		result = append(result, targets...)
 		results <- result
@@ -450,7 +450,7 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
 	require.NoError(t, err)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -488,16 +488,16 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 		},
 	}
 
-	results := make([]*Item, 1)
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, nil, scu, nil)
+	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, RelabelConfigFilterStrategy, scu, nil)
 	require.NoError(t, err)
-	d.processTargetGroups("test", groups, results)
+	results := d.processTargetGroups("test", groups, nil)
+	require.Len(t, results, 1)
 
 	i := 0
 	results[0].Labels.Range(func(l labels.Label) {
@@ -545,7 +545,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -571,4 +571,158 @@ func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*pro
 
 	m.mockCfg = cfg
 	return nil
+}
+
+func newTestDiscoverer(t testing.TB, filterStrategy string, setTargets func([]*Item)) *Discoverer {
+	t.Helper()
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	require.NoError(t, err)
+	manager := discovery.NewManager(t.Context(), config.NopLogger, registry, sdMetrics)
+	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, filterStrategy, &mockScrapeConfigUpdater{}, setTargets)
+	require.NoError(t, err)
+	return d
+}
+
+// TestProcessTargetGroupsRelabelFiltering verifies that relabeling is applied as targets are
+// created: targets dropped by a keep/drop action are excluded, and kept targets carry a
+// precomputed hash derived from the relabeled labels.
+func TestProcessTargetGroupsRelabelFiltering(t *testing.T) {
+	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	groups := []*targetgroup.Group{
+		{
+			Labels: model.LabelSet{"job": "test"},
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.1:9090", "keep": "yes"},
+				{model.AddressLabel: "10.0.0.2:9090", "keep": "no"},
+				{model.AddressLabel: "10.0.0.3:9090", "keep": "yes"},
+			},
+		},
+	}
+	relabelCfg := []*relabel.Config{
+		{
+			SourceLabels: model.LabelNames{"keep"},
+			Regex:        relabel.MustNewRegexp("yes"),
+			Action:       relabel.Keep,
+		},
+	}
+
+	got := d.processTargetGroups("test", groups, relabelCfg)
+	require.Len(t, got, 2)
+	gotURLs := []string{got[0].TargetURL, got[1].TargetURL}
+	slices.Sort(gotURLs)
+	assert.Equal(t, []string{"10.0.0.1:9090", "10.0.0.3:9090"}, gotURLs)
+	for _, item := range got {
+		assert.NotZero(t, item.hash, "kept targets should carry a precomputed hash")
+	}
+}
+
+// TestProcessTargetGroupsNoRelabelConfig verifies that when there's no relabel config for a job,
+// all targets are kept and the hash is still computed from the labels at creation time.
+func TestProcessTargetGroupsNoRelabelConfig(t *testing.T) {
+	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	groups := []*targetgroup.Group{
+		{
+			Labels: model.LabelSet{"job": "test"},
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.1:9090"},
+				{model.AddressLabel: "10.0.0.2:9090"},
+			},
+		},
+	}
+
+	got := d.processTargetGroups("test", groups, nil)
+	require.Len(t, got, 2)
+	for _, item := range got {
+		// The hash is computed at creation, from the same builder-based function whether or not
+		// relabeling runs, so it matches HashLabels over the item's labels.
+		assert.NotZero(t, item.Hash())
+		assert.Equal(t, HashLabels(item.Labels, item.JobName), item.Hash())
+	}
+}
+
+// TestProcessTargetGroupsDeduplicatesByHash verifies that targets which become identical after
+// relabeling share the same hash, so the allocator deduplicates them.
+func TestProcessTargetGroupsDeduplicatesByHash(t *testing.T) {
+	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	groups := []*targetgroup.Group{
+		{
+			Labels: model.LabelSet{"job": "test"},
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.1:9090", "drop_me": "a"},
+				{model.AddressLabel: "10.0.0.1:9090", "drop_me": "b"},
+			},
+		},
+	}
+	relabelCfg := []*relabel.Config{
+		{
+			Regex:  relabel.MustNewRegexp("drop_me"),
+			Action: relabel.LabelDrop,
+		},
+	}
+
+	got := d.processTargetGroups("test", groups, relabelCfg)
+	require.Len(t, got, 2)
+	assert.Equal(t, got[0].Hash(), got[1].Hash(), "targets identical after relabeling should share a hash")
+}
+
+// TestReloadAppliesRelabelFilteringWhenEnabled verifies the end-to-end discovery path drops
+// targets according to the scrape config's relabel_configs when the filter strategy is enabled.
+func TestReloadAppliesRelabelFilteringWhenEnabled(t *testing.T) {
+	var got []*Item
+	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, func(targets []*Item) { got = targets })
+
+	scrapeConfigs := []*promconfig.ScrapeConfig{
+		{
+			JobName: "dropme",
+			RelabelConfigs: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{model.AddressLabel},
+					Regex:        relabel.MustNewRegexp(".*"),
+					Action:       relabel.Drop,
+				},
+			},
+		},
+		{
+			JobName: "keepme",
+		},
+	}
+	require.NoError(t, d.ApplyConfig(allocatorWatcher.EventSourceConfigMap, scrapeConfigs))
+	d.UpdateTsets(map[string][]*targetgroup.Group{
+		"dropme": {{Targets: []model.LabelSet{{model.AddressLabel: "10.0.0.1:9090"}}}},
+		"keepme": {{Targets: []model.LabelSet{{model.AddressLabel: "10.0.0.2:9090"}}}},
+	})
+
+	d.Reload()
+	require.Len(t, got, 1)
+	assert.Equal(t, "10.0.0.2:9090", got[0].TargetURL)
+	assert.Equal(t, "keepme", got[0].JobName)
+}
+
+// TestReloadSkipsRelabelFilteringWhenDisabled verifies that a non-relabel-config filter strategy
+// disables filtering during discovery: targets are kept even if relabel_configs would drop them.
+func TestReloadSkipsRelabelFilteringWhenDisabled(t *testing.T) {
+	var got []*Item
+	d := newTestDiscoverer(t, "", func(targets []*Item) { got = targets })
+
+	scrapeConfigs := []*promconfig.ScrapeConfig{
+		{
+			JobName: "dropme",
+			RelabelConfigs: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{model.AddressLabel},
+					Regex:        relabel.MustNewRegexp(".*"),
+					Action:       relabel.Drop,
+				},
+			},
+		},
+	}
+	require.NoError(t, d.ApplyConfig(allocatorWatcher.EventSourceConfigMap, scrapeConfigs))
+	d.UpdateTsets(map[string][]*targetgroup.Group{
+		"dropme": {{Targets: []model.LabelSet{{model.AddressLabel: "10.0.0.1:9090"}}}},
+	})
+
+	d.Reload()
+	require.Len(t, got, 1, "filtering disabled: target should be kept despite the drop config")
+	assert.Equal(t, "10.0.0.1:9090", got[0].TargetURL)
 }

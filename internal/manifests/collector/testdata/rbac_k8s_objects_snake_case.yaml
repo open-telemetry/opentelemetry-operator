@@ -1,0 +1,14 @@
+receivers:
+  k8s_objects:
+    objects:
+      - name: pods
+        mode: pull
+        group: v1
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    logs:
+      receivers: [k8s_objects]
+      exporters: [otlp]

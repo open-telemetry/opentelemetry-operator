@@ -14,19 +14,17 @@
 package conformance
 
 import (
-	"slices"
 	"testing"
 
 	"github.com/go-logr/logr"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
-	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 // targetKey joins a Prometheus golden target to an allocator target. Both sides
@@ -56,10 +54,14 @@ func (r allocatorResult) key() targetKey {
 // bucketed by (job, address). A bucket holds more than one result only when
 // several targets share a pre-relabel address.
 //
-// It reuses the allocator's own code paths:
-//   - target.Discoverer.UpdateTsets + Reload run processTargetGroups/mergeLabels
-//     synchronously (bypassing the production 5s reload debounce).
-//   - prehook.Hook.Apply runs relabel filtering and computes the identity hash.
+// Relabel filtering now happens inside the discoverer (processTargetGroups), which
+// only emits survivors. To still observe both sides of the filter, the suite drives
+// the discoverer twice over the same injected target sets:
+//   - filtering OFF: every merged target, pre-relabel (the discovered set).
+//   - filtering ON:  the survivors, each carrying the relabel-computed identity hash.
+//
+// Both passes run the allocator's own code (no relabeling is reimplemented here); a
+// target present in the first pass but not the second was dropped by relabeling.
 //
 // Only static_configs are supported for now; file_sd and others can be added later.
 func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocatorResult {
@@ -68,16 +70,7 @@ func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocat
 	cfg, err := promconfig.Load(promYAML, config.NopLogger)
 	require.NoError(t, err, "loading fixture prometheus config")
 
-	// Drive processTargetGroups via the real Discoverer. The capture callback
-	// receives all discovered items (post-merge, pre-relabel-filter).
-	var captured []*target.Item
-	discoverer, err := target.NewDiscoverer(logr.Discard(), nil, nil, nil, func(items []*target.Item) {
-		captured = items
-	})
-	require.NoError(t, err)
-
 	tsets := map[string][]*targetgroup.Group{}
-	relabelCfg := map[string][]*relabel.Config{}
 	for _, sc := range cfg.ScrapeConfigs {
 		var groups []*targetgroup.Group
 		for _, sdc := range sc.ServiceDiscoveryConfigs {
@@ -86,24 +79,16 @@ func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocat
 			groups = append(groups, static...)
 		}
 		tsets[sc.JobName] = groups
-		relabelCfg[sc.JobName] = sc.RelabelConfigs
 	}
 
-	discoverer.UpdateTsets(tsets)
-	discoverer.Reload()
-	allItems := captured
+	// Pass 1: filtering off — all discovered targets, post-merge / pre-relabel.
+	allItems := runDiscovery(t, tsets, "", nil)
+	// Pass 2: filtering on — the survivors, carrying the relabel identity hash.
+	kept := runDiscovery(t, tsets, target.RelabelConfigFilterStrategy, cfg.ScrapeConfigs)
 
-	// Apply relabel filtering exactly as production does. Apply mutates its
-	// input slice in place, so feed it a clone to keep allItems intact.
-	hook := prehook.New("relabel-config", logr.Discard())
-	require.NotNil(t, hook)
-	hook.SetConfig(relabelCfg)
-	kept := hook.Apply(slices.Clone(allItems))
-
-	// Index kept items by (job, full pre-relabel label-set hash) — not by address,
-	// so targets that share a pre-relabel address are not confused. We keep a
-	// pointer to the filtered Item because it carries the relabel-computed identity
-	// hash used later.
+	// Index survivors by (job, full pre-relabel label-set hash) — not by address, so
+	// targets that share a pre-relabel address are not confused. The Item carries the
+	// relabel-computed identity hash used later.
 	type labelIndexKey struct {
 		job       string
 		labelHash uint64
@@ -124,3 +109,33 @@ func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocat
 	}
 	return out
 }
+
+// runDiscovery drives the allocator's real discovery pipeline once over tsets and
+// returns the targets it produces. With filterStrategy set, relabel filtering is
+// applied (scrapeConfigs supply the relabel rules and the same no-sharding handling
+// as production); otherwise every merged target is returned, pre-relabel.
+//
+// Target sets are injected directly via UpdateTsets, so no real service discovery
+// runs — a fake discovery manager stands in for the real one.
+func runDiscovery(t *testing.T, tsets map[string][]*targetgroup.Group, filterStrategy string, scrapeConfigs []*promconfig.ScrapeConfig) []*target.Item {
+	t.Helper()
+	var captured []*target.Item
+	d, err := target.NewDiscoverer(logr.Discard(), fakeDiscoveryManager{}, filterStrategy, nil, func(items []*target.Item) {
+		captured = items
+	})
+	require.NoError(t, err)
+	if len(scrapeConfigs) > 0 {
+		require.NoError(t, d.ApplyConfig(watcher.EventSourceConfigMap, scrapeConfigs))
+	}
+	d.UpdateTsets(tsets)
+	d.Reload()
+	return captured
+}
+
+// fakeDiscoveryManager satisfies the discoverer's manager dependency for the suite,
+// which injects target sets directly and never runs real service discovery.
+type fakeDiscoveryManager struct{}
+
+func (fakeDiscoveryManager) ApplyConfig(map[string]discovery.Configs) error { return nil }
+
+func (fakeDiscoveryManager) SyncCh() <-chan map[string][]*targetgroup.Group { return nil }

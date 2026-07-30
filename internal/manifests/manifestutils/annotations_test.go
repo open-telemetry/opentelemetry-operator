@@ -37,6 +37,8 @@ func TestDefaultAnnotations(t *testing.T) {
 	assert.Equal(t, "true", podAnnotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", podAnnotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", podAnnotations["prometheus.io/path"])
+	// the operator stamps an ownership marker when it adds default prom annotations
+	assert.Equal(t, "true", podAnnotations[PrometheusAnnotationsAddedKey])
 	assert.Equal(t, "5b3b62aa5e0a3c7250084c2b49190e30b72fc2ad352ffbaa699224e1aa900834", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
@@ -70,6 +72,8 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	assert.NotContains(t, podAnnotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist in pod annotations")
 	assert.NotContains(t, podAnnotations, "prometheus.io/port", "Prometheus port annotation should not exist in pod annotations")
 	assert.NotContains(t, podAnnotations, "prometheus.io/path", "Prometheus path annotation should not exist in pod annotations")
+	// the ownership marker is not stamped when DisablePrometheusAnnotations=true
+	assert.NotContains(t, podAnnotations, PrometheusAnnotationsAddedKey, "operator-owned marker should not be stamped when DisablePrometheusAnnotations=true")
 	assert.Equal(t, "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
@@ -104,6 +108,10 @@ func TestUserAnnotations(t *testing.T) {
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "1234", annotations["prometheus.io/port"])
 	assert.Equal(t, "/test", annotations["prometheus.io/path"])
+	// the ownership marker is not stamped when the user pre-set all three
+	// default prom annotations on metadata.annotations — the operator added
+	// nothing on top, so it claims nothing.
+	assert.NotContains(t, podAnnotations, PrometheusAnnotationsAddedKey, "operator-owned marker should not be stamped when user supplied all default prom annotations")
 	assert.Equal(t, "29cb15a4b87f8c6284e7c3377f6b6c5c74519f5aee8ca39a90b3cf3ca2043c4d", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 

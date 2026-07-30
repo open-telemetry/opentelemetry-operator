@@ -8,11 +8,7 @@
 set -euo pipefail
 
 # Excepted CVEs.
-# CVE-2026-40179: Stored XSS in Prometheus web UI (GHSA-vffh-x6r8-xx99).
-# The fix (PR #18506) is included in prometheus v0.312.0 which we use, but
-# the Go vulnerability database entry (GO-2026-5662) is unreviewed and has
-# incorrect version ranges that flag v0.312.0 as unfixed.
-EXCEPTED_CVES='["CVE-2026-40179"]'
+EXCEPTED_CVES='[]'
 
 GOVULNCHECK="${GOVULNCHECK:-govulncheck}"
 

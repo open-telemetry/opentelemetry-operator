@@ -107,7 +107,8 @@ func TestSortedLabelsBlackboxScenario(t *testing.T) {
 		targetLabels := model.LabelSet{model.AddressLabel: model.LabelValue(addr)}
 		targetLabelNamesBuf = targetLabelNamesBuf[:0]
 		mergeLabels(&builder, groupLabels, targetLabels, targetLabelNamesBuf)
-		items = append(items, NewItem("blackbox-test", addr, builder.Labels(), ""))
+		itemLabels := builder.Labels()
+		items = append(items, NewItem("blackbox-test", addr, itemLabels, "", HashLabels(itemLabels, "blackbox-test")))
 	}
 
 	// Verify labels are sorted

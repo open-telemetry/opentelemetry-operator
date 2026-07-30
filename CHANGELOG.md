@@ -2,6 +2,60 @@
 
 <!-- next version -->
 
+## 0.156.0
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Honor `spec.observability.metrics.disablePrometheusAnnotations: true` on update by removing the operator-stamped prometheus.io annotations from the pod template, not just stopping new ones from being added. (#5043)
+  Previously the pod-template mutate path preserved any annotation that
+  existed on the current resource but was absent from the desired render,
+  so toggling disablePrometheusAnnotations from false to true on an
+  existing OpenTelemetryCollector left the prometheus.io/scrape, port,
+  and path annotations stuck on the rolled pods. The operator now stamps
+  an ownership marker (operator.opentelemetry.io/prometheus-annotations-added)
+  whenever it adds one of the default prometheus.io/* annotations, and
+  the mutate path strips those annotations only when the marker is
+  present on the existing pod template. This preserves prometheus.io/*
+  annotations the user set out of band on the same collector.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.156.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.156.0)
+* [OpenTelemetry Contrib - v0.156.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.156.0)
+* [Java auto-instrumentation - v2.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.29.0)
+* [.NET auto-instrumentation - v1.16.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0)
+* [Node.JS - v0.78.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.64b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.64b0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.155.0
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix NetworkPolicy and operand network policy defaulting when webhooks run in a separate deployment. (#5288)
+- `collector`: Collectors with persistent storage no longer fail with "permission denied" on OpenShift when running under a permissive SCC such as anyuid. (#5224)
+  On OpenShift, the restricted SCC injects fsGroup from the namespace range, but
+  permissive SCCs (e.g. anyuid) do not. The controller now defaults
+  podSecurityContext.fsGroup from the namespace's supplemental-groups or UID range
+  annotation when no explicit fsGroup is configured. An explicitly set fsGroup is
+  never overwritten.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.155.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.155.0)
+* [OpenTelemetry Contrib - v0.155.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.155.0)
+* [Java auto-instrumentation - v2.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.29.0)
+* [.NET auto-instrumentation - v1.16.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0)
+* [Node.JS - v0.78.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.64b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.64b0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.154.0
 
 ### 🛑 Breaking changes 🛑
@@ -1372,7 +1426,7 @@ No changes.
 ### 🚀 New components 🚀
 
 - `target allocator`: Introduce TargetAllocator CRD (#2422)
-  See the [CRD changelog](./docs/crd-changelog.md) for more information.
+  See the [CRD changelog](./docs/reference/crd-changelog.md) for more information.
 
 ### 💡 Enhancements 💡
 
@@ -2184,7 +2238,7 @@ This release fixes an important bug that caused the operator to crash when prome
 
 ### 🚀 New components 🚀
 
-- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/crd-changelog.md) for detailed information. (#2620, #1907)
+- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/reference/crd-changelog.md) for detailed information. (#2620, #1907)
   Users are expected to migrate to `otelcol.v1beta1.opentelemetry.io`.
   The support for `otelcol.v1alpha1.opentelemetry.io` will be removed in the future.
   Follow [migration guide](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version) for upgrading already created collector instances.
@@ -2641,7 +2695,7 @@ This version brings stable semantic convention for network and HTTP. It includes
   :x: `protocol` which is now inferred from endpoint
   capabilities `[]string` => `map[Capability]bool` for enhanced configuration validation
 - `operator`: Enable Target Allocator Rewrite by default (#2208)
-  See [the documentation](/README.md#target-allocator) for details.
+  See [the documentation](/docs/target-allocator/README.md) for details.
   Use the `--feature-gates=-operator.collector.rewritetargetallocator` command line option to switch back to the old behaviour.
 
 ### 💡 Enhancements 💡

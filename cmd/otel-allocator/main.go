@@ -17,9 +17,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,9 +26,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/telemetry"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
@@ -38,9 +36,6 @@ var setupLog = ctrl.Log.WithName("setup")
 
 func main() {
 	var (
-		// allocatorPrehook will be nil if filterStrategy is not set or
-		// unrecognized. No filtering will be used in this case.
-		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
 		collectorWatcher *collector.Watcher
@@ -81,15 +76,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	metricExporter, promErr := otelprom.New()
-	if promErr != nil {
-		panic(promErr)
+	metricsGatherer, shutdownMeterProvider, mpErr := telemetry.SetupMeterProvider(ctx, cfg)
+	if mpErr != nil {
+		setupLog.Error(mpErr, "Unable to set up metrics")
+		os.Exit(1)
 	}
-	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
-	otel.SetMeterProvider(meterProvider)
+	defer func() {
+		// Flush and close exporters (notably the OTLP reader) on shutdown so the final
+		// batch of metrics is delivered.
+		if shutdownErr := shutdownMeterProvider(context.Background()); shutdownErr != nil {
+			setupLog.Error(shutdownErr, "Error shutting down meter provider")
+		}
+	}()
 
-	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -109,6 +109,10 @@ func main() {
 	if cfg.AllowInsecureAuthSecrets {
 		httpOptions = append(httpOptions, server.WithInsecureAuthSecrets())
 	}
+	// Serve /metrics from the union of the default registry (Prometheus service discovery,
+	// Go runtime and process collectors) and the dedicated SDK registry (OTel SDK metrics),
+	// as assembled by setupMeterProvider.
+	httpOptions = append(httpOptions, server.WithMetricsGatherer(metricsGatherer))
 	srv, serverErr := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	if serverErr != nil {
 		panic(serverErr)
@@ -123,7 +127,7 @@ func main() {
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer, targetErr := target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	targetDiscoverer, targetErr := target.NewDiscoverer(log, discoveryManager, cfg.FilterStrategy, srv, allocator.SetTargets)
 	if targetErr != nil {
 		panic(targetErr)
 	}

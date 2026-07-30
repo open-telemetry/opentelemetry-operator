@@ -8,7 +8,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-ta
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine/curl:latest
           volumeMounts:
             - name: tls-secret
               mountPath: /etc/tls
@@ -53,7 +53,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: verify-cert
-          image: mirror.gcr.io/nicolaka/netshoot:latest
+          image: registry.access.redhat.com/ubi9/ubi:latest
           command:
             - /bin/sh
             - -c
@@ -80,8 +80,7 @@ spec:
 
               echo "ConfigMap response: $CM_RESPONSE"
 
-              # Use jq to parse JSON (available in netshoot)
-              INITIAL_DATE=$(echo "$CM_RESPONSE" | jq -r '.data["initial-date"]' 2>/dev/null)
+              INITIAL_DATE=$(echo "$CM_RESPONSE" | tr -d '\n' | sed -n 's/.*"initial-date":[[:space:]]*"\([^"]*\)".*/\1/p')
 
               if [ -z "$INITIAL_DATE" ] || [ "$INITIAL_DATE" = "null" ]; then
                 echo "ERROR: Failed to get initial certificate date from ConfigMap"

@@ -1,9 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: opentelemetry-operator-pod-webhook
-  namespace: opentelemetry-operator-system
-spec:
-  replicas: 2
-status:
-  availableReplicas: 2

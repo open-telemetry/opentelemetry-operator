@@ -20,7 +20,6 @@ func (*mockAllocator) SetCollectors(map[string]*allocation.Collector)           
 func (*mockAllocator) SetTargets([]*target.Item)                                  {}
 func (*mockAllocator) Collectors() map[string]*allocation.Collector               { return nil }
 func (*mockAllocator) GetTargetsForCollectorAndJob(string, string) []*target.Item { return nil }
-func (*mockAllocator) SetFilter(allocation.Filter)                                {}
 func (*mockAllocator) SetFallbackStrategy(allocation.Strategy)                    {}
 
 func (m *mockAllocator) TargetItems() map[target.ItemHash]*target.Item {

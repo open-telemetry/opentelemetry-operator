@@ -18,6 +18,7 @@ var _ Parser = &GenericParser[SingleEndpointConfig]{}
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
 	name            string
+	aliases         []string
 	settings        *Settings[T]
 	portParser      PortParser[T]
 	rbacGen         RBACRuleGenerator[T]
@@ -120,6 +121,11 @@ func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config any) ([
 
 func (g *GenericParser[T]) ParserType() string {
 	return ComponentType(g.name)
+}
+
+// ParserAliases returns alternative names that resolve to this parser.
+func (g *GenericParser[T]) ParserAliases() []string {
+	return g.aliases
 }
 
 func (g *GenericParser[T]) ParserName() string {

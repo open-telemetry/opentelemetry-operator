@@ -8,18 +8,39 @@ spec:
   steps:
   - name: Enable operator network policy
     try:
-    - command:
-        entrypoint: kubectl
-        args:
-          - patch
-          - deployment
-          - opentelemetry-operator-controller-manager
-          - -n
-          - opentelemetry-operator-system
-          - --type=json
-          - -p
-          - '[{"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "FEATURE_GATES", "value": "operator.networkpolicy,operand.networkpolicy"}}]'
-    # Adding 10s sleep here cause sometimes the pod will be in running state for a while but can fail later if there is any issue with the component startup.
+    - script:
+        timeout: 180s
+        content: |
+          #!/bin/bash
+          set -e
+          OTEL_NAMESPACE=opentelemetry-operator-system
+          GATE_VALUE="operator.networkpolicy,operand.networkpolicy"
+
+          # Check if operator is deployed via OLM (Subscription exists)
+          SUB_NAME=$(kubectl get subscription.operators.coreos.com -n "$OTEL_NAMESPACE" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+
+          if [ -n "$SUB_NAME" ]; then
+            echo "OLM detected — feature gates are expected to be set via CSV already"
+            DEP_ENV=$(kubectl get deployment opentelemetry-operator-controller-manager \
+              -n "$OTEL_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].env}' 2>/dev/null || true)
+            if echo "$DEP_ENV" | grep -q "FEATURE_GATES"; then
+              echo "FEATURE_GATES already present in controller-manager, no patching needed"
+            else
+              echo "WARNING: FEATURE_GATES not found in controller-manager deployment"
+              exit 1
+            fi
+          else
+            echo "No OLM — patching deployment directly"
+            kubectl patch deployment opentelemetry-operator-controller-manager \
+              -n "$OTEL_NAMESPACE" --type=json \
+              -p "[{\"op\":\"add\",\"path\":\"/spec/template/spec/containers/0/env/-\",\"value\":{\"name\":\"FEATURE_GATES\",\"value\":\"$GATE_VALUE\"}}]"
+          fi
+
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s
+          echo "Operator ready with network policy feature gates"
     - sleep:
         duration: 10s
     - assert:
