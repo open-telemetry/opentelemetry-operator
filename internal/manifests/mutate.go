@@ -5,6 +5,7 @@ package manifests
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 
 	"dario.cat/mergo"
@@ -23,6 +24,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
@@ -59,7 +61,7 @@ var ImmutableChangeErr *ImmutableFieldChangeErr
 // In order for the operator to reconcile other types, they must be added here.
 // The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
 // to be set by the controller-runtime package through a client get call.
-func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
+func MutateFuncFor(existing, desired client.Object, cfg config.Config) controllerutil.MutateFn {
 	return func() error {
 		// Get the existing annotations and override any conflicts with the desired annotations
 		// This will preserve any annotations on the existing set.
@@ -120,17 +122,17 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 		case *appsv1.Deployment:
 			dpl := existing
 			wantDpl := desired.(*appsv1.Deployment)
-			return mutateDeployment(dpl, wantDpl)
+			return mutateDeployment(dpl, wantDpl, cfg)
 
 		case *appsv1.DaemonSet:
 			dpl := existing
 			wantDpl := desired.(*appsv1.DaemonSet)
-			return mutateDaemonset(dpl, wantDpl)
+			return mutateDaemonset(dpl, wantDpl, cfg)
 
 		case *appsv1.StatefulSet:
 			sts := existing
 			wantSts := desired.(*appsv1.StatefulSet)
-			return mutateStatefulSet(sts, wantSts)
+			return mutateStatefulSet(sts, wantSts, cfg)
 
 		case *monitoringv1.ServiceMonitor:
 			svcMonitor := existing
@@ -308,7 +310,7 @@ func mutateService(existing, desired *corev1.Service) {
 	existing.Spec.ClusterIPs = clusterIPs
 }
 
-func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
+func mutateDaemonset(existing, desired *appsv1.DaemonSet, cfg config.Config) error {
 	if !existing.CreationTimestamp.IsZero() {
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
@@ -322,10 +324,10 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
 
-	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template, cfg)
 }
 
-func mutateDeployment(existing, desired *appsv1.Deployment) error {
+func mutateDeployment(existing, desired *appsv1.Deployment, cfg config.Config) error {
 	if !existing.CreationTimestamp.IsZero() {
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
@@ -342,10 +344,10 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.Strategy = desired.Spec.Strategy
 
-	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template, cfg)
 }
 
-func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
+func mutateStatefulSet(existing, desired *appsv1.StatefulSet, cfg config.Config) error {
 	if !existing.CreationTimestamp.IsZero() {
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
@@ -376,7 +378,7 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
 
-	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template, cfg)
 }
 
 func mutateCertificate(existing, desired *cmv1.Certificate) {
@@ -391,49 +393,42 @@ func mutateIssuer(existing, desired *cmv1.Issuer) {
 	existing.Spec = desired.Spec
 }
 
-// operatorPrometheusAnnotationKeys is the set of pod-template annotation keys
-// the operator stamps when it adds the default prometheus.io/* scrape
-// annotations. The mutate path treats these as operator-owned only when the
-// marker manifestutils.PrometheusAnnotationsAddedKey is present on the
-// existing pod template; in that case any key in this set that is absent from
-// the desired pod template is stripped from the existing pod template before
-// the preserve-external-annotations merge runs. This lets the
-// spec.observability.metrics.disablePrometheusAnnotations feature toggle take
-// effect on already-running collectors without clobbering prometheus.io/*
-// annotations the user set out of band.
-var operatorPrometheusAnnotationKeys = []string{
-	"prometheus.io/scrape",
-	"prometheus.io/port",
-	"prometheus.io/path",
-	manifestutils.PrometheusAnnotationsAddedKey,
-}
-
-func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
-	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
-		return err
-	}
-
-	// Strip operator-stamped prometheus annotations when the marker on the
-	// existing pod template signals operator ownership and the desired pod
-	// template no longer includes them. See the comment on
-	// operatorPrometheusAnnotationKeys for the rationale.
-	if existing.Annotations != nil {
-		if _, hasMarker := existing.Annotations[manifestutils.PrometheusAnnotationsAddedKey]; hasMarker {
-			for _, key := range operatorPrometheusAnnotationKeys {
-				if _, inDesired := desired.Annotations[key]; !inDesired {
-					delete(existing.Annotations, key)
-				}
-			}
-		}
-	}
-
-	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {
-		return err
-	}
-
+// mutatePodTemplate makes the pod template metadata authoritative: annotations
+// and labels are replaced with the desired state generated from the CR, so
+// entries removed from the CR (e.g. spec.podAnnotations) are also removed from
+// the workload. Entries on the existing template whose key matches one of the
+// configured preserve patterns (config.PreservedAnnotations /
+// config.PreservedLabels) are carried over, which lets external tooling
+// (ArgoCD, kubectl rollout restart, policy engines) own specific keys.
+// Note: a key that is both present in the CR and matches a preserve pattern can
+// be changed but not deleted via the CR.
+func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec, cfg config.Config) error {
+	existing.Labels = mergePreserved(existing.Labels, desired.Labels, cfg.PreservedLabels)
+	existing.Annotations = mergePreserved(existing.Annotations, desired.Annotations, cfg.PreservedAnnotations)
 	existing.Spec = desired.Spec
 
 	return nil
+}
+
+// mergePreserved returns a copy of desired, carrying over entries from existing
+// whose key matches one of the preservePatterns. Keys present in desired always
+// take precedence. A nil result is returned when there is nothing to set, so
+// that an empty map never round-trips into a perpetual update loop.
+func mergePreserved(existing, desired map[string]string, preservePatterns []string) map[string]string {
+	result := make(map[string]string, len(desired))
+	maps.Copy(result, desired)
+	for k, v := range existing {
+		if _, ok := result[k]; ok {
+			continue
+		}
+		if manifestutils.IsFilteredSet(k, preservePatterns) {
+			result[k] = v
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {
