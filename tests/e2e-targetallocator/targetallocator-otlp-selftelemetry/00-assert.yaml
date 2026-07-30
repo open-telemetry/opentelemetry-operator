@@ -1,6 +1,6 @@
-# Collector deployment is ready.
+# Collector statefulset is ready.
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: ta-selftelemetry-collector
   namespace: ($namespace)
