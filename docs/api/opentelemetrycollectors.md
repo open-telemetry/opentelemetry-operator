@@ -20533,6 +20533,22 @@ Note that the custom service name is not created by the operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>sessionAffinity</b></td>
+        <td>string</td>
+        <td>
+          SessionAffinity specifies the session affinity type for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfig">sessionAffinityConfig</a></b></td>
+        <td>object</td>
+        <td>
+          SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>shareProcessNamespace</b></td>
         <td>boolean</td>
         <td>
@@ -32068,6 +32084,65 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.sessionAffinityConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfigclientip">clientIP</a></b></td>
+        <td>object</td>
+        <td>
+          clientIP contains the configurations of Client IP based session affinity.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.sessionAffinityConfig.clientIP
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecsessionaffinityconfig)</sup></sup>
+
+
+
+clientIP contains the configurations of Client IP based session affinity.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+Default value is 10800(for 3 hours).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr></tbody>

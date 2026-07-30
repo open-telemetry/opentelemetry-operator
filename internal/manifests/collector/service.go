@@ -91,9 +91,11 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Name: "monitoring",
 				Port: metricsPort,
 			}},
-			IPFamilies:          params.OtelCol.Spec.IpFamilies,
-			IPFamilyPolicy:      params.OtelCol.Spec.IpFamilyPolicy,
-			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
+			IPFamilies:            params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
+			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
+			SessionAffinity:       sessionAffinity(params),
+			SessionAffinityConfig: params.OtelCol.Spec.SessionAffinityConfig,
 		},
 	}, nil
 }
@@ -125,9 +127,11 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:               ports,
-			Selector:            manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
-			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
+			Ports:                 ports,
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
+			SessionAffinity:       sessionAffinity(params),
+			SessionAffinityConfig: params.OtelCol.Spec.SessionAffinityConfig,
 		},
 	}, nil
 }
@@ -201,8 +205,17 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			IPFamilies:            params.OtelCol.Spec.IpFamilies,
 			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
 			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
+			SessionAffinity:       sessionAffinity(params),
+			SessionAffinityConfig: params.OtelCol.Spec.SessionAffinityConfig,
 		},
 	}, nil
+}
+
+func sessionAffinity(params manifests.Params) corev1.ServiceAffinity {
+	if params.OtelCol.Spec.SessionAffinity != nil {
+		return *params.OtelCol.Spec.SessionAffinity
+	}
+	return ""
 }
 
 type PortNumberKey struct {

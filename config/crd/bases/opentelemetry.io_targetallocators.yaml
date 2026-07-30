@@ -2929,6 +2929,17 @@ spec:
                 type: object
               serviceAccount:
                 type: string
+              sessionAffinity:
+                type: string
+              sessionAffinityConfig:
+                properties:
+                  clientIP:
+                    properties:
+                      timeoutSeconds:
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
               shareProcessNamespace:
                 type: boolean
               terminationGracePeriodSeconds:
