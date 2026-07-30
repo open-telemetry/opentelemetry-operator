@@ -153,38 +153,8 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	}
 
 	if len(taSpec.Telemetry.Metrics.Readers) > 0 {
-		readers := make([]any, 0, len(taSpec.Telemetry.Metrics.Readers))
-		for _, r := range taSpec.Telemetry.Metrics.Readers {
-			if r.Periodic == nil {
-				continue
-			}
-			p := r.Periodic
-			exporter := map[string]any{}
-			if g := p.Exporter.OtlpGrpc; g != nil {
-				grpcMap := buildOTLPExporterMap(g.TAOTLPCommonConfig)
-				if g.Tls != nil && g.Tls.Insecure {
-					grpcMap["tls"] = map[string]any{"insecure": true}
-				}
-				exporter["otlp_grpc"] = grpcMap
-			} else if h := p.Exporter.OtlpHttp; h != nil {
-				exporter["otlp_http"] = buildOTLPExporterMap(h.TAOTLPCommonConfig)
-			}
-			// interval and timeout are in milliseconds per the OTel declarative config spec.
-			periodic := map[string]any{"exporter": exporter}
-			if p.Interval != nil {
-				periodic["interval"] = int(p.Interval.Milliseconds())
-			}
-			if p.Timeout != nil {
-				periodic["timeout"] = int(p.Timeout.Milliseconds())
-			}
-			readers = append(readers, map[string]any{"periodic": periodic})
-		}
-		if len(readers) > 0 {
-			taConfig["telemetry"] = map[string]any{
-				"metrics": map[string]any{
-					"readers": readers,
-				},
-			}
+		if tc := buildTelemetryConfig(taSpec.Telemetry); tc != nil {
+			taConfig["telemetry"] = tc
 		}
 	}
 
@@ -206,20 +176,105 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	}, nil
 }
 
-// buildOTLPExporterMap constructs the common fields shared by otlp_grpc and otlp_http exporters.
-func buildOTLPExporterMap(base v1beta1.TAOTLPCommonConfig) map[string]any {
-	m := map[string]any{"endpoint": base.Endpoint}
-	if len(base.Headers) > 0 {
-		h := make([]map[string]any, len(base.Headers))
-		for i, hdr := range base.Headers {
-			h[i] = map[string]any{"name": hdr.Name, "value": hdr.Value}
+// taTelemetryConfig and its nested types are private intermediate structs used
+// solely for YAML serialization. Their yaml tags match the TA binary's config
+// schema exactly, so no manual map construction is needed.
+
+type taTelemetryConfig struct {
+	Metrics *taMetricsConfig `yaml:"metrics,omitempty"`
+}
+
+type taMetricsConfig struct {
+	Readers []taMetricReader `yaml:"readers,omitempty"`
+}
+
+type taMetricReader struct {
+	Periodic *taPeriodicReader `yaml:"periodic,omitempty"`
+}
+
+type taPeriodicReader struct {
+	Interval int              `yaml:"interval,omitempty"`
+	Timeout  int              `yaml:"timeout,omitempty"`
+	Exporter taExporterConfig `yaml:"exporter"`
+}
+
+type taExporterConfig struct {
+	OTLPGrpc *taOTLPGrpc `yaml:"otlp_grpc,omitempty"`
+	OTLPHttp *taOTLPHttp `yaml:"otlp_http,omitempty"`
+}
+
+type taOTLPGrpc struct {
+	Endpoint              string        `yaml:"endpoint,omitempty"`
+	Headers               []taNameValue `yaml:"headers,omitempty"`
+	TemporalityPreference string        `yaml:"temporality_preference,omitempty"`
+	Tls                   *taTlsConfig  `yaml:"tls,omitempty"`
+}
+
+type taOTLPHttp struct {
+	Endpoint              string        `yaml:"endpoint,omitempty"`
+	Headers               []taNameValue `yaml:"headers,omitempty"`
+	TemporalityPreference string        `yaml:"temporality_preference,omitempty"`
+}
+
+type taNameValue struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
+}
+
+type taTlsConfig struct {
+	Insecure bool `yaml:"insecure,omitempty"`
+}
+
+// buildTelemetryConfig converts the CRD telemetry spec into the intermediate
+// struct that is serialized directly to YAML. Returns nil if no valid readers.
+func buildTelemetryConfig(tel v1beta1.TargetAllocatorTelemetry) *taTelemetryConfig {
+	readers := make([]taMetricReader, 0, len(tel.Metrics.Readers))
+	for _, r := range tel.Metrics.Readers {
+		if r.Periodic == nil {
+			continue
 		}
-		m["headers"] = h
+		p := r.Periodic
+		pr := taPeriodicReader{}
+		if p.Interval != nil {
+			pr.Interval = int(p.Interval.Milliseconds())
+		}
+		if p.Timeout != nil {
+			pr.Timeout = int(p.Timeout.Milliseconds())
+		}
+		if g := p.Exporter.OtlpGrpc; g != nil {
+			grpc := &taOTLPGrpc{
+				Endpoint:              g.Endpoint,
+				Headers:               convertHeaders(g.Headers),
+				TemporalityPreference: g.TemporalityPreference,
+			}
+			if g.Tls != nil && g.Tls.Insecure {
+				grpc.Tls = &taTlsConfig{Insecure: true}
+			}
+			pr.Exporter = taExporterConfig{OTLPGrpc: grpc}
+		} else if h := p.Exporter.OtlpHttp; h != nil {
+			pr.Exporter = taExporterConfig{OTLPHttp: &taOTLPHttp{
+				Endpoint:              h.Endpoint,
+				Headers:               convertHeaders(h.Headers),
+				TemporalityPreference: h.TemporalityPreference,
+			}}
+		}
+		readers = append(readers, taMetricReader{Periodic: &pr})
 	}
-	if base.TemporalityPreference != "" {
-		m["temporality_preference"] = base.TemporalityPreference
+	if len(readers) == 0 {
+		return nil
 	}
-	return m
+	return &taTelemetryConfig{Metrics: &taMetricsConfig{Readers: readers}}
+}
+
+func convertHeaders(headers []v1beta1.TANameValuePair) []taNameValue {
+	if len(headers) == 0 {
+		return nil
+	}
+	out := make([]taNameValue, len(headers))
+	for i, h := range headers {
+		out[i] = taNameValue{Name: h.Name, Value: h.Value}
+	}
+	return out
 }
 
 func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {

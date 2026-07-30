@@ -1,0 +1,50 @@
+# Collector deployment is ready.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ta-selftelemetry-collector
+  namespace: ($namespace)
+status:
+  readyReplicas: 1
+
+---
+# TA deployment is ready.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ta-selftelemetry-targetallocator
+  namespace: ($namespace)
+status:
+  readyReplicas: 1
+
+---
+# Collector pod is running.
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: ($namespace)
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: ($namespace).ta-selftelemetry
+status:
+  phase: Running
+  containerStatuses:
+    - name: otc-container
+      ready: true
+      started: true
+
+---
+# TA pod is running.
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: ($namespace)
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: ($namespace).ta-selftelemetry
+status:
+  phase: Running
+  containerStatuses:
+    - name: ta-container
+      ready: true
+      started: true
