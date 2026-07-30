@@ -7,8 +7,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"maps"
+	"regexp"
+	"strconv"
 
 	go_yaml "github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml/token"
 )
 
 type ComponentKind int
@@ -115,10 +118,27 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
+// exponentWithoutDotRegex matches integers written in exponential notation without a
+// decimal point (e.g. "0e12", "1e10"). goccy/go-yaml's own number detection treats such
+// strings as plain text and does not quote them, but YAML consumers that follow the
+// YAML core schema (e.g. the collector's config loader) parse them back as floats.
+var exponentWithoutDotRegex = regexp.MustCompile(`^[-+]?[0-9]+[eE][-+]?[0-9]+$`)
+
+// quoteAmbiguousStrings forces quoting of string values that would otherwise be emitted
+// as plain scalars but are ambiguous under the YAML core schema, so they round-trip back
+// as strings instead of being reinterpreted as numbers/bools/null downstream.
+func quoteAmbiguousStrings(s string) ([]byte, error) {
+	if token.IsNeedQuoted(s) || exponentWithoutDotRegex.MatchString(s) {
+		return []byte(strconv.Quote(s)), nil
+	}
+	return []byte(s), nil
+}
+
 // Yaml encodes the Config as a YAML string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
-	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt(),
+		go_yaml.CustomMarshaler[string](quoteAmbiguousStrings))
 	if err := yamlEncoder.Encode(&c); err != nil {
 		return "", err
 	}
