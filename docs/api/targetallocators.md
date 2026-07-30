@@ -111,11 +111,11 @@ doing so, you wil accept the risk of it breaking things.<br/>
         <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation.
-The current options are least-weighted, consistent-hashing and per-node. The default is
-consistent-hashing.
+The current options are least-weighted, consistent-hashing, consistent-hashing-endpoint and per-node.
+The default is consistent-hashing.
 WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
+            <i>Enum</i>: least-weighted, consistent-hashing, consistent-hashing-endpoint, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>

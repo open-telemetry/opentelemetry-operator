@@ -111,7 +111,7 @@ type TargetAllocatorPrometheusCR struct {
 
 type (
 	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector
-	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;consistent-hashing-endpoint;per-node
 	TargetAllocatorAllocationStrategy string
 	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
 	// +kubebuilder:validation:Enum="";relabel-config
@@ -124,6 +124,11 @@ const (
 
 	// TargetAllocatorAllocationStrategyConsistentHashing targets will be consistently added to collectors, which allows a high-availability setup.
 	TargetAllocatorAllocationStrategyConsistentHashing TargetAllocatorAllocationStrategy = "consistent-hashing"
+
+	// TargetAllocatorAllocationStrategyConsistentHashingEndpoint is like consistent-hashing, but keys the hash on
+	// the target's scrape endpoint (address, scheme, metrics path, and query params) instead of on the address
+	// alone, so targets that share a host:port but differ by path or params are spread across collectors.
+	TargetAllocatorAllocationStrategyConsistentHashingEndpoint TargetAllocatorAllocationStrategy = "consistent-hashing-endpoint"
 
 	// TargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
 	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = "per-node"
