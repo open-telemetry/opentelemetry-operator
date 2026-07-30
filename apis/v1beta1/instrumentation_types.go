@@ -269,16 +269,8 @@ type InstrumentationStatus struct {
 	UpgradeBlockedVersions map[string]string `json:"upgradeBlockedVersions,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=otelinst;otelinsts
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.envConfig.exporter.endpoint"
-// +kubebuilder:printcolumn:name="Sampler",type="string",JSONPath=".spec.envConfig.sampler.type"
-// +kubebuilder:printcolumn:name="Sampler Arg",type="string",JSONPath=".spec.envConfig.sampler.argument"
-// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Instrumentation"
-// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1}}
-
+// +kubebuilder:skipversion
+//
 // Instrumentation is the spec for OpenTelemetry instrumentation.
 type Instrumentation struct {
 	Status            InstrumentationStatus `json:"status,omitempty"`
@@ -286,8 +278,6 @@ type Instrumentation struct {
 	Spec              InstrumentationSpec `json:"spec,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
-
-// +kubebuilder:object:root=true
 
 // InstrumentationList contains a list of Instrumentation.
 type InstrumentationList struct {
