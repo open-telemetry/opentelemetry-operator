@@ -624,11 +624,7 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
 
-# ClusterObservability needs the kubelet to serve a cluster-CA-signed cert so the
-# bundled kubeletstats receiver can verify it via the SA-token CA bundle. Override
-# KIND_CONFIG to a kubelet-config that enables serverTLSBootstrap.
 .PHONY: prepare-e2e-clusterobservability
-prepare-e2e-clusterobservability: KIND_CONFIG = kind-clusterobservability-$(KUBE_VERSION).yaml
 prepare-e2e-clusterobservability: add-rbac-permissions-to-operator
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.clusterobservability
 	@$(MAKE) prepare-e2e
@@ -737,14 +733,7 @@ ifeq (true,$(START_KIND_CLUSTER))
 	else \
 		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG); \
 	fi
-	@$(MAKE) approve-kubelet-csrs
 endif
-
-# Approve any kubelet-serving CSRs created via serverTLSBootstrap. No-op for
-# kind configs that do not enable bootstrap.
-.PHONY: approve-kubelet-csrs
-approve-kubelet-csrs:
-	@kubectl get csr -o jsonpath='{range .items[?(@.spec.signerName=="kubernetes.io/kubelet-serving")]}{.metadata.name}{" "}{end}' | xargs -r kubectl certificate approve
 
 # Stop kind cluster
 .PHONY: stop-kind

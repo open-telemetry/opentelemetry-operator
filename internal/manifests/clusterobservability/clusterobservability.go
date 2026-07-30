@@ -98,7 +98,7 @@ func buildAgentCollector(params manifests.Params, distro config.DistroProvider) 
 	}
 
 	agentCollectorName := fmt.Sprintf("%s-%s", co.Name, AgentCollectorSuffix)
-	labels := manifestutils.Labels(co.ObjectMeta, agentCollectorName, params.Config.CollectorImage, ComponentClusterObservability, params.Config.LabelsFilter)
+	labels := manifestutils.Labels(co.ObjectMeta, agentCollectorName, params.Config.ClusterObservabilityCollectorImage, ComponentClusterObservability, params.Config.LabelsFilter)
 	labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	labels["app.kubernetes.io/component"] = ComponentClusterObservability
 
@@ -163,7 +163,7 @@ func buildClusterCollector(params manifests.Params) (*v1beta1.OpenTelemetryColle
 
 	replicas := int32(1)
 	clusterCollectorName := fmt.Sprintf("%s-%s", co.Name, ClusterCollectorSuffix)
-	clusterLabels := manifestutils.Labels(co.ObjectMeta, clusterCollectorName, params.Config.CollectorImage, ComponentClusterObservability, params.Config.LabelsFilter)
+	clusterLabels := manifestutils.Labels(co.ObjectMeta, clusterCollectorName, params.Config.ClusterObservabilityCollectorImage, ComponentClusterObservability, params.Config.LabelsFilter)
 	clusterLabels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	clusterLabels["app.kubernetes.io/component"] = ComponentClusterObservability
 	clusterLabels[constants.LabelTargetAllocator] = naming.TargetAllocator(co.Name)

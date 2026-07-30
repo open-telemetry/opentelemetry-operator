@@ -26,3 +26,20 @@ metadata:
   name: cluster-obs-targetallocator-targetallocator
 status:
   readyReplicas: 1
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+status:
+  phase: Ready
+  (conditions[?type == 'Ready']):
+  - status: "True"
+    reason: Ready
+  componentsStatus:
+    agent:
+      ready: true
+    cluster:
+      ready: true
+    instrumentation:
+      ready: true

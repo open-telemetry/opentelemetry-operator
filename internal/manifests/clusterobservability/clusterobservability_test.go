@@ -39,10 +39,12 @@ func TestBuildCollectors_UseClusterObservabilityCollectorImage(t *testing.T) {
 	agent, err := buildAgentCollector(params, config.DistroProvider(""))
 	require.NoError(t, err)
 	assert.Equal(t, img, agent.Spec.Image)
+	assert.Equal(t, "9.9.9", agent.Labels["app.kubernetes.io/version"])
 
 	cluster, err := buildClusterCollector(params)
 	require.NoError(t, err)
 	assert.Equal(t, img, cluster.Spec.Image)
+	assert.Equal(t, "9.9.9", cluster.Labels["app.kubernetes.io/version"])
 }
 
 func TestAgentVolumesAndMounts_DistroConditional(t *testing.T) {
@@ -86,8 +88,6 @@ func TestAgentVolumesAndMounts_DistroConditional(t *testing.T) {
 			require.NotNil(t, m.MountPropagation)
 			assert.Equal(t, corev1.MountPropagationHostToContainer, *m.MountPropagation)
 
-			// The granular per-directory host mounts (and the os-release special
-			// case) are replaced by the single host-root mount.
 			for _, gone := range []string{"host-dev", "host-etc", "host-proc", "host-sys", "host-usr-lib-osrelease"} {
 				assert.NotContains(t, volumeNames(volumes), gone, "distro=%q must not mount %s", distro, gone)
 			}
@@ -114,7 +114,6 @@ func TestAgentSecurityContext(t *testing.T) {
 		assert.Equal(t, int64(0), *sc.RunAsUser)
 		require.NotNil(t, sc.RunAsNonRoot)
 		assert.False(t, *sc.RunAsNonRoot)
-		// No extra privileges beyond running as root: caps dropped, no escalation.
 		assert.ElementsMatch(t, []corev1.Capability{"ALL"}, sc.Capabilities.Drop)
 		require.NotNil(t, sc.AllowPrivilegeEscalation)
 		assert.False(t, *sc.AllowPrivilegeEscalation)

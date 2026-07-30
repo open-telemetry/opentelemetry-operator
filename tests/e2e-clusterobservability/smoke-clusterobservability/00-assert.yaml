@@ -25,8 +25,3 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: cluster-obs
----
-apiVersion: opentelemetry.io/v1alpha1
-kind: TargetAllocator
-metadata:
-  name: cluster-obs-targetallocator

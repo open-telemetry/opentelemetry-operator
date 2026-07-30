@@ -131,7 +131,7 @@ func updateClusterObservabilityStatus(ctx context.Context, log logr.Logger, cli 
 		LastUpdated: now,
 	}
 
-	// Check cluster collector status (Deployment)
+	// Check cluster collector status.
 	clusterCollectorStatus := checkClusterCollectorStatus(ctx, cli, co)
 	co.Status.ComponentsStatus[componentClusterCollector] = v1alpha1.ComponentStatus{
 		Ready:       clusterCollectorStatus.ready,

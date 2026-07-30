@@ -6,12 +6,23 @@ ClusterObservability provides a streamlined way to deploy and manage OpenTelemet
 
 ClusterObservability automatically creates and manages:
 - **Agent Collector**: DaemonSet for node-level metrics, logs, and host OTLP receiver
-- **Cluster Collector**: Deployment for cluster-level k8s metrics and events
+- **Cluster Collector**: StatefulSet for cluster-level k8s metrics and events
 - **Auto-Instrumentation**: Single Instrumentation CR for application instrumentation (points to local agent)
 
 The controller uses a **controller-of-controllers pattern**, creating `OpenTelemetryCollector` and `Instrumentation` CRs that are managed by their respective controllers.
 
 ## Quick Start
+
+The agent Collector requires `hostNetwork` and hostPath volumes. Where Pod
+Security Admission is enforced, label its namespace `privileged` before
+creating the `ClusterObservability` resource:
+
+```bash
+kubectl label namespace opentelemetry-operator-system \
+  pod-security.kubernetes.io/enforce=privileged --overwrite
+```
+
+OpenShift uses a scoped SecurityContextConstraints resource instead.
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -40,7 +51,7 @@ graph TB
     CO[ClusterObservability CR] --> Controller[ClusterObservability Controller]
     
     Controller --> OTLC1[OpenTelemetryCollector CR<br/>Agent DaemonSet]
-    Controller --> OTLC2[OpenTelemetryCollector CR<br/>Cluster Deployment]  
+    Controller --> OTLC2[OpenTelemetryCollector CR<br/>Cluster StatefulSet]
     Controller --> INSTR[Instrumentation CR<br/>Single Instance<br/>Points to local agent]
     
     OTLC1 --> OTC1[OpenTelemetryCollector Controller]
@@ -48,7 +59,7 @@ graph TB
     INSTR --> IC[Instrumentation Controller]
     
     OTC1 --> DS[Agent DaemonSet]
-    OTC2 --> DEP[Cluster Deployment]
+    OTC2 --> STS[Cluster StatefulSet]
     IC --> POD[Instrumented Pods]
     
     subgraph "Configuration System"
@@ -71,10 +82,11 @@ The controller automatically detects the K8s platform at startup (cached for eff
 | Platform | Auto-Detection | Platform-Specific Actions |
 |----------|---------------|---------------------------|
 | **OpenShift** | Checks for OpenShift API availability | Creates SecurityContextConstraints for collector pods; applies kubelet CA certificate configuration |
-| **Vanilla Kubernetes** | Default | No additional resources created |
+| **Vanilla Kubernetes / Talos** | Default | No additional resources created; namespaces enforcing Pod Security Standards must allow the agent's host access |
 | **Other Platforms** | Planned | Future support for EKS, GKE, AKS-specific configurations |
 
-This design allows the same `ClusterObservability` CR to work across different K8s distributions without user intervention.
+The CR remains portable, but platform admission controls must permit the
+agent's documented host access.
 
 ## Controller Interaction Flow
 
@@ -227,9 +239,14 @@ Agent collectors run as DaemonSet with `hostNetwork: true` and collect following
 
 The agent collector exposes OTLP ports on the host network, allowing instrumented applications to send telemetry to their local node's collector using `$(OTEL_NODE_IP):4317` or `$(OTEL_NODE_IP):4318`.
 
+Kubelet serving certificates are not always signed by the API-server CA
+available to service accounts, so the base configuration skips verification.
+On OpenShift, the controller mounts the kubelet-serving CA and enables
+verification.
+
 ### Cluster Collector Configuration
 
-Cluster collectors run as Deployment and collect:
+Cluster collectors run as StatefulSet and collect:
 - **Cluster Metrics**: Via `k8s_cluster` receiver
 
 ## Auto-Instrumentation
@@ -270,7 +287,7 @@ Status:
       Message:       Agent collector DaemonSet not ready: 0/3 pods ready
     Cluster:
       Last Updated:  2025-09-06T03:40:24Z
-      Message:       Cluster collector Deployment ready: 1/1 replicas ready
+      Message:       Cluster collector StatefulSet ready: 1/1 replicas ready
       Ready:         true
     Instrumentation:
       Last Updated:  2025-09-06T03:40:24Z

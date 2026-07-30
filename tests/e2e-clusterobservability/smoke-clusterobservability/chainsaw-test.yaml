@@ -9,7 +9,22 @@ spec:
     assert: 5m
     cleanup: 2m
   steps:
-  - name: Install sink and ClusterObservability
+  - name: Configure namespace pod security
+    try:
+    - script:
+        content: |
+          if ! kubectl api-resources --api-group=security.openshift.io -o name \
+            | grep -q '^securitycontextconstraints'; then
+            kubectl label namespace "$NAMESPACE" \
+              pod-security.kubernetes.io/enforce=privileged --overwrite
+          fi
+  - name: Install sink and Target Allocator
+    try:
+    - apply:
+        file: 00-install-prerequisites.yaml
+    - assert:
+        file: 00-assert-prerequisites.yaml
+  - name: Install ClusterObservability
     try:
     - apply:
         file: 00-install.yaml
@@ -22,6 +37,9 @@ spec:
   - name: Assert telemetry reaches the sink
     use:
       template: 02-assert-telemetry-flow.yaml
+  - name: Assert OpenShift-specific security and kubelet TLS
+    use:
+      template: 02-assert-openshift.yaml
   - name: Assert instrumented app traces reach the sink
     try:
     - apply:
@@ -53,6 +71,9 @@ spec:
     catch:
     - podLogs:
         selector: app=traces-demo
+  - name: Audit Collector and Target Allocator health
+    use:
+      template: 04-assert-component-health.yaml
   - name: Cleanup
     try:
     - delete:
@@ -75,3 +96,8 @@ spec:
           apiVersion: v1
           kind: Pod
           name: telemetry-trigger
+    - script:
+        content: |
+          kubectl delete event.events.k8s.io \
+            "clusterobservability-probe-$NAMESPACE" -n default \
+            --ignore-not-found
