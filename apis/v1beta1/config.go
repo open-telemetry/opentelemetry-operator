@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	go_yaml "github.com/goccy/go-yaml"
-	"github.com/goccy/go-yaml/token"
 )
 
 type ComponentKind int
@@ -124,22 +123,79 @@ type Config struct {
 // YAML core schema (e.g. the collector's config loader) parse them back as floats.
 var exponentWithoutDotRegex = regexp.MustCompile(`^[-+]?[0-9]+[eE][-+]?[0-9]+$`)
 
-// quoteAmbiguousStrings forces quoting of string values that would otherwise be emitted
-// as plain scalars but are ambiguous under the YAML core schema, so they round-trip back
-// as strings instead of being reinterpreted as numbers/bools/null downstream.
-func quoteAmbiguousStrings(s string) ([]byte, error) {
-	if token.IsNeedQuoted(s) || exponentWithoutDotRegex.MatchString(s) {
-		return []byte(strconv.Quote(s)), nil
+// quotedString forces goccy/go-yaml to emit the wrapped value as a quoted scalar. It is
+// only ever used to wrap individual ambiguous string values (see quoteAmbiguousValues)
+// rather than being registered for the whole `string` type: registering a
+// go_yaml.CustomMarshaler for `string` globally was tried first, but it interferes with
+// the encoder's IndentSequence(true) handling for every string, not just the ambiguous
+// ones, corrupting the indentation of unrelated nested sequences (e.g. Prometheus
+// receiver's static_configs/targets) elsewhere in the generated config.
+type quotedString string
+
+func (q quotedString) MarshalYAML() ([]byte, error) {
+	return []byte(strconv.Quote(string(q))), nil
+}
+
+// quoteAmbiguousValues returns a copy of a decoded YAML value tree (as produced by
+// AnyConfig, i.e. nested map[string]any/[]any) with string values that are ambiguous
+// under the YAML core schema rewritten to quotedString, so that Yaml() emits them quoted
+// and they round-trip back as strings instead of being reinterpreted as numbers
+// downstream. The input tree is left untouched: Config.Object maps are shared with the
+// source CR (e.g. via a shallow struct copy of Spec), so mutating them in place would
+// leak into the original object.
+func quoteAmbiguousValues(v any) any {
+	switch val := v.(type) {
+	case string:
+		if exponentWithoutDotRegex.MatchString(val) {
+			return quotedString(val)
+		}
+		return val
+	case map[string]any:
+		out := make(map[string]any, len(val))
+		for k, elem := range val {
+			out[k] = quoteAmbiguousValues(elem)
+		}
+		return out
+	case []any:
+		out := make([]any, len(val))
+		for i, elem := range val {
+			out[i] = quoteAmbiguousValues(elem)
+		}
+		return out
+	default:
+		return v
 	}
-	return []byte(s), nil
 }
 
 // Yaml encodes the Config as a YAML string.
 func (c *Config) Yaml() (string, error) {
+	encodable := *c
+	encodable.Receivers.Object, _ = quoteAmbiguousValues(c.Receivers.Object).(map[string]any)
+	encodable.Exporters.Object, _ = quoteAmbiguousValues(c.Exporters.Object).(map[string]any)
+	if c.Processors != nil {
+		processors := *c.Processors
+		processors.Object, _ = quoteAmbiguousValues(c.Processors.Object).(map[string]any)
+		encodable.Processors = &processors
+	}
+	if c.Connectors != nil {
+		connectors := *c.Connectors
+		connectors.Object, _ = quoteAmbiguousValues(c.Connectors.Object).(map[string]any)
+		encodable.Connectors = &connectors
+	}
+	if c.Extensions != nil {
+		extensions := *c.Extensions
+		extensions.Object, _ = quoteAmbiguousValues(c.Extensions.Object).(map[string]any)
+		encodable.Extensions = &extensions
+	}
+	if c.Service.Telemetry != nil {
+		telemetry := *c.Service.Telemetry
+		telemetry.Object, _ = quoteAmbiguousValues(c.Service.Telemetry.Object).(map[string]any)
+		encodable.Service.Telemetry = &telemetry
+	}
+
 	var buf bytes.Buffer
-	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt(),
-		go_yaml.CustomMarshaler[string](quoteAmbiguousStrings))
-	if err := yamlEncoder.Encode(&c); err != nil {
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
+	if err := yamlEncoder.Encode(&encodable); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
