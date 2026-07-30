@@ -5,6 +5,7 @@ package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
@@ -266,4 +267,31 @@ type InstrumentationStatus struct {
 	// explaining why.
 	// +optional
 	UpgradeBlockedVersions map[string]string `json:"upgradeBlockedVersions,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=otelinst;otelinsts
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.envConfig.exporter.endpoint"
+// +kubebuilder:printcolumn:name="Sampler",type="string",JSONPath=".spec.envConfig.sampler.type"
+// +kubebuilder:printcolumn:name="Sampler Arg",type="string",JSONPath=".spec.envConfig.sampler.argument"
+// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Instrumentation"
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1}}
+
+// Instrumentation is the spec for OpenTelemetry instrumentation.
+type Instrumentation struct {
+	Status            InstrumentationStatus `json:"status,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	Spec              InstrumentationSpec `json:"spec,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// InstrumentationList contains a list of Instrumentation.
+type InstrumentationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Instrumentation `json:"items"`
 }
