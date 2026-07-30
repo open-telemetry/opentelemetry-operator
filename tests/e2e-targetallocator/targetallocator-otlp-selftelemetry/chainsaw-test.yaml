@@ -21,6 +21,8 @@ spec:
             file: 00-assert.yaml
       catch:
         - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-targetallocator
+        - podLogs:
             selector: app.kubernetes.io/component=opentelemetry-collector
 
     - name: Wait for collector to receive TA metrics via OTLP
