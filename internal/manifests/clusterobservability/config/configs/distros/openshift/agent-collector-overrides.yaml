@@ -2,11 +2,12 @@
 # These settings will be merged with agent-collector-base.yaml
 
 receivers:
-  kubeletstats:
+  kubelet_stats:
     collection_interval: 10s
     auth_type: serviceAccount
     endpoint: "https://${env:K8S_NODE_NAME}:10250"
     ca_file: /etc/kubelet-serving-ca/ca-bundle.crt
+    insecure_skip_verify: false
     metric_groups:
       - container
       - pod
@@ -15,7 +16,7 @@ receivers:
     extra_metadata_labels:
       - container.id
     
-  filelog:
+  file_log:
     include:
       - "/var/log/pods/*/*/*.log"
       - "/var/log/containers/*.log"
@@ -31,12 +32,12 @@ receivers:
         id: container-parser
 
 processors:
-  resourcedetection:
+  resource_detection:
     # OpenShift resource detector will add cloud provider attributes automatically
-    detectors: ["env", "system", "k8snode", "openshift"]
+    detectors: ["env", "system", "k8s_api", "openshift"]
     timeout: 5s
     
-  k8sattributes:
+  k8s_attributes:
     auth_type: serviceAccount
     passthrough: false
     filter:

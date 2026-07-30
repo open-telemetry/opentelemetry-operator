@@ -1,0 +1,83 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: assert-component-health
+spec:
+  try:
+  - script:
+      timeout: 3m
+      content: |
+        set -eu
+
+        audit_pods() {
+          selector="$1"
+          role="$2"
+          check_metrics="$3"
+          pods=$(kubectl get pods -n "$NAMESPACE" -l "$selector" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+          test -n "$pods" || {
+            echo "ERROR: no $role pods found"; return 1
+          }
+
+          for pod in $pods; do
+            echo "Auditing $role pod $pod"
+            restarts=$(kubectl get pod "$pod" -n "$NAMESPACE" \
+              -o jsonpath='{range .status.containerStatuses[*]}{.name}={.restartCount}{"\n"}{end}')
+            bad_restarts=$(printf '%s\n' "$restarts" | awk -F= '$2 != 0')
+            if [ -n "$bad_restarts" ]; then
+              echo "ERROR: $pod restarted containers:"
+              echo "$bad_restarts"
+              kubectl logs "$pod" -n "$NAMESPACE" --all-containers --previous || true
+              return 1
+            fi
+
+            logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers)
+            warnings=$(printf '%s\n' "$logs" | grep -Ei \
+              '(^|[[:space:]])warn(ing)?([[:space:]:]|$)|"level"[[:space:]]*:[[:space:]]*"warn(ing)?"' || true)
+            if [ -n "$warnings" ]; then
+              warning_count=$(printf '%s\n' "$warnings" | awk 'NF { count++ } END { print count + 0 }')
+              echo "Warnings from $pod ($warning_count lines; first 20):"
+              printf '%s\n' "$warnings" | sed -n '1,20p'
+            fi
+
+            errors=$(printf '%s\n' "$logs" | grep -Ei \
+              '(^|[[:space:]])(error|dpanic|panic|fatal)([[:space:]:]|$)|"level"[[:space:]]*:[[:space:]]*"(error|dpanic|panic|fatal)"' || true)
+            if [ -n "$errors" ]; then
+              echo "ERROR: error-level logs from $pod:"
+              echo "$errors"
+              return 1
+            fi
+
+          done
+
+          if [ "$check_metrics" = true ]; then
+            metrics=$(kubectl get --raw \
+              "/api/v1/namespaces/$NAMESPACE/pods/$pod:8888/proxy/metrics")
+            dropped=$(printf '%s\n' "$metrics" | awk \
+              '$1 ~ /^otelcol_(receiver_refused|exporter_enqueue_failed)_/ && ($NF + 0) > 0')
+            if [ -n "$dropped" ]; then
+              echo "ERROR: refused or dropped telemetry reported by $role:"
+              echo "$dropped"
+              return 1
+            fi
+
+            send_failures=$(printf '%s\n' "$metrics" | awk \
+              '$1 ~ /^otelcol_exporter_send_failed_/ && ($NF + 0) > 0')
+            if [ -n "$send_failures" ]; then
+              echo "Exporter send attempts failed in $role:"
+              echo "$send_failures"
+            fi
+          fi
+        }
+
+        audit_pods app.kubernetes.io/name=cluster-obs-agent "agent Collector" false
+        audit_pods app.kubernetes.io/name=cluster-obs-cluster "cluster Collector" true
+        audit_pods app.kubernetes.io/name=cluster-obs-targetallocator-targetallocator \
+          "Target Allocator" false
+
+        warning_events=$(kubectl get events -n "$NAMESPACE" \
+          --field-selector type=Warning --no-headers || true)
+        if [ -n "$warning_events" ]; then
+          echo "Warning events in $NAMESPACE:"
+          echo "$warning_events"
+        fi

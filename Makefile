@@ -476,6 +476,14 @@ e2e: chainsaw
 e2e-sidecar: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar $(CHAINSAW_SELECTOR)
 
+# End-to-end tests for ClusterObservability. The CRD is not bundled, so install
+# it directly from config/crd/bases/. --parallel 1 because only the oldest
+# active ClusterObservability CR reconciles.
+.PHONY: e2e-clusterobservability
+e2e-clusterobservability: chainsaw
+	kubectl apply -f config/crd/bases/opentelemetry.io_clusterobservabilities.yaml
+	$(CHAINSAW) test --test-dir ./tests/e2e-clusterobservability --report-name e2e-clusterobservability --parallel 1
+
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
@@ -615,6 +623,11 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 .PHONY: prepare-e2e-no-crds
 prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
+
+.PHONY: prepare-e2e-clusterobservability
+prepare-e2e-clusterobservability: add-rbac-permissions-to-operator
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.clusterobservability
+	@$(MAKE) prepare-e2e
 
 # Run operator-sdk scorecard tests for bundles
 .PHONY: scorecard-tests

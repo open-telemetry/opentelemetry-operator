@@ -1,0 +1,56 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: sink
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    exporters:
+      debug:
+        verbosity: detailed
+        sampling_initial: 100
+        sampling_thereafter: 1
+    service:
+      pipelines:
+        metrics: {receivers: [otlp], exporters: [debug]}
+        logs:    {receivers: [otlp], exporters: [debug]}
+        traces:  {receivers: [otlp], exporters: [debug]}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cluster-obs-targetallocator
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-obs-targetallocator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cluster-obs-targetallocator
+subjects:
+  - kind: ServiceAccount
+    name: cluster-obs-targetallocator-targetallocator
+---
+# The cluster collector resolves its Prometheus targets through this paired TA.
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: cluster-obs-targetallocator
+spec:
+  scrapeConfigs:
+    - job_name: noop
+      static_configs:
+        - targets: []
