@@ -31,7 +31,7 @@ spec:
         with:
           bindings:
             - name: collectorLabelSelector
-              value: app.kubernetes.io/instance=($namespace).ta-selftelemetry,app.kubernetes.io/component=opentelemetry-collector
+              value: app.kubernetes.io/name=ta-selftelemetry-collector
             - name: containerName
               value: otc-container
             - name: retryTimeout
