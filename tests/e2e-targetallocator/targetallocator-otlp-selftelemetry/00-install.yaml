@@ -8,7 +8,12 @@ spec:
   mode: statefulset
   config:
     receivers:
-      prometheus: {}
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: collector-self
+              static_configs:
+                - targets: ['0.0.0.0:8888']
       otlp:
         protocols:
           grpc: {}
