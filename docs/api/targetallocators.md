@@ -12463,23 +12463,13 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 </table>
 
 
-<<<<<<< HEAD
 ### TargetAllocator.spec.sessionAffinityConfig
-=======
-### TargetAllocator.spec.telemetry
->>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 <sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
 
 
 
-<<<<<<< HEAD
 SessionAffinityConfig specifies the session affinity configurations for the Service.
 This is only applicable to Service resources.
-=======
-Telemetry defines the self-telemetry configuration for the TargetAllocator.
-When set, the TargetAllocator exports its own metrics via OTLP in addition
-to the Prometheus /metrics endpoint.
->>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 
 <table>
     <thead>
@@ -12491,38 +12481,82 @@ to the Prometheus /metrics endpoint.
         </tr>
     </thead>
     <tbody><tr>
-<<<<<<< HEAD
         <td><b><a href="#targetallocatorspecsessionaffinityconfigclientip">clientIP</a></b></td>
         <td>object</td>
         <td>
           clientIP contains the configurations of Client IP based session affinity.<br/>
-=======
-        <td><b><a href="#targetallocatorspectelemetrymetrics">metrics</a></b></td>
-        <td>object</td>
-        <td>
-          Metrics defines the metrics export settings for the TargetAllocator's own telemetry.<br/>
->>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-<<<<<<< HEAD
 ### TargetAllocator.spec.sessionAffinityConfig.clientIP
 <sup><sup>[↩ Parent](#targetallocatorspecsessionaffinityconfig)</sup></sup>
 
 
 
 clientIP contains the configurations of Client IP based session affinity.
-=======
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+Default value is 10800(for 3 hours).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+Telemetry defines the self-telemetry configuration for the TargetAllocator.
+When set, the TargetAllocator exports its own metrics via OTLP in addition
+to the Prometheus /metrics endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics export settings for the TargetAllocator's own telemetry.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### TargetAllocator.spec.telemetry.metrics
 <sup><sup>[↩ Parent](#targetallocatorspectelemetry)</sup></sup>
 
 
 
 Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
->>>>>>> 0e154bd4 (feat(target allocator): add OTLP self-telemetry API to CRDs)
 
 <table>
     <thead>
