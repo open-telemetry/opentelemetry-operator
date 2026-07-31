@@ -25,10 +25,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -139,6 +141,12 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
+	}
+	if result.Config.GatewayAPIsAvailability == gatewayapi.ApiAvailable {
+		setupLog.Info("Gateway API CRDs are installed, adding to scheme.")
+		utilruntime.Must(gatewayv1.Install(scheme))
+	} else {
+		setupLog.Info("Gateway API CRDs are not installed, skipping adding to scheme.")
 	}
 	if result.Config.CollectorAvailability == collector.Available {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")

@@ -16,7 +16,7 @@ receivers:
 
 processors:
   batch: {}
-  resourcedetection:
+  resource_detection:
     detectors: ["env", "system"]
     timeout: 2s
 

@@ -22,6 +22,24 @@ spec:
             file: 01-install.yaml
         - assert:
             file: 01-assert.yaml
+    - name: Verify the bridge reports its own service.version
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              last=""
+              for _ in $(seq 1 60); do
+                if last=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents 2>/dev/null); then
+                  if printf '%s' "$last" | grep -Eq '"key":"service.version","value":\{"Value":\{"StringValue":"[0-9]+\.[0-9]+\.[0-9]+[^"]*"'; then
+                    exit 0
+                  fi
+                fi
+                sleep 1
+              done
+              printf '%s\n' "$last" >&2
+              echo "service.version was not reported as a non-empty semver-like string"
+              exit 1
     - name: Check effective config is empty for a valid agent id
       try:
         - script:

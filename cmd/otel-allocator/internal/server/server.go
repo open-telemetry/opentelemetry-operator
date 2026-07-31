@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/goccy/go-json"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	promcommconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -62,9 +63,21 @@ type Server struct {
 	ScrapeConfigMarshalledSecretResponse []byte
 	httpDuration                         metric.Float64Histogram
 	allowInsecureAuthSecrets             bool
+	// metricsGatherer, when set, is used to serve the /metrics endpoint. Defaults to
+	// the global Prometheus default gatherer.
+	metricsGatherer prometheus.Gatherer
 }
 
 type Option func(*Server)
+
+// WithMetricsGatherer sets the Prometheus gatherer used to serve /metrics. This allows
+// the caller to combine multiple registries (e.g. the default registry plus a dedicated
+// OTel SDK registry) into a single endpoint.
+func WithMetricsGatherer(gatherer prometheus.Gatherer) Option {
+	return func(s *Server) {
+		s.metricsGatherer = gatherer
+	}
+}
 
 // Option to create an additional https server with mTLS configuration.
 // Used for getting the scrape config with real secret values.
@@ -81,6 +94,15 @@ func WithInsecureAuthSecrets() Option {
 	return func(s *Server) {
 		s.allowInsecureAuthSecrets = true
 	}
+}
+
+// metricsHandler returns the HTTP handler serving /metrics. It uses the configured
+// gatherer if one was provided, otherwise the global Prometheus default.
+func (s *Server) metricsHandler() http.Handler {
+	if s.metricsGatherer != nil {
+		return promhttp.HandlerFor(s.metricsGatherer, promhttp.HandlerOpts{})
+	}
+	return promhttp.Handler()
 }
 
 func (s *Server) setRouter(router *gin.Engine) {
@@ -100,7 +122,11 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobsHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	// The handler is resolved per request so that the gatherer configured via
+	// WithMetricsGatherer (applied after the router is built) is honored.
+	router.GET("/metrics", func(c *gin.Context) {
+		s.metricsHandler().ServeHTTP(c.Writer, c.Request)
+	})
 	router.GET("/livez", s.LivenessProbeHandler)
 	router.GET("/readyz", s.ReadinessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))

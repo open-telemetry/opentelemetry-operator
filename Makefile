@@ -178,6 +178,12 @@ BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../
 MIN_KUBERNETES_VERSION ?= 1.25.0
 MIN_OPENSHIFT_VERSION ?= 4.12
 
+## Directories of all Go modules in the repository, root first. The ./... patterns of
+## the root module do not descend into nested modules, so anything that has to happen
+## per module iterates over this list. Hidden directories (.git, worktrees, ...) are
+## skipped.
+GO_MODULE_DIRS ?= $(shell find . -path './.*' -prune -o -name go.mod -print | sed 's|/go\.mod$$||' | sort)
+
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
@@ -251,7 +257,7 @@ targetallocator:
 # Build opamp bridge binary
 .PHONY: operator-opamp-bridge
 operator-opamp-bridge: generate
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -444,6 +450,14 @@ vet:
 lint: golangci-lint
 	$(GOLANGCI_LINT) run
 
+# Run go mod tidy in every Go module in the repository
+.PHONY: tidy
+tidy:
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "go mod tidy: $$dir"; \
+		(cd $$dir && go mod tidy); \
+	done
+
 # Generate code
 # apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
 # for the API types (the "./..." pattern does not descend into nested modules).
@@ -461,6 +475,14 @@ e2e: chainsaw
 .PHONY: e2e-sidecar
 e2e-sidecar: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar $(CHAINSAW_SELECTOR)
+
+# End-to-end tests for ClusterObservability. The CRD is not bundled, so install
+# it directly from config/crd/bases/. --parallel 1 because only the oldest
+# active ClusterObservability CR reconciles.
+.PHONY: e2e-clusterobservability
+e2e-clusterobservability: chainsaw
+	kubectl apply -f config/crd/bases/opentelemetry.io_clusterobservabilities.yaml
+	$(CHAINSAW) test --test-dir ./tests/e2e-clusterobservability --report-name e2e-clusterobservability --parallel 1
 
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
@@ -601,6 +623,11 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 .PHONY: prepare-e2e-no-crds
 prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
+
+.PHONY: prepare-e2e-clusterobservability
+prepare-e2e-clusterobservability: add-rbac-permissions-to-operator
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.clusterobservability
+	@$(MAKE) prepare-e2e
 
 # Run operator-sdk scorecard tests for bundles
 .PHONY: scorecard-tests
