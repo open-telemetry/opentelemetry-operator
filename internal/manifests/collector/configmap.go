@@ -39,7 +39,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	}
 	name := naming.ConfigMap(otelCol.Name, hash)
 	collectorName := naming.Collector(otelCol.Name)
-	labels := manifestutils.Labels(otelCol.ObjectMeta, collectorName, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := Labels(*otelCol, collectorName, params.Config, []string{})
 
 	annotations, err := manifestutils.Annotations(*otelCol, params.Config.AnnotationsFilter)
 	if err != nil {
