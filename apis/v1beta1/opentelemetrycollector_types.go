@@ -268,9 +268,9 @@ type TargetAllocatorMTLS struct {
 	// +optional
 	// +kubebuilder:default:=true
 	UseCertManager *bool `json:"useCertManager,omitempty"`
-	// TLS references user-provided Secrets containing the certificates used for mTLS. It allows
-	// managing the certificates outside of the operator (e.g. without cert-manager) and is only
-	// consulted when UseCertManager is set to false.
+	// TLS references user-provided certificates used for mTLS. It allows managing
+	// the certificates outside of the operator (e.g. without cert-manager) and
+	// is only consulted when UseCertManager is set to false.
 	// +optional
 	TLS *TargetAllocatorTLS `json:"tls,omitempty"`
 }
