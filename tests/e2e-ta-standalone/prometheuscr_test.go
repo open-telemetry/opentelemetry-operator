@@ -1,20 +1,9 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 //go:build e2e
 
-package e2e_ta_standalone
+package tastandalone
 
 import (
 	"context"
@@ -35,6 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/testing/e2e"
 )
 
 type (
@@ -66,25 +57,25 @@ type (
 // (hack/install-targetallocator-prometheus-crds.sh, run by prepare-e2e-ta-standalone).
 func TestPrometheusCRTargetAllocator(t *testing.T) {
 	feat := features.New("prometheus CR discovery in standalone TA").
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var ns string
-			ctx, ns = setupTestNamespace(ctx, t)
+			ctx, ns = setupTestNamespace(ctx, t, cfg)
 
-			mclient := newMonitoringClient(t)
+			mclient := newMonitoringClient(t, cfg)
 
 			// Deploy workload and monitoring CRs BEFORE starting the TA so the informer
 			// picks them up during its first sync.
-			deployMetricsWorkload(t, ctx, ns)
+			deployMetricsWorkload(t, ctx, cfg, ns)
 			smName := deployServiceMonitor(t, ctx, mclient, ns)
 			pmName := deployPodMonitor(t, ctx, mclient, ns)
 			scName := deployScrapeConfig(t, ctx, mclient, ns)
 
 			taConfig := newTAConfig("consistent-hashing").withPrometheusCR().build()
-			deployTA(t, ctx, ns, taConfig)
-			waitForDeploymentReady(t, ctx, ns, "target-allocator", 1)
+			deployTA(t, ctx, cfg, ns, taConfig)
+			e2e.WaitForDeployment(ctx, t, cfg, ns, "target-allocator", testTimeout)
 
-			deployCollectors(t, ctx, ns, 1)
-			waitForStatefulSetReady(t, ctx, ns, "collector", 1)
+			deployCollectors(t, ctx, cfg, ns, 1)
+			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 1, testTimeout)
 
 			return context.WithValue(ctx, promCRStateKey{}, promCRState{
 				mclient: mclient,
@@ -93,7 +84,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 				scName:  scName,
 			})
 		}).
-		Assess("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Assess("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := nsFromCtx(ctx)
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
@@ -103,13 +94,13 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			pmJobName := fmt.Sprintf("podMonitor/%s/%s/0", ns, state.pmName)
 			scJobName := fmt.Sprintf("scrapeConfig/%s/%s", ns, state.scName)
 
-			waitForJobInScrapeConfigs(t, ctx, proxyBase, smJobName)
-			waitForJobInScrapeConfigs(t, ctx, proxyBase, pmJobName)
-			waitForJobInScrapeConfigs(t, ctx, proxyBase, scJobName)
-			t.Logf("SM, PM and ScrapeConfig jobs found in /scrape_configs")
+			waitForJobInScrapeConfigs(t, ctx, cfg, proxyBase, smJobName)
+			waitForJobInScrapeConfigs(t, ctx, cfg, proxyBase, pmJobName)
+			waitForJobInScrapeConfigs(t, ctx, cfg, proxyBase, scJobName)
+			t.Log("SM, PM and ScrapeConfig jobs found in /scrape_configs")
 			return ctx
 		}).
-		Assess("ServiceMonitor targets disappear after deletion", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		Assess("ServiceMonitor targets disappear after deletion", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := nsFromCtx(ctx)
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
@@ -122,11 +113,12 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			require.NoError(t, err, "delete ServiceMonitor %s", state.smName)
 			t.Logf("deleted ServiceMonitor %s", state.smName)
 
+			cs := e2e.ClientSet(t, cfg)
 			// Wait for SM job to disappear (informer resync ~30s + rate limit ~5s).
 			err = wait.PollUntilContextTimeout(ctx, 5*time.Second, discoveryTimeout, false, func(ctx context.Context) (bool, error) {
-				body, err := clientset.CoreV1().RESTClient().Get().
+				body, getErr := cs.CoreV1().RESTClient().Get().
 					AbsPath(proxyBase + "/scrape_configs").DoRaw(ctx)
-				if err != nil {
+				if getErr != nil {
 					return false, nil
 				}
 				return !strings.Contains(string(body), smJobName), nil
@@ -135,7 +127,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			t.Logf("ServiceMonitor job %s removed from /scrape_configs", smJobName)
 
 			// PodMonitor and ScrapeConfig jobs must still be present.
-			body := kubectlGetRaw(t, ctx, proxyBase+"/scrape_configs")
+			body := kubectlGetRaw(t, ctx, cfg, proxyBase+"/scrape_configs")
 			assert.Contains(t, string(body), pmJobName,
 				"PodMonitor job %s should still be present in /scrape_configs", pmJobName)
 			assert.Contains(t, string(body), scJobName,
@@ -153,12 +145,13 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 
 const metricsAppImage = "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main"
 
-func deployMetricsWorkload(t *testing.T, ctx context.Context, ns string) {
+func deployMetricsWorkload(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string) {
 	t.Helper()
+	cs := e2e.ClientSet(t, cfg)
 	labels := map[string]string{"app": "metrics-app"}
 	replicas := int32(1)
 
-	_, err := clientset.AppsV1().Deployments(ns).Create(ctx, &appsv1.Deployment{
+	_, err := cs.AppsV1().Deployments(ns).Create(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: "metrics-app"},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -177,7 +170,7 @@ func deployMetricsWorkload(t *testing.T, ctx context.Context, ns string) {
 	}, metav1.CreateOptions{})
 	require.NoError(t, err, "create metrics-app Deployment")
 
-	_, err = clientset.CoreV1().Services(ns).Create(ctx, &corev1.Service{
+	_, err = cs.CoreV1().Services(ns).Create(ctx, &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{Name: "metrics-app", Labels: labels},
 		Spec: corev1.ServiceSpec{
 			Selector: labels,
@@ -190,16 +183,9 @@ func deployMetricsWorkload(t *testing.T, ctx context.Context, ns string) {
 	}, metav1.CreateOptions{})
 	require.NoError(t, err, "create metrics-app Service")
 
-	// Wait for the Deployment to have at least one ready pod so the
-	// ServiceMonitor and PodMonitor endpoints resolve.
-	err = wait.PollUntilContextTimeout(ctx, pollInterval, testTimeout, true, func(ctx context.Context) (bool, error) {
-		d, err := clientset.AppsV1().Deployments(ns).Get(ctx, "metrics-app", metav1.GetOptions{})
-		if err != nil {
-			return false, nil
-		}
-		return d.Status.ReadyReplicas >= 1, nil
-	})
-	require.NoError(t, err, "metrics-app deployment did not become ready")
+	// Wait for the Deployment to have a ready pod so the ServiceMonitor and PodMonitor
+	// endpoints resolve.
+	e2e.WaitForDeployment(ctx, t, cfg, ns, "metrics-app", testTimeout)
 }
 
 func deployServiceMonitor(t *testing.T, ctx context.Context, mclient *monitoringclient.Clientset, ns string) string {
@@ -269,11 +255,12 @@ func deployScrapeConfig(t *testing.T, ctx context.Context, mclient *monitoringcl
 // Wait helper for PromCR discovery
 // ---------------------------------------------------------------------------
 
-func waitForJobInScrapeConfigs(t *testing.T, ctx context.Context, proxyBase, jobName string) {
+func waitForJobInScrapeConfigs(t *testing.T, ctx context.Context, cfg *envconf.Config, proxyBase, jobName string) {
 	t.Helper()
 	t.Logf("waiting for job %q to appear in /scrape_configs", jobName)
+	cs := e2e.ClientSet(t, cfg)
 	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, discoveryTimeout, true, func(ctx context.Context) (bool, error) {
-		body, err := clientset.CoreV1().RESTClient().Get().
+		body, err := cs.CoreV1().RESTClient().Get().
 			AbsPath(proxyBase + "/scrape_configs").DoRaw(ctx)
 		if err != nil {
 			return false, nil
@@ -291,9 +278,9 @@ func waitForJobInScrapeConfigs(t *testing.T, ctx context.Context, proxyBase, job
 // Monitoring client factory
 // ---------------------------------------------------------------------------
 
-func newMonitoringClient(t *testing.T) *monitoringclient.Clientset {
+func newMonitoringClient(t *testing.T, cfg *envconf.Config) *monitoringclient.Clientset {
 	t.Helper()
-	mclient, err := monitoringclient.NewForConfig(restCfg)
+	mclient, err := monitoringclient.NewForConfig(cfg.Client().RESTConfig())
 	require.NoError(t, err, "create monitoring client")
 	return mclient
 }

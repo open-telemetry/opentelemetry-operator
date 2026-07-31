@@ -160,8 +160,8 @@ type OpenTelemetryCollectorSpec struct {
 // OpenTelemetryCollector spec.
 type TargetAllocatorEmbedded struct {
 	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-	// that can be run in a high availability mode is consistent-hashing.
+	// other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+	// that can be run in a high availability mode are consistent-hashing and per-node.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.

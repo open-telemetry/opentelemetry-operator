@@ -42,6 +42,10 @@ spec:
     - IPv4
   ipFamilyPolicy: SingleStack
   trafficDistribution: PreferClose
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   ports:
     - name: extra-port
       port: 9090
