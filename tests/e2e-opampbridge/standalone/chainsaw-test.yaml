@@ -120,8 +120,9 @@ spec:
               )
 
               printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-valid-remote-config \
-                --image=mirror.gcr.io/alpine/curl:latest \
-                --restart=Never --rm -i \
+                --image=mirror.gcr.io/alpine/curl:8.21.0 \
+                --restart=Never \
+                --rm -i \
                 --command -- curl -fsS \
                 -X POST \
                 "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
@@ -237,8 +238,9 @@ spec:
               )
 
               printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" send-invalid-remote-config \
-                --image=mirror.gcr.io/alpine/curl:latest \
-                --restart=Never --rm -i \
+                --image=mirror.gcr.io/alpine/curl:8.21.0 \
+                --restart=Never \
+                --rm -i \
                 --command -- curl -fsS \
                 -X POST \
                 "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
