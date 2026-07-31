@@ -150,8 +150,15 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 			Enabled:        true,
 			UseCertManager: new(false),
 			TLS: &v1beta1.TargetAllocatorTLS{
-				ServerCertificate: &v1beta1.CertificateReference{SecretName: "my-server-secret"},
-				ClientCertificate: &v1beta1.CertificateReference{SecretName: "my-client-secret"},
+				CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "my-ca-secret"}},
+				ServerCertificate: &v1beta1.CertificateReference{
+					Certificate: v1beta1.SecretKeySelector{Name: "my-server-secret"},
+					Key:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
+				},
+				ClientCertificate: &v1beta1.CertificateReference{
+					Certificate: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+					Key:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				},
 			},
 		}
 

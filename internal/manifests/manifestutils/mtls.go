@@ -80,10 +80,25 @@ func TAClientCertificateVolumes(
 	)
 }
 
+type sourceKind string
+
+const (
+	sourceSecret    sourceKind = "secret"
+	sourceConfigMap sourceKind = "configmap"
+)
+
+// mtlsFile is one logical file (ca.crt / tls.crt / tls.key) projected under /tls.
 type mtlsFile struct {
-	secretName string
-	key        string
-	path       string
+	kind sourceKind // secret | configmap
+	name string     // Secret or ConfigMap name
+	key  string     // source data key, mounted via subPath
+	path string     // fixed filename under /tls
+}
+
+// volumeIdentity dedups volumes. A Secret and a ConfigMap with the same name must not collide.
+type volumeIdentity struct {
+	kind sourceKind
+	name string
 }
 
 func taCertificateVolumes(
@@ -91,7 +106,7 @@ func taCertificateVolumes(
 	volumeName, certManagerSecretName string,
 	certRef *v1beta1.CertificateReference,
 ) ([]corev1.Volume, []corev1.VolumeMount) {
-	// cert-manager case
+	// cert-manager case: mount the single operator-managed Secret at /tls.
 	if !IsTAMTLSUserProvided(ta.Spec.Mtls) || certRef == nil {
 		volumes := []corev1.Volume{{
 			Name: volumeName,
@@ -108,52 +123,64 @@ func taCertificateVolumes(
 		return volumes, mounts
 	}
 
-	// user-provided case
-	// The CA certificate is served from its own reference when provided, otherwise
-	// it is expected to be bundled in the leaf Secret under the ca.crt key.
-	caRef := caCertificateReference(ta.Spec.Mtls)
-	caSecretName := certRef.SecretName
-	caKey := constants.TACollectorCAFileName
-	if caRef != nil {
-		caSecretName = caRef.SecretName
-		caKey = dataKeyCA(caRef)
+	// user-provided case. The CA (required, validated in ValidateTAMTLS) comes from a Secret or a
+	// ConfigMap; the leaf certificate and its private key come from (possibly different) Secrets.
+	files := make([]mtlsFile, 0, 3)
+
+	if caRef := caCertificateReference(ta.Spec.Mtls); caRef != nil {
+		switch {
+		case caRef.Secret != nil:
+			files = append(files, mtlsFile{
+				kind: sourceSecret,
+				name: caRef.Secret.Name,
+				key:  secretKey(caRef.Secret, constants.TACollectorCAFileName),
+				path: constants.TACollectorCAFileName,
+			})
+		case caRef.ConfigMap != nil:
+			files = append(files, mtlsFile{
+				kind: sourceConfigMap,
+				name: caRef.ConfigMap.Name,
+				key:  configMapKey(caRef.ConfigMap, constants.TACollectorCAFileName),
+				path: constants.TACollectorCAFileName,
+			})
+		}
 	}
 
-	files := []mtlsFile{
-		{
-			secretName: caSecretName,
-			key:        caKey,
-			path:       constants.TACollectorCAFileName,
+	files = append(files,
+		mtlsFile{
+			kind: sourceSecret,
+			name: certRef.Certificate.Name,
+			key:  secretKey(&certRef.Certificate, constants.TACollectorTLSCertFileName),
+			path: constants.TACollectorTLSCertFileName,
 		},
-		{
-			secretName: certRef.SecretName,
-			key:        dataKeyCertificate(certRef),
-			path:       constants.TACollectorTLSCertFileName,
+		mtlsFile{
+			kind: sourceSecret,
+			name: certRef.Key.Name,
+			key:  secretKey(&certRef.Key, constants.TACollectorTLSKeyFileName),
+			path: constants.TACollectorTLSKeyFileName,
 		},
-		{
-			secretName: certRef.SecretName,
-			key:        dataKeyKey(certRef),
-			path:       constants.TACollectorTLSKeyFileName,
-		},
-	}
+	)
 
 	var volumes []corev1.Volume
 	var mounts []corev1.VolumeMount
-	seenSecret := map[string]string{} // secret name -> volume name
+	seen := map[volumeIdentity]string{} // (kind, name) -> volume name
 	for _, f := range files {
-		volName, ok := seenSecret[f.secretName]
+		id := volumeIdentity{kind: f.kind, name: f.name}
+		volName, ok := seen[id]
 		if !ok {
-			// Derive a stable, unique volume name per distinct Secret.
+			// Derive a stable, unique volume name per distinct source.
 			volName = naming.DNSName(naming.Truncate("%s-%d", 63, volumeName, len(volumes)))
-			seenSecret[f.secretName] = volName
-			volumes = append(volumes, corev1.Volume{
-				Name: volName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: f.secretName,
-					},
-				},
-			})
+			seen[id] = volName
+			var source corev1.VolumeSource
+			switch f.kind {
+			case sourceConfigMap:
+				source.ConfigMap = &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{Name: f.name},
+				}
+			default:
+				source.Secret = &corev1.SecretVolumeSource{SecretName: f.name}
+			}
+			volumes = append(volumes, corev1.Volume{Name: volName, VolumeSource: source})
 		}
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      volName,
@@ -193,34 +220,26 @@ func caCertificateReference(mtls *v1beta1.TargetAllocatorMTLS) *v1beta1.CARefere
 	return nil
 }
 
-func dataKeyCA(ref *v1beta1.CAReference) string {
-	if ref != nil && ref.DataKeyCertificate != "" {
-		return ref.DataKeyCertificate
+// secretKey returns the selector's data key, or the role-specific default when empty.
+func secretKey(sel *v1beta1.SecretKeySelector, def string) string {
+	if sel != nil && sel.Key != "" {
+		return sel.Key
 	}
-	return constants.TACollectorTLSCertFileName
+	return def
 }
 
-func dataKeyCertificate(ref *v1beta1.CertificateReference) string {
-	if ref != nil && ref.DataKeyCertificate != "" {
-		return ref.DataKeyCertificate
+// configMapKey returns the selector's data key, or the role-specific default when empty.
+func configMapKey(sel *v1beta1.ConfigMapKeySelector, def string) string {
+	if sel != nil && sel.Key != "" {
+		return sel.Key
 	}
-	return constants.TACollectorTLSCertFileName
-}
-
-func dataKeyKey(ref *v1beta1.CertificateReference) string {
-	if ref != nil && ref.DataKeyKey != "" {
-		return ref.DataKeyKey
-	}
-	return constants.TACollectorTLSKeyFileName
+	return def
 }
 
 // ValidateTAMTLS validates the TA mTLS configuration. There are 2 scenarios:
 //   - When mTLS relies on cert-manager it requires cert-manager to be available.
-//   - When cert-manager is disabled it requires the user to provide the server
-//     and client certificate Secrets.
-//
-// Note: The CA certificate may either be referenced separately or bundled in
-// the leaf Secrets under the ca.crt key.
+//   - When cert-manager is disabled it requires the user to provide the CA
+//     reference and both the server and client certificate references.
 func ValidateTAMTLS(mtls *v1beta1.TargetAllocatorMTLS, certManagerAvailable bool) error {
 	if !IsTAMTLSEnabled(mtls) {
 		return nil
@@ -235,7 +254,20 @@ func ValidateTAMTLS(mtls *v1beta1.TargetAllocatorMTLS, certManagerAvailable bool
 
 	// User-provided certificates: both leaf certificates must be referenced.
 	if taServerCertificateReference(mtls) == nil || taClientCertificateReference(mtls) == nil {
-		return errors.New("mTLS is enabled with useCertManager set to false; tls.serverCertificate and tls.clientCertificate must both reference a Secret")
+		return errors.New("mTLS is enabled with useCertManager set to false; tls.serverCertificate and tls.clientCertificate must both be set")
+	}
+
+	// The CA certificate is required and must reference exactly one of a Secret or a ConfigMap.
+	caRef := caCertificateReference(mtls)
+	if caRef == nil {
+		return errors.New("mTLS is enabled with useCertManager set to false; tls.certificateAuthorityCertificate must be set")
+	}
+	return validateCAReference(caRef)
+}
+
+func validateCAReference(ref *v1beta1.CAReference) error {
+	if (ref.Secret != nil) == (ref.ConfigMap != nil) { // neither or both
+		return errors.New("tls.certificateAuthorityCertificate must set exactly one of secret or configMap")
 	}
 	return nil
 }

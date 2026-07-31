@@ -160,28 +160,33 @@ func TestTACertificateVolumesUserProvidedDefaultKeys(t *testing.T) {
 		Enabled:        true,
 		UseCertManager: new(false),
 		TLS: &v1beta1.TargetAllocatorTLS{
-			ServerCertificate: &v1beta1.CertificateReference{SecretName: "my-server-secret"},
-			ClientCertificate: &v1beta1.CertificateReference{SecretName: "my-client-secret"},
+			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
+			ServerCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "my-server-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
+			},
+			ClientCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+			},
 		},
 	}
 
 	serverVolumes, serverMounts := TAServerCertificateVolumes(ta)
-	// CA is bundled in the leaf Secret, so a single volume backs all three files.
-	require.Len(t, serverVolumes, 1)
-	assert.Equal(t, "my-server-secret", serverVolumes[0].Secret.SecretName)
+	// CA comes from its own Secret, the leaf cert+key share one, so two volumes back the files.
+	require.Len(t, serverVolumes, 2)
 	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
-		{secretName: "my-server-secret", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
-		{secretName: "my-server-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
-		{secretName: "my-server-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
+		{kind: sourceSecret, name: "ca-secret", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "my-server-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "my-server-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
 	})
 
 	clientVolumes, clientMounts := TAClientCertificateVolumes(ta, "test")
-	require.Len(t, clientVolumes, 1)
-	assert.Equal(t, "my-client-secret", clientVolumes[0].Secret.SecretName)
+	require.Len(t, clientVolumes, 2)
 	assert.ElementsMatch(t, toMountSpecs(clientVolumes, clientMounts), []mountSpec{
-		{secretName: "my-client-secret", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
-		{secretName: "my-client-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
-		{secretName: "my-client-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
+		{kind: sourceSecret, name: "ca-secret", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "my-client-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "my-client-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
 	})
 }
 
@@ -192,21 +197,24 @@ func TestTACertificateVolumesUserProvidedCustomKeys(t *testing.T) {
 		Enabled:        true,
 		UseCertManager: new(false),
 		TLS: &v1beta1.TargetAllocatorTLS{
+			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "ca.pem"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				SecretName:         "my-server-secret",
-				DataKeyCertificate: "server.pem",
-				DataKeyKey:         "server-key.pem",
+				Certificate: v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server.pem"},
+				Key:         v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server-key.pem"},
 			},
-			ClientCertificate: &v1beta1.CertificateReference{SecretName: "my-client-secret"},
+			ClientCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+			},
 		},
 	}
 
 	serverVolumes, serverMounts := TAServerCertificateVolumes(ta)
 	// user's arbitrary keys are projected onto the fixed /tls filenames via subPath
 	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
-		{secretName: "my-server-secret", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
-		{secretName: "my-server-secret", subPath: "server.pem", path: tlsPath(constants.TACollectorTLSCertFileName)},
-		{secretName: "my-server-secret", subPath: "server-key.pem", path: tlsPath(constants.TACollectorTLSKeyFileName)},
+		{kind: sourceSecret, name: "my-server-secret", subPath: "ca.pem", path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "my-server-secret", subPath: "server.pem", path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "my-server-secret", subPath: "server-key.pem", path: tlsPath(constants.TACollectorTLSKeyFileName)},
 	})
 }
 
@@ -217,9 +225,15 @@ func TestTACertificateVolumesSeparateCA(t *testing.T) {
 		Enabled:        true,
 		UseCertManager: new(false),
 		TLS: &v1beta1.TargetAllocatorTLS{
-			CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca-secret", DataKeyCertificate: "ca.pem"},
-			ServerCertificate:               &v1beta1.CertificateReference{SecretName: "server-secret"},
-			ClientCertificate:               &v1beta1.CertificateReference{SecretName: "client-secret"},
+			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret", Key: "ca.pem"}},
+			ServerCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+			},
+			ClientCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+			},
 		},
 	}
 
@@ -227,32 +241,102 @@ func TestTACertificateVolumesSeparateCA(t *testing.T) {
 	// CA comes from a distinct Secret, so two volumes are created.
 	require.Len(t, serverVolumes, 2)
 	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
-		{secretName: "ca-secret", subPath: "ca.pem", path: tlsPath(constants.TACollectorCAFileName)},
-		{secretName: "server-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
-		{secretName: "server-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
+		{kind: sourceSecret, name: "ca-secret", subPath: "ca.pem", path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "server-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "server-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
 	})
 }
 
-// mountSpec is a flattened view of a VolumeMount that also resolves the backing Secret name, used to
-// assert on mounts independently of the generated volume names.
-type mountSpec struct {
-	secretName string
-	subPath    string
-	path       string
+func TestTACertificateVolumesSeparateCertAndKey(t *testing.T) {
+	ta := &v1alpha1.TargetAllocator{}
+	ta.Name = "test"
+	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
+		Enabled:        true,
+		UseCertManager: new(false),
+		TLS: &v1beta1.TargetAllocatorTLS{
+			// CA sourced from a ConfigMap, cert and key from two different Secrets.
+			CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca-configmap"}},
+			ServerCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "cert-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "key-secret"},
+			},
+			ClientCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "cert-secret"},
+				Key:         v1beta1.SecretKeySelector{Name: "key-secret"},
+			},
+		},
+	}
+
+	serverVolumes, serverMounts := TAServerCertificateVolumes(ta)
+	// Three distinct sources: one ConfigMap and two Secrets.
+	require.Len(t, serverVolumes, 3)
+	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
+		{kind: sourceConfigMap, name: "ca-configmap", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "cert-secret", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "key-secret", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
+	})
 }
 
-// toMountSpecs resolves each VolumeMount back to the Secret that backs its volume, so tests can assert
-// on (secret, key, path) tuples without depending on generated volume names.
+func TestTACertificateVolumesSecretConfigMapNameCollision(t *testing.T) {
+	ta := &v1alpha1.TargetAllocator{}
+	ta.Name = "test"
+	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
+		Enabled:        true,
+		UseCertManager: new(false),
+		TLS: &v1beta1.TargetAllocatorTLS{
+			// A ConfigMap and a Secret share the name "shared"; they must not collide into one volume.
+			CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "shared"}},
+			ServerCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "shared"},
+				Key:         v1beta1.SecretKeySelector{Name: "shared"},
+			},
+			ClientCertificate: &v1beta1.CertificateReference{
+				Certificate: v1beta1.SecretKeySelector{Name: "shared"},
+				Key:         v1beta1.SecretKeySelector{Name: "shared"},
+			},
+		},
+	}
+
+	serverVolumes, serverMounts := TAServerCertificateVolumes(ta)
+	// The ConfigMap "shared" and the Secret "shared" are distinct sources -> two volumes.
+	require.Len(t, serverVolumes, 2)
+	assert.ElementsMatch(t, toMountSpecs(serverVolumes, serverMounts), []mountSpec{
+		{kind: sourceConfigMap, name: "shared", subPath: constants.TACollectorCAFileName, path: tlsPath(constants.TACollectorCAFileName)},
+		{kind: sourceSecret, name: "shared", subPath: constants.TACollectorTLSCertFileName, path: tlsPath(constants.TACollectorTLSCertFileName)},
+		{kind: sourceSecret, name: "shared", subPath: constants.TACollectorTLSKeyFileName, path: tlsPath(constants.TACollectorTLSKeyFileName)},
+	})
+}
+
+// mountSpec is a flattened view of a VolumeMount that also resolves the backing source (Secret or
+// ConfigMap), used to assert on mounts independently of the generated volume names.
+type mountSpec struct {
+	kind    sourceKind
+	name    string
+	subPath string
+	path    string
+}
+
+// toMountSpecs resolves each VolumeMount back to the source (Secret or ConfigMap) that backs its
+// volume, so tests can assert on (kind, name, key, path) tuples without depending on generated
+// volume names.
 func toMountSpecs(volumes []corev1.Volume, mounts []corev1.VolumeMount) []mountSpec {
-	byName := map[string]string{}
+	type source struct {
+		kind sourceKind
+		name string
+	}
+	byName := map[string]source{}
 	for _, v := range volumes {
-		if v.Secret != nil {
-			byName[v.Name] = v.Secret.SecretName
+		switch {
+		case v.Secret != nil:
+			byName[v.Name] = source{kind: sourceSecret, name: v.Secret.SecretName}
+		case v.ConfigMap != nil:
+			byName[v.Name] = source{kind: sourceConfigMap, name: v.ConfigMap.Name}
 		}
 	}
 	specs := make([]mountSpec, 0, len(mounts))
 	for _, m := range mounts {
-		specs = append(specs, mountSpec{secretName: byName[m.Name], subPath: m.SubPath, path: m.MountPath})
+		src := byName[m.Name]
+		specs = append(specs, mountSpec{kind: src.kind, name: src.name, subPath: m.SubPath, path: m.MountPath})
 	}
 	return specs
 }
@@ -262,8 +346,15 @@ func tlsPath(file string) string {
 }
 
 func TestValidateTAMTLS(t *testing.T) {
-	serverRef := &v1beta1.CertificateReference{SecretName: "server"}
-	clientRef := &v1beta1.CertificateReference{SecretName: "client"}
+	serverRef := &v1beta1.CertificateReference{
+		Certificate: v1beta1.SecretKeySelector{Name: "server"},
+		Key:         v1beta1.SecretKeySelector{Name: "server"},
+	}
+	clientRef := &v1beta1.CertificateReference{
+		Certificate: v1beta1.SecretKeySelector{Name: "client"},
+		Key:         v1beta1.SecretKeySelector{Name: "client"},
+	}
+	caRef := &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca"}}
 
 	tests := []struct {
 		name                 string
@@ -286,11 +377,23 @@ func TestValidateTAMTLS(t *testing.T) {
 			expectedErr: "cert-manager is not available",
 		},
 		{
-			name: "user-provided, both refs set",
+			name: "user-provided, all refs set (CA from Secret)",
 			ta: &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{
 				Enabled:        true,
 				UseCertManager: new(false),
-				TLS:            &v1beta1.TargetAllocatorTLS{ServerCertificate: serverRef, ClientCertificate: clientRef},
+				TLS:            &v1beta1.TargetAllocatorTLS{ServerCertificate: serverRef, ClientCertificate: clientRef, CertificateAuthorityCertificate: caRef},
+			}}},
+		},
+		{
+			name: "user-provided, CA from ConfigMap",
+			ta: &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{
+				Enabled:        true,
+				UseCertManager: new(false),
+				TLS: &v1beta1.TargetAllocatorTLS{
+					ServerCertificate:               serverRef,
+					ClientCertificate:               clientRef,
+					CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca"}},
+				},
 			}}},
 		},
 		{
@@ -298,9 +401,9 @@ func TestValidateTAMTLS(t *testing.T) {
 			ta: &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{
 				Enabled:        true,
 				UseCertManager: new(false),
-				TLS:            &v1beta1.TargetAllocatorTLS{ServerCertificate: serverRef},
+				TLS:            &v1beta1.TargetAllocatorTLS{ServerCertificate: serverRef, CertificateAuthorityCertificate: caRef},
 			}}},
-			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both be set",
 		},
 		{
 			name: "user-provided, no TLS block",
@@ -308,19 +411,32 @@ func TestValidateTAMTLS(t *testing.T) {
 				Enabled:        true,
 				UseCertManager: new(false),
 			}}},
-			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both be set",
 		},
 		{
-			name: "user-provided, separate CA is allowed",
+			name: "user-provided, missing CA",
+			ta: &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{
+				Enabled:        true,
+				UseCertManager: new(false),
+				TLS:            &v1beta1.TargetAllocatorTLS{ServerCertificate: serverRef, ClientCertificate: clientRef},
+			}}},
+			expectedErr: "tls.certificateAuthorityCertificate must be set",
+		},
+		{
+			name: "user-provided, CA with both secret and configMap",
 			ta: &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{
 				Enabled:        true,
 				UseCertManager: new(false),
 				TLS: &v1beta1.TargetAllocatorTLS{
-					ServerCertificate:               serverRef,
-					ClientCertificate:               clientRef,
-					CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca"},
+					ServerCertificate: serverRef,
+					ClientCertificate: clientRef,
+					CertificateAuthorityCertificate: &v1beta1.CAReference{
+						Secret:    &v1beta1.SecretKeySelector{Name: "ca"},
+						ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca"},
+					},
 				},
 			}}},
+			expectedErr: "must set exactly one of secret or configMap",
 		},
 	}
 

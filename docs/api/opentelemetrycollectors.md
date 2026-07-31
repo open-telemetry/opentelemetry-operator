@@ -34477,25 +34477,25 @@ consulted when UseCertManager is set to false.
         <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate">certificateAuthorityCertificate</a></b></td>
         <td>object</td>
         <td>
-          CertificateAuthorityCertificate references a Secret containing the CA certificate used to
-verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
-server and client certificate Secrets under the ca.crt key.<br/>
+          CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate">clientCertificate</a></b></td>
         <td>object</td>
         <td>
-          ClientCertificate references a Secret containing the client certificate and key used by the
-collector when talking to the target allocator's HTTPS server.<br/>
+          ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificate">serverCertificate</a></b></td>
         <td>object</td>
         <td>
-          ServerCertificate references a Secret containing the server certificate and key used by the
-target allocator when exposing its HTTPS server.<br/>
+          ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -34507,9 +34507,9 @@ target allocator when exposing its HTTPS server.<br/>
 
 
 
-CertificateAuthorityCertificate references a Secret containing the CA certificate used to
-verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
-server and client certificate Secrets under the ca.crt key.
+CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.
 
 <table>
     <thead>
@@ -34521,21 +34521,86 @@ server and client certificate Secrets under the ca.crt key.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>secretName</b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificateconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap sources the CA certificate from a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificatesecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret sources the CA certificate from a Secret.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.configMap
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+ConfigMap sources the CA certificate from a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          SecretName is the name of the Secret, in the same namespace as the workload, holding the
-certificate data.<br/>
+          Name of the ConfigMap, in the same namespace as the workload.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>dataKeyCertificate</b></td>
+        <td><b>key</b></td>
         <td>string</td>
         <td>
-          DataKeyCertificate is the key within the Secret's data that holds the certificate.
-Defaults to tls.crt.<br/>
-          <br/>
-            <i>Default</i>: tls.crt<br/>
+          Key within the ConfigMap's data. Defaults to ca.crt when omitted.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.secret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+Secret sources the CA certificate from a Secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -34547,8 +34612,8 @@ Defaults to tls.crt.<br/>
 
 
 
-ClientCertificate references a Secret containing the client certificate and key used by the
-collector when talking to the target allocator's HTTPS server.
+ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.
 
 <table>
     <thead>
@@ -34560,31 +34625,87 @@ collector when talking to the target allocator's HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>secretName</b></td>
-        <td>string</td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatecertificate">certificate</a></b></td>
+        <td>object</td>
         <td>
-          SecretName is the name of the Secret, in the same namespace as the workload, holding the
-certificate data.<br/>
+          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>dataKeyCertificate</b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatekey">key</a></b></td>
+        <td>object</td>
+        <td>
+          Key selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.certificate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
+
+
+
+Certificate selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          DataKeyCertificate is the key within the Secret's data that holds the certificate.
-Defaults to tls.crt.<br/>
-          <br/>
-            <i>Default</i>: tls.crt<br/>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>dataKeyKey</b></td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.key
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
+
+
+
+Key selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          DataKeyKey is the key within the Secret's data that holds the private key.
-Defaults to tls.key. It is not required for CA certificate references.<br/>
-          <br/>
-            <i>Default</i>: tls.key<br/>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -34596,8 +34717,8 @@ Defaults to tls.key. It is not required for CA certificate references.<br/>
 
 
 
-ServerCertificate references a Secret containing the server certificate and key used by the
-target allocator when exposing its HTTPS server.
+ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.
 
 <table>
     <thead>
@@ -34609,31 +34730,87 @@ target allocator when exposing its HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>secretName</b></td>
-        <td>string</td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatecertificate">certificate</a></b></td>
+        <td>object</td>
         <td>
-          SecretName is the name of the Secret, in the same namespace as the workload, holding the
-certificate data.<br/>
+          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>dataKeyCertificate</b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatekey">key</a></b></td>
+        <td>object</td>
+        <td>
+          Key selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.certificate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
+
+
+
+Certificate selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          DataKeyCertificate is the key within the Secret's data that holds the certificate.
-Defaults to tls.crt.<br/>
-          <br/>
-            <i>Default</i>: tls.crt<br/>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>dataKeyKey</b></td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.key
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
+
+
+
+Key selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
-          DataKeyKey is the key within the Secret's data that holds the private key.
-Defaults to tls.key. It is not required for CA certificate references.<br/>
-          <br/>
-            <i>Default</i>: tls.key<br/>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

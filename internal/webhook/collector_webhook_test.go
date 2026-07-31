@@ -1512,8 +1512,15 @@ func TestCollectorMTLSValidation(t *testing.T) {
 							Enabled:        true,
 							UseCertManager: new(false),
 							TLS: &v1beta1.TargetAllocatorTLS{
-								ServerCertificate: &v1beta1.CertificateReference{SecretName: "server-secret"},
-								ClientCertificate: &v1beta1.CertificateReference{SecretName: "client-secret"},
+								CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
+								ServerCertificate: &v1beta1.CertificateReference{
+									Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+									Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+								},
+								ClientCertificate: &v1beta1.CertificateReference{
+									Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+									Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+								},
 							},
 						},
 					},
@@ -1533,7 +1540,7 @@ func TestCollectorMTLSValidation(t *testing.T) {
 					Config: cfg,
 				},
 			},
-			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both be set",
 		},
 		{
 			name: "mTLS with useCertManager true and cert-manager available",

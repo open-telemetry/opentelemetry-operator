@@ -340,8 +340,15 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						Enabled:        true,
 						UseCertManager: new(false),
 						TLS: &v1beta1.TargetAllocatorTLS{
-							ServerCertificate: &v1beta1.CertificateReference{SecretName: "server-secret"},
-							ClientCertificate: &v1beta1.CertificateReference{SecretName: "client-secret"},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
+							ServerCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
 						},
 					},
 				},
@@ -357,7 +364,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "tls.serverCertificate and tls.clientCertificate must both reference a Secret",
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both be set",
 		},
 		{
 			name: "mTLS with useCertManager false and a separate CA certificate",
@@ -367,13 +374,63 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						Enabled:        true,
 						UseCertManager: new(false),
 						TLS: &v1beta1.TargetAllocatorTLS{
-							ServerCertificate:               &v1beta1.CertificateReference{SecretName: "server-secret"},
-							ClientCertificate:               &v1beta1.CertificateReference{SecretName: "client-secret"},
-							CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca-secret"},
+							ServerCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
 						},
 					},
 				},
 			},
+		},
+		{
+			name: "mTLS with useCertManager false and CA from a ConfigMap",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca-configmap"}},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false but missing CA reference",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
+								Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "tls.certificateAuthorityCertificate must be set",
 		},
 		{
 			name: "mTLS with useCertManager true and cert-manager available",

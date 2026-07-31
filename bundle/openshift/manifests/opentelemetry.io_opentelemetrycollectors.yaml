@@ -8214,45 +8214,78 @@ spec:
                         properties:
                           certificateAuthorityCertificate:
                             properties:
-                              dataKeyCertificate:
-                                default: tls.crt
-                                type: string
-                              dataKeyKey:
-                                default: tls.key
-                                type: string
-                              secretName:
-                                minLength: 1
-                                type: string
-                            required:
-                            - secretName
+                              configMap:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              secret:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
                             type: object
                           clientCertificate:
                             properties:
-                              dataKeyCertificate:
-                                default: tls.crt
-                                type: string
-                              dataKeyKey:
-                                default: tls.key
-                                type: string
-                              secretName:
-                                minLength: 1
-                                type: string
+                              certificate:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              key:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
                             required:
-                            - secretName
+                            - certificate
+                            - key
                             type: object
                           serverCertificate:
                             properties:
-                              dataKeyCertificate:
-                                default: tls.crt
-                                type: string
-                              dataKeyKey:
-                                default: tls.key
-                                type: string
-                              secretName:
-                                minLength: 1
-                                type: string
+                              certificate:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              key:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
                             required:
-                            - secretName
+                            - certificate
+                            - key
                             type: object
                         type: object
                       useCertManager:
