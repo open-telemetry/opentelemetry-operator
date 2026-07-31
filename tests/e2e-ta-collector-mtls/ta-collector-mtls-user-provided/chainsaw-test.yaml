@@ -10,10 +10,6 @@ spec:
       use:
         template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
     - name: generate-user-provided-certs
-      # Generate a CA and server/client leaf certificates with openssl, then distribute them as
-      # user-provided material: the CA via a ConfigMap, the server certificate and its private key
-      # via two separate Secrets, and the client certificate via a single Secret. This exercises the
-      # useCertManager=false path with a ConfigMap-backed CA and a split cert/key.
       try:
         - command:
             entrypoint: bash
@@ -25,38 +21,29 @@ spec:
                 cd "$dir"
 
                 # CA
-                openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt \
-                  -days 1 -subj "/CN=ta-mtls-ca"
+                openssl genrsa -out ca.key 2048
+                openssl req -x509 -new -noenc -key ca.key -subj "/CN=ta-mtls-ca" -days 1 -out ca.crt
 
-                # Server cert signed by the CA (SAN must match the TA service name).
-                openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr \
-                  -subj "/CN=prometheus-cr-targetallocator"
+                # Server
+                openssl genrsa -out server.key 2048
+                openssl req -new -key server.key -subj "/CN=prometheus-cr-targetallocator" -out server.csr
                 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
                   -out server.crt -days 1 \
                   -extfile <(printf "subjectAltName=DNS:prometheus-cr-targetallocator")
 
-                # Client cert signed by the CA.
-                openssl req -newkey rsa:2048 -nodes -keyout client.key -out client.csr \
-                  -subj "/CN=prometheus-cr-collector"
+                # Client
+                openssl genrsa -out client.key 2048
+                openssl req -new -key client.key -subj "/CN=prometheus-cr-collector" -out client.csr
                 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
                   -out client.crt -days 1
 
-                # CA distributed via a ConfigMap.
-                kubectl create configmap mtls-ca -n "$NAMESPACE" \
-                  --from-file=ca.crt=ca.crt
+                # Distribute certs 
+                kubectl create cm mtls-ca -n "$NAMESPACE" --from-file=ca.crt=ca.crt
 
-                # Server certificate and key split across two Secrets.
-                kubectl create secret generic ta-server-cert -n "$NAMESPACE" \
-                  --from-file=tls.crt=server.crt
-                kubectl create secret generic ta-server-key -n "$NAMESPACE" \
-                  --from-file=tls.key=server.key
+                kubectl create secret generic ta-server-cert -n "$NAMESPACE" --from-file=tls.crt=server.crt
+                kubectl create secret generic ta-server-key -n "$NAMESPACE" --from-file=tls.key=server.key
 
-                # Client certificate + key in one Secret; also bundle the CA so the verification Job
-                # can validate the TA server certificate.
-                kubectl create secret generic ta-client-cert -n "$NAMESPACE" \
-                  --from-file=tls.crt=client.crt \
-                  --from-file=tls.key=client.key \
-                  --from-file=ca.crt=ca.crt
+                kubectl create secret generic ta-client-cert -n "$NAMESPACE" --from-file=tls.crt=client.crt --from-file=tls.key=client.key --from-file=ca.crt=ca.crt
     - name: step-00
       try:
         - apply:
