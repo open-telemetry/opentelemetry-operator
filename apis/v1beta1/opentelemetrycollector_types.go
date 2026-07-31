@@ -284,7 +284,7 @@ type TargetAllocatorTLS struct {
 	// verify the peer's certificate. It may be omitted if the CA certificate is bundled within the
 	// server and client certificate Secrets under the ca.crt key.
 	// +optional
-	CertificateAuthorityCertificate *CertificateReference `json:"certificateAuthorityCertificate,omitempty"`
+	CertificateAuthorityCertificate *CAReference `json:"certificateAuthorityCertificate,omitempty"`
 	// ServerCertificate references a Secret containing the server certificate and key used by the
 	// target allocator when exposing its HTTPS server.
 	// +optional
@@ -312,6 +312,20 @@ type CertificateReference struct {
 	// +optional
 	// +kubebuilder:default:=tls.key
 	DataKeyKey string `json:"dataKeyKey,omitempty"`
+}
+
+// CertificateReference points to a certificate (and optionally its private key) stored in a Secret.
+type CAReference struct {
+	// SecretName is the name of the Secret, in the same namespace as the workload, holding the
+	// certificate data.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+	// DataKeyCertificate is the key within the Secret's data that holds the certificate.
+	// Defaults to tls.crt.
+	// +optional
+	// +kubebuilder:default:=tls.crt
+	DataKeyCertificate string `json:"dataKeyCertificate,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

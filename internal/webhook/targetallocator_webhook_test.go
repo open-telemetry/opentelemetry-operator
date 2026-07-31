@@ -369,7 +369,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						TLS: &v1beta1.TargetAllocatorTLS{
 							ServerCertificate:               &v1beta1.CertificateReference{SecretName: "server-secret"},
 							ClientCertificate:               &v1beta1.CertificateReference{SecretName: "client-secret"},
-							CertificateAuthorityCertificate: &v1beta1.CertificateReference{SecretName: "ca-secret"},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca-secret"},
 						},
 					},
 				},

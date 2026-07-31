@@ -19,27 +19,19 @@ import (
 )
 
 func TestIsTAMTLSEnabledTrue(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
+	mtls := &v1beta1.TargetAllocatorMTLS{Enabled: true}
 
-	assert.True(t, IsTAMTLSEnabled(ta))
+	assert.True(t, IsTAMTLSEnabled(mtls))
 }
 
 func TestIsTAMTLSEnabledFalse(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-	ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: false}
+	mtls := &v1beta1.TargetAllocatorMTLS{Enabled: false}
 
-	assert.False(t, IsTAMTLSEnabled(ta))
-}
-
-func TestIsTAMTLSEnabledNilTA(t *testing.T) {
-	assert.False(t, IsTAMTLSEnabled(nil))
+	assert.False(t, IsTAMTLSEnabled(mtls))
 }
 
 func TestIsTAMTLSEnabledNilMtls(t *testing.T) {
-	ta := &v1alpha1.TargetAllocator{}
-
-	assert.False(t, IsTAMTLSEnabled(ta))
+	assert.False(t, IsTAMTLSEnabled(nil))
 }
 
 func TestIsTAMTLSCertManagerEnabled(t *testing.T) {
@@ -48,43 +40,43 @@ func TestIsTAMTLSCertManagerEnabled(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		ta       *v1alpha1.TargetAllocator
+		mtls     *v1beta1.TargetAllocatorMTLS
 		cfg      config.Config
 		expected bool
 	}{
 		{
 			name:     "mTLS enabled, cert-manager available, UseCertManager defaulting to true",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true},
 			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
 			expected: true,
 		},
 		{
 			name:     "mTLS enabled, cert-manager available, UseCertManager explicitly true",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolTrue}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolTrue},
 			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
 			expected: true,
 		},
 		{
 			name:     "mTLS enabled, cert-manager available, UseCertManager false",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolFalse}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: &boolFalse},
 			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
 			expected: false,
 		},
 		{
 			name:     "mTLS enabled, cert-manager not available",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true},
 			cfg:      config.Config{CertManagerAvailability: certmanager.NotAvailable},
 			expected: false,
 		},
 		{
 			name:     "mTLS disabled",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: false}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: false},
 			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
 			expected: false,
 		},
 		{
-			name:     "nil TA",
-			ta:       nil,
+			name:     "nil mtls",
+			mtls:     nil,
 			cfg:      config.Config{CertManagerAvailability: certmanager.Available},
 			expected: false,
 		},
@@ -92,7 +84,7 @@ func TestIsTAMTLSCertManagerEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, IsTAMTLSCertManagerEnabled(tt.ta, tt.cfg))
+			assert.Equal(t, tt.expected, IsTAMTLSCertManagerEnabled(tt.mtls, tt.cfg))
 		})
 	}
 }
@@ -100,39 +92,39 @@ func TestIsTAMTLSCertManagerEnabled(t *testing.T) {
 func TestIsTAMTLSUserProvided(t *testing.T) {
 	tests := []struct {
 		name     string
-		ta       *v1alpha1.TargetAllocator
+		mtls     *v1beta1.TargetAllocatorMTLS
 		expected bool
 	}{
 		{
 			name:     "mTLS enabled, useCertManager defaulted",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true},
 			expected: false,
 		},
 		{
 			name:     "mTLS enabled, useCertManager true",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: new(true)}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: new(true)},
 			expected: false,
 		},
 		{
 			name:     "mTLS enabled, useCertManager false",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: new(false)}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: true, UseCertManager: new(false)},
 			expected: true,
 		},
 		{
 			name:     "mTLS disabled, useCertManager false",
-			ta:       &v1alpha1.TargetAllocator{Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: false, UseCertManager: new(false)}}},
+			mtls:     &v1beta1.TargetAllocatorMTLS{Enabled: false, UseCertManager: new(false)},
 			expected: false,
 		},
 		{
 			name:     "nil TA",
-			ta:       nil,
+			mtls:     nil,
 			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, IsTAMTLSUserProvided(tt.ta))
+			assert.Equal(t, tt.expected, IsTAMTLSUserProvided(tt.mtls))
 		})
 	}
 }
@@ -225,7 +217,7 @@ func TestTACertificateVolumesSeparateCA(t *testing.T) {
 		Enabled:        true,
 		UseCertManager: new(false),
 		TLS: &v1beta1.TargetAllocatorTLS{
-			CertificateAuthorityCertificate: &v1beta1.CertificateReference{SecretName: "ca-secret", DataKeyCertificate: "ca.pem"},
+			CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca-secret", DataKeyCertificate: "ca.pem"},
 			ServerCertificate:               &v1beta1.CertificateReference{SecretName: "server-secret"},
 			ClientCertificate:               &v1beta1.CertificateReference{SecretName: "client-secret"},
 		},
@@ -326,7 +318,7 @@ func TestValidateTAMTLS(t *testing.T) {
 				TLS: &v1beta1.TargetAllocatorTLS{
 					ServerCertificate:               serverRef,
 					ClientCertificate:               clientRef,
-					CertificateAuthorityCertificate: &v1beta1.CertificateReference{SecretName: "ca"},
+					CertificateAuthorityCertificate: &v1beta1.CAReference{SecretName: "ca"},
 				},
 			}}},
 		},
@@ -334,7 +326,7 @@ func TestValidateTAMTLS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateTAMTLS(tt.ta, tt.certManagerAvailable)
+			err := ValidateTAMTLS(tt.ta.Spec.Mtls, tt.certManagerAvailable)
 			if tt.expectedErr == "" {
 				assert.NoError(t, err)
 				return

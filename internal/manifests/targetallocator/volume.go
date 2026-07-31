@@ -13,12 +13,12 @@ import (
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volume {
+func Volumes(cfg config.Config, ta v1alpha1.TargetAllocator) []corev1.Volume {
 	volumes := []corev1.Volume{{
 		Name: naming.TAConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(instance.Name)},
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(ta.Name)},
 				Items: []corev1.KeyToPath{
 					{
 						Key:  cfg.TargetAllocatorConfigMapEntry,
@@ -29,12 +29,12 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 		},
 	}}
 
-	if manifestutils.IsTAMTLSEnabled(&instance) {
-		serverVolumes, _ := manifestutils.TAServerCertificateVolumes(&instance)
+	if manifestutils.IsTAMTLSEnabled(ta.Spec.Mtls) {
+		serverVolumes, _ := manifestutils.TAServerCertificateVolumes(&ta)
 		volumes = append(volumes, serverVolumes...)
 	}
 
-	volumes = append(volumes, instance.Spec.Volumes...)
+	volumes = append(volumes, ta.Spec.Volumes...)
 
 	return volumes
 }

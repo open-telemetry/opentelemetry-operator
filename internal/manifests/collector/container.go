@@ -62,7 +62,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			})
 	}
 
-	if manifestutils.IsTAMTLSEnabled(ta) {
+	if ta != nil && manifestutils.IsTAMTLSEnabled(ta.Spec.Mtls) {
 		_, clientMounts := manifestutils.TAClientCertificateVolumes(ta, otelcol.Name)
 		volumeMounts = append(volumeMounts, clientMounts...)
 	}

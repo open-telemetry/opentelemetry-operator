@@ -2310,9 +2310,6 @@ spec:
                           dataKeyCertificate:
                             default: tls.crt
                             type: string
-                          dataKeyKey:
-                            default: tls.key
-                            type: string
                           secretName:
                             minLength: 1
                             type: string

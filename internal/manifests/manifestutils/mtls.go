@@ -17,67 +17,82 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
-func IsTAMTLSEnabled(ta *v1alpha1.TargetAllocator) bool {
-	return ta != nil && ta.Spec.Mtls != nil && ta.Spec.Mtls.Enabled
+// IsTAMTLSEnabled reports whether mTLS should be enabled.
+func IsTAMTLSEnabled(mtls *v1beta1.TargetAllocatorMTLS) bool {
+	return mtls != nil && mtls.Enabled
 }
 
-func IsTAMTLSCertManagerEnabled(ta *v1alpha1.TargetAllocator, cfg config.Config) bool {
-	if !IsTAMTLSEnabled(ta) {
+// IsTAMTLSCertManagerEnabled reports whether cert-manager configuration for mTLS
+// is provided + is cert-manager available on the cluster.
+func IsTAMTLSCertManagerEnabled(
+	mtls *v1beta1.TargetAllocatorMTLS,
+	cfg config.Config,
+) bool {
+	if !IsTAMTLSEnabled(mtls) {
 		return false
 	}
-	if ta.Spec.Mtls.UseCertManager != nil && !*ta.Spec.Mtls.UseCertManager {
+	if mtls.UseCertManager != nil && !*mtls.UseCertManager {
 		return false
 	}
 	return cfg.CertManagerAvailability == certmanager.Available
 }
 
-// IsTAMTLSUserProvided reports whether mTLS is enabled with user-provided certificates
-// (i.e. cert-manager is explicitly disabled). In this mode the operator mounts the Secrets
-// referenced in the TLS block instead of provisioning cert-manager Certificates.
-func IsTAMTLSUserProvided(ta *v1alpha1.TargetAllocator) bool {
-	return IsTAMTLSEnabled(ta) &&
-		ta.Spec.Mtls.UseCertManager != nil &&
-		!*ta.Spec.Mtls.UseCertManager
+// IsTAMTLSUserProvided reports whether mTLS is enabled with user-provided
+// certificates (i.e. cert-manager is explicitly disabled).
+func IsTAMTLSUserProvided(mtls *v1beta1.TargetAllocatorMTLS) bool {
+	return IsTAMTLSEnabled(mtls) &&
+		mtls.UseCertManager != nil &&
+		!*mtls.UseCertManager
 }
 
-// TAServerCertificateVolumes builds the volumes and volume mounts that provide the target allocator's
-// server certificate (and the CA used to verify collector clients). With cert-manager it mounts the
-// operator-managed Secret at /tls; with user-provided certificates it projects each referenced Secret
-// key onto the corresponding file under /tls via subPath mounts.
-func TAServerCertificateVolumes(ta *v1alpha1.TargetAllocator) ([]corev1.Volume, []corev1.VolumeMount) {
+// TAServerCertificateVolumes builds the volumes and volume mounts that provide
+// TA's server certificate (and the CA used to verify collector clients).
+// There are 2 scenarios:
+//   - With cert-manager it mounts the operator-managed Secret at /tls.
+//   - With user-provided certificates it projects each referenced Secret key
+//     onto the corresponding file under /tls via subPath mounts.
+func TAServerCertificateVolumes(
+	ta *v1alpha1.TargetAllocator,
+) ([]corev1.Volume, []corev1.VolumeMount) {
 	return taCertificateVolumes(
 		ta,
 		naming.TAServerCertificate(ta.Name),
 		naming.TAServerCertificateSecretName(ta.Name),
-		taServerCertificateReference(ta),
+		taServerCertificateReference(ta.Spec.Mtls),
 	)
 }
 
-// TAClientCertificateVolumes builds the volumes and volume mounts that provide the collector's client
-// certificate (and the CA used to verify the target allocator server). With cert-manager it mounts the
-// operator-managed Secret at /tls; with user-provided certificates it projects each referenced Secret
-// key onto the corresponding file under /tls via subPath mounts.
-func TAClientCertificateVolumes(ta *v1alpha1.TargetAllocator, otelcolName string) ([]corev1.Volume, []corev1.VolumeMount) {
+// TAClientCertificateVolumes builds the volumes and volume mounts that provide
+// collector's client certificate (and the CA used to verify the TA server).
+// There are 2 scenarios:
+//   - With cert-manager it mounts the operator-managed Secret at /tls
+//   - With user-provided certificates it projects each referenced Secret key
+//     onto the corresponding file under /tls via subPath mounts.
+func TAClientCertificateVolumes(
+	ta *v1alpha1.TargetAllocator,
+	otelcolName string,
+) ([]corev1.Volume, []corev1.VolumeMount) {
 	return taCertificateVolumes(
 		ta,
 		naming.TAClientCertificate(otelcolName),
 		naming.TAClientCertificateSecretName(otelcolName),
-		taClientCertificateReference(ta),
+		taClientCertificateReference(ta.Spec.Mtls),
 	)
 }
 
-// taCertificateVolumes returns the volumes and mounts for one side of the mTLS connection.
-//
-// In the cert-manager case it mounts the single operator-managed Secret at /tls, which already stores
-// the standard ca.crt/tls.crt/tls.key keys.
-//
-// In the user-provided case (useCertManager=false) it builds one Secret volume per distinct referenced
-// Secret name and one subPath VolumeMount per file, so that the leaf certificate/key come from certRef
-// and the CA certificate comes from either a dedicated CertificateAuthorityCertificate reference or,
-// when that isn't set, from the ca.crt key of the leaf Secret. Because references are independent, the
-// same Secret may back the CA, certificate and key.
-func taCertificateVolumes(ta *v1alpha1.TargetAllocator, volumeName, certManagerSecretName string, certRef *v1beta1.CertificateReference) ([]corev1.Volume, []corev1.VolumeMount) {
-	if !IsTAMTLSUserProvided(ta) || certRef == nil {
+type mtlsFile struct {
+	secretName string
+	key        string
+	path       string
+}
+
+func taCertificateVolumes(
+	ta *v1alpha1.TargetAllocator,
+	volumeName, certManagerSecretName string,
+	certRef *v1beta1.CertificateReference,
+) ([]corev1.Volume, []corev1.VolumeMount) {
+	// cert-manager case
+	if !IsTAMTLSUserProvided(ta.Spec.Mtls) || certRef == nil {
 		volumes := []corev1.Volume{{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -93,20 +108,33 @@ func taCertificateVolumes(ta *v1alpha1.TargetAllocator, volumeName, certManagerS
 		return volumes, mounts
 	}
 
-	// The CA certificate is served from its own reference when provided, otherwise it is expected to
-	// be bundled in the leaf Secret under the ca.crt key.
-	caRef := caCertificateReference(ta)
+	// user-provided case
+	// The CA certificate is served from its own reference when provided, otherwise
+	// it is expected to be bundled in the leaf Secret under the ca.crt key.
+	caRef := caCertificateReference(ta.Spec.Mtls)
 	caSecretName := certRef.SecretName
 	caKey := constants.TACollectorCAFileName
 	if caRef != nil {
 		caSecretName = caRef.SecretName
-		caKey = dataKeyCertificate(caRef)
+		caKey = dataKeyCA(caRef)
 	}
 
 	files := []mtlsFile{
-		{secretName: caSecretName, key: caKey, path: constants.TACollectorCAFileName},
-		{secretName: certRef.SecretName, key: dataKeyCertificate(certRef), path: constants.TACollectorTLSCertFileName},
-		{secretName: certRef.SecretName, key: dataKeyKey(certRef), path: constants.TACollectorTLSKeyFileName},
+		{
+			secretName: caSecretName,
+			key:        caKey,
+			path:       constants.TACollectorCAFileName,
+		},
+		{
+			secretName: certRef.SecretName,
+			key:        dataKeyCertificate(certRef),
+			path:       constants.TACollectorTLSCertFileName,
+		},
+		{
+			secretName: certRef.SecretName,
+			key:        dataKeyKey(certRef),
+			path:       constants.TACollectorTLSKeyFileName,
+		},
 	}
 
 	var volumes []corev1.Volume
@@ -137,44 +165,41 @@ func taCertificateVolumes(ta *v1alpha1.TargetAllocator, volumeName, certManagerS
 	return volumes, mounts
 }
 
-// mtlsFile describes a single certificate file to project into /tls: which Secret and key it comes
-// from, and the fixed filename it must be mounted as.
-type mtlsFile struct {
-	secretName string
-	key        string
-	path       string
-}
-
-// taTLS returns the user-provided TLS configuration, or nil when it isn't set.
-func taTLS(ta *v1alpha1.TargetAllocator) *v1beta1.TargetAllocatorTLS {
-	if ta == nil || ta.Spec.Mtls == nil {
+func taTLS(mtls *v1beta1.TargetAllocatorMTLS) *v1beta1.TargetAllocatorTLS {
+	if mtls == nil {
 		return nil
 	}
-	return ta.Spec.Mtls.TLS
+	return mtls.TLS
 }
 
-func taServerCertificateReference(ta *v1alpha1.TargetAllocator) *v1beta1.CertificateReference {
-	if tls := taTLS(ta); tls != nil {
+func taServerCertificateReference(mtls *v1beta1.TargetAllocatorMTLS) *v1beta1.CertificateReference {
+	if tls := taTLS(mtls); tls != nil {
 		return tls.ServerCertificate
 	}
 	return nil
 }
 
-func taClientCertificateReference(ta *v1alpha1.TargetAllocator) *v1beta1.CertificateReference {
-	if tls := taTLS(ta); tls != nil {
+func taClientCertificateReference(mtls *v1beta1.TargetAllocatorMTLS) *v1beta1.CertificateReference {
+	if tls := taTLS(mtls); tls != nil {
 		return tls.ClientCertificate
 	}
 	return nil
 }
 
-func caCertificateReference(ta *v1alpha1.TargetAllocator) *v1beta1.CertificateReference {
-	if tls := taTLS(ta); tls != nil {
+func caCertificateReference(mtls *v1beta1.TargetAllocatorMTLS) *v1beta1.CAReference {
+	if tls := taTLS(mtls); tls != nil {
 		return tls.CertificateAuthorityCertificate
 	}
 	return nil
 }
 
-// dataKeyCertificate returns the Secret data key holding the certificate, defaulting to tls.crt.
+func dataKeyCA(ref *v1beta1.CAReference) string {
+	if ref != nil && ref.DataKeyCertificate != "" {
+		return ref.DataKeyCertificate
+	}
+	return constants.TACollectorTLSCertFileName
+}
+
 func dataKeyCertificate(ref *v1beta1.CertificateReference) string {
 	if ref != nil && ref.DataKeyCertificate != "" {
 		return ref.DataKeyCertificate
@@ -182,7 +207,6 @@ func dataKeyCertificate(ref *v1beta1.CertificateReference) string {
 	return constants.TACollectorTLSCertFileName
 }
 
-// dataKeyKey returns the Secret data key holding the private key, defaulting to tls.key.
 func dataKeyKey(ref *v1beta1.CertificateReference) string {
 	if ref != nil && ref.DataKeyKey != "" {
 		return ref.DataKeyKey
@@ -190,16 +214,19 @@ func dataKeyKey(ref *v1beta1.CertificateReference) string {
 	return constants.TACollectorTLSKeyFileName
 }
 
-// ValidateTAMTLS validates the target allocator mTLS configuration. When mTLS relies on cert-manager
-// it requires cert-manager to be available. When cert-manager is disabled it requires the user to
-// provide the server and client certificate Secrets; the CA certificate may either be referenced
-// separately or bundled in the leaf Secrets under the ca.crt key.
-func ValidateTAMTLS(ta *v1alpha1.TargetAllocator, certManagerAvailable bool) error {
-	if !IsTAMTLSEnabled(ta) {
+// ValidateTAMTLS validates the TA mTLS configuration. There are 2 scenarios:
+//   - When mTLS relies on cert-manager it requires cert-manager to be available.
+//   - When cert-manager is disabled it requires the user to provide the server
+//     and client certificate Secrets.
+//
+// Note: The CA certificate may either be referenced separately or bundled in
+// the leaf Secrets under the ca.crt key.
+func ValidateTAMTLS(mtls *v1beta1.TargetAllocatorMTLS, certManagerAvailable bool) error {
+	if !IsTAMTLSEnabled(mtls) {
 		return nil
 	}
 
-	if !IsTAMTLSUserProvided(ta) {
+	if !IsTAMTLSUserProvided(mtls) {
 		if !certManagerAvailable {
 			return errors.New("mTLS is enabled with useCertManager but cert-manager is not available; install cert-manager and restart the operator, or set useCertManager to false")
 		}
@@ -207,7 +234,7 @@ func ValidateTAMTLS(ta *v1alpha1.TargetAllocator, certManagerAvailable bool) err
 	}
 
 	// User-provided certificates: both leaf certificates must be referenced.
-	if taServerCertificateReference(ta) == nil || taClientCertificateReference(ta) == nil {
+	if taServerCertificateReference(mtls) == nil || taClientCertificateReference(mtls) == nil {
 		return errors.New("mTLS is enabled with useCertManager set to false; tls.serverCertificate and tls.clientCertificate must both reference a Secret")
 	}
 	return nil

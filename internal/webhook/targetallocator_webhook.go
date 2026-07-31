@@ -99,7 +99,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 	}
 
 	// validate mTLS configuration (cert-manager availability, or user-provided certificate Secrets)
-	if err := manifestutils.ValidateTAMTLS(ta, w.cfg.CertManagerAvailability == certmanager.Available); err != nil {
+	if err := manifestutils.ValidateTAMTLS(ta.Spec.Mtls, w.cfg.CertManagerAvailability == certmanager.Available); err != nil {
 		return warnings, err
 	}
 

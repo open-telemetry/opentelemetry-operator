@@ -34538,16 +34538,6 @@ Defaults to tls.crt.<br/>
             <i>Default</i>: tls.crt<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>dataKeyKey</b></td>
-        <td>string</td>
-        <td>
-          DataKeyKey is the key within the Secret's data that holds the private key.
-Defaults to tls.key. It is not required for CA certificate references.<br/>
-          <br/>
-            <i>Default</i>: tls.key<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 

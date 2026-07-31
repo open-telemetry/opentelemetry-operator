@@ -19,8 +19,8 @@ import (
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
-	image := instance.Spec.Image
+func Container(cfg config.Config, _ logr.Logger, ta v1alpha1.TargetAllocator) corev1.Container {
+	image := ta.Spec.Image
 	if image == "" {
 		image = cfg.TargetAllocatorImage
 	}
@@ -31,7 +31,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		ContainerPort: 8080,
 		Protocol:      corev1.ProtocolTCP,
 	})
-	for _, p := range instance.Spec.Ports {
+	for _, p := range ta.Spec.Ports {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          p.Name,
 			ContainerPort: p.Port,
@@ -44,9 +44,9 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		Name:      naming.TAConfigMapVolume(),
 		MountPath: "/conf",
 	}}
-	volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
+	volumeMounts = append(volumeMounts, ta.Spec.VolumeMounts...)
 
-	envVars := slices.Clone(instance.Spec.Env)
+	envVars := slices.Clone(ta.Spec.Env)
 	if envVars == nil {
 		envVars = []corev1.EnvVar{}
 	}
@@ -92,7 +92,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 
 	var args []string
 	// ensure that the args are ordered when moved to container.Args, so the output doesn't depend on map iteration
-	argsMap := instance.Spec.Args
+	argsMap := ta.Spec.Args
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
@@ -101,7 +101,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	}
 	slices.Sort(args)
 
-	readinessProbe := instance.Spec.ReadinessProbe
+	readinessProbe := ta.Spec.ReadinessProbe
 	if readinessProbe == nil {
 		readinessProbe = &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -113,7 +113,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		}
 	}
 
-	livenessProbe := instance.Spec.LivenessProbe
+	livenessProbe := ta.Spec.LivenessProbe
 	if livenessProbe == nil {
 		livenessProbe = &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -125,13 +125,13 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 		}
 	}
 
-	if manifestutils.IsTAMTLSEnabled(&instance) {
+	if manifestutils.IsTAMTLSEnabled(ta.Spec.Mtls) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,
 			Protocol:      corev1.ProtocolTCP,
 		})
-		_, serverMounts := manifestutils.TAServerCertificateVolumes(&instance)
+		_, serverMounts := manifestutils.TAServerCertificateVolumes(&ta)
 		volumeMounts = append(volumeMounts, serverMounts...)
 	}
 
@@ -139,16 +139,16 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	return corev1.Container{
 		Name:            naming.TAContainer(),
 		Image:           image,
-		ImagePullPolicy: instance.Spec.ImagePullPolicy,
+		ImagePullPolicy: ta.Spec.ImagePullPolicy,
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
-		EnvFrom:         instance.Spec.EnvFrom,
-		Resources:       instance.Spec.Resources,
-		SecurityContext: instance.Spec.SecurityContext,
+		EnvFrom:         ta.Spec.EnvFrom,
+		Resources:       ta.Spec.Resources,
+		SecurityContext: ta.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
-		Lifecycle:       instance.Spec.Lifecycle,
+		Lifecycle:       ta.Spec.Lifecycle,
 	}
 }
