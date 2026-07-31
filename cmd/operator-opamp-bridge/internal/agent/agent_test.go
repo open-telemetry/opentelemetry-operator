@@ -289,6 +289,10 @@ func (*mockHealthApplier) Delete(string) error {
 	return nil
 }
 
+func (*mockHealthApplier) Restart(context.Context) error {
+	return nil
+}
+
 func (*mockHealthApplier) ListInstances() ([]operator.CollectorInstance, error) {
 	return nil, nil
 }
@@ -298,7 +302,9 @@ func (m *mockHealthApplier) GetHealth() (operator.Health, error) {
 }
 
 type recordingConfigApplier struct {
-	applied map[string][]byte
+	applied       map[string][]byte
+	restartCalled int
+	restartErr    error
 }
 
 func (r *recordingConfigApplier) Apply(name string, configFile *protobufs.AgentConfigFile) error {
@@ -311,6 +317,11 @@ func (r *recordingConfigApplier) Apply(name string, configFile *protobufs.AgentC
 
 func (*recordingConfigApplier) Delete(string) error {
 	return nil
+}
+
+func (r *recordingConfigApplier) Restart(context.Context) error {
+	r.restartCalled++
+	return r.restartErr
 }
 
 func (*recordingConfigApplier) ListInstances() ([]operator.CollectorInstance, error) {
@@ -1381,6 +1392,57 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 		agent.Shutdown()
 		synctest.Wait()
 	})
+}
+
+func TestAgent_onCommand_Restart(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, applier.restartCalled, "Restart should be called exactly once")
+}
+
+func TestAgent_onCommand_RestartError(t *testing.T) {
+	restartErr := errors.New("rollout failed")
+	applier := &recordingConfigApplier{restartErr: restartErr}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart,
+	})
+
+	require.ErrorIs(t, err, restartErr)
+	assert.Equal(t, 1, applier.restartCalled)
+}
+
+func TestAgent_onCommand_UnknownType(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	// Use a value that is not CommandType_Restart.
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart + 99,
+	})
+
+	require.Error(t, err, "unknown command types should be returned as an error to the server")
+	assert.Contains(t, err.Error(), "unsupported command type")
+	assert.Equal(t, 0, applier.restartCalled, "Restart must not be called for unknown commands")
+}
+
+func TestAgent_Start_RegistersOnCommand(t *testing.T) {
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, newMockProxy(nil, nil, nil))
+
+	require.NoError(t, agent.Start())
+	defer agent.Shutdown()
+
+	assert.NotNil(t, mockClient.settings.Callbacks.OnCommand, "OnCommand callback must be registered")
 }
 
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {

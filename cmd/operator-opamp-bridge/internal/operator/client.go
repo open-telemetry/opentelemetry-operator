@@ -5,6 +5,7 @@ package operator
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"strings"
 	"time"
@@ -19,6 +20,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 const (
@@ -39,6 +42,10 @@ type ConfigApplier interface {
 	// Implementations define the accepted key format, but keys should match entries returned by
 	// CollectorInstance.GetConfigMap.
 	Delete(key string) error
+
+	// Restart triggers a rolling restart of the managed collector workload(s) in response to
+	// an OpAMP ServerToAgentCommand with type CommandType_Restart.
+	Restart(ctx context.Context) error
 
 	// ListInstances retrieves all collector instances managed by the bridge.
 	ListInstances() ([]CollectorInstance, error)
@@ -216,6 +223,33 @@ func (c Client) Delete(key string) error {
 		return err
 	}
 	return c.k8sClient.Delete(ctx, &result)
+}
+
+// Restart triggers a rolling restart of all managed collector workloads.
+// Sidecar mode collectors are skipped (they have no standalone workload).
+// All other collectors are restarted via rollout.TriggerRollout; errors are joined and returned.
+func (c Client) Restart(ctx context.Context) error {
+	collectors, err := c.listOpenTelemetryCollectors()
+	if err != nil {
+		return fmt.Errorf("failed to list collectors for restart: %w", err)
+	}
+	var errs []error
+	for i := range collectors {
+		col := &collectors[i]
+		mode := strings.ToLower(string(col.Col.Spec.Mode))
+		if mode == "sidecar" {
+			c.log.Info("Skipping restart for sidecar mode collector - no standalone workload",
+				"name", col.GetName(), "namespace", col.GetNamespace())
+			continue
+		}
+		workloadName := naming.Collector(col.GetName())
+		if err := rollout.TriggerRollout(ctx, c.k8sClient, col.GetNamespace(), mode, workloadName); err != nil {
+			errs = append(errs, err)
+		} else {
+			c.log.Info("Triggered workload rollout restart", "mode", mode, "name", workloadName, "namespace", col.GetNamespace())
+		}
+	}
+	return stderrors.Join(errs...)
 }
 
 // ListInstances returns all collectors that are visible to OpAMP as effective config entries.
