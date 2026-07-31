@@ -112,6 +112,9 @@ spec:
             - name: client-cert
               mountPath: /etc/tls
               readOnly: true
+            - name: ca
+              mountPath: /etc/ca
+              readOnly: true
           args:
             - /bin/sh
             - -c
@@ -119,9 +122,12 @@ spec:
               curl -s \
                 --cert /etc/tls/tls.crt \
                 --key /etc/tls/tls.key \
-                --cacert /etc/tls/ca.crt \
+                --cacert /etc/ca/ca.crt \
                 https://prometheus-cr-targetallocator:443
       volumes:
         - name: client-cert
           secret:
             secretName: ta-client-cert
+        - name: ca
+          configMap:
+            name: mtls-ca
