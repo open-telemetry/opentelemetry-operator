@@ -279,7 +279,7 @@ type TargetAllocatorMTLS struct {
 // between the target allocator and the collector. The CA may come from a Secret or a ConfigMap;
 // the leaf certificate and its private key may live in different Secrets. The referenced keys are
 // projected into the pods via subPath volume mounts, which means certificate rotation requires the
-// pods to be recreated.
+// pods to be restarted.
 type TargetAllocatorTLS struct {
 	// CertificateAuthorityCertificate references the CA certificate used to verify the peer's
 	// certificate. Exactly one of secret or configMap must be set. It is required when

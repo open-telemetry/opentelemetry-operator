@@ -34436,9 +34436,9 @@ Mtls defines the mTLS configuration for the target allocator. If enabled, the ta
         <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstls">tls</a></b></td>
         <td>object</td>
         <td>
-          TLS references user-provided Secrets containing the certificates used for mTLS. It allows
-managing the certificates outside of the operator (e.g. without cert-manager) and is only
-consulted when UseCertManager is set to false.<br/>
+          TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34460,9 +34460,9 @@ Defaults to true.<br/>
 
 
 
-TLS references user-provided Secrets containing the certificates used for mTLS. It allows
-managing the certificates outside of the operator (e.g. without cert-manager) and is only
-consulted when UseCertManager is set to false.
+TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.
 
 <table>
     <thead>
