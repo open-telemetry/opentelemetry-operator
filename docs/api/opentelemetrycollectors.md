@@ -34625,29 +34625,29 @@ to the target allocator's HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatecertificate">certificate</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatecertificatesecret">certificateSecret</a></b></td>
         <td>object</td>
         <td>
-          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatekey">key</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatekeysecret">keySecret</a></b></td>
         <td>object</td>
         <td>
-          Key selects the private key. Its key defaults to tls.key.<br/>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
 </table>
 
 
-### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.certificate
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.certificateSecret
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
 
 
 
-Certificate selects the certificate. Its key defaults to tls.crt.
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
 
 <table>
     <thead>
@@ -34677,12 +34677,12 @@ certificate, tls.key for a private key.<br/>
 </table>
 
 
-### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.key
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.keySecret
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
 
 
 
-Key selects the private key. Its key defaults to tls.key.
+KeySecret selects the private key. Its key defaults to tls.key.
 
 <table>
     <thead>
@@ -34730,29 +34730,29 @@ exposing its HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatecertificate">certificate</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatecertificatesecret">certificateSecret</a></b></td>
         <td>object</td>
         <td>
-          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatekey">key</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatekeysecret">keySecret</a></b></td>
         <td>object</td>
         <td>
-          Key selects the private key. Its key defaults to tls.key.<br/>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
 </table>
 
 
-### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.certificate
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.certificateSecret
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
 
 
 
-Certificate selects the certificate. Its key defaults to tls.crt.
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
 
 <table>
     <thead>
@@ -34782,12 +34782,12 @@ certificate, tls.key for a private key.<br/>
 </table>
 
 
-### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.key
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.keySecret
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
 
 
 
-Key selects the private key. Its key defaults to tls.key.
+KeySecret selects the private key. Its key defaults to tls.key.
 
 <table>
     <thead>
