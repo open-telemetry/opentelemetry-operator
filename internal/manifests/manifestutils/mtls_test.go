@@ -162,12 +162,12 @@ func TestTACertificateVolumesUserProvidedDefaultKeys(t *testing.T) {
 		TLS: &v1beta1.TargetAllocatorTLS{
 			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "my-server-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "my-server-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
 			},
 			ClientCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "my-client-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
 			},
 		},
 	}
@@ -199,12 +199,12 @@ func TestTACertificateVolumesUserProvidedCustomKeys(t *testing.T) {
 		TLS: &v1beta1.TargetAllocatorTLS{
 			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "ca.pem"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server.pem"},
-				Key:         v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server-key.pem"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server.pem"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "my-server-secret", Key: "server-key.pem"},
 			},
 			ClientCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "my-client-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
 			},
 		},
 	}
@@ -227,12 +227,12 @@ func TestTACertificateVolumesSeparateCA(t *testing.T) {
 		TLS: &v1beta1.TargetAllocatorTLS{
 			CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret", Key: "ca.pem"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
 			},
 			ClientCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
 			},
 		},
 	}
@@ -257,12 +257,12 @@ func TestTACertificateVolumesSeparateCertAndKey(t *testing.T) {
 			// CA sourced from a ConfigMap, cert and key from two different Secrets.
 			CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca-configmap"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "cert-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "key-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "cert-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "key-secret"},
 			},
 			ClientCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "cert-secret"},
-				Key:         v1beta1.SecretKeySelector{Name: "key-secret"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "cert-secret"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "key-secret"},
 			},
 		},
 	}
@@ -287,12 +287,12 @@ func TestTACertificateVolumesSecretConfigMapNameCollision(t *testing.T) {
 			// A ConfigMap and a Secret share the name "shared"; they must not collide into one volume.
 			CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "shared"}},
 			ServerCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "shared"},
-				Key:         v1beta1.SecretKeySelector{Name: "shared"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "shared"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "shared"},
 			},
 			ClientCertificate: &v1beta1.CertificateReference{
-				Certificate: v1beta1.SecretKeySelector{Name: "shared"},
-				Key:         v1beta1.SecretKeySelector{Name: "shared"},
+				CertificateSecret: v1beta1.SecretKeySelector{Name: "shared"},
+				KeySecret:         v1beta1.SecretKeySelector{Name: "shared"},
 			},
 		},
 	}
@@ -347,12 +347,12 @@ func tlsPath(file string) string {
 
 func TestValidateTAMTLS(t *testing.T) {
 	serverRef := &v1beta1.CertificateReference{
-		Certificate: v1beta1.SecretKeySelector{Name: "server"},
-		Key:         v1beta1.SecretKeySelector{Name: "server"},
+		CertificateSecret: v1beta1.SecretKeySelector{Name: "server"},
+		KeySecret:         v1beta1.SecretKeySelector{Name: "server"},
 	}
 	clientRef := &v1beta1.CertificateReference{
-		Certificate: v1beta1.SecretKeySelector{Name: "client"},
-		Key:         v1beta1.SecretKeySelector{Name: "client"},
+		CertificateSecret: v1beta1.SecretKeySelector{Name: "client"},
+		KeySecret:         v1beta1.SecretKeySelector{Name: "client"},
 	}
 	caRef := &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca"}}
 
