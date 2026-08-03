@@ -209,6 +209,7 @@ func (agent *Agent) Start() error {
 			SaveRemoteConfigStatus: agent.saveRemoteConfigStatus,
 			GetEffectiveConfig:     agent.getEffectiveConfig,
 			OnMessage:              agent.onMessage,
+			OnCommand:              agent.onCommand,
 		},
 		RemoteConfigStatus:    agent.remoteConfigStatus,
 		PackagesStateProvider: nil,
@@ -449,6 +450,24 @@ func (agent *Agent) Shutdown() {
 	}
 	if agent.metricReporter != nil {
 		agent.metricReporter.Shutdown()
+	}
+}
+
+// onCommand is called when the OpAMP server sends a ServerToAgentCommand.
+// Only CommandType_Restart is handled; all other command types return an error to the server.
+func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
+	switch command.GetType() {
+	case protobufs.CommandType_CommandType_Restart:
+		agent.logger.Info("Received restart command, triggering collector restart")
+		if err := agent.applier.Restart(ctx); err != nil {
+			agent.logger.Error(err, "Failed to restart collector on command")
+			return err
+		}
+		return nil
+	default:
+		err := fmt.Errorf("unsupported command type: %s", command.GetType().String())
+		agent.logger.Error(err, "Received unsupported command type")
+		return err
 	}
 }
 
