@@ -19,7 +19,7 @@ jobs:
           persist-credentials: false
 
       - name: Ensure SHA pinned actions
-        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@3db98c0363e2fa5df3e1c4c471777a7c10b24cc9 # main
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@46cfe808a5f1588656ef299eedd0ce2fd7ec0dcc # main
         with:
           allowlist: |
             slsa-framework/slsa-github-generator
