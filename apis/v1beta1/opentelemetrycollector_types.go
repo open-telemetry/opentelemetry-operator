@@ -342,12 +342,12 @@ type CAReference struct {
 // CertificateReference points to a certificate and its private key. The certificate and the key may
 // be stored in different Secrets.
 type CertificateReference struct {
-	// Certificate selects the certificate. Its key defaults to tls.crt.
+	// CertificateSecret selects the certificate. Its key defaults to tls.crt.
 	// +kubebuilder:validation:Required
-	Certificate SecretKeySelector `json:"certificate"`
-	// Key selects the private key. Its key defaults to tls.key.
+	CertificateSecret SecretKeySelector `json:"certificateSecret"`
+	// KeySecret selects the private key. Its key defaults to tls.key.
 	// +kubebuilder:validation:Required
-	Key SecretKeySelector `json:"key"`
+	KeySecret SecretKeySelector `json:"keySecret"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

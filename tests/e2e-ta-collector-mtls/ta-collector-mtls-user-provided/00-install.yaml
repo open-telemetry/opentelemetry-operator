@@ -81,14 +81,14 @@ spec:
             name: mtls-ca
         # Server certificate and private key in two separate Secrets (keys default to tls.crt/tls.key).
         serverCertificate:
-          certificate:
+          certificateSecret:
             name: ta-server-cert
-          key:
+          keySecret:
             name: ta-server-key
         clientCertificate:
-          certificate:
+          certificateSecret:
             name: ta-client-cert
-          key:
+          keySecret:
             name: ta-client-cert
     prometheusCR:
       enabled: true
