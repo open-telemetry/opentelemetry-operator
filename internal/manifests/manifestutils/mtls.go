@@ -149,14 +149,14 @@ func taCertificateVolumes(
 	files = append(files,
 		mtlsFile{
 			kind: sourceSecret,
-			name: certRef.Certificate.Name,
-			key:  secretKey(&certRef.Certificate, constants.TACollectorTLSCertFileName),
+			name: certRef.CertificateSecret.Name,
+			key:  secretKey(&certRef.CertificateSecret, constants.TACollectorTLSCertFileName),
 			path: constants.TACollectorTLSCertFileName,
 		},
 		mtlsFile{
 			kind: sourceSecret,
-			name: certRef.Key.Name,
-			key:  secretKey(&certRef.Key, constants.TACollectorTLSKeyFileName),
+			name: certRef.KeySecret.Name,
+			key:  secretKey(&certRef.KeySecret, constants.TACollectorTLSKeyFileName),
 			path: constants.TACollectorTLSKeyFileName,
 		},
 	)
