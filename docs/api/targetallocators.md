@@ -9834,29 +9834,29 @@ to the target allocator's HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatecertificate">certificate</a></b></td>
+        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatecertificatesecret">certificateSecret</a></b></td>
         <td>object</td>
         <td>
-          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatekey">key</a></b></td>
+        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatekeysecret">keySecret</a></b></td>
         <td>object</td>
         <td>
-          Key selects the private key. Its key defaults to tls.key.<br/>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
 </table>
 
 
-### TargetAllocator.spec.mtls.tls.clientCertificate.certificate
+### TargetAllocator.spec.mtls.tls.clientCertificate.certificateSecret
 <sup><sup>[↩ Parent](#targetallocatorspecmtlstlsclientcertificate)</sup></sup>
 
 
 
-Certificate selects the certificate. Its key defaults to tls.crt.
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
 
 <table>
     <thead>
@@ -9886,12 +9886,12 @@ certificate, tls.key for a private key.<br/>
 </table>
 
 
-### TargetAllocator.spec.mtls.tls.clientCertificate.key
+### TargetAllocator.spec.mtls.tls.clientCertificate.keySecret
 <sup><sup>[↩ Parent](#targetallocatorspecmtlstlsclientcertificate)</sup></sup>
 
 
 
-Key selects the private key. Its key defaults to tls.key.
+KeySecret selects the private key. Its key defaults to tls.key.
 
 <table>
     <thead>
@@ -9939,29 +9939,29 @@ exposing its HTTPS server.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#targetallocatorspecmtlstlsservercertificatecertificate">certificate</a></b></td>
+        <td><b><a href="#targetallocatorspecmtlstlsservercertificatecertificatesecret">certificateSecret</a></b></td>
         <td>object</td>
         <td>
-          Certificate selects the certificate. Its key defaults to tls.crt.<br/>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#targetallocatorspecmtlstlsservercertificatekey">key</a></b></td>
+        <td><b><a href="#targetallocatorspecmtlstlsservercertificatekeysecret">keySecret</a></b></td>
         <td>object</td>
         <td>
-          Key selects the private key. Its key defaults to tls.key.<br/>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
 </table>
 
 
-### TargetAllocator.spec.mtls.tls.serverCertificate.certificate
+### TargetAllocator.spec.mtls.tls.serverCertificate.certificateSecret
 <sup><sup>[↩ Parent](#targetallocatorspecmtlstlsservercertificate)</sup></sup>
 
 
 
-Certificate selects the certificate. Its key defaults to tls.crt.
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
 
 <table>
     <thead>
@@ -9991,12 +9991,12 @@ certificate, tls.key for a private key.<br/>
 </table>
 
 
-### TargetAllocator.spec.mtls.tls.serverCertificate.key
+### TargetAllocator.spec.mtls.tls.serverCertificate.keySecret
 <sup><sup>[↩ Parent](#targetallocatorspecmtlstlsservercertificate)</sup></sup>
 
 
 
-Key selects the private key. Its key defaults to tls.key.
+KeySecret selects the private key. Its key defaults to tls.key.
 
 <table>
     <thead>
