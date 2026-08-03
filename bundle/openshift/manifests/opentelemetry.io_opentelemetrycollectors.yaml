@@ -8237,7 +8237,7 @@ spec:
                             type: object
                           clientCertificate:
                             properties:
-                              certificate:
+                              certificateSecret:
                                 properties:
                                   key:
                                     type: string
@@ -8247,7 +8247,7 @@ spec:
                                 required:
                                 - name
                                 type: object
-                              key:
+                              keySecret:
                                 properties:
                                   key:
                                     type: string
@@ -8258,12 +8258,12 @@ spec:
                                 - name
                                 type: object
                             required:
-                            - certificate
-                            - key
+                            - certificateSecret
+                            - keySecret
                             type: object
                           serverCertificate:
                             properties:
-                              certificate:
+                              certificateSecret:
                                 properties:
                                   key:
                                     type: string
@@ -8273,7 +8273,7 @@ spec:
                                 required:
                                 - name
                                 type: object
-                              key:
+                              keySecret:
                                 properties:
                                   key:
                                     type: string
@@ -8284,8 +8284,8 @@ spec:
                                 - name
                                 type: object
                             required:
-                            - certificate
-                            - key
+                            - certificateSecret
+                            - keySecret
                             type: object
                         type: object
                       useCertManager:
