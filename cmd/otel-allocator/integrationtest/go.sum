@@ -163,8 +163,8 @@ github.com/docker/go-connections v0.7.0 h1:6SsRfJddP22WMrCkj19x9WKjEDTB+ahsdiGYf
 github.com/docker/go-connections v0.7.0/go.mod h1:no1qkHdjq7kLMGUXYAduOhYPSJxxvgWBh7ogVvptn3Q=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/ebitengine/purego v0.10.0 h1:QIw4xfpWT6GWTzaW5XEKy3HXoqrJGx1ijYHzTF0/ISU=
-github.com/ebitengine/purego v0.10.0/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/ebitengine/purego v0.10.2 h1:W809HbnvzAxgdm+aOvlSekrM16wGCdT/e76+9tS7gzE=
+github.com/ebitengine/purego v0.10.2/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/edsrzf/mmap-go v1.2.1-0.20241212181136-fad1cd13edbd h1:I4PrRZuNMeDP3VbFrak4QsqwO5tWkQf0tqrrr1L2DsU=
 github.com/edsrzf/mmap-go v1.2.1-0.20241212181136-fad1cd13edbd/go.mod h1:19H/e8pUPLicwkyNgOykDXkJ9F0MHE+Z52B8EIth78Q=
 github.com/efficientgo/core v1.0.0-rc.3 h1:X6CdgycYWDcbYiJr1H1+lQGzx13o7bq3EUkbB9DsSPc=
@@ -662,8 +662,8 @@ github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36 h1:ObX9hZmK+VmijreZO/8x9pQ8/P
 github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36/go.mod h1:LEsDu4BubxK7/cWhtlQWfuxwL4rf/2UEpxXz1o1EMtM=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 h1:nn5Wsu0esKSJiIVhscUtVbo7ada43DJhG55ua/hjS5I=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
-github.com/shirou/gopsutil/v4 v4.26.6 h1:Mzr/npDtQC/xpeEuQKHZt8Zo9CmPvhTj8nkR8w5TLDs=
-github.com/shirou/gopsutil/v4 v4.26.6/go.mod h1:LZ6ewCSkBqUpvSOf+LsTGnRinC6iaNUNMGBtDkJBaLQ=
+github.com/shirou/gopsutil/v4 v4.26.7 h1:IXzpHz/dkMRYAhKkOXr1HB6SuzWU3eoyyeWe7g3bNZc=
+github.com/shirou/gopsutil/v4 v4.26.7/go.mod h1:5O9FjBiXoTDFatIWjZZosqj4pV0DRtLx598xGbBehzM=
 github.com/shoenig/test v1.13.2 h1:SaGxHxg7xkRuKuNtuFmHf0LgNGaAgcBT7HN4WHCKfqU=
 github.com/shoenig/test v1.13.2/go.mod h1:MKmiRyEeuFl8y9PCoThaRDgYQZeWBhRQlH99poXz5LI=
 github.com/shurcooL/httpfs v0.0.0-20230704072500-f1e31cf0ba5c h1:aqg5Vm5dwtvL+YgDpBcK1ITf3o96N/K7/wsRXQnUTEs=
