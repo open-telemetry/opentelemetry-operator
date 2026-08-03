@@ -86,6 +86,10 @@ func (healthyApplier) Delete(string) error {
 	return nil
 }
 
+func (healthyApplier) Restart(context.Context) error {
+	return nil
+}
+
 func (healthyApplier) ListInstances() ([]operator.CollectorInstance, error) {
 	return nil, nil
 }

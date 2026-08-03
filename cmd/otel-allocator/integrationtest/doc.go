@@ -8,6 +8,11 @@
 // an in-memory OTLP sink for assertions — no Kubernetes cluster, no external
 // backend.
 //
+// Most tests point a scrape config's static targets at the mock. Tests that need
+// discovery to change over time (a pod whose labels are updated, say) instead
+// register their own discovery.Config and hand target groups to Prometheus's
+// discovery manager themselves; see fakeKubeSD.
+//
 // It is its own module so the heavy collector/receiver dependency graph stays
 // out of the target allocator binary's module.
 package integrationtest

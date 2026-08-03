@@ -195,6 +195,8 @@ func deployTA(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, taConf
 	require.NoError(t, err)
 
 	imgName, imgTag := splitImageNameTag(taImg)
+	err = os.WriteFile(filepath.Join(overlayDir, "targetallocator.yaml"), []byte(taConfig), 0o600)
+	require.NoError(t, err)
 
 	overlayContent := fmt.Sprintf(`apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -210,6 +212,13 @@ images:
   - name: target-allocator
     newName: %[2]s
     newTag: "%[3]s"
+
+configMapGenerator:
+  - name: target-allocator
+    behavior: merge
+    files:
+      - targetallocator.yaml
+
 `, ns, imgName, imgTag, relBase)
 
 	err = os.WriteFile(filepath.Join(overlayDir, "kustomization.yaml"), []byte(overlayContent), 0o600)
@@ -231,14 +240,6 @@ images:
 	// ServiceAccount; the operator does not create this RBAC for a standalone TA.
 	e2e.BindTargetAllocatorClusterRole(ctx, t, cfg, ns, "target-allocator")
 
-	// The base kustomization includes a ConfigMap with default content.
-	// Overwrite it immediately with test-specific config before the pod starts.
-	cs := e2e.ClientSet(t, cfg)
-	cm, err := cs.CoreV1().ConfigMaps(ns).Get(ctx, "target-allocator", metav1.GetOptions{})
-	require.NoError(t, err, "get TA ConfigMap")
-	cm.Data = map[string]string{"targetallocator.yaml": taConfig}
-	_, err = cs.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-	require.NoError(t, err, "update TA ConfigMap with test config")
 }
 
 func deployCollectors(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string, replicas int32) {

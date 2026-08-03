@@ -51,6 +51,16 @@ func (a *Agents) SetCustomConfigForAgent(
 	}
 }
 
+// SendCommandToAgent sends a ServerToAgentCommand to the specified agent.
+func (a *Agents) SendCommandToAgent(agentId InstanceId, commandType protobufs.CommandType) {
+	agent := a.FindAgent(agentId)
+	if agent != nil {
+		agent.SendToAgent(&protobufs.ServerToAgent{
+			Command: &protobufs.ServerToAgentCommand{Type: commandType},
+		})
+	}
+}
+
 func isEqualAgentDescr(d1, d2 *protobufs.AgentDescription) bool {
 	if d1 == d2 {
 		return true
