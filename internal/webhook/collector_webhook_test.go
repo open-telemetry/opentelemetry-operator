@@ -1514,12 +1514,12 @@ func TestCollectorMTLSValidation(t *testing.T) {
 							TLS: &v1beta1.TargetAllocatorTLS{
 								CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
 								ServerCertificate: &v1beta1.CertificateReference{
-									Certificate: v1beta1.SecretKeySelector{Name: "server-secret"},
-									Key:         v1beta1.SecretKeySelector{Name: "server-secret"},
+									CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+									KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
 								},
 								ClientCertificate: &v1beta1.CertificateReference{
-									Certificate: v1beta1.SecretKeySelector{Name: "client-secret"},
-									Key:         v1beta1.SecretKeySelector{Name: "client-secret"},
+									CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+									KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
 								},
 							},
 						},
