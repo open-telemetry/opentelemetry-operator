@@ -6,3 +6,6 @@ spec:
   exporter:
     endpoint: http://sink-collector:4318
     timeout: 30s
+    sending_queue:
+      enabled: true
+      block_on_overflow: true
