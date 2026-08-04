@@ -692,9 +692,11 @@ func TestInitContainerUserEnv(t *testing.T) {
 		}},
 	}
 
-	t.Run("with no user env returns only required", func(t *testing.T) {
+	t.Run("with no user env returns pod/node defaults plus required", func(t *testing.T) {
 		env := initContainerUserEnv(required, nil, nil)
 		assert.Equal(t, []string{
+			constants.EnvPodIP,
+			constants.EnvNodeIP,
 			"OTEL_APACHE_AGENT_CONF",
 			"APACHE_SERVICE_INSTANCE_ID",
 		}, envNames(env))
@@ -714,6 +716,7 @@ func TestInitContainerUserEnv(t *testing.T) {
 			"OTEL_SERVICE_NAME",
 			"CUSTOM_ENDPOINT",
 			constants.EnvNodeIP,
+			constants.EnvPodIP,
 			"OTEL_APACHE_AGENT_CONF",
 			"APACHE_SERVICE_INSTANCE_ID",
 		}, envNames(env))
@@ -726,10 +729,39 @@ func TestInitContainerUserEnv(t *testing.T) {
 		)
 		assert.Equal(t, []string{
 			"SHARED",
+			constants.EnvPodIP,
+			constants.EnvNodeIP,
 			"OTEL_APACHE_AGENT_CONF",
 			"APACHE_SERVICE_INSTANCE_ID",
 		}, envNames(env))
 		assert.Equal(t, "from-language", env[0].Value)
+	})
+
+	t.Run("common env overriding an operator-managed default wins over the default", func(t *testing.T) {
+		env := initContainerUserEnv(required, nil,
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "203.0.113.5"}},
+		)
+		assert.Equal(t, []string{
+			constants.EnvNodeIP,
+			constants.EnvPodIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+		assert.Equal(t, "203.0.113.5", env[0].Value)
+	})
+
+	t.Run("language env overriding an operator-managed default wins over common env and the default", func(t *testing.T) {
+		env := initContainerUserEnv(required,
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "198.51.100.9"}},
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "203.0.113.5"}},
+		)
+		assert.Equal(t, []string{
+			constants.EnvNodeIP,
+			constants.EnvPodIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+		assert.Equal(t, "198.51.100.9", env[0].Value)
 	})
 }
 
