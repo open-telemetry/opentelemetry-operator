@@ -144,11 +144,21 @@ func configureFastScrape(scrapeConfigs []*promconfig.ScrapeConfig) {
 	}
 }
 
-// collectMetrics flattens the sink's OTLP batches into a map from metric name to
-// the label sets observed for it — each number data point's attributes merged over
-// its resource attributes.
-func collectMetrics(sink *consumertest.MetricsSink) map[string][]map[string]string {
-	byName := map[string][]map[string]string{}
+// observedPoint is one number data point as the sink received it: the data point's
+// attributes merged over its resource attributes, plus whether it is a staleness
+// marker rather than a scraped value. Prometheus reports a target's series as
+// stale once that target leaves the scrape pool, and the receiver turns those
+// reports into value-less data points flagged NoRecordedValue — so a stale point
+// says the target is gone, not that it was scraped.
+type observedPoint struct {
+	labels map[string]string
+	stale  bool
+}
+
+// collectDataPoints flattens the sink's OTLP batches into a map from metric name
+// to every number data point observed for it, staleness markers included.
+func collectDataPoints(sink *consumertest.MetricsSink) map[string][]observedPoint {
+	byName := map[string][]observedPoint{}
 	for _, md := range sink.AllMetrics() {
 		rms := md.ResourceMetrics()
 		for i := 0; i < rms.Len(); i++ {
@@ -158,13 +168,28 @@ func collectMetrics(sink *consumertest.MetricsSink) map[string][]map[string]stri
 				ms := sms.At(j).Metrics()
 				for k := 0; k < ms.Len(); k++ {
 					m := ms.At(k)
-					for _, dpAttrs := range numberDataPointAttrs(m) {
+					for _, dp := range numberDataPoints(m) {
 						labels := map[string]string{}
 						maps.Copy(labels, res)
-						maps.Copy(labels, dpAttrs)
-						byName[m.Name()] = append(byName[m.Name()], labels)
+						maps.Copy(labels, dp.labels)
+						byName[m.Name()] = append(byName[m.Name()], observedPoint{labels: labels, stale: dp.stale})
 					}
 				}
+			}
+		}
+	}
+	return byName
+}
+
+// collectMetrics is collectDataPoints restricted to scraped values, keyed by
+// metric name. Staleness markers are excluded: they carry no value, so they are
+// not observations of the target that produced them.
+func collectMetrics(sink *consumertest.MetricsSink) map[string][]map[string]string {
+	byName := map[string][]map[string]string{}
+	for name, points := range collectDataPoints(sink) {
+		for _, p := range points {
+			if !p.stale {
+				byName[name] = append(byName[name], p.labels)
 			}
 		}
 	}
@@ -201,7 +226,9 @@ func attrMap(m pcommon.Map) map[string]string {
 	return out
 }
 
-func numberDataPointAttrs(m pmetric.Metric) []map[string]string {
+// numberDataPoints returns one observedPoint per number data point of m, with
+// only the data point's own attributes; callers merge in the resource's.
+func numberDataPoints(m pmetric.Metric) []observedPoint {
 	var dps pmetric.NumberDataPointSlice
 	switch m.Type() {
 	case pmetric.MetricTypeSum:
@@ -211,9 +238,10 @@ func numberDataPointAttrs(m pmetric.Metric) []map[string]string {
 	default:
 		return nil
 	}
-	out := make([]map[string]string, 0, dps.Len())
+	out := make([]observedPoint, 0, dps.Len())
 	for i := 0; i < dps.Len(); i++ {
-		out = append(out, attrMap(dps.At(i).Attributes()))
+		dp := dps.At(i)
+		out = append(out, observedPoint{labels: attrMap(dp.Attributes()), stale: dp.Flags().NoRecordedValue()})
 	}
 	return out
 }
