@@ -9,7 +9,7 @@
 # - Grant the necessary access to `/autoinstrumentation{,-musl}` directory. `chmod -R go+r /autoinstrumentation`
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be available in the image.
-FROM python:3.14@sha256:09b29c360b84742bf98eba40b214f7f6b4b53286bb2c8a8b5b1afa188a8d9c0e AS build
+FROM python:3.14@sha256:5f1cdbcab9a50594a79502dd73e885456d2a2fc31f1a1fa18484815b37ee9152 AS build
 
 WORKDIR /operator-build
 
@@ -26,7 +26,7 @@ ADD requirements.txt .
 RUN apk add gcc python3-dev musl-dev linux-headers
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
-FROM busybox@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+FROM busybox@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
 
 COPY --from=build /operator-build/workspace /autoinstrumentation
 COPY --from=build-musl /operator-build/workspace /autoinstrumentation-musl

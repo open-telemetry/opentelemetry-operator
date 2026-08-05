@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: setup-go
       with:
         go-version: "~1.26.5"
@@ -67,12 +67,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: setup-go
       with:
         go-version: "~1.26.5"
@@ -107,37 +107,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: "~1.26.5"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+      uses: github/codeql-action/init@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
       with:
         languages: go
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+      uses: github/codeql-action/autobuild@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+      uses: github/codeql-action/analyze@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
 
   govulncheck:
     name: Govulncheck
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
 
     - name: Set up Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: setup-go
       with:
         go-version: "~1.26.5"

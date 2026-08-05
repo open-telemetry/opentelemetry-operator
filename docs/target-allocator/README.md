@@ -304,7 +304,9 @@ prometheusCR:
   serviceMonitorSelector: {}
 ```
 
-This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
+This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster, in every namespace. On a cluster where you do not trust everyone who can create a monitor, read [Security: arbitrary file access through Service/Pod Monitors](security.md) before using `{}` — a monitor is enough to steal the collector's credentials.
+
+If you need something more specific, you can also add a label filter:
 
 ```yaml
 prometheusCR:
@@ -315,6 +317,8 @@ prometheusCR:
 ```
 
 By setting the value of `spec.targetAllocator.prometheusCR.serviceMonitorSelector.matchLabels` to `app: my-app`, it means that your ServiceMonitor resource must in turn have that same value in `metadata.labels`.
+
+See [Security: arbitrary file access through Service/Pod Monitors](security.md) for the risks of enabling `prometheusCR` on a cluster with untrusted tenants, and how to mitigate them.
 
 ### RBAC
 

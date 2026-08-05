@@ -35,6 +35,12 @@ type remoteConfigRequest struct {
 	ContentType string            `json:"content_type,omitempty"`
 }
 
+type commandRequest struct {
+	// CommandType is the command to send to the agent. Use "restart" for
+	// CommandType_Restart; any other string sends an unrecognised command type.
+	CommandType string `json:"command_type"`
+}
+
 func NewServer(agents *data.Agents) *Server {
 	logger := &Logger{
 		log.New(
@@ -76,6 +82,7 @@ func (srv *Server) Start() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/agents", srv.getAgents)
 	mux.HandleFunc("/agents/push-config-to-agent", srv.pushConfigToAgent)
+	mux.HandleFunc("/agents/send-command", srv.sendCommandToAgent)
 	mux.HandleFunc("/agents/", srv.getAgentById)
 	srv.httpServer = &http.Server{
 		Addr:    "0.0.0.0:4321",
@@ -213,6 +220,48 @@ func (srv *Server) pushConfigToAgent(writer http.ResponseWriter, request *http.R
 		return
 	}
 
+	writer.WriteHeader(http.StatusAccepted)
+}
+
+// sendCommandToAgent sends a ServerToAgentCommand to the single connected agent.
+// It returns 202 immediately; commands are fire-and-forget in the OpAMP spec.
+func (srv *Server) sendCommandToAgent(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req commandRequest
+	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.CommandType == "" {
+		http.Error(writer, "command_type must be non-empty", http.StatusBadRequest)
+		return
+	}
+
+	allAgents := srv.agents.GetAllAgentsReadonlyClone()
+	if len(allAgents) != 1 {
+		http.Error(writer, "expected exactly one connected agent", http.StatusConflict)
+		return
+	}
+
+	var agentId data.InstanceId
+	for id := range allAgents {
+		agentId = id
+	}
+
+	var cmdType protobufs.CommandType
+	if req.CommandType == "restart" {
+		cmdType = protobufs.CommandType_CommandType_Restart
+	} else {
+		// Use a numeric value guaranteed to be unknown to the bridge so that the
+		// bridge's default case in onCommand is exercised.
+		cmdType = protobufs.CommandType(999)
+	}
+
+	srv.agents.SendCommandToAgent(agentId, cmdType)
 	writer.WriteHeader(http.StatusAccepted)
 }
 

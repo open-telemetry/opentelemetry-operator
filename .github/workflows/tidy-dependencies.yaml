@@ -1,0 +1,105 @@
+name: "Tidy Go modules"
+
+# Renovate runs `go mod tidy` only in the modules whose go.mod it edited. The
+# cmd/otel-allocator/integrationtest module follows the root and apis modules through
+# local replace directives, so a bump of a dependency it shares with the root module
+# leaves it untidy and its tests then fail with "updates to go.mod needed". Renovate
+# cannot tidy across a module graph joined by replace directives yet
+# (https://github.com/renovatebot/renovate/issues/12999), so until it can, tidy every
+# module here and push the result back to the Renovate branch.
+#
+# This needs an otelbot GitHub App with `contents: write` installed on this repository,
+# exposed as the OTELBOT_CLIENT_ID variable and the OTELBOT_PRIVATE_KEY secret - the
+# shared org-wide otelbot only has `pull_requests: write`. See
+# https://github.com/open-telemetry/community/blob/main/assets.md#otelbot.
+# The push cannot use GITHUB_TOKEN: pushes made with it do not trigger workflows, which
+# would leave the tidy commit - the new head of the pull request - without any CI runs.
+
+on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - '**/go.mod'
+      - '**/go.sum'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  COMMIT_MESSAGE: "Run go mod tidy in every module"
+
+jobs:
+  tidy:
+    name: Tidy Go modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # This job holds credentials that can write to the repository, so it must only ever
+    # check out code we trust: Renovate branches in this repository, never forks.
+    # `pull_request_target` additionally keeps the job definition pinned to main, so a
+    # pull request cannot change what runs here.
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+    - name: Generate otelbot token
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      id: otelbot-token
+      with:
+        client-id: ${{ vars.OTELBOT_OPERATOR_CLIENT_ID }}
+        private-key: ${{ secrets.OTELBOT_OPERATOR_PRIVATE_KEY }}
+        permission-contents: write
+
+    # Check out the exact commit that triggered this run, so that a Renovate push racing
+    # with this job makes the push below fail instead of overwriting it.
+    - name: Check out the pull request branch
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        persist-credentials: false
+
+    # Our own push re-triggers this workflow; stop here instead of tidying again.
+    - name: Skip branches that were tidied already
+      id: guard
+      run: |
+        if [ "$(git log -1 --format=%s)" = "$COMMIT_MESSAGE" ]; then
+          echo "The branch tip is already a tidy commit, nothing to do."
+        else
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set up Go
+      if: steps.guard.outputs.run == 'true'
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: "~1.26.5"
+
+    - name: Run go mod tidy in every module
+      if: steps.guard.outputs.run == 'true'
+      run: make tidy
+
+    - name: Commit and push the tidied modules
+      if: steps.guard.outputs.run == 'true'
+      env:
+        GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      run: |
+        if git diff --quiet -- ':(glob)**/go.mod' ':(glob)**/go.sum'; then
+          echo "All modules are tidy already."
+          exit 0
+        fi
+
+        # otelbot is on the EasyCLA allowlist, so its commits pass the CLA check.
+        git config user.name otelbot
+        git config user.email 197425009+otelbot@users.noreply.github.com
+
+        git add -- ':(glob)**/go.mod' ':(glob)**/go.sum'
+        git commit -m "$COMMIT_MESSAGE"
+
+        auth_header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+        git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth_header" \
+          push origin "HEAD:$HEAD_REF"

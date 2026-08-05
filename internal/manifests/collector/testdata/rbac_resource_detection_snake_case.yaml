@@ -1,0 +1,16 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+processors:
+  resource_detection:
+    detectors: [k8snode]
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource_detection]
+      exporters: [otlp]

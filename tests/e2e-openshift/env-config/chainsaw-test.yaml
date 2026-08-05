@@ -128,6 +128,9 @@ spec:
           echo "Cleanup complete"
 
   - name: Patch operator Subscription with OPENSHIFT_WEBHOOK_REPLICAS env var
+    bindings:
+    - name: webhook_replicas
+      value: 1
     try:
     - script:
         env:
@@ -139,7 +142,7 @@ spec:
           set -e
 
           # Check if pod-webhook deployment exists (OpenShift with OLM only)
-          if ! kubectl get deployment opentelemetry-operator-pod-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+          if ! kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
             echo "SKIP: pod-webhook deployment not found"
             exit 0
           fi
@@ -173,9 +176,12 @@ spec:
     - sleep:
         duration: 10s
     - assert:
-        file: 02-assert-pod-webhook-scaled.yaml
+        file: assert-pod-webhook-replicas.yaml
 
   - name: Remove OPENSHIFT_WEBHOOK_REPLICAS and verify default restored
+    bindings:
+    - name: webhook_replicas
+      value: 2
     try:
     - script:
         env:
@@ -187,7 +193,7 @@ spec:
           set -e
 
           # Check if pod-webhook deployment exists
-          if ! kubectl get deployment opentelemetry-operator-pod-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+          if ! kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
             echo "SKIP: pod-webhook deployment not found"
             exit 0
           fi
@@ -217,7 +223,7 @@ spec:
           TIMEOUT=60
           ELAPSED=0
           while [ $ELAPSED -lt $TIMEOUT ]; do
-            REPLICAS=$(kubectl get deployment opentelemetry-operator-pod-webhook \
+            REPLICAS=$(kubectl get deployment opentelemetry-operator-webhook \
               -n "$OTEL_NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
             if [ "$REPLICAS" = "2" ]; then
               echo "Pod-webhook scaled to 2 replicas after ${ELAPSED}s"
@@ -234,4 +240,4 @@ spec:
     - sleep:
         duration: 5s
     - assert:
-        file: 03-assert-pod-webhook-default.yaml
+        file: assert-pod-webhook-replicas.yaml

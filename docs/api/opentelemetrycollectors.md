@@ -11426,8 +11426,8 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>integer</td>
         <td>
           Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-that can be run in a high availability mode is consistent-hashing.<br/>
+other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+that can be run in a high availability mode are consistent-hashing and per-node.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -20530,6 +20530,22 @@ the operator will not automatically Create a ServiceAccount.<br/>
           ServiceName sets the serviceName of the StatefulSet.
 If not specified, it will default to "<name>-headless".
 Note that the custom service name is not created by the operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sessionAffinity</b></td>
+        <td>string</td>
+        <td>
+          SessionAffinity specifies the session affinity type for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfig">sessionAffinityConfig</a></b></td>
+        <td>object</td>
+        <td>
+          SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32074,6 +32090,65 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 </table>
 
 
+### OpenTelemetryCollector.spec.sessionAffinityConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfigclientip">clientIP</a></b></td>
+        <td>object</td>
+        <td>
+          clientIP contains the configurations of Client IP based session affinity.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.sessionAffinityConfig.clientIP
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecsessionaffinityconfig)</sup></sup>
+
+
+
+clientIP contains the configurations of Client IP based session affinity.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+Default value is 10800(for 3 hours).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.startupProbe
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -32323,8 +32398,8 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>integer</td>
         <td>
           Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-that can be run in a high availability mode is consistent-hashing.<br/>
+other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+that can be run in a high availability mode are consistent-hashing and per-node.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>

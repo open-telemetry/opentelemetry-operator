@@ -32,8 +32,9 @@ func ReceiverFor(name string) components.Parser {
 }
 
 // NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
-func NewScraperParser(name string) *components.GenericParser[any] {
-	return components.NewBuilder[any]().WithName(name).WithPort(components.UnsetPort).MustBuild()
+// Additional aliases can be passed for components that accept more than one spelling.
+func NewScraperParser(name string, aliases ...string) *components.GenericParser[any] {
+	return components.NewBuilder[any]().WithName(name).WithPort(components.UnsetPort).WithAlias(aliases...).MustBuild()
 }
 
 var componentParsers = []components.Parser{
@@ -87,8 +88,11 @@ var componentParsers = []components.Parser{
 	components.NewSinglePortParserBuilder("collectd", 8081).
 		WithTargetPort(8081).
 		MustBuild(),
-	components.NewSinglePortParserBuilder("fluentforward", 8006).
+	// fluent_forward, formerly fluentforward
+	// (open-telemetry/opentelemetry-collector-contrib#47930).
+	components.NewSinglePortParserBuilder("fluent_forward", 8006).
 		WithTargetPort(8006).
+		WithAlias("fluentforward").
 		MustBuild(),
 	components.NewSinglePortParserBuilder("influxdb", 8086).
 		WithTargetPort(8086).
@@ -106,11 +110,17 @@ var componentParsers = []components.Parser{
 		WithProtocol(corev1.ProtocolUDP).
 		WithTargetPort(8125).
 		MustBuild(),
-	components.NewSinglePortParserBuilder("tcplog", components.UnsetPort).
+	// tcp_log, formerly tcplog
+	// (open-telemetry/opentelemetry-collector-contrib#47369).
+	components.NewSinglePortParserBuilder("tcp_log", components.UnsetPort).
 		WithProtocol(corev1.ProtocolTCP).
+		WithAlias("tcplog").
 		MustBuild(),
-	components.NewSinglePortParserBuilder("udplog", components.UnsetPort).
+	// udp_log, formerly udplog
+	// (open-telemetry/opentelemetry-collector-contrib#47370).
+	components.NewSinglePortParserBuilder("udp_log", components.UnsetPort).
 		WithProtocol(corev1.ProtocolUDP).
+		WithAlias("udplog").
 		MustBuild(),
 	components.NewSinglePortParserBuilder("wavefront", 2003).
 		WithTargetPort(2003).
@@ -120,9 +130,12 @@ var componentParsers = []components.Parser{
 		WithProtocol(corev1.ProtocolTCP).
 		WithTargetPort(3100).
 		MustBuild(),
-	components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
+	// kubelet_stats, formerly kubeletstats
+	// (open-telemetry/opentelemetry-collector-contrib#47957).
+	components.NewBuilder[kubeletStatsConfig]().WithName("kubelet_stats").
 		WithRbacGen(generateKubeletStatsRbacRules).
 		WithEnvVarGen(generateKubeletStatsEnvVars).
+		WithAlias("kubeletstats").
 		MustBuild(),
 	components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
 		WithRbacGen(generatek8seventsRbacRules).
@@ -130,12 +143,19 @@ var componentParsers = []components.Parser{
 	components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
 		WithRbacGen(generatek8sclusterRbacRules).
 		MustBuild(),
-	components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
+	// k8s_objects, formerly k8sobjects
+	// (open-telemetry/opentelemetry-collector-contrib#47440).
+	components.NewBuilder[k8sobjectsConfig]().WithName("k8s_objects").
 		WithRbacGen(generatek8sobjectsRbacRules).
+		WithAlias("k8sobjects").
 		MustBuild(),
 	NewPrometheusParser(),
-	NewScraperParser("sshcheck"),
-	NewScraperParser("cloudfoundry"),
+	// ssh_check, formerly sshcheck
+	// (open-telemetry/opentelemetry-collector-contrib#47515).
+	NewScraperParser("ssh_check", "sshcheck"),
+	// cloud_foundry, formerly cloudfoundry
+	// (open-telemetry/opentelemetry-collector-contrib#47932).
+	NewScraperParser("cloud_foundry", "cloudfoundry"),
 	NewScraperParser("vcenter"),
 	NewScraperParser("oracledb"),
 	NewScraperParser("snmp"),
@@ -158,9 +178,13 @@ var componentParsers = []components.Parser{
 	NewScraperParser("nginx"),
 	NewScraperParser("mysql"),
 	NewScraperParser("memcached"),
-	NewScraperParser("httpcheck"),
+	// http_check, formerly httpcheck
+	// (open-telemetry/opentelemetry-collector-contrib#47505).
+	NewScraperParser("http_check", "httpcheck"),
 	NewScraperParser("haproxy"),
-	NewScraperParser("flinkmetrics"),
+	// flink_metrics, formerly flinkmetrics
+	// (open-telemetry/opentelemetry-collector-contrib#47929).
+	NewScraperParser("flink_metrics", "flinkmetrics"),
 	NewScraperParser("couchdb"),
 	NewScraperParser("filelog"),
 }
@@ -168,5 +192,8 @@ var componentParsers = []components.Parser{
 func init() {
 	for _, parser := range componentParsers {
 		Register(parser.ParserType(), parser)
+		for _, alias := range parser.ParserAliases() {
+			Register(alias, parser)
+		}
 	}
 }

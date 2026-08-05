@@ -2,6 +2,7 @@ targetallocator-image: ghcr.io/open-telemetry/opentelemetry-operator/target-allo
 operatoropampbridge-image: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.0.0
 auto-instrumentation-python-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.0.0
 collector-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.0.0
+clusterobservability-collector-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.0.0
 collector-configmap-entry: collector.yaml
 create-rbac-permissions: 0
 enable-multi-instrumentation: true
