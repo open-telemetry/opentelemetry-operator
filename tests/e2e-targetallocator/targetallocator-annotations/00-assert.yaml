@@ -8,6 +8,7 @@ metadata:
   annotations:
     example.com/propagated: "true"
   (!contains(keys(annotations), 'kubectl.kubernetes.io/last-applied-configuration')): true
+  (!contains(keys(annotations), 'example.com/pod-only')): true
 spec:
   template:
     metadata:
@@ -23,6 +24,7 @@ metadata:
   name: annotated-targetallocator
   annotations:
     example.com/propagated: "true"
+  (!contains(keys(annotations), 'example.com/pod-only')): true
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -30,6 +32,7 @@ metadata:
   name: annotated-targetallocator
   annotations:
     example.com/propagated: "true"
+  (!contains(keys(annotations), 'example.com/pod-only')): true
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
