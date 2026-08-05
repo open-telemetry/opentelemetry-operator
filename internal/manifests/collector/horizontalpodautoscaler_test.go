@@ -165,7 +165,7 @@ func TestHPA_WithResourceMetrics(t *testing.T) {
 		case corev1.ResourceMemory:
 			assert.Equal(t, memoryQuantity, *metric.Resource.Target.AverageValue)
 		default:
-			t.Fatalf("unexpected resource metric: %s", metric.Resource.Name)
+			t.Errorf("unexpected resource metric: %s", metric.Resource.Name)
 		}
 	}
 }
