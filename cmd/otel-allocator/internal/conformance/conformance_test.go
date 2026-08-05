@@ -36,9 +36,7 @@ var seededLabels = []string{
 
 // divergentFixtures are fixtures whose behavior is known to differ from raw
 // Prometheus. They are skipped until the allocator is fixed.
-var divergentFixtures = map[string]string{
-	"seeded-labels": "relabel rules referencing scrape-seeded labels diverge from Prometheus (regression of #4074); see testdata/gap-seeded-labels/",
-}
+var divergentFixtures = map[string]string{}
 
 // TestConformance runs every fixture under testdata/ through the target
 // allocator and compares against the committed promtool golden.

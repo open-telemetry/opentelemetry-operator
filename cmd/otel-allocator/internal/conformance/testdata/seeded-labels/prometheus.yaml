@@ -1,9 +1,9 @@
-# SEEDING-GAP PROBES (documented divergence). Each job's relabel rule references
-# a label Prometheus seeds before relabeling (job, __scheme__, ...) but the
-# allocator's filter does not. Prometheus and the allocator therefore make
-# different keep/drop decisions. See KNOWN_DIVERGENCE.md.
+# SEEDED-LABEL PROBES (regression coverage for #5246). Each job's relabel rule
+# references a label Prometheus seeds before relabeling (job, __scheme__, ...).
+# The allocator seeds the same labels transiently for relabeling, so keep/drop
+# decisions must match Prometheus.
 scrape_configs:
-  # keep on `job`: Prometheus keeps (job is seeded), allocator drops -> silent loss.
+  # keep on `job`: Prometheus keeps (job is seeded); the allocator must too.
   - job_name: gap-keep-on-job
     static_configs:
       - targets: ['10.20.0.1:9100']
@@ -17,8 +17,8 @@ scrape_configs:
     relabel_configs:
       - {source_labels: [__scheme__], regex: 'http', action: keep}
 
-  # drop on `job`: opposite direction — Prometheus drops, allocator keeps
-  # (over-allocates; the collector re-relabels and drops, so less harmful).
+  # drop on `job`: opposite direction — Prometheus drops, and the allocator must
+  # drop too instead of over-allocating a target the collector later drops.
   - job_name: gap-drop-on-job
     static_configs:
       - targets: ['10.20.0.3:9100']
