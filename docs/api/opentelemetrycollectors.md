@@ -5510,9 +5510,8 @@ It must be greater than zero<br/>
 
 
 
-MetricSpec defines a subset of metrics to be defined for the HPA's metric array
-more metric type can be supported as needed.
-See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+MetricSpec specifies how to scale based on a single metric
+(only `type` and one other matching field should be set at once).
 
 <table>
     <thead>
@@ -5527,17 +5526,626 @@ See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          MetricSourceType indicates the type of metric.<br/>
+          type is the type of metric source.  It should be one of "ContainerResource", "External",
+"Object", "Pods" or "Resource", each mapping to a matching field in the object.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexcontainerresource">containerResource</a></b></td>
+        <td>object</td>
+        <td>
+          containerResource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing a single container in
+each pod of the current scale target (e.g. CPU or memory). Such metrics are
+built in to Kubernetes, and have special scaling options on top of those
+available to normal per-pod metrics using the "pods" source.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternal">external</a></b></td>
+        <td>object</td>
+        <td>
+          external refers to a global metric that is not associated
+with any Kubernetes object. It allows autoscaling based on information
+coming from components running outside of cluster
+(for example length of queue in cloud messaging service, or
+QPS from loadbalancer running outside of cluster).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobject">object</a></b></td>
+        <td>object</td>
+        <td>
+          object refers to a metric describing a single kubernetes object
+(for example, hits-per-second on an Ingress object).<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpods">pods</a></b></td>
         <td>object</td>
         <td>
-          PodsMetricSource indicates how to scale on a metric describing each pod in
-the current scale target (for example, transactions-processed-per-second).
-The values will be averaged together before being compared to the target
-value.<br/>
+          pods refers to a metric describing each pod in the current scale target
+(for example, transactions-processed-per-second).  The values will be
+averaged together before being compared to the target value.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexresource">resource</a></b></td>
+        <td>object</td>
+        <td>
+          resource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing each pod in the
+current scale target (e.g. CPU or memory). Such metrics are built in to
+Kubernetes, and have special scaling options on top of those available
+to normal per-pod metrics using the "pods" source.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].containerResource
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+containerResource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing a single container in
+each pod of the current scale target (e.g. CPU or memory). Such metrics are
+built in to Kubernetes, and have special scaling options on top of those
+available to normal per-pod metrics using the "pods" source.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          container is the name of the container in the pods of the scaling target<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the resource in question.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexcontainerresourcetarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].containerResource.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexcontainerresource)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+external refers to a global metric that is not associated
+with any Kubernetes object. It allows autoscaling based on information
+coming from components running outside of cluster
+(for example length of queue in cloud messaging service, or
+QPS from loadbalancer running outside of cluster).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetric">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternaltarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternal)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternalmetric)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternal)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+object refers to a metric describing a single kubernetes object
+(for example, hits-per-second on an Ingress object).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectdescribedobject">describedObject</a></b></td>
+        <td>object</td>
+        <td>
+          describedObject specifies the descriptions of a object,such as kind,name apiVersion<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetric">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjecttarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.describedObject
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject)</sup></sup>
+
+
+
+describedObject specifies the descriptions of a object,such as kind,name apiVersion
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          kind is the kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the referent; More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          apiVersion is the API version of the referent<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobjectmetric)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5549,10 +6157,9 @@ value.<br/>
 
 
 
-PodsMetricSource indicates how to scale on a metric describing each pod in
-the current scale target (for example, transactions-processed-per-second).
-The values will be averaged together before being compared to the target
-value.
+pods refers to a metric describing each pod in the current scale target
+(for example, transactions-processed-per-second).  The values will be
+averaged together before being compared to the target value.
 
 <table>
     <thead>
@@ -5703,6 +6310,98 @@ merge patch.<br/>
 
 ### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.target
 <sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].resource
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+resource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing each pod in the
+current scale target (e.g. CPU or memory). Such metrics are built in to
+Kubernetes, and have special scaling options on top of those available
+to normal per-pod metrics using the "pods" source.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the resource in question.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexresourcetarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].resource.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexresource)</sup></sup>
 
 
 
@@ -25836,9 +26535,8 @@ It must be greater than zero<br/>
 
 
 
-MetricSpec defines a subset of metrics to be defined for the HPA's metric array
-more metric type can be supported as needed.
-See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+MetricSpec specifies how to scale based on a single metric
+(only `type` and one other matching field should be set at once).
 
 <table>
     <thead>
@@ -25853,17 +26551,626 @@ See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          MetricSourceType indicates the type of metric.<br/>
+          type is the type of metric source.  It should be one of "ContainerResource", "External",
+"Object", "Pods" or "Resource", each mapping to a matching field in the object.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexcontainerresource-1">containerResource</a></b></td>
+        <td>object</td>
+        <td>
+          containerResource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing a single container in
+each pod of the current scale target (e.g. CPU or memory). Such metrics are
+built in to Kubernetes, and have special scaling options on top of those
+available to normal per-pod metrics using the "pods" source.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternal-1">external</a></b></td>
+        <td>object</td>
+        <td>
+          external refers to a global metric that is not associated
+with any Kubernetes object. It allows autoscaling based on information
+coming from components running outside of cluster
+(for example length of queue in cloud messaging service, or
+QPS from loadbalancer running outside of cluster).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobject-1">object</a></b></td>
+        <td>object</td>
+        <td>
+          object refers to a metric describing a single kubernetes object
+(for example, hits-per-second on an Ingress object).<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpods-1">pods</a></b></td>
         <td>object</td>
         <td>
-          PodsMetricSource indicates how to scale on a metric describing each pod in
-the current scale target (for example, transactions-processed-per-second).
-The values will be averaged together before being compared to the target
-value.<br/>
+          pods refers to a metric describing each pod in the current scale target
+(for example, transactions-processed-per-second).  The values will be
+averaged together before being compared to the target value.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexresource-1">resource</a></b></td>
+        <td>object</td>
+        <td>
+          resource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing each pod in the
+current scale target (e.g. CPU or memory). Such metrics are built in to
+Kubernetes, and have special scaling options on top of those available
+to normal per-pod metrics using the "pods" source.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].containerResource
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex-1)</sup></sup>
+
+
+
+containerResource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing a single container in
+each pod of the current scale target (e.g. CPU or memory). Such metrics are
+built in to Kubernetes, and have special scaling options on top of those
+available to normal per-pod metrics using the "pods" source.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          container is the name of the container in the pods of the scaling target<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the resource in question.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexcontainerresourcetarget-1">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].containerResource.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexcontainerresource-1)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex-1)</sup></sup>
+
+
+
+external refers to a global metric that is not associated
+with any Kubernetes object. It allows autoscaling based on information
+coming from components running outside of cluster
+(for example length of queue in cloud messaging service, or
+QPS from loadbalancer running outside of cluster).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetric-1">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternaltarget-1">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternal-1)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselector-1">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternalmetric-1)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselectormatchexpressionsindex-1">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternalmetricselector-1)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].external.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexexternal-1)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex-1)</sup></sup>
+
+
+
+object refers to a metric describing a single kubernetes object
+(for example, hits-per-second on an Ingress object).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectdescribedobject-1">describedObject</a></b></td>
+        <td>object</td>
+        <td>
+          describedObject specifies the descriptions of a object,such as kind,name apiVersion<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetric-1">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjecttarget-1">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.describedObject
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject-1)</sup></sup>
+
+
+
+describedObject specifies the descriptions of a object,such as kind,name apiVersion
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          kind is the kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the referent; More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          apiVersion is the API version of the referent<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject-1)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselector-1">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobjectmetric-1)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselectormatchexpressionsindex-1">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobjectmetricselector-1)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].object.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexobject-1)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25875,10 +27182,9 @@ value.<br/>
 
 
 
-PodsMetricSource indicates how to scale on a metric describing each pod in
-the current scale target (for example, transactions-processed-per-second).
-The values will be averaged together before being compared to the target
-value.
+pods refers to a metric describing each pod in the current scale target
+(for example, transactions-processed-per-second).  The values will be
+averaged together before being compared to the target value.
 
 <table>
     <thead>
@@ -26029,6 +27335,98 @@ merge patch.<br/>
 
 ### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.target
 <sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods-1)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the
+resource metric across all relevant pods, represented as a percentage of
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the
+metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].resource
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex-1)</sup></sup>
+
+
+
+resource refers to a resource metric (such as those specified in
+requests and limits) known to Kubernetes describing each pod in the
+current scale target (e.g. CPU or memory). Such metrics are built in to
+Kubernetes, and have special scaling options on top of those available
+to normal per-pod metrics using the "pods" source.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the resource in question.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexresourcetarget-1">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].resource.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexresource-1)</sup></sup>
 
 
 

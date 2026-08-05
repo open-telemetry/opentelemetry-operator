@@ -30,3 +30,7 @@ patches:
     name: validating-webhook-configuration
     version: v1
 - path: webhook-service-patch.yaml
+images:
+- name: controller
+  newName: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+  newTag: 0.156.0-79-g936faf56
