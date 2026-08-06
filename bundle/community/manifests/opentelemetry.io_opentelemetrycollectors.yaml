@@ -8218,6 +8218,7 @@ spec:
                               configMap:
                                 properties:
                                   key:
+                                    default: ca.crt
                                     type: string
                                   name:
                                     minLength: 1
