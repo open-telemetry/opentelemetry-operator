@@ -297,11 +297,6 @@ type TargetAllocatorTLS struct {
 }
 
 // SecretKeySelector selects a key from a Secret in the same namespace as the workload.
-//
-// A dedicated type (rather than corev1.SecretKeySelector) is used so that OLM CSV descriptors can be
-// attached later. Key has no kubebuilder default because the same selector is reused for multiple
-// roles (certificate, private key, CA certificate); the role-specific default (tls.crt, tls.key or
-// ca.crt) is applied in Go, see internal/manifests/manifestutils/mtls.go.
 type SecretKeySelector struct {
 	// Name of the Secret, in the same namespace as the workload.
 	// +kubebuilder:validation:Required
@@ -314,15 +309,14 @@ type SecretKeySelector struct {
 }
 
 // ConfigMapKeySelector selects a key from a ConfigMap in the same namespace as the workload.
-//
-// A dedicated type (rather than corev1.ConfigMapKeySelector) is used so that OLM CSV descriptors can
-// be attached later.
 type ConfigMapKeySelector struct {
 	// Name of the ConfigMap, in the same namespace as the workload.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 	// Key within the ConfigMap's data. Defaults to ca.crt when omitted.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:default="ca.crt"
 	// +optional
 	Key string `json:"key,omitempty"`
 }

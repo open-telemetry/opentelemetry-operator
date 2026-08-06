@@ -34566,6 +34566,8 @@ ConfigMap sources the CA certificate from a ConfigMap.
         <td>string</td>
         <td>
           Key within the ConfigMap's data. Defaults to ca.crt when omitted.<br/>
+          <br/>
+            <i>Default</i>: ca.crt<br/>
         </td>
         <td>false</td>
       </tr></tbody>
