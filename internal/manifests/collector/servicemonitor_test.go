@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -69,7 +68,7 @@ func TestDesiredServiceMonitorsPrometheusNotAvailable(t *testing.T) {
 		CollectorImage:              defaultCollectorImage,
 		TargetAllocatorImage:        defaultTaAllocationImage,
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-		PrometheusCRAvailability:    prometheus.NotAvailable,
+		PrometheusCRAvailability:    nil,
 	})
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true

@@ -23,7 +23,6 @@ auto-instrumentation-node-js-image: ghcr.io/open-telemetry/opentelemetry-operato
 auto-instrumentation-java-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:0.0.0
 openshift-create-dashboard: false
 open-shift-routes-availability: 1
-prometheus-cr-availability: 0
 cert-manager-availability: 0
 target-allocator-availability: 0
 collector-availability: 0

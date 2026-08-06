@@ -34,7 +34,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailability() (prometheus.Availability, error)
+	PrometheusCRsAvailability() (prometheus.AvailableCRDs, error)
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailability() (targetallocator.Availability, error)
@@ -72,41 +72,39 @@ func New(restConfig *rest.Config, reviewer *rbac.Reviewer) (AutoDetect, error) {
 	}, nil
 }
 
-// PrometheusCRsAvailability checks if Prometheus CRDs are available.
-func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+var prometheusCRDNames = []string{
+	"servicemonitors",
+	"podmonitors",
+	"probes",
+	"scrapeconfigs",
+}
+
+// PrometheusCRsAvailability returns the list of monitoring.coreos.com CRD resource names
+// (e.g. "servicemonitors", "podmonitors") that are installed in the cluster.
+func (a *autoDetect) PrometheusCRsAvailability() (prometheus.AvailableCRDs, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return prometheus.NotAvailable, err
+		return nil, err
 	}
 
-	foundServiceMonitor := false
-	foundPodMonitor := false
-	apiGroups := apiList.Groups
-	for i := range apiGroups {
-		if apiGroups[i].Name == "monitoring.coreos.com" {
-			for _, version := range apiGroups[i].Versions {
-				resources, err := a.dcl.ServerResourcesForGroupVersion(version.GroupVersion)
-				if err != nil {
-					return prometheus.NotAvailable, err
-				}
-
-				for _, resource := range resources.APIResources {
-					switch resource.Kind {
-					case "ServiceMonitor":
-						foundServiceMonitor = true
-					case "PodMonitor":
-						foundPodMonitor = true
-					}
+	var available prometheus.AvailableCRDs
+	for _, group := range apiList.Groups {
+		if group.Name != "monitoring.coreos.com" {
+			continue
+		}
+		for _, v := range group.Versions {
+			resources, err := a.dcl.ServerResourcesForGroupVersion(v.GroupVersion)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range resources.APIResources {
+				if slices.Contains(prometheusCRDNames, r.Name) {
+					available = append(available, r.Name)
 				}
 			}
 		}
 	}
-
-	if foundServiceMonitor && foundPodMonitor {
-		return prometheus.Available, nil
-	}
-
-	return prometheus.NotAvailable, nil
+	return available, nil
 }
 
 // OpenShiftRoutesAvailability checks if OpenShift Route are available.

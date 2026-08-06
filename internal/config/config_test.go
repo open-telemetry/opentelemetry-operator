@@ -60,7 +60,6 @@ func TestToStringMap(t *testing.T) {
 		"openshift-webhook-replicas":              "0",
 		"pprof-addr":                              "",
 		"health-probe-addr":                       "",
-		"prometheus-cr-availability":              "0",
 		"target-allocator-availability":           "0",
 		"target-allocator-configmap-entry":        "",
 		"targetallocator-image":                   "",

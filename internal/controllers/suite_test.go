@@ -88,7 +88,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.AvailableCRDs, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
@@ -112,11 +112,11 @@ func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailabi
 	return openshift.RoutesNotAvailable, nil
 }
 
-func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.AvailableCRDs, error) {
 	if m.PrometheusCRsAvailabilityFunc != nil {
 		return m.PrometheusCRsAvailabilityFunc()
 	}
-	return prometheus.NotAvailable, nil
+	return nil, nil
 }
 
 func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
@@ -213,6 +213,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
+
 	if err = wh.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
