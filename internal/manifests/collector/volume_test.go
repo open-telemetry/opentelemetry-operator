@@ -134,4 +134,42 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		}
 		assert.NotContains(t, volumes, unexpectedVolume)
 	})
+
+	t.Run("mTLS with user-provided client certificate secret", func(t *testing.T) {
+		otelcol := v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-collector",
+			},
+		}
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
+
+		ta := &v1alpha1.TargetAllocator{}
+		ta.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{
+			Enabled:        true,
+			UseCertManager: new(false),
+			TLS: &v1beta1.TargetAllocatorTLS{
+				CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "my-ca-secret"}},
+				ServerCertificate: &v1beta1.CertificateReference{
+					CertificateSecret: v1beta1.SecretKeySelector{Name: "my-server-secret"},
+					KeySecret:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
+				},
+				ClientCertificate: &v1beta1.CertificateReference{
+					CertificateSecret: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+					KeySecret:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+				},
+			},
+		}
+
+		volumes := Volumes(cfg, otelcol, ta)
+
+		var found bool
+		for _, v := range volumes {
+			if v.Secret != nil && v.Secret.SecretName == "my-client-secret" {
+				found = true
+			}
+		}
+		assert.True(t, found, "expected a volume backed by the user-provided client secret")
+	})
 }

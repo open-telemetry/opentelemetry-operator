@@ -24,7 +24,7 @@ func Service(params Params) *corev1.Service {
 		TargetPort: intstr.FromString("http"),
 	})
 
-	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
+	if manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "targetallocation-https",
 			Port:       443,
