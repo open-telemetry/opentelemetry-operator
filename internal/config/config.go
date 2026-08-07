@@ -110,6 +110,10 @@ type Config struct {
 	LabelsFilter []string `yaml:"labels-filter"`
 	// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 	AnnotationsFilter []string `yaml:"annotations-filter"`
+	// PreservedLabels holds patterns for label keys on managed pod templates that must survive reconciliation even when absent from the desired state.
+	PreservedLabels []string `yaml:"preserved-labels"`
+	// PreservedAnnotations holds patterns for annotation keys on managed pod templates that must survive reconciliation even when absent from the desired state.
+	PreservedAnnotations []string `yaml:"preserved-annotations"`
 	// MetricsAddr is the address the metric endpoint binds to.
 	MetricsAddr string `yaml:"metrics-addr"`
 	// MetricsSecure enables serving metrics via HTTPS with authentication and authorization.
@@ -212,6 +216,8 @@ func New() Config {
 		AutoInstrumentationNginxImage:       fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx),
 		LabelsFilter:                        []string{},
 		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
+		PreservedLabels:                     []string{},
+		PreservedAnnotations:                []string{},
 		CreateRBACPermissions:               autoRBAC.NotAvailable,
 		OpAmpBridgeAvailability:             opampbridge.NotAvailable,
 		MetricsAddr:                         ":8443",
