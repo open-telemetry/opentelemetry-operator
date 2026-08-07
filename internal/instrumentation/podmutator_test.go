@@ -831,6 +831,10 @@ func TestMutatePod(t *testing.T) {
 									Value: nodeRequireArgument,
 								},
 								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "app",
 								},
@@ -1023,6 +1027,10 @@ func TestMutatePod(t *testing.T) {
 									Value: nodeRequireArgument,
 								},
 								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "app1",
 								},
@@ -1104,6 +1112,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "NODE_OPTIONS",
 									Value: nodeRequireArgument,
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4046,6 +4058,10 @@ func TestMutatePod(t *testing.T) {
 									Value: nodeRequireArgument,
 								},
 								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "nodejs1",
 								},
@@ -4107,6 +4123,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "NODE_OPTIONS",
 									Value: nodeRequireArgument,
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",

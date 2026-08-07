@@ -67,6 +67,10 @@ func TestInjectNodeJSSDK(t *testing.T) {
 									Name:  "NODE_OPTIONS",
 									Value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
 								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
 							},
 						},
 					},
@@ -127,6 +131,10 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								{
 									Name:  "NODE_OPTIONS",
 									Value: "-Dbaz=bar" + " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
 								},
 							},
 						},
@@ -214,6 +222,10 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								{
 									Name:  "NODE_OPTIONS",
 									Value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
 								},
 							},
 						},
