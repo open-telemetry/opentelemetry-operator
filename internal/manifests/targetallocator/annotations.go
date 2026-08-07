@@ -16,6 +16,19 @@ import (
 
 const configMapHashAnnotationKey = "opentelemetry-targetallocator-config/hash"
 
+// ResourceAnnotations returns the TargetAllocator CR's metadata annotations,
+// filtered, for propagation to the resources the operator creates for it,
+// mirroring what manifestutils.Annotations does for the OpenTelemetryCollector.
+func ResourceAnnotations(instance v1alpha1.TargetAllocator, filterAnnotations []string) map[string]string {
+	annotations := make(map[string]string, len(instance.Annotations))
+	for k, v := range instance.Annotations {
+		if !manifestutils.IsFilteredSet(k, filterAnnotations) {
+			annotations[k] = v
+		}
+	}
+	return annotations
+}
+
 // Annotations returns the annotations for the TargetAllocator Pod.
 func Annotations(instance v1alpha1.TargetAllocator, configMap *v1.ConfigMap, filterAnnotations []string) map[string]string {
 	// Make a copy of PodAnnotations to be safe
