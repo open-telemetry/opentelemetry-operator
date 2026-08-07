@@ -1,0 +1,7 @@
+change_type: bug_fix
+
+component: opamp
+
+note: "Apply remote OpAMP configurations as a merge patch of the spec instead of a full object update, so operator-owned fields (e.g. spec.mode) are preserved and DaemonSet-mode collectors are no longer rejected by the validating webhook"
+
+issues: [4481]

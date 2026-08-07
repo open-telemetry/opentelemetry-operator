@@ -484,3 +484,100 @@ func TestClient_Restart_PartialFailure(t *testing.T) {
 	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workload1, Namespace: "default"}, result))
 	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
 }
+
+// TestClient_ApplyUpdatePreservesOperatorOwnedFields reproduces the failure
+// reported in issue #4481: applying a remote configuration that only carries
+// spec.config to an existing DaemonSet-mode collector must not reset the rest
+// of the spec. The old full-object update wiped spec.mode and the target
+// allocation strategy, which both clobbered operator-owned state and tripped
+// mode-specific webhook validation for DaemonSet pools. The bridge now applies
+// the remote configuration as a merge patch of the spec keys it contains.
+func TestClient_ApplyUpdatePreservesOperatorOwnedFields(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+
+	namespace := "testing"
+
+	// Existing collector: DaemonSet mode with a per-node target allocator,
+	// the webhook-sensitive shape from issue #4481.
+	existingYAML := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  mode: daemonset
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    allocationStrategy: per-node
+`)
+	var existing v1beta1.OpenTelemetryCollector
+	require.NoError(t, yaml.Unmarshal(existingYAML, &existing))
+	setTypedMeta(&existing)
+	require.NoError(t, fakeClient.Create(context.Background(), &existing))
+
+	// Remote configuration carrying only spec.config.
+	remoteConfig := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+`)
+	err := c.Apply(NewKubeResourceKey(namespace, "simplest").String(), &protobufs.AgentConfigFile{
+		Body:        remoteConfig,
+		ContentType: "yaml",
+	})
+	require.NoError(t, err, "Should be able to update the collector with a config-only remote configuration")
+
+	updated, err := c.GetInstance("simplest", namespace)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+
+	// Operator-owned fields must be preserved.
+	assert.Equal(t, v1beta1.ModeDaemonSet, updated.Spec.Mode, "spec.mode must be preserved by the update")
+	assert.True(t, updated.Spec.TargetAllocator.Enabled, "target allocator must be preserved by the update")
+	assert.Equal(t, v1beta1.TargetAllocatorAllocationStrategyPerNode, updated.Spec.TargetAllocator.AllocationStrategy, "target allocation strategy must be preserved by the update")
+
+	// The remote configuration must be applied.
+	require.NotNil(t, updated.Spec.Config.Processors)
+	_, ok := updated.Spec.Config.Processors.Object["batch"]
+	assert.True(t, ok, "spec.config must be updated with the remote configuration")
+}

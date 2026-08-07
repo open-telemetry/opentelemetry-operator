@@ -5,6 +5,7 @@ package operator
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"fmt"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -116,7 +118,7 @@ func (c Client) Apply(key string, configmap *protobufs.AgentConfigFile) error {
 	if instance == nil {
 		return c.create(ctx, name, namespace, updatedCollector)
 	}
-	return c.update(ctx, instance, updatedCollector)
+	return c.update(ctx, instance, configmap.Body)
 }
 
 func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
@@ -197,12 +199,33 @@ func (c Client) create(ctx context.Context, name, namespace string, collector *v
 	return c.k8sClient.Create(ctx, collector)
 }
 
-func (c Client) update(ctx context.Context, o, n *v1beta1.OpenTelemetryCollector) error {
-	n.ObjectMeta = o.ObjectMeta
-	n.TypeMeta = o.TypeMeta
+func (c Client) update(ctx context.Context, o *v1beta1.OpenTelemetryCollector, remoteConfig []byte) error {
+	// Apply the received remote configuration as a JSON merge patch of the
+	// spec instead of a full object update. The remote configuration manages
+	// the collector's effective configuration, while the rest of the spec
+	// (mode, image, ingress, ...) is owned by the operator. A full object
+	// update would reset those fields to the (typically minimal) received
+	// spec, which both clobbers operator-owned state and trips mode-specific
+	// webhook validation, e.g. for DaemonSet pools where the target
+	// allocation strategy is only valid together with spec.mode=daemonset.
+	// Patching only the spec keys present in the remote configuration
+	// preserves everything else, including fields like spec.replicas that
+	// remote configurations may explicitly manage.
+	remote := map[string]any{}
+	if err := yaml.Unmarshal(remoteConfig, &remote); err != nil {
+		return errors.NewBadRequest(fmt.Sprintf("failed to unmarshal remote config into a merge patch: %v", err))
+	}
+	remoteSpec, ok := remote["spec"].(map[string]any)
+	if !ok {
+		return errors.NewBadRequest("remote config does not contain a spec to apply")
+	}
+	patch, err := json.Marshal(map[string]any{"spec": remoteSpec})
+	if err != nil {
+		return fmt.Errorf("failed to marshal remote config into a merge patch: %w", err)
+	}
 
-	c.log.Info("Updating collector")
-	return c.k8sClient.Update(ctx, n)
+	c.log.Info("Updating collector", "patch", string(patch))
+	return c.k8sClient.Patch(ctx, o, client.RawPatch(types.MergePatchType, patch))
 }
 
 func (c Client) Delete(key string) error {
