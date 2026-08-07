@@ -1,0 +1,43 @@
+# Single collector with TargetAllocator. The TA exports its own metrics via OTLP
+# back to the same collector (otlp receiver), which logs them via the debug exporter.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ta-selftelemetry
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: collector-self
+              static_configs:
+                - targets: ['0.0.0.0:8888']
+      otlp:
+        protocols:
+          grpc: {}
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        metrics/prometheus:
+          receivers: [prometheus]
+          exporters: [debug]
+        metrics/selftelemetry:
+          receivers: [otlp]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    telemetry:
+      metrics:
+        readers:
+          - periodic:
+              interval: 15s
+              exporter:
+                otlpGrpc:
+                  endpoint: "ta-selftelemetry-collector:4317"
+                  tls:
+                    insecure: true

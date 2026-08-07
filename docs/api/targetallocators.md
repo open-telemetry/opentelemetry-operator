@@ -452,6 +452,15 @@ This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetry">telemetry</a></b></td>
+        <td>object</td>
+        <td>
+          Telemetry defines the self-telemetry configuration for the TargetAllocator.
+When set, the TargetAllocator exports its own metrics via OTLP in addition
+to the Prometheus /metrics endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
@@ -12136,6 +12145,354 @@ Default value is 10800(for 3 hours).<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+Telemetry defines the self-telemetry configuration for the TargetAllocator.
+When set, the TargetAllocator exports its own metrics via OTLP in addition
+to the Prometheus /metrics endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics export settings for the TargetAllocator's own telemetry.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics
+<sup><sup>[↩ Parent](#targetallocatorspectelemetry)</sup></sup>
+
+
+
+Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindex">readers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Readers configures one or more metric readers following the OTel declarative configuration spec.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index]
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetrics)</sup></sup>
+
+
+
+TAMetricReader configures a metric reader.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodic">periodic</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic configures a periodic exporting metric reader.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindex)</sup></sup>
+
+
+
+Periodic configures a periodic exporting metric reader.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures the push exporter for this reader.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>interval</b></td>
+        <td>string</td>
+        <td>
+          Interval is the delay between consecutive exports. Defaults to 60s.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the maximum allowed export duration. Defaults to 30s.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodic)</sup></sup>
+
+
+
+Exporter configures the push exporter for this reader.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc">otlpGrpc</a></b></td>
+        <td>object</td>
+        <td>
+          OtlpGrpc configures an OTLP/gRPC metric exporter.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttp">otlpHttp</a></b></td>
+        <td>object</td>
+        <td>
+          OtlpHttp configures an OTLP/HTTP metric exporter.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporter)</sup></sup>
+
+
+
+OtlpGrpc configures an OTLP/gRPC metric exporter.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+(e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpcheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers are additional key/value pairs sent with every export request.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>temporalityPreference</b></td>
+        <td>enum</td>
+        <td>
+          TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, low_memory<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpctls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          Tls configures TLS for the gRPC connection.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc.headers[index]
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc)</sup></sup>
+
+
+
+TANameValuePair is a name/value pair used for OTLP export headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpGrpc.tls
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlpgrpc)</sup></sup>
+
+
+
+Tls configures TLS for the gRPC connection.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS. Only suitable for local development.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpHttp
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporter)</sup></sup>
+
+
+
+OtlpHttp configures an OTLP/HTTP metric exporter.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+(e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers are additional key/value pairs sent with every export request.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>temporalityPreference</b></td>
+        <td>enum</td>
+        <td>
+          TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, low_memory<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.telemetry.metrics.readers[index].periodic.exporter.otlpHttp.headers[index]
+<sup><sup>[↩ Parent](#targetallocatorspectelemetrymetricsreadersindexperiodicexporterotlphttp)</sup></sup>
+
+
+
+TANameValuePair is a name/value pair used for OTLP export headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
