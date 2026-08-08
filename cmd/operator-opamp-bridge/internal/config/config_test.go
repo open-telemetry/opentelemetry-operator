@@ -67,6 +67,75 @@ func TestConfigLoadPriority(t *testing.T) {
 	})
 }
 
+func TestLoadValidatesProxyConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		proxyConfig   string
+		wantErr       bool
+		wantErrSubstr string
+	}{
+		{
+			name: "accepts HTTP proxy headers",
+			proxyConfig: `
+proxy:
+  url: http://proxy.example.com:8080
+  headers:
+    Proxy-Authorization: Basic proxy-token
+`,
+		},
+		{
+			name: "accepts SOCKS proxy URL auth without headers",
+			proxyConfig: `
+proxy:
+  url: socks5://user:pass@proxy.example.com:1080
+`,
+		},
+		{
+			name: "rejects SOCKS proxy headers",
+			proxyConfig: `
+proxy:
+  url: socks5://proxy.example.com:1080
+  headers:
+    Proxy-Authorization: Basic proxy-token
+`,
+			wantErr:       true,
+			wantErrSubstr: "proxy.headers cannot be used with",
+		},
+		{
+			name: "rejects headers without proxy URL",
+			proxyConfig: `
+proxy:
+  headers:
+    Proxy-Authorization: Basic proxy-token
+`,
+			wantErr:       true,
+			wantErrSubstr: "proxy.headers requires proxy.url",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configFile := filepath.Join(t.TempDir(), "config.yaml")
+			require.NoError(t, os.WriteFile(configFile, []byte(`
+endpoint: ws://127.0.0.1:4320/v1/opamp
+capabilities:
+  ReportsHealth: true
+`+tt.proxyConfig), 0o600))
+
+			_, err := Load(GetLogger(), []string{
+				"--" + configFilePathFlagName + "=" + configFile,
+				"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
+			})
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, tt.wantErrSubstr)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestLoadFromFileHealthListenAddr(t *testing.T) {
 	cfg := NewConfig(logr.Discard())
 	configFile := filepath.Join(t.TempDir(), "config.yaml")
@@ -250,6 +319,48 @@ func TestLoadFromFile(t *testing.T) {
 				HeartbeatInterval:  defaultHeartbeatInterval,
 				Name:               opampBridgeName,
 				Mode:               defaultMode,
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+			needErr: false,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "base case with proxy",
+			args: args{
+				file: "./testdata/agentwithproxy.yaml",
+				envVariables: map[string]string{
+					"PROXY_AUTH_HEADER": "Basic proxy-token",
+				},
+			},
+			want: &Config{
+				instanceId:         instanceId,
+				RootLogger:         logr.Discard(),
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				ListenAddr:         defaultServerListenAddr,
+				HealthListenAddr:   defaultHealthListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Name:               opampBridgeName,
+				Mode:               defaultMode,
+				Proxy: &ProxyConfig{
+					URL: "http://proxy.example.com:8080",
+					Headers: Headers{
+						"Proxy-Authorization": "Basic proxy-token",
+					},
+				},
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -483,10 +594,69 @@ func TestValidateRejectsUnknownMode(t *testing.T) {
 	})
 }
 
+func TestValidateProxyConfig(t *testing.T) {
+	t.Run("accepts HTTP proxy with headers", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Proxy = &ProxyConfig{
+			URL:     "http://proxy.example.com:8080",
+			Headers: Headers{"Proxy-Authorization": "Basic proxy-token"},
+		}
+
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts SOCKS proxy without headers", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Proxy = &ProxyConfig{
+			URL: "socks5://user:pass@proxy.example.com:1080",
+		}
+
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts proxy URL without scheme as HTTP", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Proxy = &ProxyConfig{
+			URL:     "proxy.example.com:8080",
+			Headers: Headers{"Proxy-Authorization": "Basic proxy-token"},
+		}
+
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("rejects SOCKS proxy with headers", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Proxy = &ProxyConfig{
+			URL:     "socks5://proxy.example.com:1080",
+			Headers: Headers{"Proxy-Authorization": "Basic proxy-token"},
+		}
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "proxy.headers cannot be used with")
+		assert.ErrorContains(t, err, "use URL userinfo for SOCKS")
+	})
+
+	t.Run("rejects headers without proxy URL", func(t *testing.T) {
+		cfg := NewConfig(logr.Discard())
+		cfg.Proxy = &ProxyConfig{
+			Headers: Headers{"Proxy-Authorization": "Basic proxy-token"},
+		}
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "proxy.headers requires proxy.url")
+	})
+}
+
 func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
 	cfg := NewConfig(logr.Discard())
 	cfg.Mode = standaloneMode
 	cfg.Headers = Headers{"x-test-header": "header-value"}
+	cfg.Proxy = &ProxyConfig{
+		URL:     "http://proxy.example.com:8080",
+		Headers: Headers{"Proxy-Authorization": "proxy-token"},
+	}
 	cfg.Capabilities = map[Capability]bool{AcceptsRemoteConfig: true}
 	cfg.ComponentsAllowed = map[string][]string{"receivers": {"otlp"}}
 	cfg.AgentDescription.NonIdentifyingAttributes = map[string]string{"environment": "test"}
@@ -510,11 +680,15 @@ func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
 	}})
 
 	agentCfg.Headers["x-test-header"] = "changed"
+	agentCfg.Proxy.URL = "http://changed.example.com:8080"
+	agentCfg.Proxy.Headers["Proxy-Authorization"] = "changed"
 	agentCfg.Capabilities[AcceptsRemoteConfig] = false
 	agentCfg.ComponentsAllowed["receivers"][0] = "prometheus"
 	agentCfg.AgentDescription.NonIdentifyingAttributes["environment"] = "changed"
 
 	assert.Equal(t, "header-value", cfg.Headers["x-test-header"])
+	assert.Equal(t, "http://proxy.example.com:8080", cfg.Proxy.URL)
+	assert.Equal(t, "proxy-token", cfg.Proxy.Headers["Proxy-Authorization"])
 	assert.True(t, cfg.Capabilities[AcceptsRemoteConfig])
 	assert.Equal(t, []string{"otlp"}, cfg.ComponentsAllowed["receivers"])
 	assert.Equal(t, "test", cfg.AgentDescription.NonIdentifyingAttributes["environment"])
