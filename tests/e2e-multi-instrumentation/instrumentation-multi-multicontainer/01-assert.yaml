@@ -372,6 +372,22 @@ spec:
     - /bin/sh
     - -c
     env:
+    - name: OTEL_SERVICE_NAME
+      value: apache-httpd-app
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
     - name: OTEL_APACHE_AGENT_CONF
     - name: APACHE_SERVICE_INSTANCE_ID
       valueFrom:
