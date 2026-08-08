@@ -411,9 +411,12 @@ func TestGetDescription(t *testing.T) {
 	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.version", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: version.OperatorOpAMPBridge()},
 	}})
-	assert.Len(t, desc.NonIdentifyingAttributes, 3)
+	assert.Len(t, desc.NonIdentifyingAttributes, 4)
 	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "custom.attribute", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: "custom-value"},
+	}})
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: bridgeAttributeKey, Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: operatorMode},
 	}})
 }
 
@@ -431,7 +434,26 @@ func TestGetDescriptionNoneSet(t *testing.T) {
 	assert.Contains(t, desc.IdentifyingAttributes, &protobufs.KeyValue{Key: "service.version", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: version.OperatorOpAMPBridge()},
 	}})
-	assert.Len(t, desc.NonIdentifyingAttributes, 2)
+	assert.Len(t, desc.NonIdentifyingAttributes, 3)
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: bridgeAttributeKey, Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: operatorMode},
+	}})
+}
+
+func TestGetDescriptionBridgeAttributeCannotBeOverridden(t *testing.T) {
+	got := NewConfig(logr.Discard())
+	got.AgentDescription.NonIdentifyingAttributes = map[string]string{
+		bridgeAttributeKey: "false",
+	}
+
+	desc := got.GetDescription()
+
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: bridgeAttributeKey, Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: operatorMode},
+	}})
+	assert.NotContains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: bridgeAttributeKey, Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: "false"},
+	}})
 }
 
 func TestNewConfigSetsDefaultMode(t *testing.T) {
@@ -504,6 +526,9 @@ func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
 	desc := agentCfg.GetDescription()
 	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "host.name", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: "collector-workload"},
+	}})
+	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: bridgeAttributeKey, Value: &protobufs.AnyValue{
+		Value: &protobufs.AnyValue_StringValue{StringValue: standaloneMode},
 	}})
 	assert.NotContains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "host.name", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: hostname},
