@@ -67,7 +67,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/name":       "my-instance-collector",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/version":    "latest",
+		"app.kubernetes.io/version":    "0.0.0",
 	}
 	assert.Equal(t, expectedLabels, ss.Spec.Template.Labels)
 
