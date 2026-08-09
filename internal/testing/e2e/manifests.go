@@ -11,9 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -38,8 +35,11 @@ func ApplyObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, ns str
 	t.Helper()
 	c := CRClient(t, cfg)
 	for _, obj := range objs {
-		obj.SetNamespace(ns)
-		u := toUnstructured(t, obj)
+		// Namespacing is applied to a copy: the caller's object (often a shared
+		// fixture built once per suite) must not be mutated.
+		namespaced := obj.DeepCopyObject().(crclient.Object)
+		namespaced.SetNamespace(ns)
+		u := toUnstructured(t, namespaced)
 		err := c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership)
 		require.NoError(t, err, "apply %s %q", u.GetKind(), u.GetName())
 	}
@@ -84,22 +84,5 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 		}
 		err = c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership)
 		require.NoError(t, err, "apply %s %q", u.GetKind(), u.GetName())
-	}
-}
-
-// CreateNamespace creates ns.
-func CreateNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
-	t.Helper()
-	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	require.NoError(t, CRClient(t, cfg).Create(ctx, obj), "create namespace %s", ns)
-}
-
-// DeleteNamespace deletes ns (ignoring not-found), used for test cleanup.
-func DeleteNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
-	t.Helper()
-	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	err := CRClient(t, cfg).Delete(ctx, obj)
-	if !apierrors.IsNotFound(err) {
-		require.NoError(t, err, "delete namespace %s", ns)
 	}
 }

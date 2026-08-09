@@ -5,6 +5,9 @@ package e2e
 
 import (
 	"fmt"
+	"maps"
+	"slices"
+	"strings"
 
 	"github.com/prometheus/common/model"
 )
@@ -27,7 +30,36 @@ type Series struct {
 	Value   func(model.SampleValue) bool
 }
 
-// HasSeries returns a PromQL check (for EventuallyPromQL) that passes when some
+// String renders every clause of the matcher, so a failure message says which
+// conditions the samples were judged against — not just some of them.
+func (s Series) String() string {
+	var clauses []string
+	if len(s.Labels) > 0 {
+		pairs := make([]string, 0, len(s.Labels))
+		for _, k := range slices.Sorted(maps.Keys(s.Labels)) {
+			pairs = append(pairs, fmt.Sprintf("%s=%q", k, s.Labels[k]))
+		}
+		clauses = append(clauses, "labels{"+strings.Join(pairs, ", ")+"}")
+	}
+	if len(s.Present) > 0 {
+		clauses = append(clauses, fmt.Sprintf("present%v", s.Present))
+	}
+	if len(s.Absent) > 0 {
+		clauses = append(clauses, fmt.Sprintf("absent%v", s.Absent))
+	}
+	if s.Exact {
+		clauses = append(clauses, "exact")
+	}
+	if s.Value != nil {
+		clauses = append(clauses, "value predicate")
+	}
+	if len(clauses) == 0 {
+		return "Series{any sample}"
+	}
+	return "Series{" + strings.Join(clauses, ", ") + "}"
+}
+
+// HasSeries returns a PromQL check (for Prom.Eventually) that passes when some
 // sample in the result vector matches want.
 func HasSeries(want Series) func(model.Vector) error {
 	return func(v model.Vector) error {
@@ -36,8 +68,7 @@ func HasSeries(want Series) func(model.Vector) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("no sample matched labels=%v absent=%v among %d samples: %v",
-			want.Labels, want.Absent, len(v), v)
+		return fmt.Errorf("no sample matched %s among %d samples: %v", want, len(v), v)
 	}
 }
 

@@ -615,9 +615,8 @@ e2e-ta-standalone: kustomize gotestsum
 	KUSTOMIZE=$(KUSTOMIZE) \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
-# Go-based full-deployment e2e (operator -> collector + target allocator) with
-# semantic metric checks. Deploys via the operator, so run `make prepare-e2e`
-# first. PoC of an e2e-framework + terratest harness for complex Go assertions.
+# End to end metrics collection test comparing against prometheus-operator.
+# Deploys via the operator, so run `make prepare-e2e` first.
 .PHONY: e2e-collector-metrics
 e2e-collector-metrics: gotestsum
 	@mkdir -p ./.testresults/e2e

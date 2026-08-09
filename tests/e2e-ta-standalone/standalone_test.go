@@ -52,7 +52,7 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("scale up preserves consistency", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := e2e.Namespace(t, ctx)
 			initialAssignment := ctx.Value(initialAssignmentKey{}).(map[string][]string)
 
 			scaleStatefulSet(t, ctx, cfg, ns, "collector", 3)
@@ -66,7 +66,7 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("scale down reassigns targets", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := e2e.Namespace(t, ctx)
 
 			scaleStatefulSet(t, ctx, cfg, ns, "collector", 2)
 			e2e.WaitForStatefulSet(ctx, t, cfg, ns, "collector", 2, testTimeout)
@@ -77,7 +77,7 @@ func TestStandaloneTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("HTTP API contract", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := e2e.Namespace(t, ctx)
 			proxyBase := taProxyBase(ns)
 
 			body := kubectlGetRaw(t, ctx, cfg, proxyBase+"/jobs")

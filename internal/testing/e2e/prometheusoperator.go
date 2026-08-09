@@ -24,18 +24,28 @@ import (
 // oracle. The version matches the prometheus-operator module this repo depends on
 // (see prometheusOperatorVersion). Idempotent: a no-op once installed. The release
 // bundle is fetched over the network and server-side-applied.
+//
+// Availability is waited for on every path, not just after a fresh install: an
+// install left mid-rollout (or crash-looping) by a previous or concurrent run must
+// not let tests proceed against an operator that is not reconciling yet.
 func EnsurePrometheusOperator(ctx context.Context, t *testing.T, cfg *envconf.Config) {
 	t.Helper()
 	c := CRClient(t, cfg)
 	dep := &appsv1.Deployment{}
 	err := c.Get(ctx, crclient.ObjectKey{Namespace: "default", Name: "prometheus-operator"}, dep)
-	if err == nil {
-		return
-	}
-	if !apierrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
+		installPrometheusOperator(ctx, t, c)
+	} else {
 		require.NoError(t, err, "get prometheus-operator deployment")
 	}
+	// Returns almost immediately when the operator is already available.
+	WaitForDeployment(ctx, t, cfg, "default", "prometheus-operator", 3*time.Minute)
+}
 
+// installPrometheusOperator fetches the release bundle matching the module version
+// and server-side-applies it.
+func installPrometheusOperator(ctx context.Context, t *testing.T, c crclient.Client) {
+	t.Helper()
 	url := "https://github.com/prometheus-operator/prometheus-operator/releases/download/" + prometheusOperatorVersion(t) + "/bundle.yaml"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	require.NoError(t, err, "request bundle")
@@ -48,7 +58,6 @@ func EnsurePrometheusOperator(ctx context.Context, t *testing.T, cfg *envconf.Co
 	// The bundle mixes cluster-scoped (CRDs, RBAC) and namespaced (operator in
 	// default) objects, so its own namespaces are respected.
 	applyManifests(ctx, t, c, resp.Body, "")
-	WaitForDeployment(ctx, t, cfg, "default", "prometheus-operator", 3*time.Minute)
 }
 
 // prometheusOperatorVersion returns the prometheus-operator version this repo depends

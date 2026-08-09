@@ -75,6 +75,7 @@ jobs:
         - e2e-automatic-rbac
         - e2e-autoscale
         - e2e-clusterobservability
+        - e2e-collector-metrics
         - e2e-instrumentation-default
         - e2e-instrumentation
         - e2e-no-crds

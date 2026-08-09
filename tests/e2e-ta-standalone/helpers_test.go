@@ -79,28 +79,16 @@ func TestMain(m *testing.M) {
 // Namespace lifecycle
 // ---------------------------------------------------------------------------
 
-// nsContextKey is the context key used to store the per-feature namespace name.
-type nsContextKey struct{}
-
-// nsFromCtx retrieves the per-feature namespace stored by setupTestNamespace.
-func nsFromCtx(ctx context.Context) string {
-	return ctx.Value(nsContextKey{}).(string)
-}
-
 // setupTestNamespace creates a unique namespace for the current test feature, stores
 // its name in the context, registers a t.Cleanup for teardown, and returns the updated
 // context and namespace name. Cluster RBAC is created (and cleaned up) per binding by
 // e2e.BindTargetAllocatorClusterRole, so namespace teardown only removes the namespace.
 func setupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (nsCtx context.Context, ns string) {
 	t.Helper()
-	ns = e2e.NamespaceFromT(t)
-	e2e.CreateNamespace(ctx, t, cfg, ns)
+	nsCtx = e2e.SetupNamespace(ctx, t, cfg)
+	ns = e2e.Namespace(t, nsCtx)
 	t.Logf("created namespace %s", ns)
-	t.Cleanup(func() {
-		e2e.DeleteNamespace(context.WithoutCancel(ctx), t, cfg, ns)
-		t.Logf("cleaned up namespace %s", ns)
-	})
-	return context.WithValue(ctx, nsContextKey{}, ns), ns
+	return nsCtx, ns
 }
 
 // ---------------------------------------------------------------------------

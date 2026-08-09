@@ -108,9 +108,12 @@ func TestMain(m *testing.M) {
 	os.Exit(testenv.Run(m))
 }
 
-type nsKey struct{}
-
-func ns(ctx context.Context) string { return ctx.Value(nsKey{}).(string) }
+// prom returns a handle to the test's oracle Prometheus. It is built per assertion
+// rather than per package because the namespace is only known once setup ran.
+func prom(t *testing.T, ctx context.Context, cfg *envconf.Config) *e2e.Prom {
+	t.Helper()
+	return e2e.NewProm(cfg, e2e.Namespace(t, ctx), promSvc, promPort)
+}
 
 // setup ensures prometheus-operator is installed, then deploys the sample app, the
 // oracle Prometheus (+ RBAC), any extra objects (e.g. ServiceMonitors), the collector
@@ -119,9 +122,8 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		e2e.EnsurePrometheusOperator(ctx, t, cfg)
 
-		namespace := e2e.NamespaceFromT(t)
-		e2e.CreateNamespace(ctx, t, cfg, namespace)
-		t.Cleanup(func() { e2e.DeleteNamespace(context.WithoutCancel(ctx), t, cfg, namespace) })
+		ctx = e2e.SetupNamespace(ctx, t, cfg)
+		namespace := e2e.Namespace(t, ctx)
 
 		e2e.Apply(ctx, t, cfg, namespace, sampleAppManifest)
 		e2e.Apply(ctx, t, cfg, namespace, oraclePrometheusManifest)
@@ -135,7 +137,7 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 		// StatefulSet; the operator reconciles the collector CR into <name>-collector.
 		e2e.WaitForStatefulSet(ctx, t, cfg, namespace, oracleSTS, 1, 3*time.Minute)
 		e2e.WaitForStatefulSet(ctx, t, cfg, namespace, collectorSTS, 1, 5*time.Minute)
-		return context.WithValue(ctx, nsKey{}, namespace)
+		return ctx
 	}
 }
 
@@ -144,26 +146,25 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 // scrape the same pod and write to the same Prometheus, distinguished by a `pipeline`
 // label, so any divergence in target labeling fails the differential.
 func TestServiceMonitorDifferential(t *testing.T) {
-	prom := e2e.PromTarget{Service: promSvc, Port: promPort}
-
 	feat := features.New("ServiceMonitor targets labeled identically to prometheus-operator").
 		Setup(setup(smCollectorManifest, serviceMonitor(pipelineTA), serviceMonitor(pipelineProm))).
 		Assess("the allocator path really went through ServiceMonitor relabeling", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			ns := e2e.Namespace(t, ctx)
 			// Guards the differential against a vacuous pass: the TA series must carry
 			// the prometheus-operator relabeling output, not be empty/trivial.
-			e2e.EventuallyPromQL(ctx, t, cfg, ns(ctx), prom, fmt.Sprintf(`up{%s=%q}`, pipelineLabel, pipelineTA),
+			prom(t, ctx, cfg).Eventually(ctx, t, fmt.Sprintf(`up{%s=%q}`, pipelineLabel, pipelineTA),
 				e2e.HasSeries(e2e.Series{
-					Labels:  map[string]string{"service": sampleApp, "namespace": ns(ctx)},
+					Labels:  map[string]string{"service": sampleApp, "namespace": ns},
 					Present: []string{"endpoint", "pod", "container"},
 				}))
 			return ctx
 		}).
 		Assess("target identity matches prometheus-operator (up)", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			e2e.SameLabelsAcross(ctx, t, cfg, ns(ctx), prom, e2e.Differential{Query: `up`, PartitionLabel: pipelineLabel, WantPartitions: 2})
+			prom(t, ctx, cfg).SameLabelsAcross(ctx, t, e2e.Differential{Query: `up`, PartitionLabel: pipelineLabel, WantPartitions: 2})
 			return ctx
 		}).
 		Assess("a scraped series matches prometheus-operator end-to-end (version)", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			e2e.SameLabelsAcross(ctx, t, cfg, ns(ctx), prom, e2e.Differential{Query: `version`, PartitionLabel: pipelineLabel, WantPartitions: 2})
+			prom(t, ctx, cfg).SameLabelsAcross(ctx, t, e2e.Differential{Query: `version`, PartitionLabel: pipelineLabel, WantPartitions: 2})
 			return ctx
 		}).
 		Feature()
@@ -176,12 +177,10 @@ func TestServiceMonitorDifferential(t *testing.T) {
 // carrying exactly the scrape config's identity (job/instance) and no
 // service-discovery labels.
 func TestRawScrapeConfigMetrics(t *testing.T) {
-	prom := e2e.PromTarget{Service: promSvc, Port: promPort}
-
 	feat := features.New("raw scrape_configs carry exactly the static identity").
 		Setup(setup(rawCollectorManifest)).
 		Assess("the static target carries exactly job/instance and no service-discovery labels", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			e2e.EventuallyPromQL(ctx, t, cfg, ns(ctx), prom, fmt.Sprintf(`up{job=%q}`, sampleApp),
+			prom(t, ctx, cfg).Eventually(ctx, t, fmt.Sprintf(`up{job=%q}`, sampleApp),
 				e2e.HasSeries(e2e.Series{
 					Labels: map[string]string{"job": sampleApp, "instance": sampleApp + ":8080"},
 					Exact:  true,
