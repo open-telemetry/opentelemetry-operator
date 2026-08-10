@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -200,32 +199,54 @@ func (c Client) create(ctx context.Context, name, namespace string, collector *v
 }
 
 func (c Client) update(ctx context.Context, o *v1beta1.OpenTelemetryCollector, remoteConfig []byte) error {
-	// Apply the received remote configuration as a JSON merge patch of the
-	// spec instead of a full object update. The remote configuration manages
-	// the collector's effective configuration, while the rest of the spec
-	// (mode, image, ingress, ...) is owned by the operator. A full object
-	// update would reset those fields to the (typically minimal) received
-	// spec, which both clobbers operator-owned state and trips mode-specific
-	// webhook validation, e.g. for DaemonSet pools where the target
-	// allocation strategy is only valid together with spec.mode=daemonset.
-	// Patching only the spec keys present in the remote configuration
-	// preserves everything else, including fields like spec.replicas that
-	// remote configurations may explicitly manage.
+	// Build the desired object from the current instance so the CR we submit
+	// is identical to the one in the cluster except for the spec keys the
+	// remote configuration actually carries. Operator-owned fields (mode,
+	// image, ingress, targetAllocator, ...) are preserved by construction,
+	// which keeps mode-specific webhook validation satisfied (e.g. DaemonSet
+	// pools). The overlay happens at the map level because a struct-level
+	// overlay cannot distinguish "field absent" from "field zero" (e.g.
+	// spec.mode: "").
 	remote := map[string]any{}
 	if err := yaml.Unmarshal(remoteConfig, &remote); err != nil {
-		return errors.NewBadRequest(fmt.Sprintf("failed to unmarshal remote config into a merge patch: %v", err))
+		return errors.NewBadRequest(fmt.Sprintf("failed to unmarshal remote config: %v", err))
 	}
 	remoteSpec, ok := remote["spec"].(map[string]any)
 	if !ok {
 		return errors.NewBadRequest("remote config does not contain a spec to apply")
 	}
-	patch, err := json.Marshal(map[string]any{"spec": remoteSpec})
+
+	currentJSON, err := json.Marshal(o)
 	if err != nil {
-		return fmt.Errorf("failed to marshal remote config into a merge patch: %w", err)
+		return fmt.Errorf("failed to marshal current collector: %w", err)
+	}
+	current := map[string]any{}
+	if err := json.Unmarshal(currentJSON, &current); err != nil {
+		return fmt.Errorf("failed to unmarshal current collector: %w", err)
+	}
+	currentSpec, ok := current["spec"].(map[string]any)
+	if !ok {
+		return errors.NewBadRequest("current collector does not contain a spec")
+	}
+	for key, value := range remoteSpec {
+		currentSpec[key] = value
 	}
 
-	c.log.Info("Updating collector", "patch", string(patch))
-	return c.k8sClient.Patch(ctx, o, client.RawPatch(types.MergePatchType, patch))
+	desiredJSON, err := json.Marshal(current)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated collector: %w", err)
+	}
+	desired := &v1beta1.OpenTelemetryCollector{}
+	if err := json.Unmarshal(desiredJSON, desired); err != nil {
+		return fmt.Errorf("failed to unmarshal updated collector: %w", err)
+	}
+	// Carry the current resourceVersion so the update is a proper
+	// read-modify-write: concurrent modifications surface as a conflict
+	// instead of being silently clobbered.
+	desired.ResourceVersion = o.ResourceVersion
+
+	c.log.Info("Updating collector", "name", o.Name, "namespace", o.Namespace)
+	return c.k8sClient.Update(ctx, desired)
 }
 
 func (c Client) Delete(key string) error {

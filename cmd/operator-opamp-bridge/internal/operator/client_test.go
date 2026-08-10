@@ -488,10 +488,12 @@ func TestClient_Restart_PartialFailure(t *testing.T) {
 // TestClient_ApplyUpdatePreservesOperatorOwnedFields reproduces the failure
 // reported in issue #4481: applying a remote configuration that only carries
 // spec.config to an existing DaemonSet-mode collector must not reset the rest
-// of the spec. The old full-object update wiped spec.mode and the target
-// allocation strategy, which both clobbered operator-owned state and tripped
-// mode-specific webhook validation for DaemonSet pools. The bridge now applies
-// the remote configuration as a merge patch of the spec keys it contains.
+// of the spec. The old full-object update was built from the received remote
+// configuration alone and wiped spec.mode and the target allocation strategy,
+// which both clobbered operator-owned state and tripped mode-specific webhook
+// validation for DaemonSet pools. The bridge now overlays the received spec
+// keys onto the current instance and updates the full object, preserving
+// operator-owned fields by construction.
 func TestClient_ApplyUpdatePreservesOperatorOwnedFields(t *testing.T) {
 	fakeClient := getFakeClient(t)
 	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
