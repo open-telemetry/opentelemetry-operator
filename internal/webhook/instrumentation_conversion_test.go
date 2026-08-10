@@ -73,7 +73,6 @@ func TestInstrumentationConvertTo(t *testing.T) {
 	require.NoError(t, err)
 
 	lossyFields := v1alpha1Fields{
-		JavaEnv:             []corev1.EnvVar{{Name: "JAVA_ENV", Value: "java"}},
 		JavaVolumeSizeLimit: &volumeSize,
 	}
 	annotationBytes, err := json.Marshal(lossyFields)
@@ -108,10 +107,6 @@ func TestInstrumentationConvertTo(t *testing.T) {
 					Type:     v1beta1.SamplerType("parentbased_traceidratio"),
 					Argument: "0.25",
 				},
-				Env: []corev1.EnvVar{
-					{Name: "COMMON_ENV", Value: "common"},
-					{Name: "JAVA_ENV", Value: "java"},
-				},
 			},
 			Resource: v1beta1.Resource{
 				Attributes: map[string]string{"env": "test"},
@@ -122,9 +117,15 @@ func TestInstrumentationConvertTo(t *testing.T) {
 					Enabled: &enabled,
 				},
 			},
+			Env: []corev1.EnvVar{
+				{Name: "COMMON_ENV", Value: "common"},
+			},
 			Java: v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java-image:latest",
+					Env: []corev1.EnvVar{
+						{Name: "JAVA_ENV", Value: "java"},
+					},
 				},
 				Extensions: []v1beta1.Extensions{
 					{Image: "ext-image", Dir: "/ext"},
@@ -161,9 +162,6 @@ func TestInstrumentationConvertFrom(t *testing.T) {
 				Sampler: v1beta1.Sampler{
 					Type: v1beta1.SamplerType("always_on"),
 				},
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_ENV", Value: "prod"},
-				},
 			},
 			Resource: v1beta1.Resource{
 				Attributes: map[string]string{"service": "api"},
@@ -174,6 +172,9 @@ func TestInstrumentationConvertFrom(t *testing.T) {
 				ServiceMetadata: &v1beta1.ServiceMetadataConfig{
 					Enabled: &enabled,
 				},
+			},
+			Env: []corev1.EnvVar{
+				{Name: "OTEL_ENV", Value: "prod"},
 			},
 			Java: v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
@@ -235,7 +236,7 @@ func TestInstrumentationConvertFromWithAnnotation(t *testing.T) {
 			Name:      "test-inst",
 			Namespace: "default",
 			Annotations: map[string]string{
-				v1alpha1FieldsAnnotation: `{"javaEnv":[{"name":"JAVA_OPTS","value":"-Xmx512m"}],"javaVolumeSizeLimit":"300Mi","apacheHttpdAttrs":[{"name":"ApacheModuleOtelExporterEnabled","value":"ON"}]}`,
+				v1alpha1FieldsAnnotation: `{"javaVolumeSizeLimit":"300Mi","apacheHttpdAttrs":[{"name":"ApacheModuleOtelExporterEnabled","value":"ON"}]}`,
 			},
 		},
 		Spec: v1beta1.InstrumentationSpec{
@@ -247,6 +248,9 @@ func TestInstrumentationConvertFromWithAnnotation(t *testing.T) {
 			Java: v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java:latest",
+					Env: []corev1.EnvVar{
+						{Name: "JAVA_OPTS", Value: "-Xmx512m"},
+					},
 				},
 			},
 			ApacheHttpd: v1beta1.ApacheHttpd{

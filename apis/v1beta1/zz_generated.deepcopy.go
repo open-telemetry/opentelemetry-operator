@@ -84,6 +84,13 @@ func (in *AutoscalerSpec) DeepCopy() *AutoscalerSpec {
 func (in *CommonLanguageSpec) DeepCopyInto(out *CommonLanguageSpec) {
 	*out = *in
 	in.VolumeClaimTemplate.DeepCopyInto(&out.VolumeClaimTemplate)
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 }
 
@@ -365,6 +372,13 @@ func (in *InstrumentationSpec) DeepCopyInto(out *InstrumentationSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Resource.DeepCopyInto(&out.Resource)
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.Java.DeepCopyInto(&out.Java)
 	in.NodeJS.DeepCopyInto(&out.NodeJS)
 	in.Python.DeepCopyInto(&out.Python)

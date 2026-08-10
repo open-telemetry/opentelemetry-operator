@@ -20,6 +20,11 @@ type InstrumentationSpec struct {
 	// +optional
 	Resource Resource `json:"resource,omitempty"`
 
+	// Env defines common env vars injected into all instrumented containers.
+	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
 	// Java defines configuration for Java auto-instrumentation.
 	// +optional
 	Java Java `json:"java,omitempty"`
@@ -183,6 +188,11 @@ type CommonLanguageSpec struct {
 	// If omitted, an emptyDir is used with a default size limit.
 	// +optional
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// Env defines language-specific env vars injected into containers instrumented with this language.
+	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
 	// +optional
