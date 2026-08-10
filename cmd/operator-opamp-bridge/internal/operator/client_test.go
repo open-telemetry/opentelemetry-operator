@@ -583,3 +583,50 @@ spec:
 	_, ok := updated.Spec.Config.Processors.Object["batch"]
 	assert.True(t, ok, "spec.config must be updated with the remote configuration")
 }
+
+func TestClient_ApplyUpdateRemoteConfigWithoutSpec(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+
+	namespace := "testing"
+	existingYAML := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  config:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: []
+          exporters: [debug]
+`)
+	var existing v1beta1.OpenTelemetryCollector
+	require.NoError(t, yaml.Unmarshal(existingYAML, &existing))
+	setTypedMeta(&existing)
+	require.NoError(t, fakeClient.Create(context.Background(), &existing))
+
+	// A remote configuration without a spec manages nothing and must be
+	// rejected cleanly instead of crashing or mutating the instance.
+	remoteConfig := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+`)
+	err := c.Apply(NewKubeResourceKey(namespace, "simplest").String(), &protobufs.AgentConfigFile{
+		Body:        remoteConfig,
+		ContentType: "yaml",
+	})
+	assert.Error(t, err, "a remote configuration without a spec should be rejected")
+	assert.Contains(t, err.Error(), "does not contain a spec")
+}
