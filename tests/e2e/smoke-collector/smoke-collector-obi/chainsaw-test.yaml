@@ -7,12 +7,17 @@ metadata:
 # privileged securityContext, hostPID, and user-managed RBAC. Validates that
 # the operator reconciles the CR into the correct DaemonSet spec and that the
 # OBI receiver successfully produces traces from a target workload.
+#
+# OBI uses eBPF to instrument processes at the kernel level, so traces only
+# appear in the collector pod running on the same node as the target workload.
+# The telemetry steps check ALL collector pods (not just the first) to handle
+# multi-node clusters correctly.
 spec:
   bindings:
     - name: podLabelSelector
       value: app=obi-target
     - name: appPort
-      value: "80"
+      value: "8080"
     - name: appPath
       value: /
     - name: collectorLabelSelector
@@ -55,9 +60,6 @@ spec:
                 -n opentelemetry-operator-system | \
                 grep -o '"collector-image":"[^"]*"' | head -1 | \
                 grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-              # --collector-image may be pinned to a non-semver tag (e.g. a
-              # ":latest" dev build); fall back to "latest" so the test still
-              # gets a resolvable image instead of a version-less tag.
               printf '%s' "${VERSION:-latest}"
             outputs:
               - name: collectorVersion
@@ -87,10 +89,70 @@ spec:
       use:
         template: ../../../step-templates/app-http-request.yaml
     - name: wait-for-telemetry
-      description: wait for OBI traces in collector debug output
-      use:
-        template: ../../../step-templates/wait-for-telemetry.yaml
+      description: wait for OBI traces in any collector pod (DaemonSet — traces only appear on the target's node)
+      try:
+        - script:
+            env:
+              - name: LABEL_SELECTOR
+                value: ($collectorLabelSelector)
+              - name: CONTAINER_NAME
+                value: ($containerName)
+              - name: RETRY_TIMEOUT
+                value: ($retryTimeout)
+              - name: RETRY_SLEEP
+                value: ($retrySleep)
+              - name: SEARCH_STRING
+                value: k8s.namespace.name
+            timeout: 5m
+            content: |
+              START=$(date +%s)
+              while true; do
+                ELAPSED=$(( $(date +%s) - START ))
+                if [ "$ELAPSED" -ge "$RETRY_TIMEOUT" ]; then
+                  echo "ERROR: Timeout (${RETRY_TIMEOUT}s) — '$SEARCH_STRING' not found in any collector pod" >&2
+                  kubectl logs -n "$NAMESPACE" -l "$LABEL_SELECTOR" -c "$CONTAINER_NAME" --tail=20 --prefix >&2
+                  exit 1
+                fi
+                if kubectl logs -n "$NAMESPACE" -l "$LABEL_SELECTOR" -c "$CONTAINER_NAME" --tail=-1 2>/dev/null | grep -Fq "$SEARCH_STRING"; then
+                  echo "Found '$SEARCH_STRING' in collector logs (elapsed: ${ELAPSED}s)"
+                  exit 0
+                fi
+                echo "Attempt at ${ELAPSED}s: '$SEARCH_STRING' not yet in any collector pod logs" >&2
+                sleep "$RETRY_SLEEP"
+              done
+      catch:
+        - podLogs:
+            selector: ($catchPodLabelSelector)
+            container: ($catchContainer)
     - name: validate-collector-spans
-      description: verify collector metrics confirm spans were exported (OBI receiver does not emit otelcol_receiver_accepted_spans)
-      use:
-        template: ../../../step-templates/validate-collector-exporter-spans.yaml
+      description: verify at least one collector pod exported spans (OBI traces land on the target's node only)
+      try:
+        - script:
+            env:
+              - name: COLLECTOR_LABEL_SELECTOR
+                value: ($collectorLabelSelector)
+              - name: METRICS_PORT
+                value: ($collectorMetricsPort)
+            shell: /bin/bash
+            timeout: 2m
+            content: |
+              PODS=$(kubectl get pod -n "$NAMESPACE" -l "$COLLECTOR_LABEL_SELECTOR" -o jsonpath='{.items[*].metadata.name}')
+              for i in {1..12}; do
+                for POD in $PODS; do
+                  if metrics=$(kubectl get --raw "/api/v1/namespaces/$NAMESPACE/pods/$POD:$METRICS_PORT/proxy/metrics" 2>/dev/null); then
+                    SPANS=$(echo "$metrics" | grep '^otelcol_exporter_sent_spans' | awk '{print $2}' | head -1)
+                    if [ -n "$SPANS" ] && [ "$SPANS" != "0" ]; then
+                      echo "otelcol_exporter_sent_spans = $SPANS (pod: $POD)"
+                      exit 0
+                    fi
+                  fi
+                done
+                echo "Attempt $i: no collector pod has sent_spans > 0 yet" >&2
+                sleep 5
+              done
+              echo "FAIL: no collector pod exported spans after 12 attempts" >&2
+              exit 1
+      catch:
+        - podLogs:
+            selector: ($catchPodLabelSelector)
+            container: ($catchContainer)

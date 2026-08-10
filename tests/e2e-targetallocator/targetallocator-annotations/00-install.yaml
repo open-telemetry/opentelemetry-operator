@@ -1,0 +1,15 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: annotated
+  namespace: ($namespace)
+  annotations:
+    example.com/propagated: "true"
+spec:
+  podAnnotations:
+    example.com/pod-only: "true"
+  prometheusCR:
+    enabled: true
+    serviceMonitorSelector: {}
+    podMonitorSelector: {}
+  serviceAccount: ta
