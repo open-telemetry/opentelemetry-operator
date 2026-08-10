@@ -5,6 +5,7 @@ package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
@@ -18,6 +19,11 @@ type InstrumentationSpec struct {
 	// These settings control how the operator populates resource attributes.
 	// +optional
 	Resource Resource `json:"resource,omitempty"`
+
+	// Env defines common env vars injected into all instrumented containers.
+	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Java defines configuration for Java auto-instrumentation.
 	// +optional
@@ -183,6 +189,11 @@ type CommonLanguageSpec struct {
 	// +optional
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
+	// Env defines language-specific env vars injected into containers instrumented with this language.
+	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -266,4 +277,21 @@ type InstrumentationStatus struct {
 	// explaining why.
 	// +optional
 	UpgradeBlockedVersions map[string]string `json:"upgradeBlockedVersions,omitempty"`
+}
+
+// +kubebuilder:skipversion
+//
+// Instrumentation is the spec for OpenTelemetry instrumentation.
+type Instrumentation struct {
+	Status            InstrumentationStatus `json:"status,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	Spec              InstrumentationSpec `json:"spec,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+}
+
+// InstrumentationList contains a list of Instrumentation.
+type InstrumentationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Instrumentation `json:"items"`
 }
