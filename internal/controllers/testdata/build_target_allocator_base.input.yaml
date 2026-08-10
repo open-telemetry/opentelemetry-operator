@@ -3,6 +3,8 @@ metadata:
   namespace: test
 spec:
   filterStrategy: relabel-config
+  podAnnotations:
+    pod-test: pod-value
   scrapeConfigs:
   - job_name: example
     metric_relabel_configs:
