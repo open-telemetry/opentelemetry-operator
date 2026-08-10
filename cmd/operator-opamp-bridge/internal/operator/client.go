@@ -5,7 +5,6 @@ package operator
 
 import (
 	"context"
-	"encoding/json"
 	stderrors "errors"
 	"fmt"
 	"strings"
@@ -117,7 +116,7 @@ func (c Client) Apply(key string, configmap *protobufs.AgentConfigFile) error {
 	if instance == nil {
 		return c.create(ctx, name, namespace, updatedCollector)
 	}
-	return c.update(ctx, instance, configmap.Body)
+	return c.update(ctx, instance, updatedCollector)
 }
 
 func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
@@ -198,55 +197,37 @@ func (c Client) create(ctx context.Context, name, namespace string, collector *v
 	return c.k8sClient.Create(ctx, collector)
 }
 
-func (c Client) update(ctx context.Context, o *v1beta1.OpenTelemetryCollector, remoteConfig []byte) error {
-	// Build the desired object from the current instance so the CR we submit
-	// is identical to the one in the cluster except for the spec keys the
-	// remote configuration actually carries. Operator-owned fields (mode,
-	// image, ingress, targetAllocator, ...) are preserved by construction,
-	// which keeps mode-specific webhook validation satisfied (e.g. DaemonSet
-	// pools). The overlay happens at the map level because a struct-level
-	// overlay cannot distinguish "field absent" from "field zero" (e.g.
-	// spec.mode: "").
-	remote := map[string]any{}
-	if err := yaml.Unmarshal(remoteConfig, &remote); err != nil {
-		return errors.NewBadRequest(fmt.Sprintf("failed to unmarshal remote config: %v", err))
-	}
-	remoteSpec, ok := remote["spec"].(map[string]any)
-	if !ok {
-		return errors.NewBadRequest("remote config does not contain a spec to apply")
+func (c Client) update(ctx context.Context, o, updated *v1beta1.OpenTelemetryCollector) error {
+	// Start from the current instance so the CR we submit is identical to the
+	// one in the cluster except for the fields the remote configuration
+	// manages. Operator-owned fields (mode, image, ingress, targetAllocator,
+	// ...) are preserved by construction, which also keeps mode-specific
+	// webhook validation satisfied (e.g. DaemonSet pools).
+	if updated.Spec.Replicas == nil && isEmptyConfig(updated.Spec.Config) {
+		return errors.NewBadRequest("remote configuration carries no config or replicas to apply")
 	}
 
-	currentJSON, err := json.Marshal(o)
-	if err != nil {
-		return fmt.Errorf("failed to marshal current collector: %w", err)
-	}
-	current := map[string]any{}
-	if err := json.Unmarshal(currentJSON, &current); err != nil {
-		return fmt.Errorf("failed to unmarshal current collector: %w", err)
-	}
-	currentSpec, ok := current["spec"].(map[string]any)
-	if !ok {
-		return errors.NewBadRequest("current collector does not contain a spec")
-	}
-	for key, value := range remoteSpec {
-		currentSpec[key] = value
+	desired := o.DeepCopy()
+	desired.Spec.Config = updated.Spec.Config
+	if updated.Spec.Replicas != nil {
+		desired.Spec.Replicas = updated.Spec.Replicas
 	}
 
-	desiredJSON, err := json.Marshal(current)
-	if err != nil {
-		return fmt.Errorf("failed to marshal updated collector: %w", err)
-	}
-	desired := &v1beta1.OpenTelemetryCollector{}
-	if err := json.Unmarshal(desiredJSON, desired); err != nil {
-		return fmt.Errorf("failed to unmarshal updated collector: %w", err)
-	}
-	// Carry the current resourceVersion so the update is a proper
-	// read-modify-write: concurrent modifications surface as a conflict
-	// instead of being silently clobbered.
-	desired.ResourceVersion = o.ResourceVersion
-
+	// Let controller-runtime compute and apply the merge patch between the
+	// current and desired objects; only the managed fields appear in it.
 	c.log.Info("Updating collector", "name", o.Name, "namespace", o.Namespace)
-	return c.k8sClient.Update(ctx, desired)
+	return c.k8sClient.Patch(ctx, desired, client.MergeFrom(o))
+}
+
+// isEmptyConfig reports whether the configuration carries no receivers,
+// exporters, processors or pipelines.
+func isEmptyConfig(config v1beta1.Config) bool {
+	return len(config.Receivers.Object) == 0 &&
+		len(config.Exporters.Object) == 0 &&
+		(config.Processors == nil || len(config.Processors.Object) == 0) &&
+		(config.Connectors == nil || len(config.Connectors.Object) == 0) &&
+		(config.Extensions == nil || len(config.Extensions.Object) == 0) &&
+		len(config.Service.Pipelines) == 0
 }
 
 func (c Client) Delete(key string) error {

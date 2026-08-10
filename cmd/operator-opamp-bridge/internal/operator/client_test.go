@@ -491,9 +491,9 @@ func TestClient_Restart_PartialFailure(t *testing.T) {
 // of the spec. The old full-object update was built from the received remote
 // configuration alone and wiped spec.mode and the target allocation strategy,
 // which both clobbered operator-owned state and tripped mode-specific webhook
-// validation for DaemonSet pools. The bridge now overlays the received spec
-// keys onto the current instance and updates the full object, preserving
-// operator-owned fields by construction.
+// validation for DaemonSet pools. The bridge now builds the desired object
+// from the current instance and applies the managed fields (config, replicas)
+// as a merge patch, preserving operator-owned fields by construction.
 func TestClient_ApplyUpdatePreservesOperatorOwnedFields(t *testing.T) {
 	fakeClient := getFakeClient(t)
 	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
@@ -627,6 +627,6 @@ metadata:
 		Body:        remoteConfig,
 		ContentType: "yaml",
 	})
-	assert.Error(t, err, "a remote configuration without a spec should be rejected")
-	assert.Contains(t, err.Error(), "does not contain a spec")
+	assert.Error(t, err, "a remote configuration without a config or replicas should be rejected")
+	assert.Contains(t, err.Error(), "carries no config or replicas")
 }

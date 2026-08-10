@@ -2,6 +2,6 @@ change_type: bug_fix
 
 component: opamp
 
-note: "Apply remote OpAMP configurations by overlaying the received spec keys onto the current collector and updating the full object, so the submitted CR is identical to the one in the cluster except for the remote-managed fields: operator-owned fields (e.g. spec.mode) are preserved and DaemonSet-mode collectors are no longer rejected by the validating webhook"
+note: "Apply remote OpAMP configurations by overlaying the managed fields (config, replicas) onto the current collector and applying them as a merge patch, so operator-owned fields (e.g. spec.mode) are preserved and DaemonSet-mode collectors are no longer rejected by the validating webhook"
 
 issues: [4481]
