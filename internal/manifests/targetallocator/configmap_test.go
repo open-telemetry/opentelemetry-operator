@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	colfg "go.opentelemetry.io/collector/featuregate"
+	"go.opentelemetry.io/contrib/otelconf"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -1053,6 +1055,74 @@ func TestTelemetryOTLP(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotContains(t, actual.Data[targetAllocatorFilename], "telemetry:")
 	})
+}
+
+// TestTelemetryConfigOtelconfCompatibility verifies that the YAML rendered by
+// buildTelemetryConfig is valid under the OTel declarative configuration schema.
+// If field names diverge (e.g. otlp_grpc → otlpGrpc), this test fails.
+func TestTelemetryConfigOtelconfCompatibility(t *testing.T) {
+	tel := v1beta1.TargetAllocatorTelemetry{
+		Metrics: v1beta1.TargetAllocatorMetricsConfig{
+			Readers: []v1beta1.TAMetricReader{
+				{
+					Periodic: &v1beta1.TAPeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 60 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 30 * time.Second},
+						Exporter: v1beta1.TAMetricExporter{
+							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
+								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+									Endpoint:              "example.com:4317",
+									TemporalityPreference: "delta",
+									Headers: []v1beta1.TANameValuePair{
+										{Name: "Authorization", Value: "Bearer token"},
+									},
+								},
+								Tls: &v1beta1.TAGrpcTlsConfig{Insecure: true},
+							},
+						},
+					},
+				},
+				{
+					Periodic: &v1beta1.TAPeriodicMetricReader{
+						Exporter: v1beta1.TAMetricExporter{
+							OtlpHttp: &v1beta1.TAOTLPHttpExporter{
+								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+									Endpoint:              "https://ingest.example.com:4318",
+									TemporalityPreference: "delta",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tc := buildTelemetryConfig(tel)
+	require.NotNil(t, tc)
+
+	// otelconf expects meter_provider; telemetry.metrics maps 1:1 to it.
+	type wrapper struct {
+		FileFormat    string           `yaml:"file_format"`
+		MeterProvider *taMetricsConfig `yaml:"meter_provider"`
+	}
+	raw, err := yaml.Marshal(wrapper{"0.4", tc.Metrics})
+	require.NoError(t, err)
+
+	cfg, err := otelconf.ParseYAML(raw)
+	require.NoError(t, err, "rendered telemetry YAML must be valid OTel declarative config:\n%s", string(raw))
+	require.NotNil(t, cfg.MeterProvider)
+	require.Len(t, cfg.MeterProvider.Readers, 2)
+
+	grpc := cfg.MeterProvider.Readers[0]
+	require.NotNil(t, grpc.Periodic)
+	require.NotNil(t, grpc.Periodic.Exporter.OTLPGrpc)
+	assert.Equal(t, "example.com:4317", string(*grpc.Periodic.Exporter.OTLPGrpc.Endpoint))
+
+	http := cfg.MeterProvider.Readers[1]
+	require.NotNil(t, http.Periodic)
+	require.NotNil(t, http.Periodic.Exporter.OTLPHttp)
+	assert.Equal(t, "https://ingest.example.com:4318", string(*http.Periodic.Exporter.OTLPHttp.Endpoint))
 }
 
 func TestGetCollectorNotReadyGracePeriod(t *testing.T) {
