@@ -37,9 +37,10 @@ import (
 )
 
 const (
-	agentType      = "io.opentelemetry.operator-opamp-bridge"
-	operatorMode   = "operator"
-	standaloneMode = "standalone"
+	agentType          = "io.opentelemetry.operator-opamp-bridge"
+	bridgeAttributeKey = "opentelemetry.io/opamp.bridge.mode"
+	operatorMode       = "operator"
+	standaloneMode     = "standalone"
 )
 
 var (
@@ -230,6 +231,8 @@ func (c *Config) GetDescription() *protobufs.AgentDescription {
 		NonIdentifyingAttributes: c.AgentDescription.nonIdentifyingAttributes(map[string]string{
 			"os.family": runtime.GOOS,
 			"host.name": hostname,
+		}, map[string]string{
+			bridgeAttributeKey: c.Mode,
 		}),
 	}
 }
@@ -358,10 +361,11 @@ func supportedStandaloneWorkloadKind(workloadKind string) bool {
 }
 
 // nonIdentifyingAttributes overlays configured non-identifying attributes on top of defaults for OpAMP reporting.
-func (ad *AgentDescription) nonIdentifyingAttributes(defaults map[string]string) []*protobufs.KeyValue {
+func (ad *AgentDescription) nonIdentifyingAttributes(defaults, forced map[string]string) []*protobufs.KeyValue {
 	attrs := map[string]string{}
 	maps.Copy(attrs, defaults)
 	maps.Copy(attrs, ad.NonIdentifyingAttributes)
+	maps.Copy(attrs, forced)
 
 	toReturn := make([]*protobufs.KeyValue, len(attrs))
 	i := 0
