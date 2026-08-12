@@ -18,6 +18,7 @@ The current `v1alpha1` Instrumentation CRD has been widely adopted in production
 3. Normalize per-language resource fields — remove deprecated [`volumeLimitSize`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L178) and unify inconsistent JSON tags ([`json:"resources"`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L188) vs [`json:"resourceRequirements"`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_types.go#L228))
 4. Consolidate `Resource` and `Defaults` into a single top-level `spec.resource` field for operator-level resource attribute configuration
 5. Migrate injection control from annotations to labels, enabling webhook filtering via `objectSelector` and easier pod querying ([#821](https://github.com/open-telemetry/opentelemetry-operator/issues/821), [#4445](https://github.com/open-telemetry/opentelemetry-operator/issues/4445))
+6. Decouple the operator's release cadence from language instrumentation releases by requiring users to specify the instrumentation image and removing the operator-provided default ([#5255](https://github.com/open-telemetry/opentelemetry-operator/issues/5255))
 
 ## Non-Goals (for initial v1beta1)
 
@@ -313,6 +314,51 @@ webhooks:
 
 This reduces webhook invocations to only pods that have opted in via labels, improving cluster performance. This optimization is only possible after annotations are no longer supported, since `objectSelector` cannot match annotations.
 
+### 6. No Default Instrumentation Image
+
+**Issues:** [#5255](https://github.com/open-telemetry/opentelemetry-operator/issues/5255)
+
+In v1alpha1, each language's `image` field is optional. When unset, the operator injects a default image whose version is baked into the operator release (tracked in [`versions.txt`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/versions.txt)). This couples the operator's version scheme to the collective versions of every language instrumentation it ships.
+
+This coupling has caused real problems:
+
+- **Delayed major upgrades.** When the OpenTelemetry Java agent and Dotnet agents upgraded to support to stable 1.0 HTTP semantic conventions, the operator held back the default image for a long time because bumping the default would expose every user to breaking changes in their outputted telemetry.
+- **Regular major bumps are now expected.** The OpenTelemetry project's goal is for instrumentations to be stable (1.x) by default, and maintainers will only mark things 1.x if a future 2.x with breaking changes is allowed. The Java agent's pattern of regular major releases with `LATEST_MAJOR_VERSION - 1` support is being adopted by other languages. The operator does not want to cut a new major version for every new major version of any instrumentation, nor hold users back from the latest versions.
+
+#### Proposed design
+
+In v1beta1, the operator **does not provide a default instrumentation image**. Users must specify the image (including version) for any language they wish to inject.
+
+- The per-language `image` field is **required** when that language's injection is requested.
+- The operator no longer references `versions.txt` to select instrumentation image defaults. The operator's release cadence becomes fully independent of language instrumentation releases.
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: Instrumentation
+metadata:
+  name: image-required-example
+spec:
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.29.0
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.60b0
+  envConfig:
+    exporter:
+      endpoint: http://collector:4318
+```
+
+#### Mitigating the UX impact
+
+Requiring the image should not meaningfully worsen the getting-started experience, because users copy/paste CRs from examples rather than authoring them from scratch. To keep this smooth:
+
+- **Examples stay current.** Every README, example, and smoke/e2e test that injects instrumentation pins a concrete image, and an automated process keeps these pinned versions up to date as new instrumentation releases are published. Users copy a ready-to-run CR with the latest versions already filled in.
+- **Discoverability improvements.** The autoinstrumentation image release process will be matured to make finding the right image easier:
+  - Publish a new instrumentation image on every change to a package (no curation decisions — a straight repackaging of each upstream instrumentation release).
+  - Introduce operator-owned versioning on top of the upstream SDK version so changes to the operator's part of the image (e.g. a base image bump) can be released independently. Following the Linux-distribution pattern, a tag could add a suffix — e.g. `v2.29.0-1` for the Java `2.29.0` SDK.
+  - Improve package documentation so users can easily find what each image contains — in the operator repo, on the Docker Hub landing page, and on the GHCR landing page for each image.
+
+Prior art: the Collector Helm chart removed its default image when the community k8s distro was released, requiring users to supply one and updating all READMEs and tests to use the k8s-distro. That change did not generate requests to restore a default image.
+
 ## CRD Spec
 
 Full proposed v1beta1 `InstrumentationSpec`:
@@ -483,6 +529,7 @@ The `EnvConfig` types (`Exporter`, `Sampler`, `Propagator`) are the same as v1al
 | Per-language resources JSON tag | Mixed (`resources` / `resourceRequirements`) | `resources` (all) | Rename in YAML for NodeJS, Python, DotNet, Go, ApacheHttpd, Nginx |
 | Volume size limit | `volumeLimitSize` (deprecated) | Removed | Use `volumeClaimTemplate` |
 | Injection control | Pod/namespace annotations | Labels (same keys, same values) with annotation fallback | Optionally migrate annotations to labels; annotations continue to work |
+| Instrumentation image | Per-language `image` optional; operator injects a default from `versions.txt` | Per-language `image` required; no operator-provided default | Set `image` (including version) for each injected language; copy the pinned version from the examples/READMEs |
 
 ## Migration Strategy
 
