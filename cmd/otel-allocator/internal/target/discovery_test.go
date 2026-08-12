@@ -496,7 +496,7 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, RelabelConfigFilterStrategy, scu, nil)
 	require.NoError(t, err)
-	results := d.processTargetGroups("test", groups, nil)
+	results := d.processTargetGroups("test", groups, nil, nil)
 	require.Len(t, results, 1)
 
 	i := 0
@@ -607,7 +607,7 @@ func TestProcessTargetGroupsRelabelFiltering(t *testing.T) {
 		},
 	}
 
-	got := d.processTargetGroups("test", groups, relabelCfg)
+	got := d.processTargetGroups("test", groups, relabelCfg, nil)
 	require.Len(t, got, 2)
 	gotURLs := []string{got[0].TargetURL, got[1].TargetURL}
 	slices.Sort(gotURLs)
@@ -615,6 +615,75 @@ func TestProcessTargetGroupsRelabelFiltering(t *testing.T) {
 	for _, item := range got {
 		assert.NotZero(t, item.hash, "kept targets should carry a precomputed hash")
 	}
+}
+
+// TestProcessTargetGroupsSeededLabels verifies that relabel rules referencing
+// labels Prometheus seeds before relabeling (job, __scheme__, ...) make the same
+// keep/drop decisions as Prometheus, and that the seeds neither leak into the
+// served labels nor override labels already present on the target.
+// Regression test for https://github.com/open-telemetry/opentelemetry-operator/issues/5246.
+func TestProcessTargetGroupsSeededLabels(t *testing.T) {
+	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	scrapeCfg := &promconfig.ScrapeConfig{
+		JobName:        "seeded-job",
+		Scheme:         "http",
+		MetricsPath:    "/metrics",
+		ScrapeInterval: model.Duration(time.Minute),
+		ScrapeTimeout:  model.Duration(10 * time.Second),
+	}
+	seeds := scrapeConfigSeeds(scrapeCfg)
+	groups := []*targetgroup.Group{
+		{
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.1:9090"},
+				// A target-provided scheme wins over the seeded one, matching Prometheus.
+				{model.AddressLabel: "10.0.0.2:9090", model.SchemeLabel: "https"},
+			},
+		},
+	}
+
+	t.Run("keep on seeded job label", func(t *testing.T) {
+		relabelCfg := []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{"job"},
+				Regex:        relabel.MustNewRegexp("seeded-job"),
+				Action:       relabel.Keep,
+			},
+		}
+		got := d.processTargetGroups("seeded-job", groups, relabelCfg, seeds)
+		require.Len(t, got, 2)
+		for _, item := range got {
+			assert.Empty(t, item.Labels.Get("job"), "seeds must not leak into the served labels")
+		}
+		byURL := map[string]*Item{got[0].TargetURL: got[0], got[1].TargetURL: got[1]}
+		assert.Empty(t, byURL["10.0.0.1:9090"].Labels.Get(model.SchemeLabel), "seeds must not leak into the served labels")
+		assert.Equal(t, "https", byURL["10.0.0.2:9090"].Labels.Get(model.SchemeLabel), "target-provided labels must be served verbatim")
+	})
+
+	t.Run("drop on seeded job label", func(t *testing.T) {
+		relabelCfg := []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{"job"},
+				Regex:        relabel.MustNewRegexp("seeded-job"),
+				Action:       relabel.Drop,
+			},
+		}
+		got := d.processTargetGroups("seeded-job", groups, relabelCfg, seeds)
+		assert.Empty(t, got)
+	})
+
+	t.Run("keep on seeded scheme label respects target precedence", func(t *testing.T) {
+		relabelCfg := []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{model.SchemeLabel},
+				Regex:        relabel.MustNewRegexp("http"),
+				Action:       relabel.Keep,
+			},
+		}
+		got := d.processTargetGroups("seeded-job", groups, relabelCfg, seeds)
+		require.Len(t, got, 1)
+		assert.Equal(t, "10.0.0.1:9090", got[0].TargetURL, "the https target must not match the seeded http scheme")
+	})
 }
 
 // TestProcessTargetGroupsNoRelabelConfig verifies that when there's no relabel config for a job,
@@ -631,7 +700,7 @@ func TestProcessTargetGroupsNoRelabelConfig(t *testing.T) {
 		},
 	}
 
-	got := d.processTargetGroups("test", groups, nil)
+	got := d.processTargetGroups("test", groups, nil, nil)
 	require.Len(t, got, 2)
 	for _, item := range got {
 		// The hash is computed at creation, from the same builder-based function whether or not
@@ -661,7 +730,7 @@ func TestProcessTargetGroupsDeduplicatesByHash(t *testing.T) {
 		},
 	}
 
-	got := d.processTargetGroups("test", groups, relabelCfg)
+	got := d.processTargetGroups("test", groups, relabelCfg, nil)
 	require.Len(t, got, 2)
 	assert.Equal(t, got[0].Hash(), got[1].Hash(), "targets identical after relabeling should share a hash")
 }
