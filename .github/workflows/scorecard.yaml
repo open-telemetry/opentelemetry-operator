@@ -21,7 +21,7 @@ jobs:
       matrix:
         kube-version:
           - "1.25"
-          - "1.35"
+          - "1.36"
 
     steps:
 
