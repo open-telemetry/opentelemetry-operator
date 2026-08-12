@@ -477,41 +477,94 @@ rules:
 
 If your service or pod monitor endpoints require authentication (such as bearer tokens, basic auth, OAuth2, etc.), you must ensure that the collector has access to these credentials.
 
-To secure the connection between the target allocator and the collector so that the secrets can be retrieved, mTLS is used. This involves the use of cert-manager to manage the CA, server, and client certificates.
+To secure the connection between the target allocator and the collector so that the secrets can be retrieved, mTLS is used. You can either let cert-manager manage the certificates (the default) or provide your own.
 
-Prerequisites:
-- Ensure cert-manager is installed in your Kubernetes cluster.
-- Grant RBAC Permissions:
+#### With cert-manager (default)
 
-    - The target allocator needs the appropriate RBAC permissions to get the secrets referenced in the Service / Pod monitor.
+cert-manager provisions the CA, server, and client certificates automatically.
 
-    - The operator needs the appropriate RBAC permissions to manage cert-manager resources. The following clusterRole can be used to grant the necessary permissions:
+- Prerequisites:
+  - Ensure cert-manager is installed in your Kubernetes cluster.
+  - Grant the target allocator RBAC permission to get the secrets referenced in the Service / Pod monitor.
+  - Grant the operator RBAC permission to manage cert-manager resources. The following ClusterRole can be used:
 
-        ```yaml
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          name: opentelemetry-operator-controller-manager-cert-manager-role
-        rules:
-        - apiGroups:
-          - cert-manager.io
-          resources:
-          - issuers
-          - certificaterequests
-          - certificates
-          verbs:
-          - create
-          - get
-          - list
-          - watch
-          - update
-          - patch
-          - delete
-        ```
+    ```yaml
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: opentelemetry-operator-controller-manager-cert-manager-role
+    rules:
+    - apiGroups:
+      - cert-manager.io
+      resources:
+      - issuers
+      - certificaterequests
+      - certificates
+      verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    ```
 
-* Configure mTLS by setting `spec.mtls.enabled: true` on the `TargetAllocator` CR.
-* If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
-* `useCertManager` defaults to `true`, so cert-manager will provision the serving and client certificates unless you explicitly disable it.
+- Configuration:
+  - Enable mTLS by setting `spec.mtls.enabled: true` on the `TargetAllocator` CR.
+  - If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
+  - `useCertManager` defaults to `true`, so cert-manager provisions the serving and client certificates unless you explicitly disable it.
+
+#### Without cert-manager (user-provided certificates)
+
+Set `useCertManager: false` and reference your own certificates through the `mtls.tls` block. cert-manager is not required; the operator mounts the referenced Secrets and ConfigMaps into the target allocator and collector pods.
+
+- The `mtls.tls` block has three references:
+  - `certificateAuthorityCertificate`: the CA used to verify the peer. Set exactly one of `secret` or `configMap`. Because CA bundles are public, distributing them via a `ConfigMap` is common.
+  - `serverCertificate`: the target allocator's HTTPS server certificate and private key.
+  - `clientCertificate`: the collector's client certificate and private key.
+- `serverCertificate` and `clientCertificate` each reference their `certificateSecret` (the certificate) and `keySecret` (the private key) independently, so the certificate and key may live in **different** Secrets.
+- Every reference has a required `name` and an optional `key`. When `key` is omitted it defaults to `tls.crt` for a certificate, `tls.key` for a private key, and `ca.crt` for a CA.
+- The referenced keys are projected into the pods at `/tls` via subPath mounts, so rotating a certificate requires the pods to be restarted.
+- Prerequisites:
+  - Create the Secrets/ConfigMaps holding the CA, server, and client material in the same namespace as the workload. A standard `kubernetes.io/tls` Secret (which uses the `tls.crt`/`tls.key` keys) works out of the box.
+  - Grant the target allocator RBAC permission to get the secrets referenced in the Service / Pod monitor (same as the cert-manager path). No cert-manager RBAC is needed.
+
+Example on the standalone `TargetAllocator` CR:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta
+spec:
+  mtls:
+    enabled: true
+    useCertManager: false
+    tls:
+      # CA used to verify the peer. Required. Exactly one of secret or configMap.
+      certificateAuthorityCertificate:
+        configMap:
+          name: my-ca            # key defaults to ca.crt
+        # ...or from a Secret instead:
+        # secret:
+        #   name: my-ca
+        #   key: ca.crt
+      # Target allocator's HTTPS server cert + key (may be in different Secrets).
+      serverCertificate:
+        certificateSecret:
+          name: my-server        # key defaults to tls.crt
+        keySecret:
+          name: my-server        # key defaults to tls.key
+      # Collector's client cert + key.
+      clientCertificate:
+        certificateSecret:
+          name: my-client
+        keySecret:
+          name: my-client
+```
+
+On an `OpenTelemetryCollector` with an embedded target allocator, place the same block under `spec.targetAllocator.mtls`.
 
 #### Alternative: allow insecure auth secrets
 

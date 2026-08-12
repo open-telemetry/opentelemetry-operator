@@ -104,7 +104,7 @@ func getContainerPorts(instance v1alpha1.TargetAllocator, params Params) []corev
 		})
 	}
 
-	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
+	if manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: defaultHTTPSPort,
