@@ -218,13 +218,6 @@ func tov1beta1Autoscaler(in *v1alpha1.AutoscalerSpec, minReplicas, maxReplicas *
 		in = &v1alpha1.AutoscalerSpec{}
 	}
 
-	var metrics []v1beta1.MetricSpec
-	for _, m := range in.Metrics {
-		metrics = append(metrics, v1beta1.MetricSpec{
-			Type: m.Type,
-			Pods: m.Pods,
-		})
-	}
 	if maxReplicas != nil && in.MaxReplicas == nil {
 		in.MaxReplicas = maxReplicas
 	}
@@ -236,7 +229,7 @@ func tov1beta1Autoscaler(in *v1alpha1.AutoscalerSpec, minReplicas, maxReplicas *
 		MinReplicas:             in.MinReplicas,
 		MaxReplicas:             in.MaxReplicas,
 		Behavior:                in.Behavior,
-		Metrics:                 metrics,
+		Metrics:                 in.Metrics,
 		TargetCPUUtilization:    in.TargetCPUUtilization,
 		TargetMemoryUtilization: in.TargetMemoryUtilization,
 	}
@@ -405,19 +398,11 @@ func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *v1alpha1.AutoscalerSpec {
 		return nil
 	}
 
-	var metrics []v1alpha1.MetricSpec
-	for _, m := range in.Metrics {
-		metrics = append(metrics, v1alpha1.MetricSpec{
-			Type: m.Type,
-			Pods: m.Pods,
-		})
-	}
-
 	return &v1alpha1.AutoscalerSpec{
 		MinReplicas:             in.MinReplicas,
 		MaxReplicas:             in.MaxReplicas,
 		Behavior:                in.Behavior,
-		Metrics:                 metrics,
+		Metrics:                 in.Metrics,
 		TargetCPUUtilization:    in.TargetCPUUtilization,
 		TargetMemoryUtilization: in.TargetMemoryUtilization,
 	}

@@ -436,6 +436,53 @@ func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
 	assert.Equal(t, two, *colalpha1.Spec.Autoscaler.MaxReplicas)
 }
 
+func Test_tov1beta1AndBack_autoscaler_metrics(t *testing.T) {
+	one := int32(1)
+	two := int32(2)
+
+	cpuQuantity := resource.MustParse("100m")
+	metric := autoscalingv2.MetricSpec{
+		Type: autoscalingv2.ResourceMetricSourceType,
+		Resource: &autoscalingv2.ResourceMetricSource{
+			Name: v1.ResourceCPU,
+			Target: autoscalingv2.MetricTarget{
+				Type:         autoscalingv2.AverageValueMetricType,
+				AverageValue: &cpuQuantity,
+			},
+		},
+	}
+
+	colalpha1 := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Autoscaler: &v1alpha1.AutoscalerSpec{
+				MinReplicas: &one,
+				MaxReplicas: &two,
+				Metrics:     []v1alpha1.MetricSpec{metric},
+			},
+		},
+	}
+
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := OtelColConvertTo(&colalpha1, &colbeta1)
+	require.NoError(t, err)
+
+	assert.Equal(t, one, *colbeta1.Spec.Autoscaler.MinReplicas)
+	assert.Equal(t, two, *colbeta1.Spec.Autoscaler.MaxReplicas)
+	assert.Equal(t, 1, len(colbeta1.Spec.Autoscaler.Metrics))
+	assert.Equal(t, metric.Type, colbeta1.Spec.Autoscaler.Metrics[0].Type)
+	assert.Equal(t, metric.Resource.Name, colbeta1.Spec.Autoscaler.Metrics[0].Resource.Name)
+	assert.Equal(t, cpuQuantity, *colbeta1.Spec.Autoscaler.Metrics[0].Resource.Target.AverageValue)
+
+	err = OtelColConvertFrom(&colalpha1, &colbeta1)
+	require.NoError(t, err)
+	assert.Equal(t, one, *colalpha1.Spec.Autoscaler.MinReplicas)
+	assert.Equal(t, two, *colalpha1.Spec.Autoscaler.MaxReplicas)
+	assert.Equal(t, 1, len(colalpha1.Spec.Autoscaler.Metrics))
+	assert.Equal(t, metric.Type, colalpha1.Spec.Autoscaler.Metrics[0].Type)
+	assert.Equal(t, metric.Resource.Name, colalpha1.Spec.Autoscaler.Metrics[0].Resource.Name)
+	assert.Equal(t, cpuQuantity, *colalpha1.Spec.Autoscaler.Metrics[0].Resource.Target.AverageValue)
+}
+
 func createConvertTestTA() v1alpha1.OpenTelemetryTargetAllocator {
 	replicas := int32(2)
 	runAsNonRoot := true
