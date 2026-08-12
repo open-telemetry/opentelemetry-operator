@@ -17,7 +17,7 @@ spec:
             - job_name: sample-app
               scrape_interval: 5s
               static_configs:
-                - targets: ['sample-app:8080']
+                - targets: ['sample-app:9100']
     exporters:
       otlphttp:
         endpoint: http://prometheus-operated:9090/api/v1/otlp

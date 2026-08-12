@@ -53,7 +53,7 @@ make e2e-collector-metrics  # run this suite
 
 The suite installs prometheus-operator itself (idempotently, pinned to the version in
 `go.mod`) so it can use a `Prometheus` CR as the oracle. That bundle and the test
-images (`quay.io/prometheus/prometheus`, `quay.io/brancz/prometheus-example-app`) are
+images (`quay.io/prometheus/prometheus`, `quay.io/prometheus/node-exporter`) are
 fetched from the internet.
 
 ## Notes
@@ -63,7 +63,7 @@ fetched from the internet.
   shipped ClusterRole (`config/target-allocator/clusterrole.yaml`) to the allocator's
   (and the oracle's) ServiceAccount explicitly. Without it, the allocator discovers
   nothing and nothing is scraped.
-- The assertions use `up` and the sample app's always-present `version` gauge, so the
-  tests need no traffic against the app.
+- The assertions use `up` and the sample app's always-present
+  `node_exporter_build_info` gauge, so the tests need no traffic against the app.
 - `tsdb.outOfOrderTimeWindow` on the oracle Prometheus absorbs the reordering of OTLP
   export batches.

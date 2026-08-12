@@ -163,8 +163,8 @@ func TestServiceMonitorDifferential(t *testing.T) {
 			prom(t, ctx, cfg).SameLabelsAcross(ctx, t, e2e.Differential{Query: `up`, PartitionLabel: pipelineLabel, WantPartitions: 2})
 			return ctx
 		}).
-		Assess("a scraped series matches prometheus-operator end-to-end (version)", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			prom(t, ctx, cfg).SameLabelsAcross(ctx, t, e2e.Differential{Query: `version`, PartitionLabel: pipelineLabel, WantPartitions: 2})
+		Assess("a scraped series matches prometheus-operator end-to-end (build_info)", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			prom(t, ctx, cfg).SameLabelsAcross(ctx, t, e2e.Differential{Query: `node_exporter_build_info`, PartitionLabel: pipelineLabel, WantPartitions: 2})
 			return ctx
 		}).
 		Feature()
@@ -182,7 +182,7 @@ func TestRawScrapeConfigMetrics(t *testing.T) {
 		Assess("the static target carries exactly job/instance and no service-discovery labels", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			prom(t, ctx, cfg).Eventually(ctx, t, fmt.Sprintf(`up{job=%q}`, sampleApp),
 				e2e.HasSeries(e2e.Series{
-					Labels: map[string]string{"job": sampleApp, "instance": sampleApp + ":8080"},
+					Labels: map[string]string{"job": sampleApp, "instance": sampleApp + ":9100"},
 					Exact:  true,
 				}))
 			return ctx
