@@ -23,6 +23,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
@@ -55,6 +56,8 @@ var ImmutableChangeErr *ImmutableFieldChangeErr
 // - Route
 // - Secret
 // - TargetAllocator
+// - OpenTelemetryCollector
+// - Instrumentation
 // - HTTPRoute
 // In order for the operator to reconcile other types, they must be added here.
 // The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
@@ -192,6 +195,16 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantTa := desired.(*v1alpha1.TargetAllocator)
 			mutateTargetAllocator(ta, wantTa)
 
+		case *v1beta1.OpenTelemetryCollector:
+			collector := existing
+			wantCollector := desired.(*v1beta1.OpenTelemetryCollector)
+			mutateOpenTelemetryCollector(collector, wantCollector)
+
+		case *v1alpha1.Instrumentation:
+			instrumentation := existing
+			wantInstrumentation := desired.(*v1alpha1.Instrumentation)
+			mutateInstrumentation(instrumentation, wantInstrumentation)
+
 		default:
 			t := reflect.TypeOf(existing).String()
 			return fmt.Errorf("missing mutate implementation for resource type: %s", t)
@@ -297,6 +310,63 @@ func mutateTargetAllocator(existing, desired *v1alpha1.TargetAllocator) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Spec = desired.Spec
+}
+
+func mutateOpenTelemetryCollector(existing, desired *v1beta1.OpenTelemetryCollector) {
+	normalizedDesired := desired.DeepCopy()
+	preserveCollectorStructuralDefaults(existing, normalizedDesired)
+	existing.Spec = normalizedDesired.Spec
+}
+
+func mutateInstrumentation(existing, desired *v1alpha1.Instrumentation) {
+	existing.Spec = desired.Spec
+}
+
+// Keep this list aligned with Collector CRD defaults. The no-op reconcile envtest
+// exercises these defaults after an API-server round trip.
+func preserveCollectorStructuralDefaults(existing, desired *v1beta1.OpenTelemetryCollector) {
+	if desired.Spec.ConfigVersions == 0 {
+		desired.Spec.ConfigVersions = existing.Spec.ConfigVersions
+	}
+	if desired.Spec.IpFamilyPolicy == nil {
+		desired.Spec.IpFamilyPolicy = existing.Spec.IpFamilyPolicy
+	}
+
+	desiredTA := &desired.Spec.TargetAllocator
+	existingTA := existing.Spec.TargetAllocator
+	if desiredTA.AllocationStrategy == "" {
+		desiredTA.AllocationStrategy = existingTA.AllocationStrategy
+	}
+	if desiredTA.FilterStrategy == "" {
+		desiredTA.FilterStrategy = existingTA.FilterStrategy
+	}
+	if desiredTA.CollectorNotReadyGracePeriod == nil {
+		desiredTA.CollectorNotReadyGracePeriod = existingTA.CollectorNotReadyGracePeriod
+	}
+	if desiredTA.CollectorTargetReloadInterval == nil {
+		desiredTA.CollectorTargetReloadInterval = existingTA.CollectorTargetReloadInterval
+	}
+	if desiredTA.PrometheusCR.ScrapeInterval == nil {
+		desiredTA.PrometheusCR.ScrapeInterval = existingTA.PrometheusCR.ScrapeInterval
+	}
+	if desiredTA.PrometheusCR.EvaluationInterval == nil {
+		desiredTA.PrometheusCR.EvaluationInterval = existingTA.PrometheusCR.EvaluationInterval
+	}
+	if desiredTA.PrometheusCR.PodMonitorNamespaceSelector == nil {
+		desiredTA.PrometheusCR.PodMonitorNamespaceSelector = existingTA.PrometheusCR.PodMonitorNamespaceSelector
+	}
+	if desiredTA.PrometheusCR.ServiceMonitorNamespaceSelector == nil {
+		desiredTA.PrometheusCR.ServiceMonitorNamespaceSelector = existingTA.PrometheusCR.ServiceMonitorNamespaceSelector
+	}
+	if desiredTA.PrometheusCR.ScrapeConfigNamespaceSelector == nil {
+		desiredTA.PrometheusCR.ScrapeConfigNamespaceSelector = existingTA.PrometheusCR.ScrapeConfigNamespaceSelector
+	}
+	if desiredTA.PrometheusCR.ProbeNamespaceSelector == nil {
+		desiredTA.PrometheusCR.ProbeNamespaceSelector = existingTA.PrometheusCR.ProbeNamespaceSelector
+	}
+	if desiredTA.Mtls != nil && desiredTA.Mtls.UseCertManager == nil && existingTA.Mtls != nil {
+		desiredTA.Mtls.UseCertManager = existingTA.Mtls.UseCertManager
+	}
 }
 
 func mutateService(existing, desired *corev1.Service) {

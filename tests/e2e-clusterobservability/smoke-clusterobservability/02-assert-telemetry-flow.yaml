@@ -25,8 +25,24 @@ spec:
           fi
           sleep 2
         done
+        sent_logs() {
+          METRICS=$(kubectl get --raw \
+            "/api/v1/namespaces/$NAMESPACE/pods/$CLUSTER_POD:8888/proxy/metrics" \
+            2>/dev/null) || return 1
+          printf '%s\n' "$METRICS" \
+            | awk '/^otelcol_exporter_sent_log_records(\{| )/ { total += $NF } END { print total + 0 }'
+        }
         # Ensure the whole-second Event timestamp is after the receiver start time.
         sleep 2
+        for i in $(seq 1 30); do
+          if BASELINE=$(sent_logs); then
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "ERROR: Collector telemetry endpoint is unavailable"; exit 1
+          fi
+          sleep 1
+        done
         kubectl apply -f - <<EOF
         apiVersion: events.k8s.io/v1
         kind: Event
@@ -45,6 +61,20 @@ spec:
           kind: Namespace
           name: default
         EOF
+        for i in $(seq 1 30); do
+          if ! CURRENT=$(sent_logs); then
+            sleep 1
+            continue
+          fi
+          if awk -v current="$CURRENT" -v baseline="$BASELINE" \
+            'BEGIN { exit !(current > baseline) }'; then
+            exit 0
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "ERROR: k8s_events telemetry did not reach the sink"; exit 1
+          fi
+          sleep 1
+        done
   - script:
       env:
       - name: LABEL_SELECTOR
@@ -55,12 +85,14 @@ spec:
         value: "480"
       - name: RETRY_SLEEP
         value: "10"
+      - name: ACCUMULATE_SEARCH_RESULTS
+        value: "true"
       # One signal unique to each bundled receiver:
       #   - kubeletstats (agent):   k8s.node.cpu.usage
       #   - hostmetrics (agent):    system.cpu.time
       #   - k8s_cluster  (cluster): k8s.deployment.available
       #   - filelog (agent):        unique probe body + log.file.path
-      #   - k8s_events (cluster):    unique Event note
+      #   - k8s_events (cluster):   unique Event note
       - name: SEARCH_STRINGS_ENV
         value: |
           k8s.node.cpu.usage
