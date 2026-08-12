@@ -107,16 +107,6 @@ func buildAgentCollector(params manifests.Params, distro config.DistroProvider) 
 			Name:      agentCollectorName,
 			Namespace: co.Namespace,
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         co.APIVersion,
-					Kind:               co.Kind,
-					Name:               co.Name,
-					UID:                co.UID,
-					Controller:         new(true),
-					BlockOwnerDeletion: new(true),
-				},
-			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode:   v1beta1.ModeDaemonSet,
@@ -173,16 +163,6 @@ func buildClusterCollector(params manifests.Params) (*v1beta1.OpenTelemetryColle
 			Name:      clusterCollectorName,
 			Namespace: co.Namespace,
 			Labels:    clusterLabels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         co.APIVersion,
-					Kind:               co.Kind,
-					Name:               co.Name,
-					UID:                co.UID,
-					Controller:         new(true),
-					BlockOwnerDeletion: new(true),
-				},
-			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode:   v1beta1.ModeStatefulSet,
@@ -234,16 +214,6 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 			Name:      co.Name,
 			Namespace: co.Namespace,
 			Labels:    instrumentationLabels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         co.APIVersion,
-					Kind:               co.Kind,
-					Name:               co.Name,
-					UID:                co.UID,
-					Controller:         new(true),
-					BlockOwnerDeletion: new(true),
-				},
-			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
 			Exporter: v1alpha1.Exporter{

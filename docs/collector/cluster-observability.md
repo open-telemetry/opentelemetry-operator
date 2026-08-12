@@ -133,6 +133,22 @@ sequenceDiagram
     Controller->>Controller: Reconcile Changes
 ```
 
+The controller rebuilds desired state on every reconciliation. When the
+`ClusterObservability` spec changes, it updates both managed
+`OpenTelemetryCollector` resources and the managed `Instrumentation` resource.
+Their respective controllers perform workload rollouts, while instrumentation
+changes apply to newly created pods.
+
+### Operator upgrades
+
+The generated collectors use the manager's
+`clusterobservability-collector-image` value explicitly. When a new operator
+version starts, its informer initially enqueues existing
+`ClusterObservability` resources. Rebuilding desired state propagates a changed
+collector image to both child collectors even though the parent generation is
+unchanged. The collector controller then performs the normal DaemonSet and
+StatefulSet rollouts.
+
 ## Feature Gate
 
 ClusterObservability is controlled by the `operator.clusterobservability` feature gate:
