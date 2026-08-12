@@ -1445,6 +1445,61 @@ func TestAgent_Start_RegistersOnCommand(t *testing.T) {
 	assert.NotNil(t, mockClient.settings.Callbacks.OnCommand, "OnCommand callback must be registered")
 }
 
+// TestAgent_Start_RebuildsAppliedKeysAcrossRestart reproduces
+// https://github.com/open-telemetry/opentelemetry-operator/issues/5445: a bridge restart used to forget
+// which collectors it had previously applied, so a later remote config that dropped one of those keys
+// never deleted the collector. It also verifies reporting-only collectors, which the bridge never applied,
+// are left alone.
+func TestAgent_Start_RebuildsAppliedKeysAcrossRestart(t *testing.T) {
+	const reportingCollectorName = "reporting-only"
+
+	managedCollector := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testCollectorName,
+			Namespace: testNamespace,
+			Labels:    map[string]string{operator.ManagedLabelKey: "true"},
+		},
+	}
+	reportingCollector := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      reportingCollectorName,
+			Namespace: testNamespace,
+			Labels:    map[string]string{operator.ReportingLabelKey: "true"},
+		},
+	}
+	collectorList := &v1beta1.OpenTelemetryCollectorList{
+		Items: []v1beta1.OpenTelemetryCollector{managedCollector, reportingCollector},
+	}
+
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	conf.Capabilities = map[config.Capability]bool{"AcceptsRemoteConfig": true}
+	applier := getFakeApplier(t, conf, collectorList)
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, newMockProxy(nil, nil, nil))
+
+	require.NoError(t, agent.Start(), "should be able to start agent")
+	defer agent.Shutdown()
+
+	require.Contains(t, agent.appliedKeys, testCollectorKey, "restart should rebuild the previously applied managed collector's key")
+	require.NotContains(t, agent.appliedKeys, testNamespace+"/"+reportingCollectorName, "reporting-only collectors were never applied and must not be tracked as applied")
+
+	// Simulate a remote config that no longer references the managed collector.
+	agent.onMessage(context.Background(), &types.MessageData{
+		RemoteConfig: &protobufs.AgentRemoteConfig{
+			Config:     &protobufs.AgentConfigMap{ConfigMap: map[string]*protobufs.AgentConfigFile{}},
+			ConfigHash: []byte("empty-config"),
+		},
+	})
+
+	deletedInstance, err := applier.GetInstance(testCollectorName, testNamespace)
+	require.NoError(t, err)
+	assert.Nil(t, deletedInstance, "collector previously applied before the restart should now be deleted")
+
+	stillReportingInstance, err := applier.GetInstance(reportingCollectorName, testNamespace)
+	require.NoError(t, err)
+	assert.NotNil(t, stillReportingInstance, "reporting-only collector must not be deleted")
+}
+
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {
 	toReturn := &types.MessageData{}
 	if filemap == nil {

@@ -31,4 +31,8 @@ type CollectorInstance interface {
 	GetNamespace() string
 	GetDeletionTimestamp() *metav1.Time
 	GetConfigMap() map[string]ConfigFile
+
+	// IsManaged reports whether the bridge owns this instance's lifecycle (apply/delete), as opposed to
+	// only reporting its status upstream without ever having applied config to it.
+	IsManaged() bool
 }

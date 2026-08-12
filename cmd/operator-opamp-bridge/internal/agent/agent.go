@@ -198,6 +198,11 @@ func (agent *Agent) Start() error {
 		return err
 	}
 	agent.startTime = startTime
+
+	if err = agent.rebuildAppliedKeys(); err != nil {
+		return fmt.Errorf("failed to rebuild applied keys from cluster state: %w", err)
+	}
+
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
 		Header:         agent.config.Headers.ToHTTPHeader(),
@@ -386,6 +391,25 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 		agent.metricReporter.Shutdown()
 	}
 	agent.metricReporter = reporter
+}
+
+// rebuildAppliedKeys reconstructs appliedKeys from the collectors currently in the cluster. appliedKeys
+// only lives in memory, so without this a restart forgets every key the bridge previously applied and a
+// later remote config that drops one of those keys never triggers the corresponding delete.
+func (agent *Agent) rebuildAppliedKeys() error {
+	instances, err := agent.applier.ListInstances()
+	if err != nil {
+		return err
+	}
+	for _, instance := range instances {
+		if !instance.IsManaged() || instance.GetDeletionTimestamp() != nil {
+			continue
+		}
+		for key := range instance.GetConfigMap() {
+			agent.appliedKeys[key] = true
+		}
+	}
+	return nil
 }
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
