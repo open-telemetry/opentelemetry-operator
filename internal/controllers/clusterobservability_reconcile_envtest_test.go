@@ -96,7 +96,7 @@ func TestClusterObservabilityNoOpReconcilePreservesStructuralDefaults(t *testing
 	require.Eventually(t, func() bool {
 		for _, resource := range managedResources {
 			current := resource.DeepCopyObject().(client.Object)
-			if err := cachedClient.Get(ctx, client.ObjectKeyFromObject(resource), current); err != nil {
+			if getErr := cachedClient.Get(ctx, client.ObjectKeyFromObject(resource), current); getErr != nil {
 				return false
 			}
 		}
