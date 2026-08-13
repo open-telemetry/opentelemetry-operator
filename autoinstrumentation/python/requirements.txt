@@ -31,6 +31,7 @@ opentelemetry-instrumentation-click==0.65b0
 opentelemetry-instrumentation-confluent-kafka==0.65b0
 opentelemetry-instrumentation-dbapi==0.65b0
 opentelemetry-instrumentation-django==0.65b0
+opentelemetry-instrumentation-exceptions==0.65b0
 opentelemetry-instrumentation-falcon==0.65b0
 opentelemetry-instrumentation-fastapi==0.65b0
 opentelemetry-instrumentation-flask==0.65b0
