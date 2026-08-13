@@ -47,6 +47,7 @@ opentelemetry-instrumentation-psycopg==0.65b0
 opentelemetry-instrumentation-psycopg2==0.65b0
 opentelemetry-instrumentation-pymemcache==0.65b0
 opentelemetry-instrumentation-pymongo==0.65b0
+opentelemetry-instrumentation-pymssql==0.65b0
 opentelemetry-instrumentation-pymysql==0.65b0
 opentelemetry-instrumentation-pyramid==0.65b0
 opentelemetry-instrumentation-redis==0.65b0
