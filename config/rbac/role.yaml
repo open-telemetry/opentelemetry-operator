@@ -26,6 +26,8 @@ rules:
   - ""
   resources:
   - namespaces
+  - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - secrets
   verbs:
