@@ -6,12 +6,13 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,9 +24,12 @@ import (
 	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -88,7 +92,8 @@ func NewClusterObservabilityReconciler(params ClusterObservabilityReconcilerPara
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
-//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=controllerrevisions;daemonsets;statefulsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
 //+kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=get;list;watch;create;update;patch;delete
 
@@ -119,7 +124,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	if !isActive {
 		// This instance is conflicted, update status and skip reconciliation
 		params := r.getParams(instance)
-		return coStatus.HandleReconcileStatus(ctx, log, params, errors.New("multiple ClusterObservability resources detected"))
+		return coStatus.HandleReconcileStatus(ctx, log, params, coStatus.ErrMultipleInstances)
 	}
 
 	// Rebuild desired state on every reconcile so manager defaults propagate after upgrades.
@@ -140,7 +145,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 
 	desiredObjects, buildErr := clusterobservability.Build(params)
 	if buildErr != nil {
-		return ctrl.Result{}, buildErr
+		return r.handleReconcileError(ctx, log, instance, buildErr)
 	}
 
 	var openTelemetryCRs []client.Object
@@ -162,25 +167,36 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	// can create their workloads.
 	for _, unstructuredObj := range unstructuredObjects {
 		if err := r.reconcileUnstructuredResource(ctx, log, unstructuredObj); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to reconcile unstructured resource %s: %w", unstructuredObj.GetName(), err)
+			return r.handleReconcileError(ctx, log, instance,
+				fmt.Errorf("failed to reconcile unstructured resource %s: %w", unstructuredObj.GetName(), err))
 		}
 	}
 	for _, crObj := range openTelemetryCRs {
 		if err := r.defaultOpenTelemetryResource(ctx, log, crObj); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to default desired %T %s: %w", crObj, client.ObjectKeyFromObject(crObj), err)
+			return r.handleReconcileError(ctx, log, instance,
+				fmt.Errorf("failed to default desired %T %s: %w", crObj, client.ObjectKeyFromObject(crObj), err))
 		}
 	}
 
 	ownedObjects, err := r.findClusterObservabilityOwnedObjects(ctx, params)
 	if err != nil {
-		return ctrl.Result{}, err
+		return r.handleReconcileError(ctx, log, instance, err)
 	}
 
 	managedObjects := append(openTelemetryCRs, regularObjects...)
 	if err := reconcileDesiredObjects(ctx, r.Client, log, &params.ClusterObservability, params.Scheme, managedObjects, ownedObjects); err != nil {
-		return ctrl.Result{}, err
+		return r.handleReconcileError(ctx, log, instance, err)
 	}
 	return coStatus.HandleReconcileStatus(ctx, log, params, nil)
+}
+
+func (r *ClusterObservabilityReconciler) handleReconcileError(
+	ctx context.Context,
+	log logr.Logger,
+	instance v1alpha1.ClusterObservability,
+	reconcileErr error,
+) (ctrl.Result, error) {
+	return coStatus.HandleReconcileStatus(ctx, log, r.getParams(instance), reconcileErr)
 }
 
 func (r *ClusterObservabilityReconciler) defaultOpenTelemetryResource(
@@ -331,8 +347,28 @@ func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ClusterObservability{}).
 		Watches(
+			&v1alpha1.ClusterObservability{},
+			handler.EnqueueRequestsFromMapFunc(r.findAllClusterObservability),
+			builder.WithPredicates(clusterObservabilityTopologyPredicate()),
+		).
+		Watches(
 			&corev1.Namespace{},
-			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForNamespace),
+			handler.EnqueueRequestsFromMapFunc(r.findAllClusterObservability),
+		).
+		Watches(
+			&appsv1.DaemonSet{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorWorkload),
+			builder.WithPredicates(predicate.NewPredicateFuncs(isCollectorManagedObject)),
+		).
+		Watches(
+			&appsv1.StatefulSet{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorWorkload),
+			builder.WithPredicates(predicate.NewPredicateFuncs(isCollectorManagedObject)),
+		).
+		Watches(
+			&corev1.Pod{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorPod),
+			builder.WithPredicates(clusterObservabilityCollectorPodPredicate()),
 		)
 
 	for _, resource := range ownedResources {
@@ -340,6 +376,15 @@ func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	}
 
 	return builder.Complete(r)
+}
+
+func clusterObservabilityTopologyPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		// Create and delete default to true. Updates are handled by the primary
+		// watch and must not fan out status-only changes to every instance.
+		UpdateFunc:  func(event.UpdateEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return false },
+	}
 }
 
 // SetupCaches indexes resources by their ClusterObservability controller owner.
@@ -360,10 +405,132 @@ func clusterObservabilityOwnerName(rawObj client.Object) []string {
 	return []string{owner.Name}
 }
 
-// findClusterObservabilityForNamespace finds ClusterObservability instances when namespaces change.
-func (r *ClusterObservabilityReconciler) findClusterObservabilityForNamespace(context.Context, client.Object) []ctrl.Request {
-	ctx := context.Background()
+func clusterObservabilityCollectorPodPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return isCollectorManagedObject(e.Object)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return isCollectorManagedObject(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldPod, oldOK := e.ObjectOld.(*corev1.Pod)
+			newPod, newOK := e.ObjectNew.(*corev1.Pod)
+			return oldOK && newOK && isCollectorManagedObject(newPod) && podHealthChanged(oldPod, newPod)
+		},
+	}
+}
 
+func isCollectorManagedObject(obj client.Object) bool {
+	labels := obj.GetLabels()
+	return labels["app.kubernetes.io/managed-by"] == "opentelemetry-operator" &&
+		labels["app.kubernetes.io/component"] == "opentelemetry-collector"
+}
+
+type containerHealth struct {
+	name             string
+	ready            bool
+	restartCount     int32
+	waitingReason    string
+	terminatedReason string
+	exitCode         int32
+}
+
+func podHealthChanged(oldPod, newPod *corev1.Pod) bool {
+	if oldPod.Status.Phase != newPod.Status.Phase ||
+		(oldPod.DeletionTimestamp == nil) != (newPod.DeletionTimestamp == nil) {
+		return true
+	}
+
+	return !slices.Equal(containerHealthStatuses(oldPod), containerHealthStatuses(newPod))
+}
+
+func containerHealthStatuses(pod *corev1.Pod) []containerHealth {
+	statuses := make([]corev1.ContainerStatus, 0, len(pod.Status.InitContainerStatuses)+len(pod.Status.ContainerStatuses))
+	statuses = append(statuses, pod.Status.InitContainerStatuses...)
+	statuses = append(statuses, pod.Status.ContainerStatuses...)
+	result := make([]containerHealth, 0, len(statuses))
+	for _, status := range statuses {
+		health := containerHealth{
+			name:         status.Name,
+			ready:        status.Ready,
+			restartCount: status.RestartCount,
+		}
+		if status.State.Waiting != nil {
+			health.waitingReason = status.State.Waiting.Reason
+		}
+		if status.State.Terminated != nil {
+			health.terminatedReason = status.State.Terminated.Reason
+			health.exitCode = status.State.Terminated.ExitCode
+		}
+		result = append(result, health)
+	}
+	return result
+}
+
+func (r *ClusterObservabilityReconciler) findClusterObservabilityForCollectorPod(
+	ctx context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	workloadOwner := metav1.GetControllerOf(obj)
+	if workloadOwner == nil || workloadOwner.APIVersion != appsv1.SchemeGroupVersion.String() {
+		return nil
+	}
+
+	var workload client.Object
+	switch workloadOwner.Kind {
+	case "DaemonSet":
+		workload = &appsv1.DaemonSet{}
+	case "StatefulSet":
+		workload = &appsv1.StatefulSet{}
+	default:
+		return nil
+	}
+
+	key := client.ObjectKey{Namespace: obj.GetNamespace(), Name: workloadOwner.Name}
+	if err := r.Get(ctx, key, workload); err != nil {
+		if !apierrors.IsNotFound(err) {
+			r.log.Error(err, "failed to resolve collector pod owner", "pod", client.ObjectKeyFromObject(obj))
+		}
+		return nil
+	}
+	return r.findClusterObservabilityForCollectorWorkload(ctx, workload)
+}
+
+func (r *ClusterObservabilityReconciler) findClusterObservabilityForCollectorWorkload(
+	ctx context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	collectorOwner := metav1.GetControllerOf(obj)
+	if collectorOwner == nil || collectorOwner.APIVersion != v1beta1.GroupVersion.String() ||
+		collectorOwner.Kind != "OpenTelemetryCollector" {
+		return nil
+	}
+
+	collector := &v1beta1.OpenTelemetryCollector{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: obj.GetNamespace(), Name: collectorOwner.Name}, collector); err != nil {
+		if !apierrors.IsNotFound(err) {
+			r.log.Error(err, "failed to resolve collector workload owner", "workload", client.ObjectKeyFromObject(obj))
+		}
+		return nil
+	}
+
+	clusterObservabilityOwner := metav1.GetControllerOf(collector)
+	if clusterObservabilityOwner == nil ||
+		clusterObservabilityOwner.APIVersion != v1alpha1.GroupVersion.String() ||
+		clusterObservabilityOwner.Kind != "ClusterObservability" {
+		return nil
+	}
+
+	return []ctrl.Request{{NamespacedName: types.NamespacedName{
+		Namespace: collector.Namespace,
+		Name:      clusterObservabilityOwner.Name,
+	}}}
+}
+
+// findAllClusterObservability reconciles every instance when cluster-wide
+// inputs or singleton membership change.
+func (r *ClusterObservabilityReconciler) findAllClusterObservability(ctx context.Context, _ client.Object) []ctrl.Request {
 	var clusterObservabilityList v1alpha1.ClusterObservabilityList
 	if err := r.List(ctx, &clusterObservabilityList); err != nil {
 		r.log.Error(err, "failed to list ClusterObservability resources")
@@ -422,22 +589,10 @@ func (r *ClusterObservabilityReconciler) validateSingleton(ctx context.Context, 
 	isWinner := oldestResource.UID == instance.UID
 
 	if !isWinner {
-		// This resource is conflicted, emit an event and update status
-		r.recorder.Eventf(instance, nil, corev1.EventTypeWarning, "Conflicted", "Conflicted",
-			"Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
-			oldestResource.Namespace, oldestResource.Name)
 		log.Info("ClusterObservability resource is conflicted",
 			"active", fmt.Sprintf("%s/%s", oldestResource.Namespace, oldestResource.Name),
 			"conflicted", fmt.Sprintf("%s/%s", instance.Namespace, instance.Name))
 	} else {
-		// This resource is the winner, emit events for conflicted ones
-		for _, conflicted := range activeResources {
-			if conflicted.UID != instance.UID {
-				r.recorder.Eventf(&conflicted, nil, corev1.EventTypeWarning, "Conflicted", "Conflicted",
-					"Multiple ClusterObservability resources detected. Only %s/%s (oldest) is active",
-					instance.Namespace, instance.Name)
-			}
-		}
 		log.Info("ClusterObservability resource is active", "conflicted-count", len(activeResources)-1)
 	}
 

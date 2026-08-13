@@ -1,0 +1,33 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+status:
+  observedGeneration: 4
+  phase: Ready
+  (conditions[?type == 'Configured']):
+  - status: "True"
+    observedGeneration: 4
+  (conditions[?type == 'Ready']):
+  - status: "True"
+    observedGeneration: 4
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-agent
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: http://sink-collector:4318
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-cluster
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: http://sink-collector:4318
