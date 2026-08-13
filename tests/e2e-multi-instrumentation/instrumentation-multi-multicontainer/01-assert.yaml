@@ -135,6 +135,8 @@ spec:
       value: "0.85"
     - name: NODE_OPTIONS
       value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
