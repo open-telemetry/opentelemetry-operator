@@ -1,7 +1,0 @@
-change_type: enhancement
-
-component: operator-opamp-bridge
-
-note: Add an `opentelemetry.io/opamp.bridge.mode` non-identifying OpAMP AgentDescription attribute so servers can distinguish operator and standalone bridge clients.
-
-issues: [5423]
