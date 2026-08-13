@@ -75,9 +75,11 @@ spec:
         audit_pods app.kubernetes.io/name=cluster-obs-targetallocator-targetallocator \
           "Target Allocator" false
 
-        warning_events=$(kubectl get events -n "$NAMESPACE" \
-          --field-selector type=Warning --no-headers || true)
+        warning_events=$(kubectl get events.events.k8s.io -n "$NAMESPACE" \
+          --field-selector type=Warning,regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+          --no-headers || true)
         if [ -n "$warning_events" ]; then
-          echo "Warning events in $NAMESPACE:"
+          echo "ERROR: unexpected warning events in $NAMESPACE:"
           echo "$warning_events"
+          exit 1
         fi

@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -384,6 +387,146 @@ func TestReconcileUnstructuredResourceAvoidsNoOpUpdates(t *testing.T) {
 	assert.Equal(t, []any{}, updated.Object["groups"])
 	assert.Equal(t, "preserved", updated.GetLabels()["example.com/external"])
 	assert.Equal(t, "preserved", updated.GetAnnotations()["example.com/external"])
+}
+
+func TestClusterObservabilityReconcileFailureUpdatesStatus(t *testing.T) {
+	ctx := context.Background()
+	key := types.NamespacedName{Name: "cluster-obs", Namespace: "observability"}
+	instance := &v1alpha1.ClusterObservability{
+		TypeMeta: metav1.TypeMeta{APIVersion: v1alpha1.GroupVersion.String(), Kind: "ClusterObservability"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       key.Name,
+			Namespace:  key.Namespace,
+			UID:        types.UID("cluster-observability-uid"),
+			Generation: 2,
+		},
+		Spec: v1alpha1.ClusterObservabilitySpec{
+			Exporter: v1alpha1.OTLPHTTPExporter{Endpoint: "https://example.com:4318"},
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, appsv1.AddToScheme(scheme))
+	require.NoError(t, v1alpha1.AddToScheme(scheme))
+	require.NoError(t, v1beta1.AddToScheme(scheme))
+	cli := newClusterObservabilityFakeClientBuilder(scheme).
+		WithStatusSubresource(&v1alpha1.ClusterObservability{}).
+		WithObjects(instance).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, cli client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if _, isCollector := obj.(*v1beta1.OpenTelemetryCollector); isCollector {
+					return errors.New("refusing managed collector creation")
+				}
+				return cli.Create(ctx, obj, opts...)
+			},
+		}).
+		Build()
+	reconciler := NewClusterObservabilityReconciler(ClusterObservabilityReconcilerParams{
+		Client:   cli,
+		Recorder: events.NewFakeRecorder(5),
+		Scheme:   scheme,
+		Log:      logr.Discard(),
+		Config:   operatorconfig.New(),
+	})
+
+	_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: key})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "refusing managed collector creation")
+
+	updated := &v1alpha1.ClusterObservability{}
+	require.NoError(t, cli.Get(ctx, key, updated))
+	assert.Equal(t, updated.Generation, updated.Status.ObservedGeneration)
+	assert.Equal(t, "Failed", updated.Status.Phase)
+	var configured *v1alpha1.ClusterObservabilityCondition
+	for i := range updated.Status.Conditions {
+		if updated.Status.Conditions[i].Type == v1alpha1.ClusterObservabilityConditionConfigured {
+			configured = &updated.Status.Conditions[i]
+			break
+		}
+	}
+	require.NotNil(t, configured)
+	assert.Equal(t, metav1.ConditionFalse, configured.Status)
+	assert.Equal(t, "ReconcileError", configured.Reason)
+	assert.Equal(t, updated.Generation, configured.ObservedGeneration)
+}
+
+func TestFindClusterObservabilityForCollectorWorkload(t *testing.T) {
+	const namespace = "observability"
+	scheme := runtime.NewScheme()
+	require.NoError(t, appsv1.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, v1alpha1.AddToScheme(scheme))
+	require.NoError(t, v1beta1.AddToScheme(scheme))
+	collector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-obs-agent",
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion: v1alpha1.GroupVersion.String(),
+				Kind:       "ClusterObservability",
+				Name:       "cluster-obs",
+				Controller: new(bool),
+			}},
+		},
+	}
+	*collector.OwnerReferences[0].Controller = true
+	workload := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
+		Name:      "cluster-obs-agent-collector",
+		Namespace: namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/component":  "opentelemetry-collector",
+		},
+		OwnerReferences: []metav1.OwnerReference{{
+			APIVersion: v1beta1.GroupVersion.String(),
+			Kind:       "OpenTelemetryCollector",
+			Name:       collector.Name,
+			Controller: new(bool),
+		}},
+	}}
+	*workload.OwnerReferences[0].Controller = true
+	assert.True(t, isCollectorManagedObject(workload))
+	assert.False(t, isCollectorManagedObject(&appsv1.DaemonSet{}))
+	cli := fake.NewClientBuilder().WithScheme(scheme).WithObjects(collector, workload).Build()
+	reconciler := NewClusterObservabilityReconciler(ClusterObservabilityReconcilerParams{
+		Client: cli,
+		Log:    logr.Discard(),
+	})
+
+	requests := reconciler.findClusterObservabilityForCollectorWorkload(context.Background(), workload)
+	require.Len(t, requests, 1)
+	assert.Equal(t, types.NamespacedName{Name: "cluster-obs", Namespace: namespace}, requests[0].NamespacedName)
+
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{
+		Name:      "cluster-obs-agent-collector-abcde",
+		Namespace: namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/component":  "opentelemetry-collector",
+		},
+		OwnerReferences: []metav1.OwnerReference{{
+			APIVersion: appsv1.SchemeGroupVersion.String(),
+			Kind:       "DaemonSet",
+			Name:       workload.Name,
+			Controller: new(bool),
+		}},
+	}}
+	*pod.OwnerReferences[0].Controller = true
+	requests = reconciler.findClusterObservabilityForCollectorPod(context.Background(), pod)
+	require.Len(t, requests, 1)
+	assert.Equal(t, types.NamespacedName{Name: "cluster-obs", Namespace: namespace}, requests[0].NamespacedName)
+
+	predicate := clusterObservabilityCollectorPodPredicate()
+	healthy := pod.DeepCopy()
+	healthy.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "otc-container", Ready: true}}
+	unchanged := healthy.DeepCopy()
+	unchanged.ResourceVersion = "2"
+	assert.False(t, predicate.Update(event.UpdateEvent{ObjectOld: healthy, ObjectNew: unchanged}))
+	crashing := unchanged.DeepCopy()
+	crashing.Status.ContainerStatuses[0].Ready = false
+	crashing.Status.ContainerStatuses[0].RestartCount = 1
+	crashing.Status.ContainerStatuses[0].State.Waiting = &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}
+	assert.True(t, predicate.Update(event.UpdateEvent{ObjectOld: unchanged, ObjectNew: crashing}))
 }
 
 func assertManagedCollectorExporter(

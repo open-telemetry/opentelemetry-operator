@@ -1,0 +1,34 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+status:
+  observedGeneration: 3
+  phase: Degraded
+  (conditions[?type == 'Configured']):
+  - status: "True"
+    observedGeneration: 3
+  (conditions[?type == 'Ready']):
+  - status: "False"
+    observedGeneration: 3
+    reason: ComponentsNotReady
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-agent
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: "://invalid"
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-cluster
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: "://invalid"

@@ -34,6 +34,8 @@ spec:
     try:
     - assert:
         file: 01-assert-collectors.yaml
+  # Status assertions expect the update, failure, and recovery mutations below
+  # to advance ClusterObservability generations to 2, 3, and 4.
   - name: Update ClusterObservability
     try:
     - apply:
@@ -80,6 +82,102 @@ spec:
   - name: Audit Collector and Target Allocator health
     use:
       template: 04-assert-component-health.yaml
+  - name: Report a broken collector rollout
+    try:
+    - script:
+        content: |
+          kubectl delete events.events.k8s.io -n "$NAMESPACE" \
+            --field-selector regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+            --ignore-not-found
+    - apply:
+        file: 05-break-clusterobservability.yaml
+    - script:
+        timeout: 5m
+        content: |
+          set -u
+          for i in $(seq 1 50); do
+            phase=$(kubectl get clusterobservability cluster-obs -n "$NAMESPACE" \
+              -o jsonpath='{.status.phase}')
+            agent_restarts=$(kubectl get pods -n "$NAMESPACE" \
+              -l app.kubernetes.io/name=cluster-obs-agent \
+              -o jsonpath='{range .items[*].status.containerStatuses[*]}{.restartCount}{"\n"}{end}' \
+              | awk '$1 > max { max = $1 } END { print max + 0 }')
+            cluster_restarts=$(kubectl get pods -n "$NAMESPACE" \
+              -l app.kubernetes.io/name=cluster-obs-cluster \
+              -o jsonpath='{range .items[*].status.containerStatuses[*]}{.restartCount}{"\n"}{end}' \
+              | awk '$1 > max { max = $1 } END { print max + 0 }')
+            if [ "$phase" = Degraded ] && [ "${agent_restarts:-0}" -gt 0 ] \
+              && [ "${cluster_restarts:-0}" -gt 0 ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "ERROR: invalid exporter configuration did not produce a failed collector rollout"
+          exit 1
+    - assert:
+        file: 05-assert-broken-clusterobservability.yaml
+    - script:
+        timeout: 2m
+        content: |
+          set -u
+          for i in $(seq 1 24); do
+            reasons=$(kubectl get events.events.k8s.io -n "$NAMESPACE" \
+              --field-selector regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+              -o jsonpath='{range .items[*]}{.reason}{"\n"}{end}')
+            count=$(printf '%s\n' "$reasons" | grep -cx ComponentsNotReady || true)
+            if [ "$count" -eq 1 ]; then
+              exit 0
+            fi
+            if [ "$count" -gt 1 ]; then
+              echo "ERROR: ComponentsNotReady event was reported $count times"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "ERROR: ComponentsNotReady event was not reported"
+          exit 1
+  - name: Recover from a broken collector rollout
+    try:
+    - script:
+        content: |
+          kubectl patch clusterobservability cluster-obs -n "$NAMESPACE" \
+            --type=json \
+            -p='[{"op":"replace","path":"/spec/exporter/endpoint","value":"http://sink-collector:4318"}]'
+    - assert:
+        file: 05-assert-recovered-clusterobservability.yaml
+    - script:
+        content: |
+          set -u
+          for collector in cluster-obs-agent cluster-obs-cluster; do
+            value=$(kubectl get opentelemetrycollector "$collector" -n "$NAMESPACE" \
+              -o jsonpath='{.spec.config.exporters.otlp_http.endpoint}')
+            if [ "$value" != "http://sink-collector:4318" ]; then
+              echo "ERROR: recovered exporter endpoint was not propagated to $collector"
+              exit 1
+            fi
+          done
+    - script:
+        content: |
+          set -eu
+          warnings=$(kubectl get events.events.k8s.io -n "$NAMESPACE" \
+            --field-selector type=Warning,regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+            -o jsonpath='{range .items[*]}{.reason}{"\n"}{end}')
+          test "$(printf '%s\n' "$warnings" | grep -cx ComponentsNotReady || true)" -eq 1
+          test "$(printf '%s\n' "$warnings" | awk 'NF { count++ } END { print count + 0 }')" -eq 1
+          series_count=$(kubectl get events.events.k8s.io -n "$NAMESPACE" \
+            --field-selector type=Warning,regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+            -o jsonpath='{range .items[?(@.reason=="ComponentsNotReady")]}{.series.count}{"\n"}{end}')
+          deprecated_count=$(kubectl get events.events.k8s.io -n "$NAMESPACE" \
+            --field-selector type=Warning,regarding.kind=ClusterObservability,regarding.name=cluster-obs \
+            -o jsonpath='{range .items[?(@.reason=="ComponentsNotReady")]}{.deprecatedCount}{"\n"}{end}')
+          if [ -n "$series_count" ] && [ "$series_count" -ne 1 ]; then
+            echo "ERROR: ComponentsNotReady event series count is $series_count"
+            exit 1
+          fi
+          if [ -n "$deprecated_count" ] && [ "$deprecated_count" -ne 1 ]; then
+            echo "ERROR: ComponentsNotReady deprecated event count is $deprecated_count"
+            exit 1
+          fi
   - name: Cleanup
     try:
     - delete:

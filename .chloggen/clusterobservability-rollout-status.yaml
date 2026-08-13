@@ -1,0 +1,12 @@
+change_type: bug_fix
+
+component: cluster-observability
+
+note: Report ClusterObservability rollout health
+
+issues: [5450]
+
+subtext: |
+  Show when managed collectors are rolling out or have failed, and recover the
+  status when they become healthy. Emit warning events only when reconciliation
+  fails or a rollout first becomes unhealthy.
