@@ -109,7 +109,7 @@ func TestClusterObservabilitySpecUpdateReconcilesManagedResources(t *testing.T) 
 	assert.Equal(t, reconciled.Generation, reconciled.Status.ObservedGeneration)
 }
 
-func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorImage(t *testing.T) {
+func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorDefaults(t *testing.T) {
 	ctx := context.Background()
 	key := types.NamespacedName{Name: "cluster-obs", Namespace: "observability"}
 	instance := &v1alpha1.ClusterObservability{
@@ -145,10 +145,9 @@ func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorImage(t *
 		Build()
 
 	oldImage := "registry.example.com/otelcol-k8s:old"
-	oldJavaImage := "registry.example.com/autoinstrumentation-java:old"
 	initialConfig := operatorconfig.New()
 	initialConfig.ClusterObservabilityCollectorImage = oldImage
-	initialConfig.AutoInstrumentationJavaImage = oldJavaImage
+	oldInstrumentationImages := setAutoInstrumentationImages(&initialConfig, "old")
 	reconciler := NewClusterObservabilityReconciler(ClusterObservabilityReconcilerParams{
 		Client:   cli,
 		Recorder: events.NewFakeRecorder(20),
@@ -169,7 +168,7 @@ func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorImage(t *
 	}
 	instrumentation := &v1alpha1.Instrumentation{}
 	require.NoError(t, cli.Get(ctx, client.ObjectKey(key), instrumentation))
-	assert.Equal(t, oldJavaImage, instrumentation.Spec.Java.Image)
+	assertAutoInstrumentationImages(t, instrumentation, oldInstrumentationImages)
 	stale := &v1alpha1.Instrumentation{ObjectMeta: metav1.ObjectMeta{
 		Name: "stale", Namespace: key.Namespace, UID: types.UID("stale-instrumentation-uid"),
 	}}
@@ -193,12 +192,11 @@ func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorImage(t *
 	assert.True(t, apierrors.IsNotFound(cli.Get(ctx, client.ObjectKeyFromObject(stale), &v1alpha1.Instrumentation{})))
 
 	// A new manager configuration simulates an operator upgrade. The parent CR
-	// generation is unchanged, but the new operand image must still propagate.
+	// generation is unchanged, but the new operand images must still propagate.
 	newImage := "registry.example.com/otelcol-k8s:new"
-	newJavaImage := "registry.example.com/autoinstrumentation-java:new"
 	upgradedConfig := initialConfig
 	upgradedConfig.ClusterObservabilityCollectorImage = newImage
-	upgradedConfig.AutoInstrumentationJavaImage = newJavaImage
+	newInstrumentationImages := setAutoInstrumentationImages(&upgradedConfig, "new")
 	upgradedReconciler := NewClusterObservabilityReconciler(ClusterObservabilityReconcilerParams{
 		Client:   cli,
 		Recorder: events.NewFakeRecorder(20),
@@ -223,12 +221,45 @@ func TestClusterObservabilityManagedResourcesAreStableAndFollowOperatorImage(t *
 	assert.Equal(t, "true", agent.Labels["opentelemetry.io/opamp-reporting"])
 	assert.Equal(t, "preserved", agent.Annotations["example.com/external-metadata"])
 	require.NoError(t, cli.Get(ctx, client.ObjectKey(key), instrumentation))
-	assert.Equal(t, newJavaImage, instrumentation.Spec.Java.Image)
+	assertAutoInstrumentationImages(t, instrumentation, newInstrumentationImages)
 
 	reconciled := &v1alpha1.ClusterObservability{}
 	require.NoError(t, cli.Get(ctx, key, reconciled))
 	assert.Equal(t, int64(1), reconciled.Generation)
 	assert.Equal(t, reconciled.Generation, reconciled.Status.ObservedGeneration)
+}
+
+func setAutoInstrumentationImages(cfg *operatorconfig.Config, tag string) map[string]string {
+	images := map[string]string{
+		"apache-httpd": "registry.example.com/autoinstrumentation-apache-httpd:" + tag,
+		"dotnet":       "registry.example.com/autoinstrumentation-dotnet:" + tag,
+		"go":           "registry.example.com/autoinstrumentation-go:" + tag,
+		"java":         "registry.example.com/autoinstrumentation-java:" + tag,
+		"nginx":        "registry.example.com/autoinstrumentation-nginx:" + tag,
+		"nodejs":       "registry.example.com/autoinstrumentation-nodejs:" + tag,
+		"python":       "registry.example.com/autoinstrumentation-python:" + tag,
+	}
+	cfg.AutoInstrumentationApacheHttpdImage = images["apache-httpd"]
+	cfg.AutoInstrumentationDotNetImage = images["dotnet"]
+	cfg.AutoInstrumentationGoImage = images["go"]
+	cfg.AutoInstrumentationJavaImage = images["java"]
+	cfg.AutoInstrumentationNginxImage = images["nginx"]
+	cfg.AutoInstrumentationNodeJSImage = images["nodejs"]
+	cfg.AutoInstrumentationPythonImage = images["python"]
+	return images
+}
+
+func assertAutoInstrumentationImages(t *testing.T, instrumentation *v1alpha1.Instrumentation, expected map[string]string) {
+	t.Helper()
+	assert.Equal(t, expected, map[string]string{
+		"apache-httpd": instrumentation.Spec.ApacheHttpd.Image,
+		"dotnet":       instrumentation.Spec.DotNet.Image,
+		"go":           instrumentation.Spec.Go.Image,
+		"java":         instrumentation.Spec.Java.Image,
+		"nginx":        instrumentation.Spec.Nginx.Image,
+		"nodejs":       instrumentation.Spec.NodeJS.Image,
+		"python":       instrumentation.Spec.Python.Image,
+	})
 }
 
 func TestClusterObservabilityCreatesOpenShiftSCCBeforeCollectors(t *testing.T) {
