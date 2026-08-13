@@ -13,6 +13,7 @@ spec:
           selector="$1"
           role="$2"
           check_metrics="$3"
+          logs_since_time="${4:-}"
           pods=$(kubectl get pods -n "$NAMESPACE" -l "$selector" \
             -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
           test -n "$pods" || {
@@ -31,7 +32,12 @@ spec:
               return 1
             fi
 
-            logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers)
+            if [ -n "$logs_since_time" ]; then
+              logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers \
+                --since-time="$logs_since_time")
+            else
+              logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers)
+            fi
             warnings=$(printf '%s\n' "$logs" | grep -Ei \
               '(^|[[:space:]])warn(ing)?([[:space:]:]|$)|"level"[[:space:]]*:[[:space:]]*"warn(ing)?"' || true)
             if [ -n "$warnings" ]; then
@@ -70,8 +76,19 @@ spec:
           fi
         }
 
+        # The cluster Collector can start before its paired Target Allocator.
+        # Audit it after the current Target Allocator became ready.
+        target_allocator_ready_time=$(kubectl get pods -n "$NAMESPACE" \
+          -l app.kubernetes.io/name=cluster-obs-targetallocator-targetallocator \
+          -o jsonpath='{range .items[*].status.conditions[?(@.type=="Ready")]}{.status}{" "}{.lastTransitionTime}{"\n"}{end}' \
+          | awk '$1 == "True" { print $2 }' | sort | tail -n 1)
+        test -n "$target_allocator_ready_time" || {
+          echo "ERROR: Target Allocator readiness timestamp not found"; exit 1
+        }
+
         audit_pods app.kubernetes.io/name=cluster-obs-agent "agent Collector" false
-        audit_pods app.kubernetes.io/name=cluster-obs-cluster "cluster Collector" true
+        audit_pods app.kubernetes.io/name=cluster-obs-cluster \
+          "cluster Collector" true "$target_allocator_ready_time"
         audit_pods app.kubernetes.io/name=cluster-obs-targetallocator-targetallocator \
           "Target Allocator" false
 

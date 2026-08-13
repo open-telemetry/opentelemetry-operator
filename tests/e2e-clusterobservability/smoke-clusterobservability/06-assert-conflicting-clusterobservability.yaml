@@ -1,0 +1,8 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs-conflict
+status:
+  phase: Conflicted
+  (conditions[?type == 'Conflicted']):
+  - status: "True"
