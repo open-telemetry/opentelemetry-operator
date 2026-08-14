@@ -615,6 +615,13 @@ e2e-ta-standalone: kustomize gotestsum
 	KUSTOMIZE=$(KUSTOMIZE) \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
+# End to end metrics collection test comparing against prometheus-operator.
+# Deploys via the operator, so run `make prepare-e2e` first.
+.PHONY: e2e-collector-metrics
+e2e-collector-metrics: gotestsum
+	@mkdir -p ./.testresults/e2e
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-collector-metrics.xml -- -tags e2e -count=1 -timeout 15m ./tests/e2e-collector-metrics/...
+
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
