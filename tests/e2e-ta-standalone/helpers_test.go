@@ -227,7 +227,6 @@ configMapGenerator:
 	// The standalone TA needs the project's target-allocator ClusterRole bound to its
 	// ServiceAccount; the operator does not create this RBAC for a standalone TA.
 	e2e.BindTargetAllocatorClusterRole(ctx, t, cfg, ns, "target-allocator")
-
 }
 
 func deployCollectors(t *testing.T, ctx context.Context, cfg *envconf.Config, ns string, replicas int32) {
