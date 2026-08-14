@@ -131,6 +131,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
 	defaultCPUTarget := int32(90)
+	trueVal := true
 
 	if err := v1beta1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
@@ -166,6 +167,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					},
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
@@ -200,6 +202,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					},
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
@@ -223,6 +226,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					},
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 				},
 			},
 		},
@@ -244,6 +248,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateManaged,
@@ -270,6 +275,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
@@ -294,6 +300,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
@@ -333,6 +340,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 				},
 			},
 		},
@@ -368,6 +376,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 				},
 			},
 		},
@@ -399,6 +408,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled:            true,
 						Replicas:           &one,
@@ -441,6 +451,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled:            true,
 						Replicas:           &one,
@@ -478,6 +489,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled:            true,
 						Replicas:           &one,
@@ -508,6 +520,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+					NetworkPolicy:   v1beta1.NetworkPolicy{Enabled: &trueVal},
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled:            true,
 						Replicas:           &one,

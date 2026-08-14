@@ -34,15 +34,16 @@ var (
 	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
 	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operator.networkpolicy",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
 		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
 	// EnableOperandNetworkPolicy is the feature gate that enables the operator to create network policies for the collector.
 	EnableOperandNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operand.networkpolicy",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
+		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
 	// EnableClusterObservability is the feature gate that enables the ClusterObservability controller.
 	EnableClusterObservability = featuregate.GlobalRegistry().MustRegister(
