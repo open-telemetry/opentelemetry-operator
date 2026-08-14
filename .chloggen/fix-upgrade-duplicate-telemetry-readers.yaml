@@ -5,7 +5,7 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix the 0.111.0 upgrade step re-adding the deprecated `service.telemetry.metrics.address` field on collectors that already use `readers`, which made a later upgrade step bind a second Prometheus reader to the same port.
+note: Fix the automatic-upgrade routine binding two Prometheus readers to the same port when a collector already uses `service.telemetry.metrics.readers`.
 
 # One or more tracking issues related to the change
 issues: [5416]
@@ -16,7 +16,8 @@ issues: [5416]
 subtext: |
   When an OpenTelemetryCollector already configured `service.telemetry.metrics.readers`
   (added by earlier defaulting), the automatic version-upgrade routine still backfilled the
-  older `address` field for it. The 0.122.0 upgrade step later migrates `address` into a new
-  reader without checking whether an equivalent one already exists, leaving two readers bound
-  to the same host:port. The collector then failed to start with "address already in use".
-  The 0.111.0 step now skips backfilling `address` when `readers` is already configured.
+  older, deprecated `address` field for it. The 0.122.0 upgrade step then migrated `address`
+  into a new reader, leaving two readers bound to the same host:port. The collector then
+  failed to start with "address already in use". The 0.111.0 step now skips backfilling
+  `address` when `readers` is already configured, and the 0.122.0 step now skips adding a
+  reader for `address` if an equivalent one already exists.
