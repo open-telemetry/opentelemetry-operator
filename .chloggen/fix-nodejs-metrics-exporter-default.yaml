@@ -1,16 +1,20 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: enhancement
+change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: The `autoinstrumentation-dotnet` image now bundles the correct native profiler for the platform it is pulled for, fixing arm64 support (the image was already published for arm64 but always contained amd64 binaries).
+note: Default `OTEL_METRICS_EXPORTER` to `otlp` for Node.js auto-instrumentation so metrics are exported without extra configuration.
 
 # One or more tracking issues related to the change
-issues: [3270]
+issues: [3768]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  The Node.js SDK only initializes its metrics pipeline when a metric reader is configured, and the
+  webhook was not setting one. As a result, metrics silently stopped being exported for anyone relying
+  on the previous default behavior. The webhook now sets `OTEL_METRICS_EXPORTER=otlp` by default,
+  matching the existing behavior for Python auto-instrumentation, unless the user already set it.

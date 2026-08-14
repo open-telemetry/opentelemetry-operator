@@ -45,7 +45,6 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.157.0 | @frzifus        |
 | v0.158.0 | @pavolloffay    |
 | v0.159.0 | @swiatekm       |
 | v0.160.0 | @iblancasa      |
@@ -53,3 +52,4 @@ The operator should be released within a week after the [OpenTelemetry collector
 | v0.162.0 | @jaronoff97     |
 | v0.163.0 | @yuriolisa      |
 | v0.164.0 | @TylerHelmuth   |
+| v0.165.0 | @frzifus        |

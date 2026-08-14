@@ -1105,6 +1105,10 @@ func TestInjectNodeJS(t *testing.T) {
 							Value: nodeRequireArgument,
 						},
 						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},

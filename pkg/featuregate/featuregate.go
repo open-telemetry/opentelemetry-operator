@@ -19,9 +19,10 @@ var (
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
 		"operator.golang.flags",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
+		featuregate.WithRegisterToVersion("v0.160.0"),
 	)
 	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
 	// strategy for allocation strategies that might not assign all jobs (per-node).
