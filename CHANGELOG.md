@@ -2,6 +2,34 @@
 
 <!-- next version -->
 
+## 0.158.0
+
+### 💡 Enhancements 💡
+
+- `collector`: moves operator.golang.flags to stable setting GOMEMLIMIT and GOMAXPROCS automatically (#5455)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Add PersistentVolume and PersistentVolumeClaim RBAC rules for k8s_cluster receiver automatic RBAC generation. (#5421)
+- `auto-instrumentation`: Default `OTEL_METRICS_EXPORTER` to `otlp` for Node.js auto-instrumentation so metrics are exported without extra configuration. (#3768)
+  The Node.js SDK only initializes its metrics pipeline when a metric reader is configured, and the
+  webhook was not setting one. As a result, metrics silently stopped being exported for anyone relying
+  on the previous default behavior. The webhook now sets `OTEL_METRICS_EXPORTER=otlp` by default,
+  matching the existing behavior for Python auto-instrumentation, unless the user already set it.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.158.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.158.0)
+* [OpenTelemetry Contrib - v0.158.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.158.0)
+* [Java auto-instrumentation - v2.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.30.0)
+* [.NET auto-instrumentation - v1.16.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0)
+* [Node.JS - v0.78.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.64b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.64b0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.157.0
 
 ### 💡 Enhancements 💡
