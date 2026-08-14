@@ -19,6 +19,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 	if !taSpec.Enabled {
 		return nil, nil
 	}
+	filterStrategy := taSpec.FilterStrategy
 
 	// setting all the labels normally here leads to some undesirable results, like the name label being wrong
 	// instead, only set managed-by and leave everything else as-is
@@ -57,7 +58,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 				PodDisruptionBudget:       taSpec.PodDisruptionBudget,
 			},
 			AllocationStrategy:           taSpec.AllocationStrategy,
-			FilterStrategy:               taSpec.FilterStrategy,
+			FilterStrategy:               &filterStrategy,
 			PrometheusCR:                 taSpec.PrometheusCR,
 			Observability:                taSpec.Observability,
 			AllowInsecureAuthSecrets:     taSpec.AllowInsecureAuthSecrets,

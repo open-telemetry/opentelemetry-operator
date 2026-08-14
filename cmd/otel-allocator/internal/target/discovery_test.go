@@ -772,7 +772,7 @@ func TestReloadAppliesRelabelFilteringWhenEnabled(t *testing.T) {
 // disables filtering during discovery: targets are kept even if relabel_configs would drop them.
 func TestReloadSkipsRelabelFilteringWhenDisabled(t *testing.T) {
 	var got []*Item
-	d := newTestDiscoverer(t, "", func(targets []*Item) { got = targets })
+	d := newTestDiscoverer(t, "none", func(targets []*Item) { got = targets })
 
 	scrapeConfigs := []*promconfig.ScrapeConfig{
 		{

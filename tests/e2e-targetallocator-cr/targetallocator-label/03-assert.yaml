@@ -4,7 +4,7 @@ data:
   targetallocator.yaml: |
     allocation_strategy: consistent-hashing
     collector_selector: null
-    filter_strategy: ""
+    filter_strategy: none
 kind: ConfigMap
 metadata:
   name: ta-targetallocator

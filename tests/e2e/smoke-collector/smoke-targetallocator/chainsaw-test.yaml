@@ -57,7 +57,7 @@ spec:
                         static_configs:
                           - targets:
                               - 0.0.0.0:8888
-                  filter_strategy: relabel-config
+                  filter_strategy: none
   - name: step-01
     try:
     - apply:

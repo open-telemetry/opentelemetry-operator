@@ -8189,6 +8189,7 @@ spec:
                     default: relabel-config
                     enum:
                     - ""
+                    - none
                     - relabel-config
                     type: string
                   image:

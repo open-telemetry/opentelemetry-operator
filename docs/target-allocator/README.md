@@ -24,7 +24,7 @@ The Target Allocator uses a configuration file (by default under `/conf/targetal
 | `config`                           | Prometheus configuration block                                                |                                               |                      |
 | `allocation_strategy`              | Allocation strategy to apply to job assignments                               | `consistent-hashing`                          |                      |
 | `allocation_fallback_strategy`     | Fallback allocation strategy for job assignments                              |                                               |                      |
-| `filter_strategy`                  | Filter strategy to apply to metrics                                           | `relabel-config`                              |                      |
+| `filter_strategy`                  | Filter strategy to apply to metrics (`relabel-config` or `none`)               | `relabel-config`                              |                      |
 | `prometheus_cr`                    | Whether to watch Prometheus Custom Resources                                  |                                               |                      |
 | `https`                            | Whether to expose the target allocator endpoint over https                    |                                               |                      |
 | `allow_insecure_auth_secrets`      | Serve auth secret values over plain HTTP without mTLS                         | `false`                                       | `ALLOW_INSECURE_AUTH_SECRETS` |
