@@ -1,0 +1,31 @@
+# The collector under test: receives OTLP from the instrumented app and forwards
+# everything to the test's otlp-sink, which the test queries for assertions. The name
+# "deployment" is load-bearing: the Instrumentation CRs point their exporters at
+# http://deployment-collector:4317/4318.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: deployment
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+
+    processors: {}
+
+    exporters:
+      otlphttp:
+        endpoint: http://otlp-sink:4318
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlphttp]
+        metrics:
+          receivers: [otlp]
+          exporters: [otlphttp]

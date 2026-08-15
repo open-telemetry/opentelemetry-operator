@@ -1,0 +1,37 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: nodejs
+spec:
+  env:
+    # Export metrics every 10s so the test does not wait out the default 60s
+    # export interval.
+    - name: OTEL_METRIC_EXPORT_INTERVAL
+      value: "10000"
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://deployment-collector:4318
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+  exporter:
+    endpoint: http://deployment-collector:4318
+  propagators:
+    - jaeger
+    - b3
+  nodejs:
+    env:
+      - name: OTEL_NODEJS_DEBUG
+        value: "true"
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

@@ -78,6 +78,10 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
 TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink php python ruby
+# The otlp-sink is deployed by the Go e2e helpers rather than by a manifest, so unlike
+# the other test apps its image is passed to the tests instead of being written into a
+# manifest. Derived from the prefix above so overriding it covers the sink too.
+OTLPSINK_IMG ?= $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-otlp-sink:main
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -677,6 +681,15 @@ e2e-ta-standalone: kustomize gotestsum
 e2e-collector-metrics: gotestsum
 	@mkdir -p ./.testresults/e2e
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-collector-metrics.xml -- -tags e2e -count=1 -timeout 15m ./tests/e2e-collector-metrics/...
+
+# Go-based auto-instrumentation e2e tests: the operator injects language agents into
+# sample apps, and the tests assert on the telemetry an in-cluster OTLP sink actually
+# receives. Deploys via the operator, so run `make prepare-e2e` first. The tests run
+# in parallel, each in its own namespace.
+.PHONY: e2e-instrumentation-go
+e2e-instrumentation-go: gotestsum
+	@mkdir -p ./.testresults/e2e
+	OTLPSINK_IMG=$(OTLPSINK_IMG) $(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-instrumentation-go.xml -- -tags e2e -count=1 -timeout 30m ./tests/e2e-instrumentation-go/...
 
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
