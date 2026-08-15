@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: ""
+      build-test-apps:
+        description: "Build the e2e test app images (tests/test-e2e-apps) from source instead of using the ones published from main. Pass true when the change set touches them, so incompatibilities with the tests surface before the merge publishes new images."
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -44,7 +49,7 @@ jobs:
       run: make install-tools
 
     - name: Build test image archive
-      run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION}
+      run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION} BUILD_TEST_E2E_APPS=${{ inputs.build-test-apps }}
 
     - name: Upload test image archive
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

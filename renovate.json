@@ -290,6 +290,13 @@
       "schedule": ["on monday"]
     },
     {
+      "description": "Group all updates to the Go-based e2e test apps (module dependencies and base images) into a single weekly PR",
+      "matchManagers": ["gomod", "dockerfile"],
+      "matchFileNames": ["tests/test-e2e-apps/**"],
+      "groupName": "e2e test apps",
+      "schedule": ["on monday"]
+    },
+    {
       "matchManagers": ["regex"],
       "matchDatasources": ["docker"],
       "matchFileNames": [".github/workflows/publish-test-e2e-images.yaml"],
