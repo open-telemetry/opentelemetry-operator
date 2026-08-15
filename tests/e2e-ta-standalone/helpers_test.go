@@ -80,13 +80,15 @@ func TestMain(m *testing.M) {
 // ---------------------------------------------------------------------------
 
 // setupTestNamespace creates a unique namespace for the current test feature, stores
-// its name in the context, registers a t.Cleanup for teardown, and returns the updated
-// context and namespace name. Cluster RBAC is created (and cleaned up) per binding by
+// its name in the context, registers a t.Cleanup for teardown and one that dumps the
+// namespace if the test fails, and returns the updated context and namespace name.
+// Cluster RBAC is created (and cleaned up) per binding by
 // e2e.BindTargetAllocatorClusterRole, so namespace teardown only removes the namespace.
 func setupTestNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (nsCtx context.Context, ns string) {
 	t.Helper()
 	nsCtx = e2e.SetupNamespace(ctx, t, cfg)
 	ns = e2e.Namespace(t, nsCtx)
+	e2e.DumpNamespaceOnFailure(nsCtx, t, cfg, ns)
 	t.Logf("created namespace %s", ns)
 	return nsCtx, ns
 }

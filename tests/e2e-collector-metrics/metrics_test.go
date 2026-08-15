@@ -124,6 +124,7 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 
 		ctx = e2e.SetupNamespace(ctx, t, cfg)
 		namespace := e2e.Namespace(t, ctx)
+		e2e.DumpNamespaceOnFailure(ctx, t, cfg, namespace)
 
 		e2e.Apply(ctx, t, cfg, namespace, sampleAppManifest)
 		e2e.Apply(ctx, t, cfg, namespace, oraclePrometheusManifest)
