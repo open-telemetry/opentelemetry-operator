@@ -26,7 +26,7 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/open-telemetry/opamp-go v0.23.0
-	github.com/openshift/api v0.0.0-20260810132456-8f52beb625b5
+	github.com/openshift/api v0.0.0-20260813212709-d4bb0b443cb8
 	github.com/operator-framework/api v0.45.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.92.0
