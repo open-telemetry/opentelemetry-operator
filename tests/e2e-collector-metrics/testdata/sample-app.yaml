@@ -1,0 +1,25 @@
+# The scraped workload: node-exporter, from the Prometheus org. Chosen because the
+# image is multi-arch — including s390x and ppc64le, which downstream CI runs these
+# tests on — and because it exposes a constant `node_exporter_build_info` gauge, so
+# target labels can be asserted on without generating any traffic against the app.
+# The port is named `metrics` so a ServiceMonitor endpoint can target it by name.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: sample-app, labels: {app: sample-app}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: sample-app}}
+  template:
+    metadata: {labels: {app: sample-app}}
+    spec:
+      containers:
+        - name: app
+          image: quay.io/prometheus/node-exporter:v1.10.2
+          ports: [{containerPort: 9100, name: metrics}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: sample-app, labels: {app: sample-app}}
+spec:
+  selector: {app: sample-app}
+  ports: [{port: 9100, targetPort: 9100, name: metrics}]

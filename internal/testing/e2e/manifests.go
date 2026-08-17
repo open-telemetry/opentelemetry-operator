@@ -11,12 +11,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
@@ -26,6 +25,41 @@ import (
 func Apply(ctx context.Context, t *testing.T, cfg *envconf.Config, ns, manifests string) {
 	t.Helper()
 	applyManifests(ctx, t, CRClient(t, cfg), strings.NewReader(manifests), ns)
+}
+
+// ApplyObjects server-side-applies typed objects into ns. It is the alternative to
+// Apply for resources a test needs to vary: rather than templating YAML, build the
+// object as a Go struct and set the fields that differ. Any type registered in Scheme
+// works, including custom resources such as ServiceMonitor or OpenTelemetryCollector.
+func ApplyObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string, objs ...crclient.Object) {
+	t.Helper()
+	c := CRClient(t, cfg)
+	for _, obj := range objs {
+		// Namespacing is applied to a copy: the caller's object (often a shared
+		// fixture built once per suite) must not be mutated.
+		namespaced := obj.DeepCopyObject().(crclient.Object)
+		namespaced.SetNamespace(ns)
+		u := toUnstructured(t, namespaced)
+		err := c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership)
+		require.NoError(t, err, "apply %s %q", u.GetKind(), u.GetName())
+	}
+}
+
+// toUnstructured converts a typed object into an unstructured one carrying its
+// apiVersion/kind (typed structs leave TypeMeta empty), so it can go through the same
+// server-side-apply path as YAML manifests.
+func toUnstructured(t *testing.T, obj crclient.Object) *unstructured.Unstructured {
+	t.Helper()
+	gvk, err := apiutil.GVKForObject(obj, Scheme())
+	require.NoError(t, err, "look up GroupVersionKind for %T", obj)
+	raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	require.NoError(t, err, "convert %T to unstructured", obj)
+	u := &unstructured.Unstructured{Object: raw}
+	u.SetGroupVersionKind(gvk)
+	// Typed structs always render a status; it is a subresource on every type these
+	// tests apply, so sending it would be at best ignored and at worst rejected.
+	unstructured.RemoveNestedField(u.Object, "status")
+	return u
 }
 
 // applyManifests SSA-applies each document from r. When forceNS is non-empty it is set
@@ -50,22 +84,5 @@ func applyManifests(ctx context.Context, t *testing.T, c crclient.Client, r io.R
 		}
 		err = c.Apply(ctx, crclient.ApplyConfigurationFromUnstructured(u), crclient.FieldOwner(fieldManager), crclient.ForceOwnership)
 		require.NoError(t, err, "apply %s %q", u.GetKind(), u.GetName())
-	}
-}
-
-// CreateNamespace creates ns.
-func CreateNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
-	t.Helper()
-	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	require.NoError(t, CRClient(t, cfg).Create(ctx, obj), "create namespace %s", ns)
-}
-
-// DeleteNamespace deletes ns (ignoring not-found), used for test cleanup.
-func DeleteNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, ns string) {
-	t.Helper()
-	obj := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}
-	err := CRClient(t, cfg).Delete(ctx, obj)
-	if !apierrors.IsNotFound(err) {
-		require.NoError(t, err, "delete namespace %s", ns)
 	}
 }

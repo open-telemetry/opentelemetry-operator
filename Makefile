@@ -58,8 +58,14 @@ TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,$
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
-BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
-BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+# E2E test app images (tests/test-e2e-apps). Their manifests reference the images
+# published from main (ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-*:main),
+# so the prefix is fixed and independent of IMG_PREFIX. Building locally tags images
+# exactly as the manifests reference them; loading them into kind then shadows the
+# registry versions, letting tests run against local changes before they are merged
+# and published.
+TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs python
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -615,6 +621,13 @@ e2e-ta-standalone: kustomize gotestsum
 	KUSTOMIZE=$(KUSTOMIZE) \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
+# End to end metrics collection test comparing against prometheus-operator.
+# Deploys via the operator, so run `make prepare-e2e` first.
+.PHONY: e2e-collector-metrics
+e2e-collector-metrics: gotestsum
+	@mkdir -p ./.testresults/e2e
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-collector-metrics.xml -- -tags e2e -count=1 -timeout 15m ./tests/e2e-collector-metrics/...
+
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
@@ -670,11 +683,17 @@ container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
 	docker build --load -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
-# Build bridge test server container image for e2e tests
-.PHONY: container-bridge-test-server
-container-bridge-test-server: GOOS = linux
-container-bridge-test-server:
-	docker build --load -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
+# Build every e2e test app image from tests/test-e2e-apps, tagged as the test
+# manifests reference them. The python app is built twice, matching the two
+# variants published from main (latest and oldest supported python).
+.PHONY: container-test-e2e-apps
+container-test-e2e-apps:
+	@for app in $(TEST_E2E_APPS); do \
+		echo "Building $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main"; \
+		docker build --load -t $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main tests/test-e2e-apps/$$app || exit 1; \
+	done
+	docker build --load -t $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10 \
+		--build-arg BASE_IMAGE=docker.io/library/python:3.10-alpine tests/test-e2e-apps/python
 
 # Build must-gather container image
 .PHONY: container-must-gather
@@ -760,7 +779,7 @@ install-targetallocator-prometheus-crds:
 .PHONY: load-image-all
 load-image-all:
 ifeq ($(IMAGE_ARCHIVE),)
-	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 else
 	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
 endif
@@ -784,10 +803,14 @@ else
 	$(MAKE) container-target-allocator-push
 endif
 
-# Load bridge test server image into kind cluster
-.PHONY: load-image-bridge-test-server
-load-image-bridge-test-server: container-bridge-test-server kind
-	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${BRIDGETESTSERVER_IMG}
+# Build all e2e test app images and load them into the kind cluster, shadowing the
+# published images the test manifests reference. Run this (or let CI run it) after
+# changing anything under tests/test-e2e-apps.
+.PHONY: load-image-test-e2e-apps
+load-image-test-e2e-apps: container-test-e2e-apps kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image \
+		$(foreach app,$(TEST_E2E_APPS),$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$(app):main) \
+		$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10
 
 # Load operator OpAMP bridge image into kind cluster
 .PHONY: load-image-operator-opamp-bridge
@@ -852,7 +875,7 @@ CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.6.0
+GOVULNCHECK_VERSION ?= v1.7.0
 PROMTOOL ?= $(LOCALBIN)/promtool
 # promtool is the golden source for the target-allocator conformance suite. It must match
 # the prometheus/prometheus library the operator links against, so derive the release version
@@ -1171,9 +1194,15 @@ else
 	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION))
 endif
 
-# Create container image archive with all images
+# Create container image archive with all images. Set BUILD_TEST_E2E_APPS=true to
+# also build the e2e test app images from source and include them, so tests run
+# against local changes to tests/test-e2e-apps instead of the published images (CI
+# does this whenever those files change).
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-instrumentation-all
+ifeq ($(BUILD_TEST_E2E_APPS),true)
+container-image-archive: container-test-e2e-apps
+endif
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -1181,12 +1210,17 @@ endif
 	@echo "$(IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
-	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_JAVA_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_NODEJS_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
+ifeq ($(BUILD_TEST_E2E_APPS),true)
+	@for app in $(TEST_E2E_APPS); do \
+		echo "$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main" >>$(IMAGE_LIST_FILE); \
+	done
+	@echo "$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10" >>$(IMAGE_LIST_FILE)
+endif
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
 
 ##@ Validation
