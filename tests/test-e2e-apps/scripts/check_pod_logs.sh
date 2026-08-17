@@ -8,6 +8,7 @@ CONTAINER_NAME=${CONTAINER_NAME} # Read from env
 RETRY_TIMEOUT=${RETRY_TIMEOUT:-120} # Read from env, default 120
 RETRY_SLEEP=${RETRY_SLEEP:-5}    # Read from env, default 5
 SEARCH_STRINGS_INPUT=${SEARCH_STRINGS_ENV} # Read the delimited string from env
+ACCUMULATE_SEARCH_RESULTS=${ACCUMULATE_SEARCH_RESULTS:-false}
 
 # --- Input Validation ---
 if [[ -z "$LABEL_SELECTOR" ]]; then
@@ -36,6 +37,7 @@ if [[ ${#SEARCH_STRINGS[@]} -eq 0 ]]; then
   echo "ERROR: Failed to parse any search strings from SEARCH_STRINGS_ENV."
   exit 1
 fi
+TOTAL_SEARCH_STRINGS=${#SEARCH_STRINGS[@]}
 # --- End Configuration Processing ---
 
 
@@ -126,10 +128,14 @@ while true; do
         fi
     done
 
+    if [ "$ACCUMULATE_SEARCH_RESULTS" = true ]; then
+        SEARCH_STRINGS=("${MISSING_STRINGS_THIS_ATTEMPT[@]}")
+    fi
+
     # 4. Evaluate outcome of this attempt
     if [ "$ALL_FOUND_THIS_ATTEMPT" = true ]; then
         echo "-----------------------------------------------------"
-        echo "Success: All ${#SEARCH_STRINGS[@]} strings found simultaneously in container '$CONTAINER_NAME' of pod '$POD'."
+        echo "Success: All $TOTAL_SEARCH_STRINGS strings found in container '$CONTAINER_NAME' of pod '$POD'."
         echo "-----------------------------------------------------"
         exit 0 # Successful exit!
     else

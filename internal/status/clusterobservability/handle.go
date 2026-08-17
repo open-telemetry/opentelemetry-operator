@@ -430,37 +430,6 @@ func updateConfigVersions(co *v1alpha1.ClusterObservability) error {
 	return nil
 }
 
-// DetectConfigChanges returns true if the config versions in the status differ from current embedded configs.
-// This is used to trigger reconciliation when operator is upgraded with new configs.
-func DetectConfigChanges(co *v1alpha1.ClusterObservability) (bool, error) {
-	if co.Status.ConfigVersions == nil {
-		// First time - consider it a change
-		return true, nil
-	}
-
-	configLoader := config.NewConfigLoader()
-	currentVersions, err := configLoader.GetAllConfigVersions()
-	if err != nil {
-		return false, fmt.Errorf("failed to get current config versions: %w", err)
-	}
-
-	// Check if any versions differ
-	for versionKey, currentVersion := range currentVersions {
-		if existingVersion, exists := co.Status.ConfigVersions[versionKey]; !exists || configLoader.CompareConfigVersions(existingVersion, currentVersion) {
-			return true, nil
-		}
-	}
-
-	// Check if any old versions are no longer present (distro removed)
-	for versionKey := range co.Status.ConfigVersions {
-		if _, exists := currentVersions[versionKey]; !exists {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // findCondition finds a condition by type in the conditions slice.
 func findCondition(conditions []v1alpha1.ClusterObservabilityCondition, condType v1alpha1.ClusterObservabilityConditionType) *v1alpha1.ClusterObservabilityCondition {
 	for i := range conditions {
