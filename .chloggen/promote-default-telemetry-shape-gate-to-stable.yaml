@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: "promote the operator.collector.usedefaulttelemetryshape feature gate to stable, so the operator-injected Prometheus telemetry reader always uses collector defaults for without_type_suffix, without_units, and without_scope_info"
+
+# One or more tracking issues related to the change
+issues: [5075]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The gate is now stable and can no longer be disabled. Users wanting the
+  pre-v0.154.0 metric name shape should explicitly set
+  `without_type_suffix`, `without_units`, and `without_scope_info` to `false`
+  in their collector configuration. The gate will be removed in a future release.
