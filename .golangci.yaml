@@ -3,6 +3,10 @@ run:
   concurrency: 3
   issues-exit-code: 1
   tests: true
+  # Include the e2e test suites and their helpers (internal/testing/e2e,
+  # tests/e2e-*); without the tag they would be silently skipped.
+  build-tags:
+    - e2e
 
 linters:
   # all available settings of specific linters

@@ -32,6 +32,8 @@ sed "s/__agent_log_dir__/${agent_log_dir}/g" \
     > /opt/opentelemetry-webserver/agent/conf/opentelemetry_sdk_log4cxx.xml
 
 # Materialise the OTel agent config file (placeholder pod name is replaced at runtime).
+# $(VAR) references in OTEL_APACHE_AGENT_CONF (e.g. exporter endpoint) are
+# expanded by the kubelet before this script runs; see initContainerUserEnv.
 echo "${OTEL_APACHE_AGENT_CONF}" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf
 sed -i "s/<<SID-PLACEHOLDER>>/${APACHE_SERVICE_INSTANCE_ID}/g" \
     /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf
