@@ -532,6 +532,10 @@ e2e-log-operator:
 check-chainsaw-test-names:
 	./hack/check-chainsaw-test-names.sh
 
+.PHONY: check-autoinstrumentation-revision
+check-autoinstrumentation-revision:
+	./.github/workflows/scripts/check-autoinstrumentation-revision.sh
+
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
 .PHONY: e2e-multi-instrumentation-default

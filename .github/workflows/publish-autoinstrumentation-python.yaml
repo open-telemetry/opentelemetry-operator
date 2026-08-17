@@ -38,6 +38,9 @@ jobs:
       - name: Read version
         run: echo VERSION=$(head -n 1 autoinstrumentation/python/requirements.txt | cut -d '=' -f3) >> $GITHUB_ENV
 
+      - name: Read revision
+        run: echo "REVISION=$(cat autoinstrumentation/python/revision.txt)" >> $GITHUB_ENV
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -46,7 +49,8 @@ jobs:
             ${{ secrets.DOCKER_USERNAME != '' && 'otel/autoinstrumentation-python' || '' }}
             ghcr.io/${{ github.repository_owner }}/opentelemetry-operator/autoinstrumentation-python
           tags: |
-            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+            type=raw,value=${{ env.VERSION }}-${{ env.REVISION }}
+            type=raw,value=${{ env.VERSION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
