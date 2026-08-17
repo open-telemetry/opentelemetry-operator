@@ -6,10 +6,28 @@
 
 ### 💡 Enhancements 💡
 
+- `operator, collector, target allocator`: Enable operator, collector, target allocator network policies by default. (#5394)
+  Feature gate `operator.networkpolicy` and `operand.networkpolicy` are promoted to beta, and enabled by default.
+  These feature gates create network policies for the operator and operand components.
+
+- `auto-instrumentation`: Apache and nginx instrumentations forward Spec env vars to attach init containers so kubelet can expand $(VAR) references in exporter endpoints. (#5333)
+- `collector`: promote the operator.collector.usedefaulttelemetryshape feature gate to stable, so the operator-injected Prometheus telemetry reader always uses collector defaults for without_type_suffix, without_units, and without_scope_info (#5075)
+  The gate is now stable and can no longer be disabled. Users wanting the
+  pre-v0.154.0 metric name shape should explicitly set
+  `without_type_suffix`, `without_units`, and `without_scope_info` to `false`
+  in their collector configuration. The gate will be removed in a future release.
 - `collector`: moves operator.golang.flags to stable setting GOMEMLIMIT and GOMAXPROCS automatically (#5455)
 
 ### 🧰 Bug fixes 🧰
 
+- `collector`: Fix the automatic-upgrade routine binding two Prometheus readers to the same port when a collector already uses `service.telemetry.metrics.readers`. (#5416)
+  When an OpenTelemetryCollector already configured `service.telemetry.metrics.readers`
+  (added by earlier defaulting), the automatic version-upgrade routine still backfilled the
+  older, deprecated `address` field for it. The 0.122.0 upgrade step then migrated `address`
+  into a new reader, leaving two readers bound to the same host:port. The collector then
+  failed to start with "address already in use". The 0.111.0 step now skips backfilling
+  `address` when `readers` is already configured, and the 0.122.0 step now skips adding a
+  reader for `address` if an equivalent one already exists.
 - `collector`: Add PersistentVolume and PersistentVolumeClaim RBAC rules for k8s_cluster receiver automatic RBAC generation. (#5421)
 - `auto-instrumentation`: Default `OTEL_METRICS_EXPORTER` to `otlp` for Node.js auto-instrumentation so metrics are exported without extra configuration. (#3768)
   The Node.js SDK only initializes its metrics pipeline when a metric reader is configured, and the
