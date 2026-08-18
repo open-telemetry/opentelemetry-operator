@@ -17,11 +17,12 @@ var _ CollectorInstance = CRDInstance{}
 
 // CRDInstance wraps an OpenTelemetryCollector CRD to implement CollectorInstance.
 type CRDInstance struct {
-	Col v1beta1.OpenTelemetryCollector
+	Col     v1beta1.OpenTelemetryCollector
+	managed bool
 }
 
-func newCRDInstance(col v1beta1.OpenTelemetryCollector) CRDInstance {
-	return CRDInstance{Col: col}
+func newCRDInstance(col v1beta1.OpenTelemetryCollector, managed bool) CRDInstance {
+	return CRDInstance{Col: col, managed: managed}
 }
 
 func (c CRDInstance) GetName() string {
@@ -34,6 +35,12 @@ func (c CRDInstance) GetNamespace() string {
 
 func (c CRDInstance) GetDeletionTimestamp() *metav1.Time {
 	return c.Col.GetDeletionTimestamp()
+}
+
+// IsManaged reports whether the bridge applies remote config to this collector, as opposed to it only
+// being reporting-only (labeled with ReportingLabelKey but not ManagedLabelKey).
+func (c CRDInstance) IsManaged() bool {
+	return c.managed
 }
 
 // selectorLabels returns the collector's status selector, or the operator's standard collector labels as a fallback.
