@@ -534,7 +534,7 @@ check-chainsaw-test-names:
 
 .PHONY: check-autoinstrumentation-revision
 check-autoinstrumentation-revision:
-	./.github/workflows/scripts/check-autoinstrumentation-revision.sh
+	./hack/autoinstrumentation-revision.sh check
 
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different

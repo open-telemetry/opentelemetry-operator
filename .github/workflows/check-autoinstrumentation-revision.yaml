@@ -5,7 +5,7 @@ on:
     paths:
       - "autoinstrumentation/**"
       - ".github/workflows/check-autoinstrumentation-revision.yaml"
-      - ".github/workflows/scripts/check-autoinstrumentation-revision.sh"
+      - "hack/autoinstrumentation-revision.sh"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -26,4 +26,4 @@ jobs:
       - name: Validate autoinstrumentation revisions
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: ./.github/workflows/scripts/check-autoinstrumentation-revision.sh
+        run: ./hack/autoinstrumentation-revision.sh check
