@@ -14,7 +14,7 @@ spec:
     fsGroup: 3000
   initContainers:
     - name: php-init
-      image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-php:main
+      image: ghcr.io/jerrytfleung/opentelemetry-operator/e2e-test-app-php:main
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
