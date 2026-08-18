@@ -210,7 +210,7 @@ func New() Config {
 		IgnoreMissingCollectorCRDs:          false,
 		AutoInstrumentationJavaImage:        fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava),
 		AutoInstrumentationNodeJSImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS),
-		AutoInstrumentationPhpImage:         fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-php:%s", v.AutoInstrumentationPhp),
+		AutoInstrumentationPhpImage:         fmt.Sprintf("ghcr.io/jerrytfleung/autoinstrumentation-php:%s", v.AutoInstrumentationPhp),
 		AutoInstrumentationPythonImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython),
 		AutoInstrumentationDotNetImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet),
 		AutoInstrumentationGoImage:          fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo),
