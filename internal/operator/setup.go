@@ -17,6 +17,9 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	"go.uber.org/zap/zapcore"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -85,6 +88,13 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 	}
 
 	metricsOptions := buildMetricsOptions(*cfg, tlsOptsFuncs)
+	// The shared manager cache exposes only Collector Pods and ControllerRevisions.
+	// Rollout status depends on both resources retaining these labels; other consumers
+	// must use the API reader or broaden this selector.
+	collectorLabels := labels.SelectorFromSet(labels.Set{
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+	})
 
 	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
@@ -98,6 +108,10 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.Pod{}:                {Label: collectorLabels},
+				&appsv1.ControllerRevision{}: {Label: collectorLabels},
+			},
 		},
 	}
 

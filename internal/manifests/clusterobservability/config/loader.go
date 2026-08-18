@@ -421,11 +421,6 @@ func (c *ConfigLoader) GetConfigVersion(collectorType CollectorType, distroProvi
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
-// CompareConfigVersions compares two config versions and returns true if they differ.
-func (*ConfigLoader) CompareConfigVersions(version1, version2 string) bool {
-	return version1 != version2
-}
-
 // GetAllConfigVersions returns version hashes for all supported collector types and distros.
 func (c *ConfigLoader) GetAllConfigVersions() (map[string]string, error) {
 	versions := make(map[string]string)

@@ -133,6 +133,41 @@ sequenceDiagram
     Controller->>Controller: Reconcile Changes
 ```
 
+The controller rebuilds desired state on every reconciliation. When the
+`ClusterObservability` spec changes, it updates both managed
+`OpenTelemetryCollector` resources and the managed `Instrumentation` resource.
+Their respective controllers perform workload rollouts, while instrumentation
+changes apply to newly created pods.
+
+`Configured` and `Ready` describe different parts of the reconciliation. A
+generation is `Configured=True` after its desired managed resources have been
+applied. `Ready=True` additionally requires the current collector generations
+and their DaemonSet and StatefulSet rollouts to be complete. A reconciliation
+error sets `Configured=False`; it does not hide the fact that previously
+configured workloads may still be ready. `Ready=Unknown` identifies a rollout
+that is still progressing, while `Ready=False` identifies a current generation
+that failed to become ready. Each condition includes the `observedGeneration`
+it describes. The top-level `status.observedGeneration` records the generation
+the controller evaluated, including failed reconciliation attempts;
+`Configured=True` confirms that generation was successfully applied.
+
+Kubernetes Events supplement this durable status with actionable warnings. The
+controller reports `ReconcileError` when it cannot apply a generation and a
+transition-only `ComponentsNotReady` warning when a current rollout fails.
+Successful updates, progressing rollouts, recoveries, and repeated
+reconciliations do not emit events.
+
+### Operator upgrades
+
+The generated collectors use the manager's
+`clusterobservability-collector-image` value explicitly. When a new operator
+version starts, its informer initially enqueues existing
+`ClusterObservability` resources. Rebuilding desired state propagates a changed
+collector image to both child collectors even though the parent generation is
+unchanged. The collector controller then performs the normal DaemonSet and
+StatefulSet rollouts, which are reflected by the generation-aware `Ready`
+condition described above.
+
 ## Feature Gate
 
 ClusterObservability is controlled by the `operator.clusterobservability` feature gate:
@@ -202,7 +237,7 @@ Status:
   Conditions:
     Last Transition Time:  2025-09-06T03:30:28Z
     Message:               Multiple ClusterObservability resources exist in cluster
-    Reason:                Configured
+    Reason:                MultipleInstances
     Status:                True
     Type:                  Conflicted
   Message:                 Multiple ClusterObservability resources detected. Only the oldest resource is active.
@@ -211,7 +246,6 @@ Status:
 Events:
   Type     Reason      Age               From                   Message
   ----     ------      ----              ----                   -------
-  Normal   Info        6s (x2 over 6s)   cluster-observability  status updated - resource is conflicted
   Warning  Conflicted  4s (x25 over 6s)  cluster-observability  Multiple ClusterObservability resources detected. Only opentelemetry-operator-system/cluster-observability (oldest) is active
 ```
 
@@ -285,6 +319,7 @@ Status:
     Agent:
       Last Updated:  2025-09-06T03:40:24Z
       Message:       Agent collector DaemonSet not ready: 0/3 pods ready
+      Ready:         false
     Cluster:
       Last Updated:  2025-09-06T03:40:24Z
       Message:       Cluster collector StatefulSet ready: 1/1 replicas ready
@@ -296,25 +331,28 @@ Status:
   Conditions:
     Last Transition Time:  2025-09-06T03:36:05Z
     Message:               ClusterObservability configuration applied successfully
+    Observed Generation:   1
     Reason:                Configured
     Status:                True
     Type:                  Configured
     Last Transition Time:  2025-09-06T03:36:05Z
-    Message:               Collector configuration has been updated - managed collectors will be reconciled
-    Reason:                ConfigChanged
+    Message:               Embedded collector configuration is current
+    Observed Generation:   1
+    Reason:                ConfigCurrent
     Status:                True
     Type:                  ConfigurationUpdated
+    Last Transition Time:  2025-09-06T03:40:24Z
+    Message:               ClusterObservability component rollout is progressing
+    Observed Generation:   1
+    Reason:                RolloutProgressing
+    Status:                Unknown
+    Type:                  Ready
   Config Versions:
     Agent - Collector - Openshift:    d3945a86e3b61a9bb578b8340cf9679a486b4cde13332b7f216b6d85874ea6ee
     Cluster - Collector - Openshift:  4ac402eda083f315297e410b2dccb1698cb5ae10ebedc8ad5eb860a5aeda66a1
   Message:                            Some components are not ready
   Observed Generation:                1
   Phase:                              Pending
-Events:
-  Type    Reason         Age                     From                   Message
-  ----    ------         ----                    ----                   -------
-  Normal  ConfigChanged  4m19s (x2 over 4m19s)   cluster-observability  Collector configuration has changed, updating managed resources
-  Normal  Info           4m17s (x23 over 4m19s)  cluster-observability  applied status changes
 ```
 
 ### How Users Apply Auto-Instrumentation

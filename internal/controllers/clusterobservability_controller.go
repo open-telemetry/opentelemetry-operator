@@ -5,12 +5,15 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,9 +25,12 @@ import (
 	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -33,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability"
 	coStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/clusterobservability"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
 
 // ClusterObservabilityReconciler reconciles a ClusterObservability object.
@@ -52,6 +59,8 @@ type ClusterObservabilityReconcilerParams struct {
 	Log      logr.Logger
 	Config   config.Config
 }
+
+const clusterObservabilityResourceOwnerKey = ".metadata.owner"
 
 func (r *ClusterObservabilityReconciler) getParams(instance v1alpha1.ClusterObservability) manifests.Params {
 	return manifests.Params{
@@ -84,7 +93,8 @@ func NewClusterObservabilityReconciler(params ClusterObservabilityReconcilerPara
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
-//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=controllerrevisions;daemonsets;statefulsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
 //+kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=get;list;watch;create;update;patch;delete
 
@@ -118,19 +128,8 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 		return coStatus.HandleReconcileStatus(ctx, log, params, errors.New("multiple ClusterObservability resources detected"))
 	}
 
-	// TODO: Add upgrade support
+	// Rebuild desired state on every reconcile so manager defaults propagate after upgrades.
 	// TODO: Support management state like OpenTelemetryCollector
-
-	configChanged, configErr := coStatus.DetectConfigChanges(&instance)
-	if configErr != nil {
-		log.Error(configErr, "failed to detect config changes")
-	}
-
-	if configChanged {
-		log.Info("Configuration changes detected - triggering full reconciliation")
-		r.recorder.Eventf(&instance, nil, corev1.EventTypeNormal, "ConfigChanged", "ConfigChanged",
-			"Collector configuration has changed, updating managed resources")
-	}
 
 	// Add finalizer to ensure proper resource cleanup
 	if !controllerutil.ContainsFinalizer(&instance, v1alpha1.ClusterObservabilityFinalizer) {
@@ -147,7 +146,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 
 	desiredObjects, buildErr := clusterobservability.Build(params)
 	if buildErr != nil {
-		return ctrl.Result{}, buildErr
+		return r.handleReconcileError(ctx, log, instance, buildErr)
 	}
 
 	var openTelemetryCRs []client.Object
@@ -165,124 +164,76 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 		}
 	}
 
-	// Handle OpenTelemetry CRs - their controllers manage the underlying resources
+	// Prerequisites such as the OpenShift SCC must exist before child controllers
+	// can create their workloads.
+	for _, unstructuredObj := range unstructuredObjects {
+		if err := r.reconcileUnstructuredResource(ctx, log, unstructuredObj); err != nil {
+			return r.handleReconcileError(ctx, log, instance,
+				fmt.Errorf("failed to reconcile unstructured resource %s: %w", unstructuredObj.GetName(), err))
+		}
+	}
 	for _, crObj := range openTelemetryCRs {
-		if err := r.reconcileOpenTelemetryResource(ctx, log, crObj); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to reconcile OpenTelemetry CR %s: %w", crObj.GetObjectKind(), err)
+		if err := r.defaultOpenTelemetryResource(ctx, log, crObj); err != nil {
+			return r.handleReconcileError(ctx, log, instance,
+				fmt.Errorf("failed to default desired %T %s: %w", crObj, client.ObjectKeyFromObject(crObj), err))
 		}
 	}
 
-	// Handle Unstructured objects (like OpenShift SCC) separately to avoid deep copy issues
-	for _, unstructuredObj := range unstructuredObjects {
-		if err := r.reconcileUnstructuredResource(ctx, log, unstructuredObj); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to reconcile unstructured resource %s: %w", unstructuredObj.GetName(), err)
-		}
+	ownedObjects, err := r.findClusterObservabilityOwnedObjects(ctx, params)
+	if err != nil {
+		return r.handleReconcileError(ctx, log, instance, err)
 	}
-	// Handle regular Kubernetes resources (currently none - OpenTelemetry CRs handle their own resources)
-	if len(regularObjects) > 0 {
-		ownedObjects, err := r.findClusterObservabilityOwnedObjects(ctx, params)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		err = reconcileDesiredObjects(ctx, r.Client, log, &params.ClusterObservability, params.Scheme, regularObjects, ownedObjects)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+
+	managedObjects := append(openTelemetryCRs, regularObjects...)
+	if err := reconcileDesiredObjects(ctx, r.Client, log, &params.ClusterObservability, params.Scheme, managedObjects, ownedObjects); err != nil {
+		return r.handleReconcileError(ctx, log, instance, err)
 	}
 	return coStatus.HandleReconcileStatus(ctx, log, params, nil)
 }
 
-// reconcileOpenTelemetryResource creates/updates OpenTelemetry CRs.
-// Their respective controllers handle the underlying Kubernetes resources.
-// TODO: fix issue with resourceVersion becoming stale due to updates from OpenTelemetryCollector/Instrumentation controllers.
-func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx context.Context, log logr.Logger, desired client.Object) error {
-	key := client.ObjectKeyFromObject(desired)
+func (r *ClusterObservabilityReconciler) handleReconcileError(
+	ctx context.Context,
+	log logr.Logger,
+	instance v1alpha1.ClusterObservability,
+	reconcileErr error,
+) (ctrl.Result, error) {
+	return coStatus.HandleReconcileStatus(ctx, log, r.getParams(instance), reconcileErr)
+}
 
-	var existing client.Object
-	switch desired.(type) {
+func (r *ClusterObservabilityReconciler) defaultOpenTelemetryResource(
+	ctx context.Context,
+	log logr.Logger,
+	desired client.Object,
+) error {
+	switch resource := desired.(type) {
 	case *v1beta1.OpenTelemetryCollector:
-		existing = &v1beta1.OpenTelemetryCollector{}
+		// Default is nil-safe without the optional admission and event collaborators.
+		defaulter := webhook.NewCollectorWebhook(log, r.scheme, r.config, nil, nil, nil, nil, nil)
+		if err := defaulter.Default(ctx, resource); err != nil {
+			return err
+		}
+		return normalizeCollectorConfigForAPI(resource)
 	case *v1alpha1.Instrumentation:
-		existing = &v1alpha1.Instrumentation{}
+		defaulter := webhook.NewInstrumentationWebhook(log, r.scheme, r.config)
+		return defaulter.Default(ctx, resource)
 	default:
 		return fmt.Errorf("unsupported CRD type: %T", desired)
 	}
+}
 
-	getErr := r.Get(ctx, key, existing)
-
-	if getErr != nil {
-		if apierrors.IsNotFound(getErr) {
-			if createErr := r.Create(ctx, desired); createErr != nil {
-				return fmt.Errorf("failed to create %s %s: %w", desired.GetObjectKind().GroupVersionKind().Kind, key, createErr)
-			}
-			log.Info("Created CR", "kind", desired.GetObjectKind().GroupVersionKind().Kind, "name", key.Name, "namespace", key.Namespace)
-			return nil
-		}
-		return fmt.Errorf("failed to get %s %s: %w", desired.GetObjectKind().GroupVersionKind().Kind, key, getErr)
+// normalizeCollectorConfigForAPI round-trips opaque values through JSON so
+// webhook defaults use the same dynamic types as API-server values.
+func normalizeCollectorConfigForAPI(resource *v1beta1.OpenTelemetryCollector) error {
+	// AnyConfig's custom marshaler has a pointer receiver.
+	configJSON, err := json.Marshal(&resource.Spec.Config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal desired collector config: %w", err)
 	}
-	switch existingCRD := existing.(type) {
-	case *v1beta1.OpenTelemetryCollector:
-		desiredCRD := desired.(*v1beta1.OpenTelemetryCollector)
-		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) {
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				latest := &v1beta1.OpenTelemetryCollector{}
-				if err := r.Get(ctx, key, latest); err != nil {
-					return err
-				}
-
-				// Only update if still different (another controller might have updated it)
-				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) {
-					log.Info("OpenTelemetryCollector already matches desired state", "name", key.Name, "namespace", key.Namespace)
-					return nil
-				}
-
-				// Update the latest version with our desired changes
-				latest.Spec = desiredCRD.Spec
-				latest.Labels = desiredCRD.Labels
-				latest.Annotations = desiredCRD.Annotations
-
-				return r.Update(ctx, latest)
-			})
-			if err != nil {
-				return fmt.Errorf("failed to update OpenTelemetryCollector %s: %w", key, err)
-			}
-
-			log.Info("Updated OpenTelemetryCollector", "name", key.Name, "namespace", key.Namespace)
-		}
-
-	case *v1alpha1.Instrumentation:
-		desiredCRD := desired.(*v1alpha1.Instrumentation)
-		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) {
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				latest := &v1alpha1.Instrumentation{}
-				if err := r.Get(ctx, key, latest); err != nil {
-					return err
-				}
-
-				// Only update if still different (another controller might have updated it)
-				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) {
-					log.Info("Instrumentation already matches desired state", "name", key.Name, "namespace", key.Namespace)
-					return nil
-				}
-
-				// Update the latest version with our desired changes
-				latest.Spec = desiredCRD.Spec
-				latest.Labels = desiredCRD.Labels
-				latest.Annotations = desiredCRD.Annotations
-
-				return r.Update(ctx, latest)
-			})
-			if err != nil {
-				return fmt.Errorf("failed to update Instrumentation %s: %w", key, err)
-			}
-
-			log.Info("Updated Instrumentation", "name", key.Name, "namespace", key.Namespace)
-		}
-
-	default:
-		return fmt.Errorf("unsupported CRD type: %T", existing)
+	var normalized v1beta1.Config
+	if err := json.Unmarshal(configJSON, &normalized); err != nil {
+		return fmt.Errorf("failed to normalize desired collector config: %w", err)
 	}
-
+	resource.Spec.Config = normalized
 	return nil
 }
 
@@ -290,6 +241,10 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 // without deep copy issues that occur with complex nested data.
 func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx context.Context, log logr.Logger, obj client.Object) error {
 	unstructuredObj := obj.(*unstructured.Unstructured)
+	normalizedDesired, err := normalizeUnstructuredForAPI(unstructuredObj)
+	if err != nil {
+		return fmt.Errorf("failed to normalize unstructured resource %s: %w", unstructuredObj.GetName(), err)
+	}
 
 	// Create a new Unstructured object for fetching existing resource
 	// This avoids deep copy issues with the desired object
@@ -304,18 +259,37 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 
 	if apierrors.IsNotFound(getErr) {
 		// Create new resource
-		if createErr := r.Create(ctx, unstructuredObj); createErr != nil {
+		if createErr := r.Create(ctx, normalizedDesired); createErr != nil {
 			return fmt.Errorf("failed to create unstructured resource %s: %w", unstructuredObj.GetName(), createErr)
 		}
 		log.Info("Created unstructured resource",
 			"kind", unstructuredObj.GetKind(),
 			"name", unstructuredObj.GetName())
-		// Check if update is needed by comparing specs
-	} else if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
-		unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
-		if updateErr := r.Update(ctx, unstructuredObj); updateErr != nil {
-			return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
+		return nil
+	}
+
+	updated := false
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &unstructured.Unstructured{}
+		latest.SetGroupVersionKind(unstructuredObj.GroupVersionKind())
+		if err := r.Get(ctx, key, latest); err != nil {
+			return err
 		}
+
+		candidate := latest.DeepCopy()
+		applyDesiredUnstructuredResource(candidate, normalizedDesired)
+		if apiequality.Semantic.DeepEqual(latest.Object, candidate.Object) {
+			return nil
+		}
+		if err := r.Update(ctx, candidate); err != nil {
+			return err
+		}
+		updated = true
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), err)
+	}
+	if updated {
 		log.Info("Updated unstructured resource",
 			"kind", unstructuredObj.GetKind(),
 			"name", unstructuredObj.GetName())
@@ -324,10 +298,49 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 	return nil
 }
 
+func normalizeUnstructuredForAPI(resource *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	data, err := json.Marshal(resource.Object)
+	if err != nil {
+		return nil, err
+	}
+	normalized := &unstructured.Unstructured{}
+	if err := json.Unmarshal(data, normalized); err != nil {
+		return nil, err
+	}
+	normalized.SetGroupVersionKind(resource.GroupVersionKind())
+	return normalized, nil
+}
+
+func applyDesiredUnstructuredResource(existing, desired *unstructured.Unstructured) {
+	if desiredLabels := desired.GetLabels(); len(desiredLabels) > 0 {
+		labels := maps.Clone(existing.GetLabels())
+		if labels == nil {
+			labels = map[string]string{}
+		}
+		maps.Copy(labels, desiredLabels)
+		existing.SetLabels(labels)
+	}
+
+	if desiredAnnotations := desired.GetAnnotations(); len(desiredAnnotations) > 0 {
+		annotations := maps.Clone(existing.GetAnnotations())
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		maps.Copy(annotations, desiredAnnotations)
+		existing.SetAnnotations(annotations)
+	}
+
+	for key, value := range desired.Object {
+		if key == "apiVersion" || key == "kind" || key == "metadata" {
+			continue
+		}
+		existing.Object[key] = runtime.DeepCopyJSONValue(value)
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	err := r.SetupCaches(mgr)
-	if err != nil {
+	if err := r.SetupCaches(mgr.GetCache()); err != nil {
 		return err
 	}
 
@@ -337,6 +350,21 @@ func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Watches(
 			&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForNamespace),
+		).
+		Watches(
+			&appsv1.DaemonSet{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorWorkload),
+			builder.WithPredicates(predicate.NewPredicateFuncs(isCollectorManagedObject)),
+		).
+		Watches(
+			&appsv1.StatefulSet{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorWorkload),
+			builder.WithPredicates(predicate.NewPredicateFuncs(isCollectorManagedObject)),
+		).
+		Watches(
+			&corev1.Pod{},
+			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForCollectorPod),
+			builder.WithPredicates(clusterObservabilityCollectorPodPredicate()),
 		)
 
 	for _, resource := range ownedResources {
@@ -346,27 +374,145 @@ func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	return builder.Complete(r)
 }
 
-// SetupCaches sets up field indexing for efficient owned object queries.
-func (r *ClusterObservabilityReconciler) SetupCaches(mgr ctrl.Manager) error {
-	const clusterObservabilityResourceOwnerKey = ".metadata.owner"
-
-	ownedResources := r.GetOwnedResourceTypes()
-	for _, resource := range ownedResources {
-		if err := mgr.GetCache().IndexField(context.Background(), resource, clusterObservabilityResourceOwnerKey, func(rawObj client.Object) []string {
-			owner := metav1.GetControllerOf(rawObj)
-			if owner == nil {
-				return nil
-			}
-			// Make sure it's a ClusterObservability
-			if owner.APIVersion != v1alpha1.GroupVersion.String() || owner.Kind != "ClusterObservability" {
-				return nil
-			}
-			return []string{owner.Name}
-		}); err != nil {
+// SetupCaches indexes resources by their ClusterObservability controller owner.
+func (r *ClusterObservabilityReconciler) SetupCaches(indexer client.FieldIndexer) error {
+	for _, resource := range r.GetOwnedResourceTypes() {
+		if err := indexer.IndexField(context.Background(), resource, clusterObservabilityResourceOwnerKey, clusterObservabilityOwnerName); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func clusterObservabilityOwnerName(rawObj client.Object) []string {
+	owner := metav1.GetControllerOf(rawObj)
+	if owner == nil || owner.APIVersion != v1alpha1.GroupVersion.String() || owner.Kind != "ClusterObservability" {
+		return nil
+	}
+	return []string{owner.Name}
+}
+
+func clusterObservabilityCollectorPodPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return isCollectorManagedObject(e.Object)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return isCollectorManagedObject(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldPod, oldOK := e.ObjectOld.(*corev1.Pod)
+			newPod, newOK := e.ObjectNew.(*corev1.Pod)
+			return oldOK && newOK && isCollectorManagedObject(newPod) && podHealthChanged(oldPod, newPod)
+		},
+	}
+}
+
+func isCollectorManagedObject(obj client.Object) bool {
+	labels := obj.GetLabels()
+	return labels["app.kubernetes.io/managed-by"] == "opentelemetry-operator" &&
+		labels["app.kubernetes.io/component"] == "opentelemetry-collector"
+}
+
+type containerHealth struct {
+	name             string
+	ready            bool
+	restartCount     int32
+	waitingReason    string
+	terminatedReason string
+	exitCode         int32
+}
+
+func podHealthChanged(oldPod, newPod *corev1.Pod) bool {
+	if oldPod.Status.Phase != newPod.Status.Phase ||
+		(oldPod.DeletionTimestamp == nil) != (newPod.DeletionTimestamp == nil) {
+		return true
+	}
+
+	return !slices.Equal(containerHealthStatuses(oldPod), containerHealthStatuses(newPod))
+}
+
+func containerHealthStatuses(pod *corev1.Pod) []containerHealth {
+	statuses := make([]corev1.ContainerStatus, 0, len(pod.Status.InitContainerStatuses)+len(pod.Status.ContainerStatuses))
+	statuses = append(statuses, pod.Status.InitContainerStatuses...)
+	statuses = append(statuses, pod.Status.ContainerStatuses...)
+	result := make([]containerHealth, 0, len(statuses))
+	for _, status := range statuses {
+		health := containerHealth{
+			name:         status.Name,
+			ready:        status.Ready,
+			restartCount: status.RestartCount,
+		}
+		if status.State.Waiting != nil {
+			health.waitingReason = status.State.Waiting.Reason
+		}
+		if status.State.Terminated != nil {
+			health.terminatedReason = status.State.Terminated.Reason
+			health.exitCode = status.State.Terminated.ExitCode
+		}
+		result = append(result, health)
+	}
+	return result
+}
+
+func (r *ClusterObservabilityReconciler) findClusterObservabilityForCollectorPod(
+	ctx context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	workloadOwner := metav1.GetControllerOf(obj)
+	if workloadOwner == nil || workloadOwner.APIVersion != appsv1.SchemeGroupVersion.String() {
+		return nil
+	}
+
+	var workload client.Object
+	switch workloadOwner.Kind {
+	case "DaemonSet":
+		workload = &appsv1.DaemonSet{}
+	case "StatefulSet":
+		workload = &appsv1.StatefulSet{}
+	default:
+		return nil
+	}
+
+	key := client.ObjectKey{Namespace: obj.GetNamespace(), Name: workloadOwner.Name}
+	if err := r.Get(ctx, key, workload); err != nil {
+		if !apierrors.IsNotFound(err) {
+			r.log.Error(err, "failed to resolve collector pod owner", "pod", client.ObjectKeyFromObject(obj))
+		}
+		return nil
+	}
+	return r.findClusterObservabilityForCollectorWorkload(ctx, workload)
+}
+
+func (r *ClusterObservabilityReconciler) findClusterObservabilityForCollectorWorkload(
+	ctx context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	collectorOwner := metav1.GetControllerOf(obj)
+	if collectorOwner == nil || collectorOwner.APIVersion != v1beta1.GroupVersion.String() ||
+		collectorOwner.Kind != "OpenTelemetryCollector" {
+		return nil
+	}
+
+	collector := &v1beta1.OpenTelemetryCollector{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: obj.GetNamespace(), Name: collectorOwner.Name}, collector); err != nil {
+		if !apierrors.IsNotFound(err) {
+			r.log.Error(err, "failed to resolve collector workload owner", "workload", client.ObjectKeyFromObject(obj))
+		}
+		return nil
+	}
+
+	clusterObservabilityOwner := metav1.GetControllerOf(collector)
+	if clusterObservabilityOwner == nil ||
+		clusterObservabilityOwner.APIVersion != v1alpha1.GroupVersion.String() ||
+		clusterObservabilityOwner.Kind != "ClusterObservability" {
+		return nil
+	}
+
+	return []ctrl.Request{{NamespacedName: types.NamespacedName{
+		Namespace: collector.Namespace,
+		Name:      clusterObservabilityOwner.Name,
+	}}}
 }
 
 // findClusterObservabilityForNamespace finds ClusterObservability instances when namespaces change.
@@ -535,24 +681,19 @@ func (*ClusterObservabilityReconciler) GetOwnedResourceTypes() []client.Object {
 	}
 }
 
-// findClusterObservabilityOwnedObjects finds OpenTelemetry CRs owned by ClusterObservability for cleanup.
 func (r *ClusterObservabilityReconciler) findClusterObservabilityOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
-	const clusterObservabilityResourceOwnerKey = ".metadata.owner"
 	ownedObjects := map[types.UID]client.Object{}
-
 	listOpts := []client.ListOption{
 		client.InNamespace(params.ClusterObservability.Namespace),
 		client.MatchingFields{clusterObservabilityResourceOwnerKey: params.ClusterObservability.Name},
 	}
 
-	ownedObjectTypes := r.GetOwnedResourceTypes()
-	for _, objectType := range ownedObjectTypes {
-		objs, err := getList(ctx, r.Client, objectType, listOpts...)
+	for _, objectType := range r.GetOwnedResourceTypes() {
+		objects, err := getList(ctx, r.Client, objectType, listOpts...)
 		if err != nil {
 			return nil, err
 		}
-		maps.Copy(ownedObjects, objs)
+		maps.Copy(ownedObjects, objects)
 	}
-
 	return ownedObjects, nil
 }

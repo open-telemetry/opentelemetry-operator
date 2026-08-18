@@ -1,0 +1,13 @@
+change_type: bug_fix
+
+component: cluster-observability
+
+note: Keep ClusterObservability managed resources up to date
+
+issues: [5450]
+
+subtext: |
+  Apply exporter configuration changes to both managed Collectors and propagate
+  updated default Collector and auto-instrumentation images after operator
+  upgrades. Preserve unrelated metadata and avoid updates caused only by
+  API-server defaults.
