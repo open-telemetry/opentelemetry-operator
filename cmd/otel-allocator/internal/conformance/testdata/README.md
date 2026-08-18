@@ -39,7 +39,7 @@ For every fixture the suite compares the allocator's discovery+relabel result ag
 ## Known divergences
 
 Fixtures whose behavior currently differs from raw Prometheus are listed in
-`divergentFixtures` in `../conformance_test.go` and skipped with a reason. See `seeded-labels/` for an example (relabel rules on scrape-seeded labels).
+`divergentFixtures` in `../conformance_test.go` and skipped with a reason.
 
 ## Adding or updating a case
 

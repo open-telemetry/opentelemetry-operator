@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: ""
+      build-test-apps:
+        description: "Build the e2e test app images (tests/test-e2e-apps) from source instead of using the ones published from main. Pass true when the change set touches them, so incompatibilities with the tests surface before the merge publishes new images."
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -32,7 +37,7 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: setup-go
       with:
-        go-version: "~1.26.5"
+        go-version: "~1.26.6"
 
     - name: Cache tools
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -44,7 +49,7 @@ jobs:
       run: make install-tools
 
     - name: Build test image archive
-      run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION}
+      run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION} BUILD_TEST_E2E_APPS=${{ inputs.build-test-apps }}
 
     - name: Upload test image archive
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -69,12 +74,13 @@ jobs:
         # should be compatible with them.
         kube-version:
         - "1.25"
-        - "1.35"
+        - "1.36"
         group:
         - e2e
         - e2e-automatic-rbac
         - e2e-autoscale
         - e2e-clusterobservability
+        - e2e-collector-metrics
         - e2e-instrumentation-default
         - e2e-instrumentation
         - e2e-no-crds
@@ -125,7 +131,7 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: setup-go
       with:
-        go-version: "~1.26.5"
+        go-version: "~1.26.6"
 
     - name: Cache tools
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

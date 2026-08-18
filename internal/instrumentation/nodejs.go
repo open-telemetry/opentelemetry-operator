@@ -80,26 +80,32 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod *corev1.Pod, containers []*
 }
 
 func getDefaultNodeJSEnvVars(container *corev1.Container) []corev1.EnvVar {
+	var envVars []corev1.EnvVar
+
 	idx := getIndexOfEnv(container.Env, envNodeOptions)
 	if idx == -1 {
-		return []corev1.EnvVar{
-			{
-				Name:  envNodeOptions,
-				Value: nodeRequireArgument,
-			},
-		}
-	} else if idx > -1 {
-		// Don't modify NODE_OPTIONS if it uses ValueFrom
-		if container.Env[idx].ValueFrom != nil {
-			return []corev1.EnvVar{}
-		}
-		// NODE_OPTIONS is set, append the required argument
-		return []corev1.EnvVar{
-			{
-				Name:  envNodeOptions,
-				Value: container.Env[idx].Value + nodeRequireArgument,
-			},
-		}
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  envNodeOptions,
+			Value: nodeRequireArgument,
+		})
+	} else if container.Env[idx].ValueFrom == nil {
+		// NODE_OPTIONS is set, append the required argument.
+		// Don't modify NODE_OPTIONS if it uses ValueFrom.
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  envNodeOptions,
+			Value: container.Env[idx].Value + nodeRequireArgument,
+		})
 	}
-	return []corev1.EnvVar{}
+
+	// Set OTEL_METRICS_EXPORTER to otlp if not set by the user. The Node.js SDK only
+	// initializes the metrics SDK when a metric reader is configured, so without this
+	// default, metrics are silently dropped.
+	if getIndexOfEnv(container.Env, envOtelMetricsExporter) == -1 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  envOtelMetricsExporter,
+			Value: "otlp",
+		})
+	}
+
+	return envVars
 }

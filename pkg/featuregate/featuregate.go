@@ -19,9 +19,10 @@ var (
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
 		"operator.golang.flags",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
+		featuregate.WithRegisterToVersion("v0.160.0"),
 	)
 	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
 	// strategy for allocation strategies that might not assign all jobs (per-node).
@@ -34,15 +35,16 @@ var (
 	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
 	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operator.networkpolicy",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
 		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
 	// EnableOperandNetworkPolicy is the feature gate that enables the operator to create network policies for the collector.
 	EnableOperandNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operand.networkpolicy",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
+		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
 	// EnableClusterObservability is the feature gate that enables the ClusterObservability controller.
 	EnableClusterObservability = featuregate.GlobalRegistry().MustRegister(
@@ -51,18 +53,19 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
-	// UseCollectorDefaultTelemetryShape, when enabled (default at beta), makes
+	// UseCollectorDefaultTelemetryShape, when enabled (stable, always on), makes
 	// the operator-injected Prometheus telemetry reader use collector defaults
 	// for without_type_suffix, without_units, and without_scope_info — metric
 	// names emitted by operator-managed collectors no longer carry type
-	// suffixes, units, or scope_info. When disabled, the operator explicitly
-	// sets all three to false to preserve the pre-v0.154.0 metric name shape.
+	// suffixes, units, or scope_info. Users wanting the pre-v0.154.0 metric name
+	// shape must explicitly set all three to false under spec.config.service.telemetry.
 	// See open-telemetry/opentelemetry-operator#5075.
 	UseCollectorDefaultTelemetryShape = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.usedefaulttelemetryshape",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("when enabled (default), the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. When disabled, the operator explicitly sets all three to false to preserve the pre-v0.154.0 metric name shape."),
+		featuregate.StageStable,
+		featuregate.WithRegisterDescription("when enabled, the operator-injected Prometheus telemetry reader uses collector defaults for without_type_suffix/without_units/without_scope_info. Users wanting the pre-v0.154.0 metric name shape must explicitly set all three to false in the collector configuration."),
 		featuregate.WithRegisterFromVersion("v0.152.0"),
+		featuregate.WithRegisterToVersion("v0.160.0"),
 	)
 )
 
