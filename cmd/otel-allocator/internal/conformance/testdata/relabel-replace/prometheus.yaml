@@ -1,0 +1,52 @@
+# Replace action variations, ported from prometheus model/relabel/relabel_test.go.
+# Each job is one case; targets carry __address__ so they are valid scrape targets.
+scrape_configs:
+  - job_name: replace-basic
+    static_configs:
+      - targets: ['10.1.0.1:9100']
+        labels: {a: foo, b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: [a], regex: 'f(.*)', target_label: d, separator: ';', replacement: 'ch${1}-ch${1}', action: replace}
+
+  - job_name: replace-multi-source
+    static_configs:
+      - targets: ['10.1.0.2:9100']
+        labels: {a: foo, b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: [a, b], regex: 'f(.*);(.*)r', target_label: a, separator: ';', replacement: 'b${1}${2}m', action: replace}
+      - {source_labels: [c, a], regex: '(b).*b(.*)ba(.*)', target_label: d, separator: ';', replacement: '$1$2$2$3', action: replace}
+
+  - job_name: replace-capture
+    static_configs:
+      - targets: ['10.1.0.3:9100']
+        labels: {a: abc}
+    relabel_configs:
+      - {source_labels: [a], regex: '.*(b).*', target_label: d, separator: ';', replacement: '$1', action: replace}
+
+  - job_name: replace-nomatch-noop
+    static_configs:
+      - targets: ['10.1.0.4:9100']
+        labels: {a: boo}
+    relabel_configs:
+      - {source_labels: [a], regex: 'f', target_label: b, replacement: bar, action: replace}
+
+  - job_name: replace-blank-deletes
+    static_configs:
+      - targets: ['10.1.0.5:9100']
+        labels: {a: foo, f: baz}
+    relabel_configs:
+      - {source_labels: [a], regex: '(f).*', target_label: '$1', replacement: '$2', action: replace}
+
+  - job_name: replace-named-target
+    static_configs:
+      - targets: ['10.1.0.6:9100']
+        labels: {a: some-name-value}
+    relabel_configs:
+      - {source_labels: [a], regex: 'some-([^-]+)-([^,]+)', target_label: '${1}', replacement: '${2}', action: replace}
+
+  - job_name: replace-invalid-group
+    static_configs:
+      - targets: ['10.1.0.7:9100']
+        labels: {a: some-name-value}
+    relabel_configs:
+      - {source_labels: [a], regex: 'some-([^-]+)-([^,]+)', target_label: '${1}', replacement: '${3}', action: replace}

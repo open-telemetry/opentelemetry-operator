@@ -25,7 +25,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-ta
-          image: mirror.gcr.io/curlimages/curl:latest
+          image: mirror.gcr.io/alpine/curl:latest
           volumeMounts:
             - name: tls-secret
               mountPath: /etc/tls

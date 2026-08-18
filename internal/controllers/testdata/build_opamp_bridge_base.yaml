@@ -50,7 +50,22 @@ spec:
               divisor: "0"
               resource: limits.cpu
         image: test
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
         name: opamp-bridge-container
+        ports:
+        - containerPort: 8080
+          name: opamp
+          protocol: TCP
+        - containerPort: 8081
+          name: healthz
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
         resources: {}
         volumeMounts:
         - mountPath: /conf

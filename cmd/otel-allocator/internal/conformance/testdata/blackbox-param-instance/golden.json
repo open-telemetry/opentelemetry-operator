@@ -1,0 +1,42 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "a.example.com:443",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "blackbox"
+    },
+    "labels": {
+      "__address__": "blackbox:9115",
+      "__metrics_path__": "/metrics",
+      "__param_target": "a.example.com:443",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "a.example.com:443",
+      "job": "blackbox"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "b.example.com:443",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "blackbox"
+    },
+    "labels": {
+      "__address__": "blackbox:9115",
+      "__metrics_path__": "/metrics",
+      "__param_target": "b.example.com:443",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "b.example.com:443",
+      "job": "blackbox"
+    }
+  }
+]

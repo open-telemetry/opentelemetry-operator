@@ -1,0 +1,10 @@
+# Consumed only by cmd/otel-allocator/integrationtest. The uppercase/lowercase
+# relabel rules must attach foo_uppercase/foo_lowercase to the emitted metric.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels:
+      foo_uppercase: BAR123FOO
+      foo_lowercase: bar123foo

@@ -1,0 +1,10 @@
+# Consumed only by cmd/otel-allocator/integrationtest. labelmap copies label
+# names into new ones, which must appear on the emitted metrics.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {bar_b1: bar, bar_b2: baz} # job labelmap-prefix
+  - metric: widgets_total
+    labels: {my_bar: aaa, my_baz: bbb} # job labelmap-meta

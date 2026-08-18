@@ -39,6 +39,8 @@ spec:
         file: 00-install-collector.yaml
     - apply:
         file: 00-install-instrumentation.yaml
+    - sleep:
+        duration: 1s
   - name: Install test app
     try:
     - apply:
@@ -103,6 +105,8 @@ spec:
             file: 00-install-collector.yaml
         - apply:
             file: 00-install-instrumentation.yaml
+        - sleep:
+            duration: 1s
     - name: Install test app
       try:
         - apply:

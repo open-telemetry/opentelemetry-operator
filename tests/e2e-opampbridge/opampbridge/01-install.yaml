@@ -22,6 +22,15 @@ rules:
     verbs:
       - list
       - get
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+    verbs:
+      - get
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -62,3 +71,5 @@ spec:
     receivers:
       - otlp
   endpoint: ws://e2e-test-app-bridge-server:4320/v1/opamp
+  tls:
+    insecure: true

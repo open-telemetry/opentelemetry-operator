@@ -38,7 +38,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: capture-cert
-          image: mirror.gcr.io/nicolaka/netshoot:latest
+          image: registry.access.redhat.com/ubi9/ubi:latest
           command:
             - /bin/sh
             - -c

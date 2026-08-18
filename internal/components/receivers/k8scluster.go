@@ -22,6 +22,8 @@ func generatek8sclusterRbacRules(_ logr.Logger, cfg k8sclusterConfig) ([]rbacv1.
 				"namespaces/status",
 				"nodes",
 				"nodes/spec",
+				"persistentvolumeclaims",
+				"persistentvolumes",
 				"pods",
 				"pods/status",
 				"replicationcontrollers",

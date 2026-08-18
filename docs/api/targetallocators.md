@@ -429,6 +429,22 @@ the operator will not automatically Create a ServiceAccount.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>sessionAffinity</b></td>
+        <td>string</td>
+        <td>
+          SessionAffinity specifies the session affinity type for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecsessionaffinityconfig">sessionAffinityConfig</a></b></td>
+        <td>object</td>
+        <td>
+          SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>shareProcessNamespace</b></td>
         <td>boolean</td>
         <td>
@@ -9626,6 +9642,15 @@ If enabled, the target allocator will communicate with the collector over mTLS.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>useCertManager</b></td>
         <td>boolean</td>
         <td>
@@ -9633,6 +9658,370 @@ If enabled, the target allocator will communicate with the collector over mTLS.
 Defaults to true.<br/>
           <br/>
             <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls
+<sup><sup>[↩ Parent](#targetallocatorspecmtls)</sup></sup>
+
+
+
+TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecmtlstlscertificateauthoritycertificate">certificateAuthorityCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsclientcertificate">clientCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsservercertificate">serverCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.certificateAuthorityCertificate
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstls)</sup></sup>
+
+
+
+CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecmtlstlscertificateauthoritycertificateconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap sources the CA certificate from a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstlscertificateauthoritycertificatesecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret sources the CA certificate from a Secret.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.certificateAuthorityCertificate.configMap
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+ConfigMap sources the CA certificate from a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the ConfigMap, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the ConfigMap's data. Defaults to ca.crt when omitted.<br/>
+          <br/>
+            <i>Default</i>: ca.crt<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.certificateAuthorityCertificate.secret
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+Secret sources the CA certificate from a Secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.clientCertificate
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstls)</sup></sup>
+
+
+
+ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatecertificatesecret">certificateSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsclientcertificatekeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.clientCertificate.certificateSecret
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlsclientcertificate)</sup></sup>
+
+
+
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.clientCertificate.keySecret
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlsclientcertificate)</sup></sup>
+
+
+
+KeySecret selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.serverCertificate
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstls)</sup></sup>
+
+
+
+ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsservercertificatecertificatesecret">certificateSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecmtlstlsservercertificatekeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.serverCertificate.certificateSecret
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlsservercertificate)</sup></sup>
+
+
+
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.mtls.tls.serverCertificate.keySecret
+<sup><sup>[↩ Parent](#targetallocatorspecmtlstlsservercertificate)</sup></sup>
+
+
+
+KeySecret selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12059,6 +12448,65 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.sessionAffinityConfig
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecsessionaffinityconfigclientip">clientIP</a></b></td>
+        <td>object</td>
+        <td>
+          clientIP contains the configurations of Client IP based session affinity.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.sessionAffinityConfig.clientIP
+<sup><sup>[↩ Parent](#targetallocatorspecsessionaffinityconfig)</sup></sup>
+
+
+
+clientIP contains the configurations of Client IP based session affinity.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+Default value is 10800(for 3 hours).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr></tbody>

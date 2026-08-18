@@ -1,0 +1,42 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.30.0.1:9100",
+      "__meta_path": "/a",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "same-address"
+    },
+    "labels": {
+      "__address__": "10.30.0.1:9100",
+      "__metrics_path__": "/a",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.30.0.1:9100",
+      "job": "same-address"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.30.0.1:9100",
+      "__meta_path": "/b",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "same-address"
+    },
+    "labels": {
+      "__address__": "10.30.0.1:9100",
+      "__metrics_path__": "/b",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.30.0.1:9100",
+      "job": "same-address"
+    }
+  }
+]

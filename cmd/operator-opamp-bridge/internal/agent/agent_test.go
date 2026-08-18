@@ -5,6 +5,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -273,6 +274,177 @@ func getFakeApplier(t *testing.T, conf *config.Config, lists ...runtimeClient.Ob
 	require.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithLists(lists...).WithScheme(scheme)
 	return operator.NewClient("test-bridge", l, c.Build(), conf.GetComponentsAllowed())
+}
+
+type mockHealthApplier struct {
+	health operator.Health
+	err    error
+}
+
+func (*mockHealthApplier) Apply(string, *protobufs.AgentConfigFile) error {
+	return nil
+}
+
+func (*mockHealthApplier) Delete(string) error {
+	return nil
+}
+
+func (*mockHealthApplier) Restart(context.Context) error {
+	return nil
+}
+
+func (*mockHealthApplier) ListInstances() ([]operator.CollectorInstance, error) {
+	return nil, nil
+}
+
+func (m *mockHealthApplier) GetHealth() (operator.Health, error) {
+	return m.health, m.err
+}
+
+type recordingConfigApplier struct {
+	applied       map[string][]byte
+	restartCalled int
+	restartErr    error
+}
+
+func (r *recordingConfigApplier) Apply(name string, configFile *protobufs.AgentConfigFile) error {
+	if r.applied == nil {
+		r.applied = map[string][]byte{}
+	}
+	r.applied[name] = configFile.Body
+	return nil
+}
+
+func (*recordingConfigApplier) Delete(string) error {
+	return nil
+}
+
+func (r *recordingConfigApplier) Restart(context.Context) error {
+	r.restartCalled++
+	return r.restartErr
+}
+
+func (*recordingConfigApplier) ListInstances() ([]operator.CollectorInstance, error) {
+	return nil, nil
+}
+
+func (*recordingConfigApplier) GetHealth() (operator.Health, error) {
+	return operator.Health{Healthy: true, Children: map[string]operator.Health{}}, nil
+}
+
+func TestAgent_UpdateHealth(t *testing.T) {
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	applier := getFakeApplier(t, conf)
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, newMockProxy(nil, nil, nil))
+
+	require.NoError(t, agent.UpdateHealth())
+	assert.NotNil(t, mockClient.lastHealth)
+	assert.True(t, mockClient.lastHealth.Healthy)
+}
+
+func TestAgentApplyRemoteConfigRejectsEmptyRemoteName(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	body := []byte("receivers: {}\n")
+
+	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
+		Config: &protobufs.AgentConfigMap{
+			ConfigMap: map[string]*protobufs.AgentConfigFile{
+				"": {
+					Body: body,
+				},
+			},
+		},
+		ConfigHash: []byte("hash"),
+	})
+
+	require.Error(t, err)
+	require.Equal(t, protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED, status.Status)
+	assert.Contains(t, status.ErrorMessage, "remote config entry has empty name")
+	assert.Empty(t, applier.applied)
+}
+
+func TestAgentApplyRemoteConfigRejectsEmptyBody(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
+		Config: &protobufs.AgentConfigMap{
+			ConfigMap: map[string]*protobufs.AgentConfigFile{
+				"collector": {},
+			},
+		},
+		ConfigHash: []byte("hash"),
+	})
+
+	require.Error(t, err)
+	require.Equal(t, protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED, status.Status)
+	assert.Contains(t, status.ErrorMessage, `remote config entry "collector" has empty body`)
+	assert.Empty(t, applier.applied)
+}
+
+func TestAgent_getHealthFromApplierHealth(t *testing.T) {
+	fakeClock := testingclock.NewFakeClock(time.Now())
+	startTime, err := timeToUnixNanoUnsigned(fakeClock.Now())
+	require.NoError(t, err)
+	childStart := fakeClock.Now().Add(time.Second)
+	childStartUnix, err := timeToUnixNanoUnsigned(childStart)
+	require.NoError(t, err)
+	applier := &mockHealthApplier{
+		health: operator.Health{
+			Healthy: true,
+			Status:  "root",
+			Children: map[string]operator.Health{
+				"child": {
+					Healthy:   false,
+					Status:    "child-status",
+					LastError: "child-error",
+					StartTime: childStart,
+					Children:  map[string]operator.Health{},
+				},
+			},
+		},
+	}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.clock = fakeClock
+	agent.startTime = startTime
+
+	got := agent.getHealth()
+
+	assert.Equal(t, &protobufs.ComponentHealth{
+		Healthy:            true,
+		StartTimeUnixNano:  startTime,
+		StatusTimeUnixNano: startTime,
+		Status:             "root",
+		ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+			"child": {
+				Healthy:            false,
+				StartTimeUnixNano:  childStartUnix,
+				StatusTimeUnixNano: startTime,
+				Status:             "child-status",
+				LastError:          "child-error",
+				ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
+			},
+		},
+	}, got)
+}
+
+func TestAgent_getHealthFromApplierError(t *testing.T) {
+	fakeClock := testingclock.NewFakeClock(time.Now())
+	startTime, err := timeToUnixNanoUnsigned(fakeClock.Now())
+	require.NoError(t, err)
+	agent := NewAgent(logr.Discard(), &mockHealthApplier{err: errors.New("health failed")}, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.clock = fakeClock
+	agent.startTime = startTime
+
+	got := agent.getHealth()
+
+	assert.Equal(t, &protobufs.ComponentHealth{
+		Healthy:           false,
+		StartTimeUnixNano: startTime,
+		LastError:         "health failed",
+	}, got)
 }
 
 func TestAgent_getHealth(t *testing.T) {
@@ -1222,6 +1394,112 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 	})
 }
 
+func TestAgent_onCommand_Restart(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, applier.restartCalled, "Restart should be called exactly once")
+}
+
+func TestAgent_onCommand_RestartError(t *testing.T) {
+	restartErr := errors.New("rollout failed")
+	applier := &recordingConfigApplier{restartErr: restartErr}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart,
+	})
+
+	require.ErrorIs(t, err, restartErr)
+	assert.Equal(t, 1, applier.restartCalled)
+}
+
+func TestAgent_onCommand_UnknownType(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	// Use a value that is not CommandType_Restart.
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart + 99,
+	})
+
+	require.Error(t, err, "unknown command types should be returned as an error to the server")
+	assert.Contains(t, err.Error(), "unsupported command type")
+	assert.Equal(t, 0, applier.restartCalled, "Restart must not be called for unknown commands")
+}
+
+func TestAgent_Start_RegistersOnCommand(t *testing.T) {
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, newMockProxy(nil, nil, nil))
+
+	require.NoError(t, agent.Start())
+	defer agent.Shutdown()
+
+	assert.NotNil(t, mockClient.settings.Callbacks.OnCommand, "OnCommand callback must be registered")
+}
+
+// TestAgent_Start_RebuildsAppliedKeysAcrossRestart reproduces
+// https://github.com/open-telemetry/opentelemetry-operator/issues/5445: a bridge restart used to forget
+// which collectors it had previously applied, so a later remote config that dropped one of those keys
+// never deleted the collector. It also verifies reporting-only collectors, which the bridge never applied,
+// are left alone.
+func TestAgent_Start_RebuildsAppliedKeysAcrossRestart(t *testing.T) {
+	const reportingCollectorName = "reporting-only"
+
+	managedCollector := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testCollectorName,
+			Namespace: testNamespace,
+			Labels:    map[string]string{operator.ManagedLabelKey: "true"},
+		},
+	}
+	reportingCollector := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      reportingCollectorName,
+			Namespace: testNamespace,
+			Labels:    map[string]string{operator.ReportingLabelKey: "true"},
+		},
+	}
+	collectorList := &v1beta1.OpenTelemetryCollectorList{
+		Items: []v1beta1.OpenTelemetryCollector{managedCollector, reportingCollector},
+	}
+
+	mockClient := &mockOpampClient{}
+	conf := config.NewConfig(logr.Discard())
+	conf.Capabilities = map[config.Capability]bool{"AcceptsRemoteConfig": true}
+	applier := getFakeApplier(t, conf, collectorList)
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, newMockProxy(nil, nil, nil))
+
+	require.NoError(t, agent.Start(), "should be able to start agent")
+	defer agent.Shutdown()
+
+	require.Contains(t, agent.appliedKeys, testCollectorKey, "restart should rebuild the previously applied managed collector's key")
+	require.NotContains(t, agent.appliedKeys, testNamespace+"/"+reportingCollectorName, "reporting-only collectors were never applied and must not be tracked as applied")
+
+	// Simulate a remote config that no longer references the managed collector.
+	agent.onMessage(context.Background(), &types.MessageData{
+		RemoteConfig: &protobufs.AgentRemoteConfig{
+			Config:     &protobufs.AgentConfigMap{ConfigMap: map[string]*protobufs.AgentConfigFile{}},
+			ConfigHash: []byte("empty-config"),
+		},
+	})
+
+	deletedInstance, err := applier.GetInstance(testCollectorName, testNamespace)
+	require.NoError(t, err)
+	assert.Nil(t, deletedInstance, "collector previously applied before the restart should now be deleted")
+
+	stillReportingInstance, err := applier.GetInstance(reportingCollectorName, testNamespace)
+	require.NoError(t, err)
+	assert.NotNil(t, stillReportingInstance, "reporting-only collector must not be deleted")
+}
+
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {
 	toReturn := &types.MessageData{}
 	if filemap == nil {
@@ -1257,4 +1535,125 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 		ConfigHash: []byte(hash),
 	}
 	return toReturn, nil
+}
+
+func TestAgent_Start_TLSConfig(t *testing.T) {
+	tests := []struct {
+		name               string
+		endpoint           string
+		insecure           bool
+		insecureSkipVerify bool
+		expectNil          bool
+		expectSkip         bool
+		expectURL          string
+	}{
+		{
+			name:      "Insecure (no TLS)",
+			endpoint:  "ws://127.0.0.1:4320/v1/opamp",
+			insecure:  true,
+			expectNil: true,
+			expectURL: "ws://127.0.0.1:4320/v1/opamp",
+		},
+		{
+			name:               "Secure with Skip Verify",
+			endpoint:           "wss://127.0.0.1:4320/v1/opamp",
+			insecure:           false,
+			insecureSkipVerify: true,
+			expectNil:          false,
+			expectSkip:         true,
+			expectURL:          "wss://127.0.0.1:4320/v1/opamp",
+		},
+		{
+			name:               "Secure (verify enabled)",
+			endpoint:           "wss://127.0.0.1:4320/v1/opamp",
+			insecure:           false,
+			insecureSkipVerify: false,
+			expectNil:          true,
+			expectURL:          "wss://127.0.0.1:4320/v1/opamp",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockOpampClient{}
+			conf := config.NewConfig(logr.Discard())
+			conf.Endpoint = tt.endpoint
+			conf.TLS = &v1alpha1.OpAMPBridgeTLSConfig{
+				Insecure:           tt.insecure,
+				InsecureSkipVerify: tt.insecureSkipVerify,
+			}
+			applier := getFakeApplier(t, conf)
+			mp := newMockProxy(nil, nil, nil)
+			agent := NewAgent(l, applier, conf, mockClient, mp)
+
+			err := agent.Start()
+			require.NoError(t, err)
+
+			if tt.expectNil {
+				assert.Nil(t, mockClient.settings.TLSConfig)
+			} else {
+				require.NotNil(t, mockClient.settings.TLSConfig)
+				assert.Equal(t, tt.expectSkip, mockClient.settings.TLSConfig.InsecureSkipVerify)
+			}
+			assert.Equal(t, tt.expectURL, mockClient.settings.OpAMPServerURL)
+			agent.Shutdown()
+		})
+	}
+}
+
+func TestAgent_Start_ProxyConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		proxy        *config.ProxyConfig
+		wantURL      string
+		wantHeaders  []string
+		wantNoHeader bool
+	}{
+		{
+			name:         "no explicit proxy",
+			wantNoHeader: true,
+		},
+		{
+			name: "HTTP proxy with headers",
+			proxy: &config.ProxyConfig{
+				URL: "http://proxy.example.com:8080",
+				Headers: config.Headers{
+					"Proxy-Authorization": "Basic proxy-token",
+				},
+			},
+			wantURL:     "http://proxy.example.com:8080",
+			wantHeaders: []string{"Basic proxy-token"},
+		},
+		{
+			name: "SOCKS proxy without headers",
+			proxy: &config.ProxyConfig{
+				URL: "socks5://user:pass@proxy.example.com:1080",
+			},
+			wantURL:      "socks5://user:pass@proxy.example.com:1080",
+			wantNoHeader: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockOpampClient{}
+			conf := config.NewConfig(logr.Discard())
+			conf.Endpoint = "wss://127.0.0.1:4320/v1/opamp"
+			conf.Proxy = tt.proxy
+			applier := getFakeApplier(t, conf)
+			mp := newMockProxy(nil, nil, nil)
+			agent := NewAgent(l, applier, conf, mockClient, mp)
+
+			err := agent.Start()
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.wantURL, mockClient.settings.ProxyURL)
+			if tt.wantNoHeader {
+				assert.Empty(t, mockClient.settings.ProxyHeaders)
+			} else {
+				assert.Equal(t, tt.wantHeaders, mockClient.settings.ProxyHeaders.Values("Proxy-Authorization"))
+			}
+			agent.Shutdown()
+		})
+	}
 }

@@ -144,19 +144,20 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		},
 	}
 
-	if n.apiServerPodSelector != nil {
-		np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-			PodSelector: n.apiServerPodSelector,
-		})
-	}
-	if n.apiServerNamespaceSelector != nil {
-		if np.Spec.Egress[0].To == nil {
-			np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-				NamespaceSelector: n.apiServerNamespaceSelector,
-			})
-		} else {
-			np.Spec.Egress[0].To[0].NamespaceSelector = n.apiServerNamespaceSelector
+	if n.apiServerPodSelector != nil || n.apiServerNamespaceSelector != nil {
+		peer := networkingv1.NetworkPolicyPeer{
+			PodSelector:       n.apiServerPodSelector,
+			NamespaceSelector: n.apiServerNamespaceSelector,
 		}
+		np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
+			Ports: []networkingv1.NetworkPolicyPort{
+				{
+					Protocol: &tcp,
+					Port:     &apiServerPort,
+				},
+			},
+			To: []networkingv1.NetworkPolicyPeer{peer},
+		})
 	}
 
 	if n.webhookPort != 0 {

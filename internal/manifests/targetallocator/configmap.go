@@ -134,7 +134,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
+	if manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
 		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
@@ -162,7 +162,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			Name:        name,
 			Namespace:   instance.Namespace,
 			Labels:      labels,
-			Annotations: instance.Annotations,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Data: map[string]string{
 			targetAllocatorFilename: string(taConfigYAML),

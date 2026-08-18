@@ -7,8 +7,8 @@
 # excepted CVE is no longer detected, so the exception list stays current.
 set -euo pipefail
 
-# Excepted CVEs. See https://github.com/open-telemetry/opentelemetry-operator/issues/4926
-EXCEPTED_CVES='["CVE-2026-34040","CVE-2026-33997"]'
+# Excepted CVEs.
+EXCEPTED_CVES='[]'
 
 GOVULNCHECK="${GOVULNCHECK:-govulncheck}"
 

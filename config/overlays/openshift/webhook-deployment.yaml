@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-operator-webhook
+  namespace: system
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/component: webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+      app.kubernetes.io/component: webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentelemetry-operator
+        app.kubernetes.io/component: webhook
+    spec:
+      serviceAccountName: opentelemetry-operator-controller-manager
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: opentelemetry-operator
+                  app.kubernetes.io/component: webhook
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: webhook
+        image: controller:latest
+        args:
+        - "webhook-server"
+        - "--zap-log-level=info"
+        - "--zap-time-encoding=rfc3339nano"
+        env:
+        - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+          value: "true"
+        - name: ENABLE_GO_AUTO_INSTRUMENTATION
+          value: "true"
+        - name: FEATURE_GATES
+          value: "operand.networkpolicy"
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: webhook-certs
+        secret:
+          defaultMode: 420
+          secretName: opentelemetry-operator-webhook-service-cert

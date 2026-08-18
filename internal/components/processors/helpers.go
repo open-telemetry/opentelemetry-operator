@@ -28,17 +28,19 @@ func ProcessorFor(name string) components.Parser {
 }
 
 var componentParsers = []components.Parser{
-	components.NewBuilder[K8sAttributeConfig]().WithName("k8sattributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
-	// k8s_attributes is the snake-case alias introduced in
-	// open-telemetry/opentelemetry-collector-contrib#45901. Both names
-	// resolve to the same processor in the collector, so the operator
-	// must generate the same RBAC for either spelling (#4922).
-	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
-	components.NewBuilder[ResourceDetectionConfig]().WithName("resourcedetection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
+	// k8s_attributes, formerly k8sattributes
+	// (open-telemetry/opentelemetry-collector-contrib#45901, see #4922).
+	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).WithAlias("k8sattributes").MustBuild(),
+	// resource_detection, formerly resourcedetection
+	// (open-telemetry/opentelemetry-collector-contrib#48525).
+	components.NewBuilder[ResourceDetectionConfig]().WithName("resource_detection").WithRbacGen(GenerateResourceDetectionRbacRules).WithAlias("resourcedetection").MustBuild(),
 }
 
 func init() {
 	for _, parser := range componentParsers {
 		Register(parser.ParserType(), parser)
+		for _, alias := range parser.ParserAliases() {
+			Register(alias, parser)
+		}
 	}
 }

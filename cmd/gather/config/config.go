@@ -52,7 +52,7 @@ func NewConfig(scheme *runtime.Scheme) (Config, error) {
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return Config{}, fmt.Errorf("creating the Kubernetes clienset: %w", err)
+		return Config{}, fmt.Errorf("creating the Kubernetes clientset: %w", err)
 	}
 
 	return Config{

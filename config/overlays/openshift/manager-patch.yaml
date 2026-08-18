@@ -26,6 +26,11 @@
 - op: add
   path: "/spec/template/spec/containers/0/env/-"
   value:
+    name: ENABLE_WEBHOOKS
+    value: "false"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
     name: ENABLE_LEADER_ELECTION
     value: "true"
 - op: add

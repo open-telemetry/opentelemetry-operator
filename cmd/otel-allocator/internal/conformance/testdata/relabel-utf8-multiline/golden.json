@@ -1,0 +1,106 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.9.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-multiline"
+    },
+    "labels": {
+      "__address__": "10.9.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "d": "match",
+      "instance": "10.9.0.1:9100",
+      "job": "replace-multiline"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.9.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-utf8-source",
+      "utf-8.label": "line1\nline2"
+    },
+    "labels": {
+      "__address__": "10.9.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "b": "bar",
+      "c": "baz",
+      "d": "match",
+      "instance": "10.9.0.2:9100",
+      "job": "replace-utf8-source",
+      "utf-8.label": "line1\nline2"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.9.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-utf8-target"
+    },
+    "labels": {
+      "__address__": "10.9.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "instance": "10.9.0.3:9100",
+      "job": "replace-utf8-target",
+      "utf-8.label": "match"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.9.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "job": "replace-utf8-target-var"
+    },
+    "labels": {
+      "__address__": "10.9.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "line1\nline2",
+      "b": "bar",
+      "c": "baz",
+      "instance": "10.9.0.4:9100",
+      "job": "replace-utf8-target-var",
+      "utf-8.label": "match"
+    }
+  }
+]

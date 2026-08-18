@@ -42,6 +42,9 @@ config/rbac/extra-permissions-operator/
 config/rbac/certmanager-permissions/
 .testresults
 
+# locally-built test app binaries
+tests/test-e2e-apps/bridge-server/bridge-server
+
 # autoinstrumentation artifacts
 build
 node_modules

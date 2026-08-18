@@ -1,0 +1,6 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obi-target
+status:
+  readyReplicas: 1

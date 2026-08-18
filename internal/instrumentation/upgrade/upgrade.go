@@ -84,6 +84,7 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	for i := range list.Items {
 		toUpgrade := list.Items[i]
 		upgraded, blockedVersions := u.upgrade(ctx, toUpgrade)
+
 		if !reflect.DeepEqual(upgraded, toUpgrade) {
 			// use update instead of patch because the patch does not upgrade annotations
 			if err := u.Client.Update(ctx, upgraded); err != nil {
@@ -91,11 +92,12 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 				continue
 			}
 		}
-		// Update status if the blocked versions set has changed (including clearing it when no longer blocked).
+
 		if !maps.Equal(upgraded.Status.UpgradeBlockedVersions, blockedVersions) {
-			upgraded.Status.UpgradeBlockedVersions = blockedVersions
-			if err := u.Client.Status().Update(ctx, upgraded); err != nil {
-				u.Logger.Error(err, "failed to update status for blocked upgrade", "name", upgraded.Name, "namespace", upgraded.Namespace)
+			patch := upgraded.DeepCopy()
+			patch.Status.UpgradeBlockedVersions = blockedVersions
+			if err := u.Client.Status().Patch(ctx, patch, client.MergeFrom(upgraded)); err != nil {
+				u.Logger.Error(err, "failed to update status for instrumentation", "name", upgraded.Name, "namespace", upgraded.Namespace)
 			}
 		}
 	}

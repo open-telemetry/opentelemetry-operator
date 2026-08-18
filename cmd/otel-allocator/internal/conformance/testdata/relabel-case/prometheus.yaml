@@ -1,0 +1,9 @@
+# Uppercase / Lowercase actions.
+scrape_configs:
+  - job_name: case-upper-lower
+    static_configs:
+      - targets: ['10.5.0.1:9100']
+        labels: {foo: bAr123Foo}
+    relabel_configs:
+      - {source_labels: [foo], action: uppercase, target_label: foo_uppercase}
+      - {source_labels: [foo], action: lowercase, target_label: foo_lowercase}

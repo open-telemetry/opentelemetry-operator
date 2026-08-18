@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-collector
+status:
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-obs-targetallocator-targetallocator
+status:
+  availableReplicas: 1
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-obs-targetallocator
+roleRef:
+  kind: Role
+  name: cluster-obs-targetallocator
+subjects:
+  - kind: ServiceAccount
+    name: cluster-obs-targetallocator-targetallocator

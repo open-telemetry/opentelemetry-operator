@@ -7,8 +7,10 @@ spec:
   bindings:
   - name: upgrade_fbc_image
     value: ($values.upgrade_fbc_image)
-  - name: upgrade_otel_version
-    value: ($values.upgrade_otel_version)
+  - name: upgrade_collector_version
+    value: ($values.upgrade_collector_version)
+  - name: upgrade_ta_version
+    value: ($values.upgrade_ta_version)
   - name: upgrade_operator_csv_name
     value: ($values.upgrade_operator_csv_name)
   # Refer Chainsaw docs on how to pass data to tests.
@@ -16,7 +18,8 @@ spec:
   # Example using heredoc:
   # chainsaw test tests/e2e-openshift-upgrade --values - <<EOF
   # upgrade_fbc_image: brew.registry.redhat.io/rh-osbs/iib:986879
-  # upgrade_otel_version: 0.127.0
+  # upgrade_collector_version: 0.127.0
+  # upgrade_ta_version: 0.127.0
   # upgrade_operator_csv_name: opentelemetry-operator.v0.127.0-1
   # EOF
   steps:

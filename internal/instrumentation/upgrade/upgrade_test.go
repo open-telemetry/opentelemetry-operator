@@ -112,6 +112,7 @@ func TestUpgrade(t *testing.T) {
 		Name:      "my-inst",
 	}, &updated)
 	require.NoError(t, err)
+
 	assert.Equal(t, "java:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
 	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])

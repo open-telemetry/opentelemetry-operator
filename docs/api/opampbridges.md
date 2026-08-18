@@ -222,6 +222,13 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecproxy">proxy</a></b></td>
+        <td>object</td>
+        <td>
+          Proxy is the optional proxy configuration used only for the OpAMP backend connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
@@ -251,6 +258,13 @@ default.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount for the OpAMPBridge.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespectls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS configuration for the connection to the OpAMP backend server.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3009,6 +3023,42 @@ More info: https://kubernetes.io/docs/concepts/services-networking/service/#defi
 </table>
 
 
+### OpAMPBridge.spec.proxy
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+Proxy is the optional proxy configuration used only for the OpAMP backend connection.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>headers</b></td>
+        <td>map[string]string</td>
+        <td>
+          Headers are sent to HTTP/HTTPS proxies during CONNECT requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          URL is the proxy URL used only for the OpAMP backend connection.
+Supported schemes are http, https, socks5, and socks5h. If the scheme is omitted, http is assumed.
+SOCKS username/password authentication can be configured with URL userinfo.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpAMPBridge.spec.resources
 <sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
 
@@ -3476,6 +3526,41 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.tls
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+TLS configuration for the connection to the OpAMP backend server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure indicates whether the endpoint should use TLS or not.
+When true, TLS is completely disabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure_skip_verify</b></td>
+        <td>boolean</td>
+        <td>
+          InsecureSkipVerify indicates to keep TLS but skip certificate validation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

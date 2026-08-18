@@ -1,0 +1,11 @@
+# Blackbox-exporter pattern: several targets are rewritten to one __address__
+# (the prober) but kept distinct by __param_target / instance. They must NOT
+# collide into one identity. A real-world false-collision risk for the allocator.
+scrape_configs:
+  - job_name: blackbox
+    static_configs:
+      - targets: ['a.example.com:443', 'b.example.com:443']
+    relabel_configs:
+      - {source_labels: [__address__], target_label: __param_target}
+      - {source_labels: [__param_target], target_label: instance}
+      - {target_label: __address__, replacement: 'blackbox:9115'}

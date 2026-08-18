@@ -11426,8 +11426,8 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>integer</td>
         <td>
           Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-that can be run in a high availability mode is consistent-hashing.<br/>
+other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+that can be run in a high availability mode are consistent-hashing and per-node.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -20530,6 +20530,22 @@ the operator will not automatically Create a ServiceAccount.<br/>
           ServiceName sets the serviceName of the StatefulSet.
 If not specified, it will default to "<name>-headless".
 Note that the custom service name is not created by the operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sessionAffinity</b></td>
+        <td>string</td>
+        <td>
+          SessionAffinity specifies the session affinity type for the Service.
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfig">sessionAffinityConfig</a></b></td>
+        <td>object</td>
+        <td>
+          SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32074,6 +32090,65 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 </table>
 
 
+### OpenTelemetryCollector.spec.sessionAffinityConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+SessionAffinityConfig specifies the session affinity configurations for the Service.
+This is only applicable to Service resources.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecsessionaffinityconfigclientip">clientIP</a></b></td>
+        <td>object</td>
+        <td>
+          clientIP contains the configurations of Client IP based session affinity.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.sessionAffinityConfig.clientIP
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecsessionaffinityconfig)</sup></sup>
+
+
+
+clientIP contains the configurations of Client IP based session affinity.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+Default value is 10800(for 3 hours).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.startupProbe
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -32323,8 +32398,8 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>integer</td>
         <td>
           Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-that can be run in a high availability mode is consistent-hashing.<br/>
+other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+that can be run in a high availability mode are consistent-hashing and per-node.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -34358,6 +34433,15 @@ Mtls defines the mTLS configuration for the target allocator. If enabled, the ta
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>useCertManager</b></td>
         <td>boolean</td>
         <td>
@@ -34365,6 +34449,370 @@ Mtls defines the mTLS configuration for the target allocator. If enabled, the ta
 Defaults to true.<br/>
           <br/>
             <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtls)</sup></sup>
+
+
+
+TLS references user-provided certificates used for mTLS. It allows managing
+the certificates outside of the operator (e.g. without cert-manager) and
+is only consulted when UseCertManager is set to false.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate">certificateAuthorityCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate">clientCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificate">serverCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.certificateAuthorityCertificate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstls)</sup></sup>
+
+
+
+CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+certificate. Exactly one of secret or configMap must be set. It is required when
+UseCertManager is false.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificateconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap sources the CA certificate from a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificatesecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret sources the CA certificate from a Secret.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.configMap
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+ConfigMap sources the CA certificate from a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the ConfigMap, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the ConfigMap's data. Defaults to ca.crt when omitted.<br/>
+          <br/>
+            <i>Default</i>: ca.crt<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.secret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlscertificateauthoritycertificate)</sup></sup>
+
+
+
+Secret sources the CA certificate from a Secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstls)</sup></sup>
+
+
+
+ClientCertificate references the client certificate and key used by the collector when talking
+to the target allocator's HTTPS server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatecertificatesecret">certificateSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsclientcertificatekeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.certificateSecret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
+
+
+
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.clientCertificate.keySecret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsclientcertificate)</sup></sup>
+
+
+
+KeySecret selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstls)</sup></sup>
+
+
+
+ServerCertificate references the server certificate and key used by the target allocator when
+exposing its HTTPS server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatecertificatesecret">certificateSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertificateSecret selects the certificate. Its key defaults to tls.crt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatormtlstlsservercertificatekeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret selects the private key. Its key defaults to tls.key.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.certificateSecret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
+
+
+
+CertificateSecret selects the certificate. Its key defaults to tls.crt.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.mtls.tls.serverCertificate.keySecret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatormtlstlsservercertificate)</sup></sup>
+
+
+
+KeySecret selects the private key. Its key defaults to tls.key.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Secret, in the same namespace as the workload.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+certificate, tls.key for a private key.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41613,10 +42061,26 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorstatusconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions represents the latest available observations of the OpenTelemetryCollector's current state.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           Image indicates the container image to use for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          ObservedGeneration is the most recent generation observed for this OpenTelemetryCollector. It corresponds to the OpenTelemetryCollector's generation, which is updated on mutation by the API Server.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41631,6 +42095,83 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td>string</td>
         <td>
           Version of the managed OpenTelemetry Collector (operand)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.status.conditions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorstatus-1)</sup></sup>
+
+
+
+Condition contains details for one aspect of the current state of this API Resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -24,7 +24,7 @@ func Service(params Params) *corev1.Service {
 		TargetPort: intstr.FromString("http"),
 	})
 
-	if manifestutils.IsTAMTLSEnabled(&params.TargetAllocator) {
+	if manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "targetallocation-https",
 			Port:       443,
@@ -34,9 +34,10 @@ func Service(params Params) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.TargetAllocator.Name),
-			Namespace: params.TargetAllocator.Namespace,
-			Labels:    labels,
+			Name:        naming.TAService(params.TargetAllocator.Name),
+			Namespace:   params.TargetAllocator.Namespace,
+			Labels:      labels,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector:            selector,

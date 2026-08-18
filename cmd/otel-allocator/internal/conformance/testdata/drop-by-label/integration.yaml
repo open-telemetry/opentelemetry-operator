@@ -1,0 +1,11 @@
+# Consumed only by cmd/otel-allocator/integrationtest. The kept target (who=alice)
+# is scraped; the dropped target (who=bob) must produce no metric.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {who: alice}
+expect_absent:
+  - metric: widgets_total
+    labels: {who: bob}

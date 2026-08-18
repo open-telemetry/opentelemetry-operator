@@ -17,7 +17,7 @@ processors:
     send_batch_size: 1000
     timeout: 10s
     
-  resourcedetection:
+  resource_detection:
     # OpenShift resource detector will determine cloud provider automatically
     detectors: ["env", "system", "openshift"]
     timeout: 5s

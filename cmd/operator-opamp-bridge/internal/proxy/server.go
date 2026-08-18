@@ -112,7 +112,7 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 	}
 	delete(s.connections, conn)
 	// Tell listeners to get updates.
-	s.updatesChan <- struct{}{}
+	s.signalUpdate()
 }
 
 func (s *OpAMPProxy) onMessage(_ context.Context, conn types.Connection, msg *protobufs.AgentToServer) *protobufs.ServerToAgent {
@@ -146,10 +146,17 @@ func (s *OpAMPProxy) onMessage(_ context.Context, conn types.Connection, msg *pr
 	}
 	s.mux.Unlock()
 	if agentUpdated {
-		s.updatesChan <- struct{}{}
+		s.signalUpdate()
 	}
 	// Send the response back to the Agent.
 	return response
+}
+
+func (s *OpAMPProxy) signalUpdate() {
+	select {
+	case s.updatesChan <- struct{}{}:
+	default:
+	}
 }
 
 // GetConfigurations implements Server.

@@ -1,0 +1,17 @@
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: obi-privileged
+  annotations:
+    kubernetes.io/description: 'Allows OBI collectors to run privileged with hostPID for eBPF instrumentation'
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+allowHostPorts: false
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: true
+allowPrivilegedContainer: true
+readOnlyRootFilesystem: false

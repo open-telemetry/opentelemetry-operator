@@ -95,8 +95,8 @@ func (i *sdkInjector) injectJava(ctx context.Context, inst instrumentationWithCo
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
 			}
 		}
-		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec)
-		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), javaInitContainerName)
+		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec,
+			resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext))
 	}
 
 	return pod
@@ -404,29 +404,32 @@ func getContainerByName(containerName string, pod *corev1.Pod) *corev1.Container
 	return container
 }
 
-func (*sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, container *corev1.Container) {
-	idx := getIndexOfEnv(container.Env, constants.EnvPodIP)
-	if idx == -1 {
-		container.Env = append([]corev1.EnvVar{{
+func defaultPodNodeEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
 			Name: constants.EnvPodIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.podIP",
 				},
 			},
-		}}, container.Env...)
-	}
-
-	idx = getIndexOfEnv(container.Env, constants.EnvNodeIP)
-	if idx == -1 {
-		container.Env = append([]corev1.EnvVar{{
+		},
+		{
 			Name: constants.EnvNodeIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.hostIP",
 				},
 			},
-		}}, container.Env...)
+		},
+	}
+}
+
+func (*sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, container *corev1.Container) {
+	for _, envVar := range defaultPodNodeEnvVars() {
+		if getIndexOfEnv(container.Env, envVar.Name) == -1 {
+			container.Env = append([]corev1.EnvVar{envVar}, container.Env...)
+		}
 	}
 
 	for _, env := range otelinst.Spec.Env {

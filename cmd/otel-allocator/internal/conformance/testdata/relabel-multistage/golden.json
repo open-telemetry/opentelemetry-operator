@@ -1,0 +1,44 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.8.0.1:9100",
+      "__meta_sd_tags": "path:/secret,job:some-job,label:foo=bar",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "sd-tags"
+    },
+    "labels": {
+      "__address__": "10.8.0.1:9100",
+      "__metrics_path__": "/secret",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "foo": "bar",
+      "instance": "10.8.0.1:9100",
+      "job": "some-job"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.8.0.2:9100",
+      "__meta_kubernetes_pod_annotation_XXX_metrics_port": "9091",
+      "__meta_kubernetes_pod_container_port_name": "foo",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "k8s-port-name"
+    },
+    "labels": {
+      "__address__": "10.8.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.8.0.2:9100",
+      "job": "k8s-port-name"
+    }
+  }
+]

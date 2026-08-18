@@ -41,7 +41,7 @@ func TestItemHash_String(t *testing.T) {
 
 func TestNewItem(t *testing.T) {
 	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	item := NewItem("job-1", "http://localhost:8080/metrics", ls, "collector-0")
+	item := NewItem("job-1", "http://localhost:8080/metrics", ls, "collector-0", HashLabels(ls, "job-1"))
 
 	assert.Equal(t, "job-1", item.JobName)
 	assert.Equal(t, "http://localhost:8080/metrics", item.TargetURL)
@@ -49,10 +49,10 @@ func TestNewItem(t *testing.T) {
 	assert.Equal(t, ls, item.Labels)
 }
 
-func TestNewItemWithHash(t *testing.T) {
+func TestNewItemHash(t *testing.T) {
 	ls := labels.New(labels.Label{Name: "app", Value: "test"})
 	precomputedHash := ItemHash(42)
-	item := NewItem("job-1", "http://localhost:8080", ls, "", WithHash(precomputedHash))
+	item := NewItem("job-1", "http://localhost:8080", ls, "", precomputedHash)
 
 	assert.Equal(t, precomputedHash, item.Hash())
 }
@@ -62,8 +62,8 @@ func TestItemHashStability(t *testing.T) {
 		labels.Label{Name: "app", Value: "frontend"},
 		labels.Label{Name: "env", Value: "prod"},
 	)
-	item1 := NewItem("my-job", "http://10.0.0.1:8080", ls, "")
-	item2 := NewItem("my-job", "http://10.0.0.1:8080", ls, "")
+	item1 := NewItem("my-job", "http://10.0.0.1:8080", ls, "", HashLabels(ls, "my-job"))
+	item2 := NewItem("my-job", "http://10.0.0.1:8080", ls, "", HashLabels(ls, "my-job"))
 
 	// Same inputs must produce the same hash
 	assert.Equal(t, item1.Hash(), item2.Hash())
@@ -74,8 +74,8 @@ func TestItemHashStability(t *testing.T) {
 
 func TestItemHashDifferentJobs(t *testing.T) {
 	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	item1 := NewItem("job-a", "http://10.0.0.1:8080", ls, "")
-	item2 := NewItem("job-b", "http://10.0.0.1:8080", ls, "")
+	item1 := NewItem("job-a", "http://10.0.0.1:8080", ls, "", HashLabels(ls, "job-a"))
+	item2 := NewItem("job-b", "http://10.0.0.1:8080", ls, "", HashLabels(ls, "job-b"))
 
 	// Different job names should produce different hashes
 	assert.NotEqual(t, item1.Hash(), item2.Hash())
@@ -84,16 +84,16 @@ func TestItemHashDifferentJobs(t *testing.T) {
 func TestItemHashDifferentLabels(t *testing.T) {
 	ls1 := labels.New(labels.Label{Name: "version", Value: "v1"})
 	ls2 := labels.New(labels.Label{Name: "version", Value: "v2"})
-	item1 := NewItem("job", "http://10.0.0.1:8080", ls1, "")
-	item2 := NewItem("job", "http://10.0.0.1:8080", ls2, "")
+	item1 := NewItem("job", "http://10.0.0.1:8080", ls1, "", HashLabels(ls1, "job"))
+	item2 := NewItem("job", "http://10.0.0.1:8080", ls2, "", HashLabels(ls2, "job"))
 
 	assert.NotEqual(t, item1.Hash(), item2.Hash())
 }
 
 func TestItemHashCollectorNameNotAffectHash(t *testing.T) {
 	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	item1 := NewItem("job", "http://10.0.0.1:8080", ls, "collector-0")
-	item2 := NewItem("job", "http://10.0.0.1:8080", ls, "collector-1")
+	item1 := NewItem("job", "http://10.0.0.1:8080", ls, "collector-0", HashLabels(ls, "job"))
+	item2 := NewItem("job", "http://10.0.0.1:8080", ls, "collector-1", HashLabels(ls, "job"))
 
 	// Collector name is not part of the hash
 	assert.Equal(t, item1.Hash(), item2.Hash())
@@ -163,7 +163,7 @@ func TestGetNodeName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			item := NewItem("job", "http://10.0.0.1:8080", tt.labels, "")
+			item := NewItem("job", "http://10.0.0.1:8080", tt.labels, "", HashLabels(tt.labels, "job"))
 			assert.Equal(t, tt.expected, item.GetNodeName())
 		})
 	}
@@ -195,21 +195,21 @@ func TestGetEndpointSliceName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			item := NewItem("job", "http://10.0.0.1:8080", tt.labels, "")
+			item := NewItem("job", "http://10.0.0.1:8080", tt.labels, "", HashLabels(tt.labels, "job"))
 			assert.Equal(t, tt.expected, item.GetEndpointSliceName())
 		})
 	}
 }
 
-func TestLabelsHashWithJobName(t *testing.T) {
+func TestHashLabels(t *testing.T) {
 	ls := labels.New(
 		labels.Label{Name: "app", Value: "test"},
 		labels.Label{Name: "env", Value: "prod"},
 	)
 
-	hash1 := LabelsHashWithJobName(ls, "job-a")
-	hash2 := LabelsHashWithJobName(ls, "job-a")
-	hash3 := LabelsHashWithJobName(ls, "job-b")
+	hash1 := HashLabels(ls, "job-a")
+	hash2 := HashLabels(ls, "job-a")
+	hash3 := HashLabels(ls, "job-b")
 
 	// Same inputs produce the same hash
 	assert.Equal(t, hash1, hash2)
@@ -217,6 +217,16 @@ func TestLabelsHashWithJobName(t *testing.T) {
 	assert.NotEqual(t, hash1, hash3)
 	// Hash is non-zero
 	assert.NotZero(t, hash1)
+}
+
+func TestHashLabelsMatchesHashFromBuilder(t *testing.T) {
+	ls := labels.New(
+		labels.Label{Name: "app", Value: "test"},
+		labels.Label{Name: "__meta_kubernetes_namespace", Value: "default"},
+	)
+	// HashLabels must agree with HashFromBuilder so items created via the constructor and items
+	// hashed during discovery share the same hash space.
+	assert.Equal(t, HashFromBuilder(labels.NewBuilder(ls), "job"), HashLabels(ls, "job"))
 }
 
 func TestHashFromBuilder(t *testing.T) {
@@ -247,15 +257,14 @@ func TestHashFromBuilderDifferentJobs(t *testing.T) {
 	assert.NotEqual(t, hash1, hash2)
 }
 
-func TestItemHashCaching(t *testing.T) {
+func TestItemHashReturnsConstructorHash(t *testing.T) {
 	ls := labels.New(labels.Label{Name: "app", Value: "test"})
-	item := NewItem("job", "url", ls, "")
+	item := NewItem("job", "url", ls, "", HashLabels(ls, "job"))
 
-	// First call computes the hash
 	h1 := item.Hash()
-	// Second call should return the cached value
 	h2 := item.Hash()
 
 	assert.Equal(t, h1, h2)
+	assert.Equal(t, HashLabels(ls, "job"), h1)
 	assert.NotZero(t, h1)
 }

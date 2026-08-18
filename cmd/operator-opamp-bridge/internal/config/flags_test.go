@@ -18,6 +18,7 @@ func TestGetFlagSet(t *testing.T) {
 	// Check if each flag exists
 	assert.NotNil(t, fs.Lookup(configFilePathFlagName), "Flag %s not found", configFilePathFlagName)
 	assert.NotNil(t, fs.Lookup(listenAddrFlagName), "Flag %s not found", listenAddrFlagName)
+	assert.NotNil(t, fs.Lookup(healthListenAddrFlagName), "Flag %s not found", healthListenAddrFlagName)
 	assert.NotNil(t, fs.Lookup(kubeConfigPathFlagName), "Flag %s not found", kubeConfigPathFlagName)
 }
 
@@ -62,6 +63,15 @@ func TestFlagGetters(t *testing.T) {
 			expectedValue: ":8081",
 			getterFunc: func(fs *pflag.FlagSet) (any, error) {
 				value, _, err := getListenAddr(fs)
+				return value, err
+			},
+		},
+		{
+			name:          "GetHealthListenAddr",
+			flagArgs:      []string{"--" + healthListenAddrFlagName, ":8082"},
+			expectedValue: ":8082",
+			getterFunc: func(fs *pflag.FlagSet) (any, error) {
+				value, _, err := getHealthListenAddr(fs)
 				return value, err
 			},
 		},
