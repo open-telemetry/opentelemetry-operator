@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/aws/smithy-go v1.27.4 // indirect
 	github.com/blang/semver/v4 v4.0.0
-	github.com/buraksezer/consistent v0.10.0
+	github.com/buraksezer/consistent v1.0.0
 	github.com/cert-manager/cert-manager v1.21.1
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/distribution/reference v0.6.0
