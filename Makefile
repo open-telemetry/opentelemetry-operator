@@ -745,7 +745,7 @@ container-instrumentation-apache-httpd:
 
 # Build all auto-instrumentation container images
 .PHONY: container-instrumentation-all
-container-instrumentation-all: container-instrumentation-java container-instrumentation-nodejs container-instrumentation-php container-instrumentation-python container-instrumentation-dotnet container-instrumentation-apache-httpd
+container-instrumentation-all: container-instrumentation-java container-instrumentation-nodejs container-instrumentation-python container-instrumentation-dotnet container-instrumentation-apache-httpd
 
 ##@ Kind Cluster
 # Start kind cluster for local development
