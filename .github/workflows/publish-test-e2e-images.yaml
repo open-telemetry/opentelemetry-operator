@@ -19,10 +19,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   # The Go-based test apps have their own modules with unit tests; run them
   # before publishing their images.
   test-go-apps:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       matrix:
