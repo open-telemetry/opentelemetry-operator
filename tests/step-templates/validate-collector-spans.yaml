@@ -4,44 +4,60 @@ metadata:
   name: validate-collector-spans
 spec:
   try:
-    - command:
-        entrypoint: kubectl
+    - script:
         env:
           - name: COLLECTOR_LABEL_SELECTOR
             value: ($collectorLabelSelector)
-        args:
-          - get
-          - pod
-          - -n
-          - ${NAMESPACE}
-          - -l
-          - ${COLLECTOR_LABEL_SELECTOR}
-          - -o
-          - jsonpath={.items[0].metadata.name}
-        outputs:
-          - name: collectorPodName
-            value: ($stdout)
-    - script:
-        env:
-          - name: podName
-            value: ($collectorPodName)
           - name: metricsPort
             value: ($collectorMetricsPort)
         shell: /bin/bash
-        timeout: 60s
+        timeout: 120s
         content: |
-          # Add retry logic for metrics collection to handle timing issues
-          for i in {1..12}; do
-            echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
-            if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:${metricsPort}/proxy/metrics 2>/dev/null); then
-              echo "Successfully fetched metrics on attempt $i" >&2
-              echo "$metrics_output"
-              exit 0
+          PODS=$(kubectl get pods -n "$NAMESPACE" -l "$COLLECTOR_LABEL_SELECTOR" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+          if [ -z "$PODS" ]; then
+            echo "ERROR: No pods found matching '$COLLECTOR_LABEL_SELECTOR'" >&2
+            exit 1
+          fi
+
+          FIRST_POD=$(echo "$PODS" | head -1)
+          HOST_NETWORK=$(kubectl get pod -n "$NAMESPACE" "$FIRST_POD" \
+            -o jsonpath='{.spec.hostNetwork}')
+
+          fetch_metrics() {
+            local pod=$1
+            if [ "$HOST_NETWORK" = "true" ]; then
+              local lport=$((30000 + RANDOM % 10000))
+              kubectl port-forward -n "$NAMESPACE" "pod/${pod}" "${lport}:${metricsPort}" &>/dev/null &
+              local pf=$!
+              sleep 2
+              local out
+              out=$(curl -sf "http://localhost:${lport}/metrics" 2>/dev/null)
+              local rc=$?
+              kill $pf 2>/dev/null; wait $pf 2>/dev/null
+              [ $rc -ne 0 ] && return 1
+              echo "$out"
+            else
+              kubectl get --raw \
+                "/api/v1/namespaces/$NAMESPACE/pods/${pod}:${metricsPort}/proxy/metrics" 2>/dev/null
             fi
-            echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
+          }
+
+          for attempt in {1..12}; do
+            for POD in $PODS; do
+              metrics_output=$(fetch_metrics "$POD") || continue
+              sent=$(echo "$metrics_output" | grep '^otelcol_exporter_sent_spans{' | awk '{s+=$NF} END {print s+0}')
+              if [ "$sent" -gt 0 ]; then
+                echo "Found spans on pod $POD (sent=$sent) on attempt $attempt" >&2
+                echo "$metrics_output"
+                exit 0
+              fi
+              echo "Pod $POD has no span data yet (sent=$sent)" >&2
+            done
+            echo "Attempt $attempt: No pod has span data yet, retrying in 5s..." >&2
             sleep 5
           done
-          echo "Failed to fetch metrics after 12 attempts (60 seconds)" >&2
+          echo "Failed to find spans after 12 attempts" >&2
           exit 1
         outputs:
           - name: metrics

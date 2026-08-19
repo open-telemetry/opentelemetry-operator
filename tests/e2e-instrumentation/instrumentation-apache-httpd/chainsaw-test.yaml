@@ -59,6 +59,18 @@ spec:
   - name: Check the instrumented app has sent the telemetry data successfully
     use:
       template: ../../step-templates/validate-collector-spans.yaml
+  - name: Setup SCC for DaemonSet hostNetwork
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+            echo "OpenShift detected — creating SCC for hostNetwork"
+            kubectl apply -f scc.yaml
+            oc adm policy add-scc-to-user daemonset-with-hostport -z daemonset-collector -n $NAMESPACE
+          else
+            echo "Not OpenShift — skipping SCC setup"
+          fi
   - name: Switch to node-IP exporter endpoint
     try:
     - apply:
@@ -113,10 +125,18 @@ spec:
         bindings:
           - name: collectorLabelSelector
             value: app.kubernetes.io/name=daemonset-collector
-  - name: Check telemetry data via node-IP endpoint
+  - name: Check the DaemonSet collector has sent the telemetry data successfully
     use:
       template: ../../step-templates/validate-collector-spans.yaml
       with:
         bindings:
           - name: collectorLabelSelector
             value: app.kubernetes.io/name=daemonset-collector
+  - name: Cleanup SCC
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          if kubectl api-resources --api-group=security.openshift.io -o name 2>/dev/null | grep -q securitycontextconstraints; then
+            kubectl delete scc daemonset-with-hostport --ignore-not-found
+          fi
