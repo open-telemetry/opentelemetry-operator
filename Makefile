@@ -49,7 +49,7 @@ else
 endif
 
 # Image URL to use all building/pushing image targets
-DOCKER_USER ?= jerrytfleung
+DOCKER_USER ?= open-telemetry
 IMG_PREFIX ?= ghcr.io/${DOCKER_USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
@@ -67,7 +67,7 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # exactly as the manifests reference them; loading them into kind then shadows the
 # registry versions, letting tests run against local changes before they are merged
 # and published.
-TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/jerrytfleung/opentelemetry-operator
+TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
 TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs python php
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))

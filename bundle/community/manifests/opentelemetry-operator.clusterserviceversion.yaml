@@ -585,7 +585,7 @@ spec:
                   value: "true"
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
-                image: ghcr.io/jerrytfleung/opentelemetry-operator/opentelemetry-operator:0.158.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.158.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
