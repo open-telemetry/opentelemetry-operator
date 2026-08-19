@@ -352,8 +352,6 @@ func (c Client) generateCollectorHealth(selectorLabels map[string]string, namesp
 func (c Client) listOpenTelemetryCollectors() ([]CRDInstance, error) {
 	ctx := context.Background()
 
-	var instances []v1beta1.OpenTelemetryCollector
-
 	labelSelector := labels.NewSelector()
 	requirement, err := labels.NewRequirement(ManagedLabelKey, selection.In, []string{c.name, "true"})
 	if err != nil {
@@ -366,7 +364,6 @@ func (c Client) listOpenTelemetryCollectors() ([]CRDInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	instances = append(instances, managedCollectors.Items...)
 
 	reportingCollectorLabelMatcher := client.MatchingLabels{ReportingLabelKey: "true"}
 	reportingCollectors := v1beta1.OpenTelemetryCollectorList{}
@@ -374,16 +371,17 @@ func (c Client) listOpenTelemetryCollectors() ([]CRDInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	instances = append(instances, reportingCollectors.Items...)
 
-	for i := range instances {
-		instances[i].SetManagedFields(nil)
-		setTypedMeta(&instances[i])
+	result := make([]CRDInstance, 0, len(managedCollectors.Items)+len(reportingCollectors.Items))
+	for i := range managedCollectors.Items {
+		managedCollectors.Items[i].SetManagedFields(nil)
+		setTypedMeta(&managedCollectors.Items[i])
+		result = append(result, newCRDInstance(managedCollectors.Items[i], true))
 	}
-
-	result := make([]CRDInstance, len(instances))
-	for i := range instances {
-		result[i] = newCRDInstance(instances[i])
+	for i := range reportingCollectors.Items {
+		reportingCollectors.Items[i].SetManagedFields(nil)
+		setTypedMeta(&reportingCollectors.Items[i])
+		result = append(result, newCRDInstance(reportingCollectors.Items[i], false))
 	}
 	return result, nil
 }

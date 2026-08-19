@@ -30,7 +30,6 @@ import (
 func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
-
 	if err := v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
@@ -51,6 +50,9 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &one,
+					},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: new(true),
 					},
 				},
 			},
@@ -77,6 +79,9 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 						},
 					},
 					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: new(true),
+					},
 				},
 			},
 		},
@@ -96,6 +101,9 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &five,
+					},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: new(true),
 					},
 				},
 			},
@@ -118,6 +126,9 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
+					},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: new(true),
 					},
 				},
 			},
@@ -149,6 +160,9 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 								StrVal: "10%",
 							},
 						},
+					},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: new(true),
 					},
 				},
 			},
@@ -333,7 +347,29 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			expectedErr: "mTLS is enabled with useCertManager but cert-manager is not available",
 		},
 		{
-			name: "mTLS with useCertManager false and cert-manager not available",
+			name: "mTLS with useCertManager false and user-provided certificates",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
+							ServerCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false but missing certificate secrets",
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{
 					Mtls: &v1beta1.TargetAllocatorMTLS{
@@ -342,6 +378,73 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
+			expectedErr: "tls.serverCertificate and tls.clientCertificate must both be set",
+		},
+		{
+			name: "mTLS with useCertManager false and a separate CA certificate",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "ca-secret"}},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false and CA from a ConfigMap",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+							CertificateAuthorityCertificate: &v1beta1.CAReference{ConfigMap: &v1beta1.ConfigMapKeySelector{Name: "ca-configmap"}},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mTLS with useCertManager false but missing CA reference",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					Mtls: &v1beta1.TargetAllocatorMTLS{
+						Enabled:        true,
+						UseCertManager: new(false),
+						TLS: &v1beta1.TargetAllocatorTLS{
+							ServerCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "server-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "server-secret"},
+							},
+							ClientCertificate: &v1beta1.CertificateReference{
+								CertificateSecret: v1beta1.SecretKeySelector{Name: "client-secret"},
+								KeySecret:         v1beta1.SecretKeySelector{Name: "client-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "tls.certificateAuthorityCertificate must be set",
 		},
 		{
 			name: "mTLS with useCertManager true and cert-manager available",

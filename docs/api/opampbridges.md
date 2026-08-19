@@ -222,6 +222,13 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecproxy">proxy</a></b></td>
+        <td>object</td>
+        <td>
+          Proxy is the optional proxy configuration used only for the OpAMP backend connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
@@ -3010,6 +3017,42 @@ of the 'port' field is used (an identity map).
 This field is ignored for services with clusterIP=None, and should be
 omitted or set equal to the 'port' field.
 More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.proxy
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+Proxy is the optional proxy configuration used only for the OpAMP backend connection.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>headers</b></td>
+        <td>map[string]string</td>
+        <td>
+          Headers are sent to HTTP/HTTPS proxies during CONNECT requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          URL is the proxy URL used only for the OpAMP backend connection.
+Supported schemes are http, https, socks5, and socks5h. If the scheme is omitted, http is assumed.
+SOCKS username/password authentication can be configured with URL userinfo.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

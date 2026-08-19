@@ -268,6 +268,80 @@ type TargetAllocatorMTLS struct {
 	// +optional
 	// +kubebuilder:default:=true
 	UseCertManager *bool `json:"useCertManager,omitempty"`
+	// TLS references user-provided certificates used for mTLS. It allows managing
+	// the certificates outside of the operator (e.g. without cert-manager) and
+	// is only consulted when UseCertManager is set to false.
+	// +optional
+	TLS *TargetAllocatorTLS `json:"tls,omitempty"`
+}
+
+// TargetAllocatorTLS references user-provided sources holding the certificates used for mTLS
+// between the target allocator and the collector. The CA may come from a Secret or a ConfigMap;
+// the leaf certificate and its private key may live in different Secrets. The referenced keys are
+// projected into the pods via subPath volume mounts, which means certificate rotation requires the
+// pods to be restarted.
+type TargetAllocatorTLS struct {
+	// CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+	// certificate. Exactly one of secret or configMap must be set. It is required when
+	// UseCertManager is false.
+	// +optional
+	CertificateAuthorityCertificate *CAReference `json:"certificateAuthorityCertificate,omitempty"`
+	// ServerCertificate references the server certificate and key used by the target allocator when
+	// exposing its HTTPS server.
+	// +optional
+	ServerCertificate *CertificateReference `json:"serverCertificate,omitempty"`
+	// ClientCertificate references the client certificate and key used by the collector when talking
+	// to the target allocator's HTTPS server.
+	// +optional
+	ClientCertificate *CertificateReference `json:"clientCertificate,omitempty"`
+}
+
+// SecretKeySelector selects a key from a Secret in the same namespace as the workload.
+type SecretKeySelector struct {
+	// Name of the Secret, in the same namespace as the workload.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+	// certificate, tls.key for a private key.
+	// +optional
+	Key string `json:"key,omitempty"`
+}
+
+// ConfigMapKeySelector selects a key from a ConfigMap in the same namespace as the workload.
+type ConfigMapKeySelector struct {
+	// Name of the ConfigMap, in the same namespace as the workload.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Key within the ConfigMap's data. Defaults to ca.crt when omitted.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:default="ca.crt"
+	// +optional
+	Key string `json:"key,omitempty"`
+}
+
+// CAReference points to a CA certificate stored in either a Secret or a ConfigMap. CA certificates
+// are public, so distributing them via a ConfigMap is common. Exactly one of secret or configMap
+// must be set.
+type CAReference struct {
+	// Secret sources the CA certificate from a Secret.
+	// +optional
+	Secret *SecretKeySelector `json:"secret,omitempty"`
+	// ConfigMap sources the CA certificate from a ConfigMap.
+	// +optional
+	ConfigMap *ConfigMapKeySelector `json:"configMap,omitempty"`
+}
+
+// CertificateReference points to a certificate and its private key. The certificate and the key may
+// be stored in different Secrets.
+type CertificateReference struct {
+	// CertificateSecret selects the certificate. Its key defaults to tls.crt.
+	// +kubebuilder:validation:Required
+	CertificateSecret SecretKeySelector `json:"certificateSecret"`
+	// KeySecret selects the private key. Its key defaults to tls.key.
+	// +kubebuilder:validation:Required
+	KeySecret SecretKeySelector `json:"keySecret"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

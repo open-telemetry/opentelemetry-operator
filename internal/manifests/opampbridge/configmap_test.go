@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -52,6 +53,10 @@ description:
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
+proxy:
+  url: http://proxy.example.com:8080
+  headers:
+    Proxy-Authorization: proxy-token
 `,
 	}
 	tests := []struct {
@@ -89,6 +94,10 @@ headers:
 					Image:    tc.image,
 					Endpoint: "ws://opamp-server:4320/v1/opamp",
 					Headers:  map[string]string{"authorization": "access-12345-token"},
+					Proxy: &v1alpha1.OpAMPBridgeProxyConfig{
+						URL:     "http://proxy.example.com:8080",
+						Headers: map[string]string{"Proxy-Authorization": "proxy-token"},
+					},
 					Description: &v1alpha1.AgentDescription{
 						NonIdentifyingAttributes: map[string]string{
 							"hello": "world",
@@ -127,4 +136,38 @@ headers:
 			assert.Equal(t, tc.expectedData, actual.Data)
 		})
 	}
+}
+
+func TestDesiredConfigMapWithSOCKSProxy(t *testing.T) {
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			Endpoint: "ws://opamp-server:4320/v1/opamp",
+			Proxy: &v1alpha1.OpAMPBridgeProxyConfig{
+				URL: "socks5://user:pass@proxy.example.com:1080",
+			},
+			Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+				v1alpha1.OpAMPBridgeCapabilityReportsHealth: true,
+			},
+		},
+	}
+
+	actual, err := ConfigMap(manifests.Params{
+		Config:      config.New(),
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, map[string]string{
+		"remoteconfiguration.yaml": `capabilities:
+  ReportsHealth: true
+endpoint: ws://opamp-server:4320/v1/opamp
+proxy:
+  url: socks5://user:pass@proxy.example.com:1080
+`,
+	}, actual.Data)
 }

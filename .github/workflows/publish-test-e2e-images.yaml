@@ -19,8 +19,35 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
+  # The Go-based test apps have their own modules with unit tests; run them
+  # before publishing their images.
+  test-go-apps:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [ bridge-server ]
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "~1.26.7"
+          cache-dependency-path: tests/test-e2e-apps/${{ matrix.app }}/go.sum
+      - name: Vet and test
+        working-directory: tests/test-e2e-apps/${{ matrix.app }}
+        run: |
+          go vet ./...
+          go test ./...
   bridge-server:
+    needs: [ test-go-apps ]
     permissions: # required by the reusable workflow
       contents: read
       packages: write

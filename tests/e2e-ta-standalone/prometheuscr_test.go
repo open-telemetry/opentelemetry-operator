@@ -85,7 +85,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			})
 		}).
 		Assess("ServiceMonitor, PodMonitor and ScrapeConfig targets discovered", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := e2e.Namespace(t, ctx)
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
 
@@ -101,7 +101,7 @@ func TestPrometheusCRTargetAllocator(t *testing.T) {
 			return ctx
 		}).
 		Assess("ServiceMonitor targets disappear after deletion", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := nsFromCtx(ctx)
+			ns := e2e.Namespace(t, ctx)
 			state := ctx.Value(promCRStateKey{}).(promCRState)
 			proxyBase := taProxyBase(ns)
 

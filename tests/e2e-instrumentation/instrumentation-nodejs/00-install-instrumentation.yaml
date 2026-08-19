@@ -14,8 +14,6 @@ spec:
       value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
   exporter:
     endpoint: http://deployment-collector:4318
   propagators:
