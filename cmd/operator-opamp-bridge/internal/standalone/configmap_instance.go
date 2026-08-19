@@ -37,3 +37,9 @@ func (*standaloneCollectorInstance) GetDeletionTimestamp() *metav1.Time {
 func (p *standaloneCollectorInstance) GetConfigMap() map[string]operator.ConfigFile {
 	return p.configMap
 }
+
+// IsManaged always returns true: standalone mode has no reporting-only concept, so every instance
+// returned by ListInstances is one the bridge applies remote config to.
+func (*standaloneCollectorInstance) IsManaged() bool {
+	return true
+}
