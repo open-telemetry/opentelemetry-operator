@@ -462,6 +462,20 @@ spec:
                     type: array
                   image:
                     type: string
+                  initContainer:
+                    properties:
+                      args:
+                        items:
+                          type: string
+                        type: array
+                      command:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                    x-kubernetes-validations:
+                    - message: command must be set when args are set
+                      rule: '!has(self.args) || size(self.command) > 0'
                   resourceRequirements:
                     properties:
                       claims:
@@ -1199,6 +1213,20 @@ spec:
                     type: array
                   image:
                     type: string
+                  initContainer:
+                    properties:
+                      args:
+                        items:
+                          type: string
+                        type: array
+                      command:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                    x-kubernetes-validations:
+                    - message: command must be set when args are set
+                      rule: '!has(self.args) || size(self.command) > 0'
                   resources:
                     properties:
                       claims:
@@ -1764,6 +1792,20 @@ spec:
                     type: array
                   image:
                     type: string
+                  initContainer:
+                    properties:
+                      args:
+                        items:
+                          type: string
+                        type: array
+                      command:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                    x-kubernetes-validations:
+                    - message: command must be set when args are set
+                      rule: '!has(self.args) || size(self.command) > 0'
                   resourceRequirements:
                     properties:
                       claims:
@@ -2016,6 +2058,20 @@ spec:
                     type: array
                   image:
                     type: string
+                  initContainer:
+                    properties:
+                      args:
+                        items:
+                          type: string
+                        type: array
+                      command:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                    x-kubernetes-validations:
+                    - message: command must be set when args are set
+                      rule: '!has(self.args) || size(self.command) > 0'
                   resourceRequirements:
                     properties:
                       claims:
