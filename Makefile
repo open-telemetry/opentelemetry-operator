@@ -536,6 +536,10 @@ check-chainsaw-test-names:
 check-autoinstrumentation-revision:
 	./hack/autoinstrumentation-revision.sh check
 
+.PHONY: bump-autoinstrumentation-revision
+bump-autoinstrumentation-revision:
+	./hack/autoinstrumentation-revision.sh apply
+
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
 .PHONY: e2e-multi-instrumentation-default

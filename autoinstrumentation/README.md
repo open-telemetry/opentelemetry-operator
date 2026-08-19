@@ -45,8 +45,11 @@ Run the same check locally before opening a pull request:
 make check-autoinstrumentation-revision
 ```
 
-It diffs against the merge-base with the target branch (override with
-`TARGET_BRANCH=<branch>`).
+Or apply the correct revisions automatically:
+
+```bash
+make bump-autoinstrumentation-revision
+```
 
 The upstream SDK version for each language is read from:
 
