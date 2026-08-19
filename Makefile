@@ -446,7 +446,13 @@ ta-integration-test: gotestsum
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
-precommit: fmt vet lint test ensure-update-is-noop
+precommit: fmt vet lint test ensure-update-is-noop chlog-check
+
+# Check that the branch adds a changelog entry when it changes code.
+# Skip with: CHLOG=skip make precommit
+.PHONY: chlog-check
+chlog-check:
+	@./hack/check-changelog-entry.sh
 
 ##@ Lint and Format
 # Run formatters
