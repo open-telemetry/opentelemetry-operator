@@ -896,7 +896,7 @@ func TestServer_CollectorHandler(t *testing.T) {
 		},
 		{
 			description: "Single entry target map",
-			collectorId: "test-collector2",
+			collectorId: "test-collector",
 			targetItems: []*target.Item{
 				baseTargetItem,
 			},
@@ -906,7 +906,7 @@ func TestServer_CollectorHandler(t *testing.T) {
 		},
 		{
 			description: "Multiple entry target map",
-			collectorId: "test-collector2",
+			collectorId: "test-collector",
 			targetItems: []*target.Item{
 				baseTargetItem,
 				testJobTwoTargetItemTwo,
