@@ -4,7 +4,7 @@ FROM php:8.4@sha256:966621a53c8e75f062fad4e043ffec507cb793822aee3422110e0127fe53
 
 COPY --from=composer_build /usr/bin/composer /usr/local/bin/composer
 
-RUN apt-get update && apt-get install -y zlib1g-dev libzip-dev unzip && docker-php-ext-install zip
+RUN apt-get update && apt-get install -y git zlib1g-dev libzip-dev unzip && docker-php-ext-install zip
 
 WORKDIR /app
 
