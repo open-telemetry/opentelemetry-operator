@@ -17,3 +17,5 @@ subtext: |
   The Go type of `TargetAllocatorSpec.FilterStrategy` changed to a pointer so typed clients can
   distinguish an unset strategy from an explicitly configured value. The legacy empty value remains
   accepted as an alias for disabling filtering, but new configurations should use `none`.
+  The Target Allocator now rejects any other value of `filter_strategy` on startup, and normalizes
+  the empty value to `none` when loading its configuration.
