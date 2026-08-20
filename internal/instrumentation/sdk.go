@@ -503,7 +503,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELPropagators)
 	if idx == -1 && len(otelinst.Spec.Propagators) > 0 {
-		propagators := *(*[]string)((unsafe.Pointer(&otelinst.Spec.Propagators)))
+		propagators := *(*[]string)(unsafe.Pointer(&otelinst.Spec.Propagators))
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELPropagators,
 			Value: strings.Join(propagators, ","),
