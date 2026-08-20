@@ -38,6 +38,10 @@ spec:
               value: "120"
             - name: retrySleep
               value: "10"
+            - name: catchPodLabelSelector
+              value: app.kubernetes.io/component=opentelemetry-targetallocator
+            - name: catchContainer
+              value: ta-container
             # TA-specific Prometheus metrics bridged to OTLP; their presence in
             # the collector debug logs proves the TA self-telemetry pipeline works end-to-end.
             - name: searchStrings
