@@ -7,7 +7,7 @@ TOKEN=$(oc create token e2e-test-metrics-reader -n $NAMESPACE)
 THANOS_QUERIER_HOST=$(oc get route thanos-querier -n openshift-monitoring -o json | jq -r '.spec.host')
 
 #Check metrics for OpenTelemetry collector instance.
-metrics="otelcol_processor_groupbyattrs_num_non_grouped_metrics_total otelcol_processor_groupbyattrs_metric_groups_bucket otelcol_processor_groupbyattrs_metric_groups_count otelcol_processor_groupbyattrs_metric_groups_sum"
+metrics="otelcol_processor_groupbyattrs_num_non_grouped_metrics otelcol_processor_groupbyattrs_metric_groups_bucket otelcol_processor_groupbyattrs_metric_groups_count otelcol_processor_groupbyattrs_metric_groups_sum"
 
 for metric in $metrics; do
 query="$metric"

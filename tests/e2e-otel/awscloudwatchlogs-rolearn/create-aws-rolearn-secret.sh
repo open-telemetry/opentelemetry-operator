@@ -63,11 +63,16 @@ cat > "$trust_rel_file" <<EOF
 EOF
 
 echo "Creating IAM role '$role_name'..."
-role_arn=$(aws iam create-role \
-             --role-name "$role_name" \
-             --assume-role-policy-document "file://$trust_rel_file" \
-             --query Role.Arn \
-             --output text)
+if role_arn=$(aws iam get-role --role-name "$role_name" --query Role.Arn --output text 2>/dev/null); then
+  echo "Role already exists, updating trust policy..."
+  aws iam update-assume-role-policy --role-name "$role_name" --policy-document "file://$trust_rel_file"
+else
+  role_arn=$(aws iam create-role \
+               --role-name "$role_name" \
+               --assume-role-policy-document "file://$trust_rel_file" \
+               --query Role.Arn \
+               --output text)
+fi
 
 # Create custom CloudWatch Logs policy
 policy_name="CloudWatchLogsPolicy-$namespace-$OPENSHIFT_BUILD_NAMESPACE"
@@ -93,11 +98,14 @@ cat > "$policy_file" <<EOF
 EOF
 
 echo "Creating IAM policy '$policy_name'..."
-policy_arn=$(aws iam create-policy \
-             --policy-name "$policy_name" \
-             --policy-document "file://$policy_file" \
-             --query Policy.Arn \
-             --output text)
+policy_arn="arn:aws:iam::${aws_account_id}:policy/${policy_name}"
+if ! aws iam get-policy --policy-arn "$policy_arn" >/dev/null 2>&1; then
+  policy_arn=$(aws iam create-policy \
+               --policy-name "$policy_name" \
+               --policy-document "file://$policy_file" \
+               --query Policy.Arn \
+               --output text)
+fi
 
 echo "Attaching policy '$policy_name' to role '$role_name'..."
 aws iam attach-role-policy \
@@ -110,7 +118,8 @@ echo "Create the secret to be used with OpenTelemetry Collector"
 oc -n $namespace create secret generic aws-sts-cloudwatch \
   --from-literal=log_group_name="$log_group_name" \
   --from-literal=region="$region" \
-  --from-literal=role_arn="$role_arn"
+  --from-literal=role_arn="$role_arn" \
+  --dry-run=client -o yaml | oc apply -f -
 
 echo "AWS STS configuration for CloudWatch Logs completed successfully!"
 echo "Log Group: $log_group_name"

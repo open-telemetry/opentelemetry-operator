@@ -1,0 +1,65 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: azuremonitorlogs
+spec:
+  description: "Test forwarding cluster logs to Azure Monitor via OTel Collector and ClusterLogForwarder"
+  template: true
+  steps:
+  - name: Create Azure Monitor resources and credentials
+    try:
+    - script:
+        timeout: 10m
+        content: ./create-azure-monitor-resources.sh
+    cleanup:
+    - script:
+        timeout: 5m
+        content: ./delete-azure-monitor-resources.sh
+
+  - name: Deploy OTel Collector with Azure Monitor exporter
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        timeout: 3m
+        file: otel-collector-assert.yaml
+
+  - name: Grant log collector permissions and deploy ClusterLogForwarder
+    try:
+    - script:
+        timeout: 5m
+        content: ./setup-cluster-log-forwarder.sh
+    cleanup:
+    - script:
+        timeout: 2m
+        content: ./cleanup-cluster-log-forwarder.sh
+
+  - name: Deploy log generator application
+    try:
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - command:
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/1000
+        - --overwrite
+        entrypoint: kubectl
+    - apply:
+        file: app-plaintext-logs.yaml
+    - assert:
+        timeout: 2m
+        file: app-plaintext-logs-assert.yaml
+
+  - name: Verify logs are received in Azure Monitor
+    try:
+    - script:
+        timeout: 16m
+        content: ./check_azure_logs.sh

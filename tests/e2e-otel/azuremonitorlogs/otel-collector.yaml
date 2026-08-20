@@ -1,0 +1,74 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-logs-gateway
+spec:
+  mode: deployment
+  env:
+    - name: AZURE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-monitor-credentials
+          key: AZURE_CLIENT_ID
+    - name: AZURE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: azure-monitor-credentials
+          key: AZURE_CLIENT_SECRET
+    - name: AZURE_TENANT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-monitor-credentials
+          key: AZURE_TENANT_ID
+    - name: AZURE_OTLP_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: azure-monitor-credentials
+          key: AZURE_OTLP_ENDPOINT
+  config:
+    extensions:
+      oauth2client:
+        client_id: ${env:AZURE_CLIENT_ID}
+        client_secret: ${env:AZURE_CLIENT_SECRET}
+        token_url: "https://login.microsoftonline.com/${env:AZURE_TENANT_ID}/oauth2/v2.0/token"
+        scopes: ["https://monitor.azure.com/.default"]
+
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
+      transform:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              - merge_maps(attributes, resource.attributes, "insert")
+      batch:
+        send_batch_max_size: 10240
+        send_batch_size: 8192
+        timeout: 5s
+
+    exporters:
+      debug:
+        verbosity: detailed
+      otlphttp/azure:
+        auth:
+          authenticator: oauth2client
+        logs_endpoint: "${env:AZURE_OTLP_ENDPOINT}"
+
+    service:
+      extensions: [oauth2client]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, transform, batch]
+          exporters: [otlphttp/azure, debug]

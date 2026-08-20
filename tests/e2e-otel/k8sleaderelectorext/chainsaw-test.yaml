@@ -1,0 +1,21 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: k8sleaderelectorext
+spec:
+  steps:
+  - name: Create OTEL collector with k8s_leader_elector extension and k8s_cluster receiver using 2 replicas
+    try:
+    - apply:
+        file: otel-k8sleaderelectorext.yaml
+    - assert:
+        file: otel-k8sleaderelectorext-assert.yaml
+  - name: Wait for leader election and metrics collection
+    try:
+    - sleep:
+        duration: 60s
+  - name: Verify leader election and metrics in the OTEL collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_leader_election.sh

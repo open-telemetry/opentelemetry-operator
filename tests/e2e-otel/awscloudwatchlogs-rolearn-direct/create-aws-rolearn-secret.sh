@@ -70,11 +70,16 @@ cat > "$base_trust_file" <<EOF
 }
 EOF
 
-base_role_arn=$(aws iam create-role \
-             --role-name "$base_role_name" \
-             --assume-role-policy-document "file://$base_trust_file" \
-             --query Role.Arn \
-             --output text)
+if base_role_arn=$(aws iam get-role --role-name "$base_role_name" --query Role.Arn --output text 2>/dev/null); then
+  echo "Base role already exists, updating trust policy..."
+  aws iam update-assume-role-policy --role-name "$base_role_name" --policy-document "file://$base_trust_file"
+else
+  base_role_arn=$(aws iam create-role \
+               --role-name "$base_role_name" \
+               --assume-role-policy-document "file://$base_trust_file" \
+               --query Role.Arn \
+               --output text)
+fi
 
 echo "Base role created: $base_role_arn"
 
@@ -95,11 +100,14 @@ cat > "$base_policy_file" <<EOF
 EOF
 
 echo "Creating base role policy '$base_policy_name'..."
-base_policy_arn=$(aws iam create-policy \
-             --policy-name "$base_policy_name" \
-             --policy-document "file://$base_policy_file" \
-             --query Policy.Arn \
-             --output text)
+base_policy_arn="arn:aws:iam::${aws_account_id}:policy/${base_policy_name}"
+if ! aws iam get-policy --policy-arn "$base_policy_arn" >/dev/null 2>&1; then
+  base_policy_arn=$(aws iam create-policy \
+               --policy-name "$base_policy_name" \
+               --policy-document "file://$base_policy_file" \
+               --query Policy.Arn \
+               --output text)
+fi
 
 echo "Attaching policy to base role..."
 aws iam attach-role-policy \
@@ -130,11 +138,16 @@ cat > "$target_trust_file" <<EOF
 }
 EOF
 
-target_role_arn=$(aws iam create-role \
-             --role-name "$target_role_name" \
-             --assume-role-policy-document "file://$target_trust_file" \
-             --query Role.Arn \
-             --output text)
+if target_role_arn=$(aws iam get-role --role-name "$target_role_name" --query Role.Arn --output text 2>/dev/null); then
+  echo "Target role already exists, updating trust policy..."
+  aws iam update-assume-role-policy --role-name "$target_role_name" --policy-document "file://$target_trust_file"
+else
+  target_role_arn=$(aws iam create-role \
+               --role-name "$target_role_name" \
+               --assume-role-policy-document "file://$target_trust_file" \
+               --query Role.Arn \
+               --output text)
+fi
 
 echo "Target role created: $target_role_arn"
 
@@ -162,11 +175,14 @@ cat > "$target_policy_file" <<EOF
 EOF
 
 echo "Creating CloudWatch Logs policy '$target_policy_name'..."
-target_policy_arn=$(aws iam create-policy \
-             --policy-name "$target_policy_name" \
-             --policy-document "file://$target_policy_file" \
-             --query Policy.Arn \
-             --output text)
+target_policy_arn="arn:aws:iam::${aws_account_id}:policy/${target_policy_name}"
+if ! aws iam get-policy --policy-arn "$target_policy_arn" >/dev/null 2>&1; then
+  target_policy_arn=$(aws iam create-policy \
+               --policy-name "$target_policy_name" \
+               --policy-document "file://$target_policy_file" \
+               --query Policy.Arn \
+               --output text)
+fi
 
 echo "Attaching CloudWatch policy to target role..."
 aws iam attach-role-policy \
@@ -180,7 +196,8 @@ oc -n $namespace create secret generic aws-sts-cloudwatch \
   --from-literal=log_group_name="$log_group_name" \
   --from-literal=region="$region" \
   --from-literal=base_role_arn="$base_role_arn" \
-  --from-literal=target_role_arn="$target_role_arn"
+  --from-literal=target_role_arn="$target_role_arn" \
+  --dry-run=client -o yaml | oc apply -f -
 
 echo "AWS STS configuration for CloudWatch Logs completed successfully!"
 echo "Log Group: $log_group_name"
