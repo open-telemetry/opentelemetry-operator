@@ -34,8 +34,10 @@ spec:
               value: app.kubernetes.io/name=ta-selftelemetry-collector
             - name: containerName
               value: otc-container
+            # kind clusters occasionally drop UDP DNS packets to CoreDNS under
+            # conntrack pressure; a generous timeout lets transient blips clear.
             - name: retryTimeout
-              value: "120"
+              value: "300"
             - name: retrySleep
               value: "10"
             - name: catchPodLabelSelector

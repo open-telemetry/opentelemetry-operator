@@ -36,7 +36,9 @@ spec:
       metrics:
         readers:
           - periodic:
-              interval: 15s
+              # Short interval so more export attempts fit in the wait window,
+              # increasing odds of catching a gap in transient DNS packet loss.
+              interval: 5s
               exporter:
                 otlpGrpc:
                   # FQDN so CoreDNS answers authoritatively; the gRPC resolver does
