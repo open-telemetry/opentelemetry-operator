@@ -21,6 +21,7 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
     env:
       # Required if endpoint is set to 4317.
       # Python autoinstrumentation uses http/proto by default
@@ -28,6 +29,7 @@ spec:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
   dotnet:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.16.0-1
     env:
       # Required if endpoint is set to 4317.
       # Dotnet autoinstrumentation uses http/proto by default
@@ -35,6 +37,7 @@ spec:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
   go:
+    image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.24.0
     env:
       # Required if endpoint is set to 4317.
       # Go autoinstrumentation uses http/proto by default

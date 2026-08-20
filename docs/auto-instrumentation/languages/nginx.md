@@ -13,7 +13,7 @@ metadata:
   name: my-instrumentation
 spec:
   nginx:
-    image: your-customized-auto-instrumentation-image:nginx # if custom instrumentation image is needed
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-1
     configFile: /my/custom-dir/custom-nginx.conf
     attrs:
       - name: NginxModuleOtelMaxQueueSize

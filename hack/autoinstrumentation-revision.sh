@@ -12,6 +12,9 @@
 #       Print the upstream SDK version for a language.
 #   hack/autoinstrumentation-revision.sh revision <language>
 #       Print the current operator-owned revision for a language.
+#   hack/autoinstrumentation-revision.sh image <cr-language-key>
+#       Print the canonical, pinnable image reference for an Instrumentation CR
+#       language key (java, nodejs, python, dotnet, go, apacheHttpd, nginx).
 #   hack/autoinstrumentation-revision.sh check
 #       Validate revision bumps for a pull request.
 #   hack/autoinstrumentation-revision.sh apply
@@ -101,6 +104,37 @@ revision() {
   printf '%s\n' "$r"
 }
 
+# go_version prints the upstream go instrumentation version from versions.txt.
+# Go references the upstream image directly and has no operator-owned revision.
+go_version() {
+  local v
+  v="$(grep -E '^autoinstrumentation-go=' versions.txt | head -n 1 | cut -d '=' -f 2 | tr -d '[:space:]')"
+  if [[ -z "$v" ]]; then
+    echo "could not read autoinstrumentation-go version from versions.txt" >&2
+    return 1
+  fi
+  printf '%s\n' "$v"
+}
+
+# image_ref <cr-language-key> prints the canonical, pinnable image reference used
+# in Instrumentation CR examples. Keys are the CR spec field names, which differ
+# from the revision.txt directory names: apacheHttpd and nginx both map to the
+# shared apache-httpd image, and go uses the upstream image (no revision).
+image_ref() {
+  local key="$1" ghcr='ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation'
+  case "$key" in
+    java|nodejs|python|dotnet)
+      printf '%s-%s:%s-%s\n' "$ghcr" "$key" "$(sdk_version "$key")" "$(revision "$key")" ;;
+    apacheHttpd|nginx)
+      printf '%s-apache-httpd:%s-%s\n' "$ghcr" "$(sdk_version apache-httpd)" "$(revision apache-httpd)" ;;
+    go)
+      printf 'ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s\n' "$(go_version)" ;;
+    *)
+      echo "unknown Instrumentation language key '$key'" >&2
+      return 1 ;;
+  esac
+}
+
 cmd_languages() {
   discover_languages
   printf '%s\n' "${LANGUAGES[@]}"
@@ -112,6 +146,10 @@ cmd_sdk_version() {
 
 cmd_revision() {
   revision "${1:?usage: revision <language>}"
+}
+
+cmd_image() {
+  image_ref "${1:?usage: image <cr-language-key>}"
 }
 
 cmd_check() {
@@ -211,10 +249,11 @@ case "${1:-}" in
   languages) shift; cmd_languages "$@" ;;
   sdk-version) shift; cmd_sdk_version "$@" ;;
   revision) shift; cmd_revision "$@" ;;
+  image) shift; cmd_image "$@" ;;
   check) shift; cmd_check "$@" ;;
   apply) shift; cmd_apply "$@" ;;
   *)
-    echo "usage: $0 {languages|sdk-version <language>|revision <language>|check|apply}" >&2
+    echo "usage: $0 {languages|sdk-version <language>|revision <language>|image <cr-language-key>|check|apply}" >&2
     exit 1
     ;;
 esac

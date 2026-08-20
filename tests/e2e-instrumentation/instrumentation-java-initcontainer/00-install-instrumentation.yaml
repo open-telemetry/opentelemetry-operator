@@ -16,6 +16,7 @@ spec:
     - jaeger
     - b3
   java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.30.0-1
     env:
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"
