@@ -225,7 +225,7 @@ spec:
             # Allow success or forbidden error
             ($error == null || contains($error, 'forbidden')): true
     - assert:
-       file: assert-upgrade-catalog.yaml
+        file: assert-upgrade-catalog.yaml
   - name: Upgrade OpenTelemetry Operator
     try:
     - apply:
