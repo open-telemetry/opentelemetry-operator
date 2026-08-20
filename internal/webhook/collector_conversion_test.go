@@ -416,8 +416,8 @@ func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
 	two := int32(2)
 	colalpha1 := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			MinReplicas: &one,
-			MaxReplicas: &two,
+			MinReplicas: &one, //nolint:staticcheck
+			MaxReplicas: &two, //nolint:staticcheck
 		},
 	}
 
