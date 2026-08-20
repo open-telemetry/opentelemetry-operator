@@ -16,7 +16,8 @@ spec:
                 - targets: ['0.0.0.0:8888']
       otlp:
         protocols:
-          grpc: {}
+          grpc:
+            endpoint: 0.0.0.0:4317
     exporters:
       debug:
         verbosity: detailed
