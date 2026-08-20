@@ -875,7 +875,7 @@ KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.0
+GOLANGCI_LINT_VERSION ?= v2.13.1
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.32.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
