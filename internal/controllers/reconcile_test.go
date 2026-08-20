@@ -1088,8 +1088,9 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.OpAMPBridge(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							// confirm that we don't remove annotations and labels even if we don't set them
-							assert.Contains(t, d.Spec.Template.Annotations, annotationName)
+							// pod template metadata is authoritative: entries removed from the CR are removed from the template
+							assert.NotContains(t, d.Spec.Template.Annotations, annotationName)
+							// object-level metadata is still preserved when the CR stops setting it
 							assert.Contains(t, d.Labels, labelName)
 							actual := v1.Service{}
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.Name), params.Namespace))
