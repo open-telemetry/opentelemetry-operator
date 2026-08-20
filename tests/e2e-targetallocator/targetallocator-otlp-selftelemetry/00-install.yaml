@@ -39,6 +39,8 @@ spec:
               interval: 15s
               exporter:
                 otlpGrpc:
-                  endpoint: "ta-selftelemetry-collector:4317"
+                  # FQDN so CoreDNS answers authoritatively; the gRPC resolver does
+                  # not apply search-domain expansion to a bare service name.
+                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local:4317"
                   tls:
                     insecure: true
