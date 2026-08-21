@@ -535,11 +535,11 @@ check-chainsaw-test-names:
 
 .PHONY: check-autoinstrumentation-revision
 check-autoinstrumentation-revision:
-	./hack/autoinstrumentation-revision.sh check
+	go run ./hack/autoinstrumentation-revision check
 
 .PHONY: bump-autoinstrumentation-revision
 bump-autoinstrumentation-revision:
-	./hack/autoinstrumentation-revision.sh apply
+	go run ./hack/autoinstrumentation-revision apply
 
 # Pin the auto-instrumentation image on every Instrumentation CR example to the
 # canonical <sdk-version>-<revision> reference. Enforced by ensure-update-is-noop.

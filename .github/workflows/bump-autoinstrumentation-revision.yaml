@@ -79,8 +79,8 @@ jobs:
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
-        ./hack/autoinstrumentation-revision.sh apply
-        go run ./hack/update-example-images
+        make bump-autoinstrumentation-revision
+        make update-example-images
 
     - name: Commit and push the revision bumps
       if: steps.guard.outputs.run == 'true'
