@@ -322,7 +322,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 			return ctrl.Result{}, err
 		}
 		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
-		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
+		return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
 	// Add finalizer for this CR

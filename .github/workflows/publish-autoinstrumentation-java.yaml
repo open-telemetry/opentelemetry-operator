@@ -38,6 +38,9 @@ jobs:
       - name: Read version
         run: echo "VERSION=$(cat autoinstrumentation/java/version.txt)" >> $GITHUB_ENV
 
+      - name: Read revision
+        run: echo "REVISION=$(cat autoinstrumentation/java/revision.txt)" >> $GITHUB_ENV
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -46,7 +49,8 @@ jobs:
             ${{ secrets.DOCKER_USERNAME != '' && 'otel/autoinstrumentation-java' || '' }}
             ghcr.io/${{ github.repository_owner }}/opentelemetry-operator/autoinstrumentation-java
           tags: |
-            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+            type=raw,value=${{ env.VERSION }}-${{ env.REVISION }}
+            type=raw,value=${{ env.VERSION }}
             type=semver,pattern={{major}},value=v${{ env.VERSION }}
 
       - name: Set up QEMU

@@ -1,0 +1,96 @@
+name: "Bump Auto-Instrumentation Revision"
+
+# Renovate bumps base images (busybox/alpine/...) and SDK versions under
+# autoinstrumentation/. Each such change requires an operator-owned revision bump
+# (reset to 1 on an SDK change, increment otherwise - see
+# autoinstrumentation/README.md), which Renovate cannot do itself. Without it the
+# check-autoinstrumentation-revision job fails every Renovate PR until a
+# maintainer edits revision.txt by hand. This applies the correct revision and
+# pushes it back to the Renovate branch so the check passes automatically.
+#
+# This needs an otelbot GitHub App with `contents: write` installed on this
+# repository, exposed as the OTELBOT_OPERATOR_CLIENT_ID variable and the
+# OTELBOT_OPERATOR_PRIVATE_KEY secret - the shared org-wide otelbot only has
+# `pull_requests: write`. See
+# https://github.com/open-telemetry/community/blob/main/assets.md#otelbot.
+# The push cannot use GITHUB_TOKEN: pushes made with it do not trigger workflows,
+# which would leave the bump commit - the new head of the pull request - with the
+# check still failing against the pre-bump commit.
+
+on: # zizmor: ignore[dangerous-triggers] writing to the pull request branch needs a privileged token, and the job below only ever runs against non-fork Renovate branches
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'autoinstrumentation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  COMMIT_MESSAGE: "Bump auto-instrumentation image revisions"
+
+jobs:
+  bump-revision:
+    name: Bump auto-instrumentation revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+    - name: Generate otelbot token
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      id: otelbot-token
+      with:
+        client-id: ${{ vars.OTELBOT_OPERATOR_CLIENT_ID }}
+        private-key: ${{ secrets.OTELBOT_OPERATOR_PRIVATE_KEY }}
+        permission-contents: write
+
+    - name: Check out the pull request branch
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Skip branches that were bumped already
+      id: guard
+      run: |
+        if [ "$(git log -1 --format=%s)" = "$COMMIT_MESSAGE" ]; then
+          echo "The branch tip is already a revision bump, nothing to do."
+        else
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Apply revision bumps
+      if: steps.guard.outputs.run == 'true'
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: ./hack/autoinstrumentation-revision.sh apply
+
+    - name: Commit and push the revision bumps
+      if: steps.guard.outputs.run == 'true'
+      env:
+        GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      run: |
+        if git diff --quiet -- 'autoinstrumentation/*/revision.txt'; then
+          echo "No revision changes needed."
+          exit 0
+        fi
+
+        # otelbot is on the EasyCLA allowlist, so its commits pass the CLA check.
+        git config user.name otelbot
+        git config user.email 197425009+otelbot@users.noreply.github.com
+
+        git add -- 'autoinstrumentation/*/revision.txt'
+        git commit -m "$COMMIT_MESSAGE"
+
+        auth_header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+        git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth_header" \
+          push origin "HEAD:$HEAD_REF"
