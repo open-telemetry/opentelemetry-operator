@@ -1,0 +1,48 @@
+# Single collector with TargetAllocator. The TA exports its own metrics via OTLP
+# back to the same collector (otlp receiver), which logs them via the debug exporter.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ta-selftelemetry
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: collector-self
+              static_configs:
+                - targets: ['0.0.0.0:8888']
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        metrics/prometheus:
+          receivers: [prometheus]
+          exporters: [debug]
+        metrics/selftelemetry:
+          receivers: [otlp]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    telemetry:
+      metrics:
+        readers:
+          - periodic:
+              # Short interval so more export attempts fit in the wait window,
+              # increasing odds of catching a gap in transient DNS packet loss.
+              interval: 5s
+              exporter:
+                otlpGrpc:
+                  # FQDN so CoreDNS answers authoritatively; the gRPC resolver does
+                  # not apply search-domain expansion to a bare service name.
+                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local:4317"
+                  tls:
+                    insecure: true

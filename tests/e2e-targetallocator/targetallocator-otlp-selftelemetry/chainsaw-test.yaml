@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-otlp-selftelemetry
+spec:
+  steps:
+    - name: Setup Target Allocator RBAC
+      use:
+        template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+        with:
+          bindings:
+            - name: clusterRoleName
+              value: ta-selftelemetry-targetallocator
+
+    - name: Install collector with TA OTLP self-telemetry
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-targetallocator
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-collector
+
+    - name: Wait for collector to receive TA metrics via OTLP
+      use:
+        template: ../../step-templates/wait-for-telemetry.yaml
+        with:
+          bindings:
+            - name: collectorLabelSelector
+              value: app.kubernetes.io/name=ta-selftelemetry-collector
+            - name: containerName
+              value: otc-container
+            # kind clusters occasionally drop UDP DNS packets to CoreDNS under
+            # conntrack pressure; a generous timeout lets transient blips clear.
+            - name: retryTimeout
+              value: "300"
+            - name: retrySleep
+              value: "10"
+            - name: catchPodLabelSelector
+              value: app.kubernetes.io/component=opentelemetry-targetallocator
+            - name: catchContainer
+              value: ta-container
+            # TA-specific Prometheus metrics bridged to OTLP; their presence in
+            # the collector debug logs proves the TA self-telemetry pipeline works end-to-end.
+            - name: searchStrings
+              value: |-
+                opentelemetry_allocator_targets
+                opentelemetry_allocator_collectors_discovered
