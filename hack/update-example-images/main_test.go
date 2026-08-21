@@ -3,7 +3,11 @@
 
 package main
 
-import "testing"
+import (
+	"maps"
+	"slices"
+	"testing"
+)
 
 var testRefs = map[string]string{
 	"java":        "ghcr.io/otel/autoinstrumentation-java:2.0.0-1",
@@ -16,23 +20,13 @@ var testRefs = map[string]string{
 }
 
 func TestPinImages(t *testing.T) {
+	headerRe := headerRegex(slices.Sorted(maps.Keys(testRefs)))
+
 	tests := []struct {
 		name string
 		in   string
 		want string
 	}{
-		{
-			name: "inserts image as first child",
-			in: "spec:\n" +
-				"  java:\n" +
-				"    env:\n" +
-				"    - name: X\n",
-			want: "spec:\n" +
-				"  java:\n" +
-				"    image: ghcr.io/otel/autoinstrumentation-java:2.0.0-1\n" +
-				"    env:\n" +
-				"    - name: X\n",
-		},
 		{
 			name: "replaces existing first-child image",
 			in: "spec:\n" +
@@ -45,7 +39,7 @@ func TestPinImages(t *testing.T) {
 				"    env: []\n",
 		},
 		{
-			name: "moves a non-first-child image to first and keeps siblings",
+			name: "replaces first-child image and keeps later siblings",
 			in: "spec:\n" +
 				"  apacheHttpd:\n" +
 				"    image: old:tag # comment\n" +
@@ -56,14 +50,15 @@ func TestPinImages(t *testing.T) {
 				"    version: \"2.2\"\n",
 		},
 		{
-			name: "handles multiple language blocks and ends block at less-indented sibling",
+			name: "replaces first-child image in multiple language blocks",
 			in: "spec:\n" +
 				"  java:\n" +
+				"    image: old-java\n" +
 				"    env: []\n" +
 				"  exporter:\n" +
 				"    endpoint: http://x:4317\n" +
 				"  python:\n" +
-				"    env: []\n",
+				"    image: old-python\n",
 			want: "spec:\n" +
 				"  java:\n" +
 				"    image: ghcr.io/otel/autoinstrumentation-java:2.0.0-1\n" +
@@ -71,26 +66,34 @@ func TestPinImages(t *testing.T) {
 				"  exporter:\n" +
 				"    endpoint: http://x:4317\n" +
 				"  python:\n" +
-				"    image: ghcr.io/otel/autoinstrumentation-python:0.2b0-1\n" +
-				"    env: []\n",
+				"    image: ghcr.io/otel/autoinstrumentation-python:0.2b0-1\n",
 		},
 		{
-			name: "preserves comments and blank lines inside a block",
-			in: "  go:\n" +
+			name: "leaves a language block with no image untouched (never inserts)",
+			in: "spec:\n" +
+				"  nodejs:\n" +
 				"    env:\n" +
-				"      # keep me\n" +
-				"\n" +
-				"      - name: X\n",
-			want: "  go:\n" +
-				"    image: ghcr.io/otel/autoinstrumentation-go:v0.3.0\n" +
+				"      - name: NODE_PATH\n" +
+				"        value: /app\n",
+			want: "spec:\n" +
+				"  nodejs:\n" +
 				"    env:\n" +
-				"      # keep me\n" +
-				"\n" +
-				"      - name: X\n",
+				"      - name: NODE_PATH\n" +
+				"        value: /app\n",
 		},
 		{
-			name: "does not drop a deeper (non-direct-child) image line",
+			name: "does not touch an image that is not the first child",
+			in: "  apacheHttpd:\n" +
+				"    version: \"2.2\"\n" +
+				"    image: old:tag\n",
+			want: "  apacheHttpd:\n" +
+				"    version: \"2.2\"\n" +
+				"    image: old:tag\n",
+		},
+		{
+			name: "replaces first-child image but not a deeper image line",
 			in: "  java:\n" +
+				"    image: old\n" +
 				"    volumeClaimTemplate:\n" +
 				"      spec:\n" +
 				"        image: not-a-lang-image\n",
@@ -102,8 +105,8 @@ func TestPinImages(t *testing.T) {
 		},
 		{
 			name: "no trailing newline is preserved",
-			in:   "  java:\n    env: []",
-			want: "  java:\n    image: ghcr.io/otel/autoinstrumentation-java:2.0.0-1\n    env: []",
+			in:   "  java:\n    image: old",
+			want: "  java:\n    image: ghcr.io/otel/autoinstrumentation-java:2.0.0-1",
 		},
 		{
 			name: "sdk-only content is unchanged",
@@ -125,15 +128,25 @@ func TestPinImages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := pinImages(tt.in, testRefs)
+			got := pinImages(tt.in, headerRe, testRefs)
 			if got != tt.want {
 				t.Errorf("pinImages() mismatch\n--- got ---\n%q\n--- want ---\n%q", got, tt.want)
 			}
-			// Running again must be a no-op.
-			if again := pinImages(got, testRefs); again != got {
+			if again := pinImages(got, headerRe, testRefs); again != got {
 				t.Errorf("pinImages() not idempotent\n--- first ---\n%q\n--- second ---\n%q", got, again)
 			}
 		})
+	}
+}
+
+func TestLanguageKeys(t *testing.T) {
+	got, err := languageKeys()
+	if err != nil {
+		t.Fatalf("languageKeys() error: %v", err)
+	}
+	want := []string{"apacheHttpd", "dotnet", "go", "java", "nginx", "nodejs", "python"}
+	if !slices.Equal(got, want) {
+		t.Errorf("languageKeys() = %v, want %v", got, want)
 	}
 }
 
