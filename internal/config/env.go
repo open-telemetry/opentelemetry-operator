@@ -27,6 +27,9 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS"); ok {
 		cfg.AutoInstrumentationNodeJSImage = v
 	}
+	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_PHP"); ok {
+		cfg.AutoInstrumentationPhpImage = v
+	}
 	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON"); ok {
 		cfg.AutoInstrumentationPythonImage = v
 	}
@@ -126,6 +129,9 @@ func ApplyEnvVars(cfg *Config) {
 	}
 	if v, ok := os.LookupEnv("ENABLE_APACHE_HTTPD_AUTO_INSTRUMENTATION"); ok {
 		cfg.EnableApacheHttpdInstrumentation, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("ENABLE_PHP_AUTO_INSTRUMENTATION"); ok {
+		cfg.EnablePhpAutoInstrumentation, _ = strconv.ParseBool(v)
 	}
 	if v, ok := os.LookupEnv("ENABLE_PYTHON_AUTO_INSTRUMENTATION"); ok {
 		cfg.EnablePythonAutoInstrumentation, _ = strconv.ParseBool(v)
