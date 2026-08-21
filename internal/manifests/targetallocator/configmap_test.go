@@ -63,6 +63,44 @@ filter_strategy: relabel-config
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
+	t.Run("should render filter strategies", func(t *testing.T) {
+		noneFilterStrategy := v1beta1.TargetAllocatorFilterStrategyNone
+		emptyFilterStrategy := v1beta1.TargetAllocatorFilterStrategy("")
+		testCases := []struct {
+			name           string
+			filterStrategy *v1beta1.TargetAllocatorFilterStrategy
+			expected       string
+		}{
+			{
+				name:           "none",
+				filterStrategy: &noneFilterStrategy,
+				expected:       "filter_strategy: none\n",
+			},
+			{
+				name:           "legacy empty value",
+				filterStrategy: &emptyFilterStrategy,
+				expected:       "filter_strategy: \"\"\n",
+			},
+			{
+				name:           "unset",
+				filterStrategy: nil,
+				expected:       "filter_strategy: relabel-config\n",
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				targetAllocator := targetAllocatorInstance()
+				targetAllocator.Spec.FilterStrategy = testCase.filterStrategy
+				actual, err := ConfigMap(Params{
+					Collector:       collectorInstance(),
+					TargetAllocator: targetAllocator,
+				})
+				require.NoError(t, err)
+				assert.Contains(t, actual.Data[targetAllocatorFilename], testCase.expected)
+			})
+		}
+	})
 	t.Run("should return target allocator config map without collector", func(t *testing.T) {
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing

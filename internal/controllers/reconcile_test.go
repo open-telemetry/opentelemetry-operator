@@ -113,6 +113,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	updatedRouteParams.Spec.Ingress.Type = v1beta1.IngressTypeRoute
 	updatedRouteParams.Spec.Ingress.Route.Termination = v1beta1.TLSRouteTerminationTypeInsecure
 	updatedRouteParams.Spec.Ingress.Hostname = expectHostname
+	noneFilterStrategyParams := testCollectorAssertNoErr(t, "test-stateful-ta-none-filter", baseTaImage, promFile)
+	noneFilterStrategyParams.Spec.TargetAllocator.FilterStrategy = v1beta1.TargetAllocatorFilterStrategyNone
 	deletedParams := testCollectorWithMode(t, "test2", v1beta1.ModeDeployment)
 	now := metav1.NewTime(time.Now())
 	deletedParams.DeletionTimestamp = &now
@@ -517,6 +519,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(params.Name, params.Namespace))
 							require.NoError(t, err)
 							require.True(t, exists)
+							relabelConfigFilterStrategy := v1beta1.TargetAllocatorFilterStrategyRelabelConfig
 							expected := v1alpha1.TargetAllocator{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      params.Name,
@@ -528,7 +531,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								Spec: v1alpha1.TargetAllocatorSpec{
 									OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{},
 									AllocationStrategy:        "consistent-hashing",
-									FilterStrategy:            "relabel-config",
+									FilterStrategy:            &relabelConfigFilterStrategy,
 									PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 										ScrapeInterval:         &metav1.Duration{Duration: time.Second * 30},
 										ServiceMonitorSelector: &metav1.LabelSelector{},
@@ -576,6 +579,29 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							require.NoError(t, err)
 							require.True(t, exists)
 							assert.Equal(t, actual.Spec.Image, updatedTaImage)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+		{
+			name: "stateful collector with target allocator filtering disabled",
+			args: args{
+				params: noneFilterStrategyParams,
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check[v1beta1.OpenTelemetryCollector]{
+						func(t *testing.T, params v1beta1.OpenTelemetryCollector) {
+							actual := v1alpha1.TargetAllocator{}
+							exists, err := populateObjectIfExists(t, &actual, namespacedObjectName(params.Name, params.Namespace))
+							require.NoError(t, err)
+							require.True(t, exists)
+							require.NotNil(t, actual.Spec.FilterStrategy)
+							assert.Equal(t, v1beta1.TargetAllocatorFilterStrategyNone, *actual.Spec.FilterStrategy)
 						},
 					},
 					wantErr:     assert.NoError,

@@ -1709,6 +1709,11 @@ func (in *TargetAllocatorList) DeepCopyObject() runtime.Object {
 func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	*out = *in
 	in.OpenTelemetryCommonFields.DeepCopyInto(&out.OpenTelemetryCommonFields)
+	if in.FilterStrategy != nil {
+		in, out := &in.FilterStrategy, &out.FilterStrategy
+		*out = new(v1beta1.TargetAllocatorFilterStrategy)
+		**out = **in
+	}
 	in.GlobalConfig.DeepCopyInto(&out.GlobalConfig)
 	if in.ScrapeConfigs != nil {
 		in, out := &in.ScrapeConfigs, &out.ScrapeConfigs

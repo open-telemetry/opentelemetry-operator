@@ -862,6 +862,42 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name: "empty filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyUnset,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "none filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyNone,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "relabel-config filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyRelabelConfig,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "invalid filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     "not-a-strategy",
+			},
+			expectedErr: errors.New(`invalid filter strategy "not-a-strategy", must be one of: relabel-config, none`),
+		},
+		{
 			name: "both allowNamespaces and denyNamespaces set",
 			fileConfig: Config{
 				PrometheusCR: PrometheusCRConfig{
@@ -1217,5 +1253,35 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.Equal(t, testNamespace, config.CollectorNamespace, "Env var should override config file for namespace")
 		assert.Equal(t, cliListenAddr, config.ListenAddr, "CLI should override config file for listen address")
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
+	})
+
+	t.Run("filter strategy is normalized on load", func(t *testing.T) {
+		for _, tc := range []struct {
+			name     string
+			value    string
+			expected FilterStrategy
+		}{
+			{name: "unset", value: "", expected: DefaultFilterStrategy},
+			{name: "empty", value: `filter_strategy: ""`, expected: FilterStrategyNone},
+			{name: "none", value: "filter_strategy: none", expected: FilterStrategyNone},
+			{name: "relabel-config", value: "filter_strategy: relabel-config", expected: FilterStrategyRelabelConfig},
+			{name: "invalid values are left for validation", value: "filter_strategy: invalid", expected: "invalid"},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				tempDir := t.TempDir()
+				kubeConfigPath := createDummyKubeConfig(t, tempDir)
+				configPath := filepath.Join(tempDir, "config.yaml")
+				require.NoError(t, os.WriteFile(configPath, []byte(tc.value+"\n"), 0o600))
+
+				args := []string{
+					"--" + configFilePathFlagName + "=" + configPath,
+					"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+				}
+
+				config, err := Load(args)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, config.FilterStrategy)
+			})
+		}
 	})
 }

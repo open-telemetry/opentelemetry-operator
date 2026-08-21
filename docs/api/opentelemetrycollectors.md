@@ -32333,10 +32333,12 @@ consumed in the config file for the TargetAllocator.<br/>
         <td>enum</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors.
-The only current option is relabel-config (drops targets based on prom relabel_config).
+The current options are relabel-config (drops targets based on Prometheus relabel_config)
+and none (disables filtering).
+For backward compatibility, an empty string also disables filtering, but none should be used.
 The default is relabel-config.<br/>
           <br/>
-            <i>Enum</i>: , relabel-config<br/>
+            <i>Enum</i>: , none, relabel-config<br/>
             <i>Default</i>: relabel-config<br/>
         </td>
         <td>false</td>
