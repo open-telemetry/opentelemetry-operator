@@ -262,6 +262,49 @@ service:
 	assert.Equal(t, expected, yamlCollector)
 }
 
+func TestConfigYamlPreservesAmbiguousNumericStrings(t *testing.T) {
+	// Regression test for https://github.com/open-telemetry/opentelemetry-operator/issues/4314
+	// Strings written in exponential notation without a decimal point (e.g. "0e12") must stay
+	// quoted, otherwise YAML consumers following the core schema read them back as floats.
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{
+			Object: map[string]any{
+				"otlp": nil,
+			},
+		},
+		Processors: &v1beta1.AnyConfig{
+			Object: map[string]any{
+				"metricstransform/cluster-code": map[string]any{
+					"new_value": "0e12",
+				},
+			},
+		},
+		Exporters: v1beta1.AnyConfig{
+			Object: map[string]any{
+				"debug": nil,
+			},
+		},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{"metricstransform/cluster-code"},
+					Exporters:  []string{"debug"},
+				},
+			},
+		},
+	}
+	yamlCollector, err := cfg.Yaml()
+	require.NoError(t, err)
+	assert.Contains(t, yamlCollector, `new_value: "0e12"`)
+
+	var roundTripped map[string]any
+	require.NoError(t, go_yaml.Unmarshal([]byte(yamlCollector), &roundTripped))
+	processors := roundTripped["processors"].(map[string]any)
+	transform := processors["metricstransform/cluster-code"].(map[string]any)
+	assert.Equal(t, "0e12", transform["new_value"])
+}
+
 func TestGetTelemetryFromYAML(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
 	require.NoError(t, err)
