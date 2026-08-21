@@ -25,6 +25,14 @@ INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentati
 INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
 INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
 
+# Operator-owned build revisions appended to the published image tags (see autoinstrumentation/README.md).
+# Nginx shares the apache-httpd image and therefore its revision.
+INSTRUMENTATION_JAVA_REVISION ?= "$(shell cat autoinstrumentation/java/revision.txt)"
+INSTRUMENTATION_NODEJS_REVISION ?= "$(shell cat autoinstrumentation/nodejs/revision.txt)"
+INSTRUMENTATION_PYTHON_REVISION ?= "$(shell cat autoinstrumentation/python/revision.txt)"
+INSTRUMENTATION_DOTNET_REVISION ?= "$(shell cat autoinstrumentation/dotnet/revision.txt)"
+INSTRUMENTATION_APACHE_HTTPD_REVISION ?= "$(shell cat autoinstrumentation/apache-httpd/revision.txt)"
+
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
 	-X ${VERSION_PKG}.buildDate=${VERSION_DATE}\
@@ -882,7 +890,7 @@ KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.0
+GOLANGCI_LINT_VERSION ?= v2.13.1
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.32.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -1112,13 +1120,13 @@ chlog-insert-components:
 	@echo "" >>components.md
 	@echo "* [OpenTelemetry Collector - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v${OTELCOL_VERSION})" >>components.md
 	@echo "* [OpenTelemetry Contrib - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v${OTELCOL_VERSION})" >>components.md
-	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
-	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
-	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
-	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}-${INSTRUMENTATION_JAVA_REVISION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
+	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
+	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
+	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
 	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md
-	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
-	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
+	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
+	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
 	@$(SED_INPLACE) '/<!-- next version -->/r ./components.md' CHANGELOG.md
 	@$(SED_INPLACE) '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
