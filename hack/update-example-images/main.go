@@ -35,7 +35,6 @@ var scanRoots = []string{"tests", "docs", "config"}
 
 var managedExts = []string{".yaml", ".yml", ".md"}
 
-
 var excludedPaths = map[string]bool{
 	"tests/e2e-upgrade": true, // pins old images to exercise upgrade-blocking
 	"docs/rfcs":         true, // illustrative versions in design docs
@@ -203,7 +202,6 @@ func goVersion(root string) (string, error) {
 	}
 	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
 }
-
 
 func managedFiles(root string) ([]string, error) {
 	var files []string
