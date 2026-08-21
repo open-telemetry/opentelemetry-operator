@@ -59,7 +59,7 @@ func regenGolden(t *testing.T, promYAMLPath string, jobs []string, outPath strin
 	}
 	var all []goldenTarget
 	for _, job := range jobs {
-		out, err := exec.CommandContext( //nolint:gosec,G702 // test code, not actual command injection
+		out, err := exec.CommandContext( //nolint:gosec // test code, not actual command injection
 			t.Context(),
 			promtool,
 			"check",

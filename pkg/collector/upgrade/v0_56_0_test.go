@@ -30,7 +30,7 @@ func Test0_56_0Upgrade(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Replicas:    &one,
-			MaxReplicas: &three,
+			MaxReplicas: &three, //nolint:staticcheck
 			Config:      collectorCfg,
 		},
 	}
