@@ -58,6 +58,10 @@ jobs:
         fetch-depth: 0
         persist-credentials: false
 
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: "~1.26.7"
+
     - name: Skip branches that were bumped already
       id: guard
       run: |
@@ -71,7 +75,7 @@ jobs:
       if: steps.guard.outputs.run == 'true'
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      run: ./hack/autoinstrumentation-revision.sh apply
+      run: make bump-autoinstrumentation-revision
 
     - name: Commit and push the revision bumps
       if: steps.guard.outputs.run == 'true'
