@@ -162,6 +162,10 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instan
 		r.defaultFSGroupOnOpenShift(ctx, &instance)
 	}
 
+	if instance.Spec.Image == "" {
+		instance.Spec.Image = r.config.CollectorImage
+	}
+
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
