@@ -27,6 +27,14 @@ INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentati
 INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
 INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
 
+# Operator-owned build revisions appended to the published image tags (see autoinstrumentation/README.md).
+# Nginx shares the apache-httpd image and therefore its revision.
+INSTRUMENTATION_JAVA_REVISION ?= "$(shell cat autoinstrumentation/java/revision.txt)"
+INSTRUMENTATION_NODEJS_REVISION ?= "$(shell cat autoinstrumentation/nodejs/revision.txt)"
+INSTRUMENTATION_PYTHON_REVISION ?= "$(shell cat autoinstrumentation/python/revision.txt)"
+INSTRUMENTATION_DOTNET_REVISION ?= "$(shell cat autoinstrumentation/dotnet/revision.txt)"
+INSTRUMENTATION_APACHE_HTTPD_REVISION ?= "$(shell cat autoinstrumentation/apache-httpd/revision.txt)"
+
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
 	-X ${VERSION_PKG}.buildDate=${VERSION_DATE}\
@@ -537,6 +545,14 @@ e2e-log-operator:
 .PHONY: check-chainsaw-test-names
 check-chainsaw-test-names:
 	./hack/check-chainsaw-test-names.sh
+
+.PHONY: check-autoinstrumentation-revision
+check-autoinstrumentation-revision:
+	./hack/autoinstrumentation-revision.sh check
+
+.PHONY: bump-autoinstrumentation-revision
+bump-autoinstrumentation-revision:
+	./hack/autoinstrumentation-revision.sh apply
 
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
