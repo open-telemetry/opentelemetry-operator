@@ -13,6 +13,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,6 +59,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// Confine all reads and writes to the repo root; os.Root rejects any path
+	// that escapes it, so example writes can never traverse outside the repo.
+	rootFS, err := os.OpenRoot(root)
+	if err != nil {
+		return err
+	}
+	defer rootFS.Close()
 
 	keys, err := languageKeys()
 	if err != nil {
@@ -77,8 +85,7 @@ func run() error {
 
 	changed := 0
 	for _, rel := range files {
-		abs := filepath.Join(root, rel)
-		content, err := os.ReadFile(abs)
+		content, err := rootFS.ReadFile(rel)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", rel, err)
 		}
@@ -86,7 +93,7 @@ func run() error {
 		if updated == string(content) {
 			continue
 		}
-		if err := os.WriteFile(abs, []byte(updated), 0o600); err != nil {
+		if err := rootFS.WriteFile(rel, []byte(updated), 0o600); err != nil {
 			return fmt.Errorf("write %s: %w", rel, err)
 		}
 		fmt.Println("updated", rel)
@@ -144,7 +151,7 @@ func languageKeys() ([]string, error) {
 		}
 	}
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("no language fields with an Image found on InstrumentationSpec")
+		return nil, errors.New("no language fields with an Image found on InstrumentationSpec")
 	}
 	slices.Sort(keys)
 	return keys, nil
@@ -212,7 +219,7 @@ func goVersion(root string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("could not read autoinstrumentation-go version from versions.txt")
+	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
 }
 
 // managedFiles lists the Instrumentation CR examples this tool pins (repo-relative):
@@ -246,7 +253,7 @@ func managedFiles(root string) ([]string, error) {
 		}
 	}
 
-	err := filepath.WalkDir(filepath.Join(root, "docs/auto-instrumentation"), func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(filepath.Join(root, "docs", "auto-instrumentation"), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
