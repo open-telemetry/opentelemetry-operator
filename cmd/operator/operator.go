@@ -33,7 +33,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
@@ -124,7 +123,7 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		}
 	}
 
-	if result.Config.PrometheusCRAvailability == prometheus.Available {
+	if result.Config.PrometheusCRAvailability.Available() {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	} else {
@@ -248,7 +247,7 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		}
 	}
 
-	if result.Config.PrometheusCRAvailability == prometheus.Available && result.Config.CreateServiceMonitorOperatorMetrics {
+	if result.Config.PrometheusCRAvailability.AvailableServiceMonitor() && result.Config.CreateServiceMonitorOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
