@@ -25,6 +25,7 @@ spec:
     type: parentbased_traceidratio
     argument: "1"
   java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.0-1
     env:
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"

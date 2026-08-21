@@ -5,8 +5,10 @@ name: "Bump Auto-Instrumentation Revision"
 # (reset to 1 on an SDK change, increment otherwise - see
 # autoinstrumentation/README.md), which Renovate cannot do itself. Without it the
 # check-autoinstrumentation-revision job fails every Renovate PR until a
-# maintainer edits revision.txt by hand. This applies the correct revision and
-# pushes it back to the Renovate branch so the check passes automatically.
+# maintainer edits revision.txt by hand. This applies the correct revision, then
+# re-pins the Instrumentation CR examples to the new <sdk-version>-<revision> tag
+# (otherwise ensure-update-is-noop fails the PR), and pushes both back to the
+# Renovate branch so the checks pass automatically.
 #
 # This needs an otelbot GitHub App with `contents: write` installed on this
 # repository, exposed as the OTELBOT_OPERATOR_CLIENT_ID variable and the
@@ -32,7 +34,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  COMMIT_MESSAGE: "Bump auto-instrumentation image revisions"
+  COMMIT_MESSAGE: "Bump auto-instrumentation image revisions and pin examples"
 
 jobs:
   bump-revision:
@@ -58,7 +60,8 @@ jobs:
         fetch-depth: 0
         persist-credentials: false
 
-    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: "~1.26.7"
 
@@ -71,11 +74,13 @@ jobs:
           echo "run=true" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Apply revision bumps
+    - name: Apply revision bumps and re-pin example images
       if: steps.guard.outputs.run == 'true'
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      run: make bump-autoinstrumentation-revision
+      run: |
+        make bump-autoinstrumentation-revision
+        make update-example-images
 
     - name: Commit and push the revision bumps
       if: steps.guard.outputs.run == 'true'
@@ -83,16 +88,15 @@ jobs:
         GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
       run: |
-        if git diff --quiet -- 'autoinstrumentation/*/revision.txt'; then
-          echo "No revision changes needed."
-          exit 0
-        fi
-
         # otelbot is on the EasyCLA allowlist, so its commits pass the CLA check.
         git config user.name otelbot
         git config user.email 197425009+otelbot@users.noreply.github.com
 
-        git add -- 'autoinstrumentation/*/revision.txt'
+        git add -- 'autoinstrumentation/*/revision.txt' tests config/samples docs/auto-instrumentation
+        if git diff --cached --quiet; then
+          echo "No revision or example changes needed."
+          exit 0
+        fi
         git commit -m "$COMMIT_MESSAGE"
 
         auth_header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
