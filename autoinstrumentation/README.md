@@ -32,7 +32,7 @@ operator-owned revision (a positive integer). The `revision` portion of the tag
 is read from this file at publish time.
 
 The revision moves according to two rules, enforced on pull requests by
-[`hack/autoinstrumentation-revision.sh`](../hack/autoinstrumentation-revision.sh):
+[`hack/autoinstrumentation-revision`](../hack/autoinstrumentation-revision):
 
 1. **Reset to `1`** when the upstream SDK version changes. A new upstream version
    starts a fresh packaging lineage (`2.30.0-1`, then a later `2.30.1-1`).
