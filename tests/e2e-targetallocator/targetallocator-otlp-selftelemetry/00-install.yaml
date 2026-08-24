@@ -32,20 +32,6 @@ spec:
   targetAllocator:
     enabled: true
     serviceAccount: ta
-    telemetry:
-      metrics:
-        readers:
-          - periodic:
-              # Short interval so more export attempts fit in the wait window,
-              # increasing odds of catching a gap in transient DNS packet loss.
-              interval: 5s
-              exporter:
-                otlpGrpc:
-                  # Trailing dot makes this an absolute name, so the resolver (which
-                  # honors /etc/resolv.conf ndots rules) skips search-domain expansion
-                  # entirely instead of issuing several extra queries per lookup before
-                  # trying the name as-is; fewer UDP round trips means fewer chances to
-                  # hit transient DNS packet loss in kind.
-                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local.:4317"
-                  tls:
-                    insecure: true
+    # Self-telemetry is enabled in a later step, once the collector's Service
+    # ClusterIP is known. This avoids depending on in-cluster DNS resolution,
+    # which is unreliable under load in kind (see chainsaw-test.yaml).

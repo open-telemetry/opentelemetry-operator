@@ -25,6 +25,65 @@ spec:
         - podLogs:
             selector: app.kubernetes.io/component=opentelemetry-collector
 
+    - name: Point TA self-telemetry at the collector's ClusterIP
+      try:
+        # Target the collector Service's ClusterIP directly instead of its DNS name.
+        # In-cluster DNS resolution (pod -> CoreDNS) has proven unreliable under load
+        # in kind, causing this test to fail almost every CI run even with generous
+        # retries and an FQDN. Using the ClusterIP sidesteps CoreDNS entirely for the
+        # TA -> collector OTLP export, at the cost of no longer exercising the
+        # DNS-based endpoint path a real user would typically configure.
+        - script:
+            content: |
+              #!/bin/bash
+              set -euo pipefail
+              kubectl get service ta-selftelemetry-collector -n ${NAMESPACE} -o jsonpath='{.spec.clusterIP}'
+            outputs:
+              - name: collectorClusterIP
+                value: ($stdout)
+        - script:
+            env:
+              - name: COLLECTOR_CLUSTER_IP
+                value: ($collectorClusterIP)
+            content: |
+              #!/bin/bash
+              set -euo pipefail
+              kubectl patch opentelemetrycollector ta-selftelemetry -n ${NAMESPACE} --type merge -p "$(cat <<EOF
+              {
+                "spec": {
+                  "targetAllocator": {
+                    "telemetry": {
+                      "metrics": {
+                        "readers": [
+                          {
+                            "periodic": {
+                              "interval": "5s",
+                              "exporter": {
+                                "otlpGrpc": {
+                                  "endpoint": "${COLLECTOR_CLUSTER_IP}:4317",
+                                  "tls": {
+                                    "insecure": true
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+              EOF
+              )"
+        - assert:
+            file: 00-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-targetallocator
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-collector
+
     - name: Wait for collector to receive TA metrics via OTLP
       use:
         template: ../../step-templates/wait-for-telemetry.yaml
@@ -34,12 +93,10 @@ spec:
               value: app.kubernetes.io/name=ta-selftelemetry-collector
             - name: containerName
               value: otc-container
-            # kind clusters occasionally drop UDP DNS packets to CoreDNS under
-            # conntrack pressure; a generous timeout lets transient blips clear.
             - name: retryTimeout
-              value: "300"
+              value: "120"
             - name: retrySleep
-              value: "10"
+              value: "5"
             - name: catchPodLabelSelector
               value: app.kubernetes.io/component=opentelemetry-targetallocator
             - name: catchContainer
