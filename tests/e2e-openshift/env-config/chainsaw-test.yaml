@@ -141,9 +141,28 @@ spec:
           #!/bin/bash
           set -e
 
-          # Check if pod-webhook deployment exists (OpenShift with OLM only)
-          if ! kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
-            echo "SKIP: pod-webhook deployment not found"
+          # Wait for OLM reconciliation to stabilize after prior step cleanup.
+          # The previous step's finally block may have modified the Subscription,
+          # triggering OLM reconciliation that can cause transient API errors.
+          echo "Waiting for operator deployment to stabilize..."
+          kubectl rollout status deployment/opentelemetry-operator-controller-manager \
+            -n "$OTEL_NAMESPACE" --timeout=120s
+
+          # Check if pod-webhook deployment exists (OpenShift with OLM only).
+          # Use a retry loop because OLM reconciliation after Subscription changes
+          # can cause brief transient API errors when querying deployments.
+          WEBHOOK_FOUND=false
+          for attempt in $(seq 1 10); do
+            if kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+              WEBHOOK_FOUND=true
+              break
+            fi
+            echo "Webhook deployment not accessible (attempt $attempt/10), retrying in 3s..."
+            sleep 3
+          done
+
+          if [ "$WEBHOOK_FOUND" != "true" ]; then
+            echo "SKIP: pod-webhook deployment not found after 10 attempts"
             exit 0
           fi
 
@@ -173,8 +192,26 @@ spec:
 
           kubectl rollout status deployment/opentelemetry-operator-controller-manager \
             -n "$OTEL_NAMESPACE" --timeout=120s
+
+          # Wait for the operator to reconcile the webhook deployment replicas.
+          # The CSV webhook controller reads OPENSHIFT_WEBHOOK_REPLICAS and updates
+          # the webhook deployment, but this happens asynchronously after the
+          # operator restarts.
+          echo "Waiting for webhook deployment to scale to 1 replica..."
+          TIMEOUT=120
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            REPLICAS=$(kubectl get deployment opentelemetry-operator-webhook \
+              -n "$OTEL_NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+            if [ "$REPLICAS" = "1" ]; then
+              echo "Webhook deployment scaled to 1 replica after ${ELAPSED}s"
+              break
+            fi
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
     - sleep:
-        duration: 10s
+        duration: 5s
     - assert:
         file: assert-pod-webhook-replicas.yaml
 
@@ -192,9 +229,19 @@ spec:
           #!/bin/bash
           set -e
 
-          # Check if pod-webhook deployment exists
-          if ! kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
-            echo "SKIP: pod-webhook deployment not found"
+          # Check if pod-webhook deployment exists (retry for OLM stability)
+          WEBHOOK_FOUND=false
+          for attempt in $(seq 1 10); do
+            if kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
+              WEBHOOK_FOUND=true
+              break
+            fi
+            echo "Webhook deployment not accessible (attempt $attempt/10), retrying in 3s..."
+            sleep 3
+          done
+
+          if [ "$WEBHOOK_FOUND" != "true" ]; then
+            echo "SKIP: pod-webhook deployment not found after 10 attempts"
             exit 0
           fi
 
