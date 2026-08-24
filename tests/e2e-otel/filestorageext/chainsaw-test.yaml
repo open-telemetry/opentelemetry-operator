@@ -36,12 +36,26 @@ spec:
         file: otel-filestorageext.yaml
     - assert:
         file: otel-filestorageext-assert.yaml
+    catch:
+    - describe:
+        apiVersion: v1
+        kind: Pod
+    - events: {}
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
   - name: Create the logs generator app
     try:
     - apply:
         file: app-plaintest-logs.yaml
     - assert:
         file: app-plaintest-logs-assert.yaml
+    catch:
+    - describe:
+        apiVersion: v1
+        kind: Pod
+    - events: {}
+    - podLogs:
+        selector: run=otel-logtest-plaintext
   - name: Wait for the logs to be collected
     try:
     - sleep:
@@ -51,8 +65,22 @@ spec:
     - script:
         timeout: 5m
         content: ./check_logs.sh
+    catch:
+    - describe:
+        apiVersion: v1
+        kind: Pod
+    - events: {}
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
   - name: Confirm the filestorage extension is working
     try:
     - script:
         timeout: 5m
         content: ./check_filestorageext.sh
+    catch:
+    - describe:
+        apiVersion: v1
+        kind: Pod
+    - events: {}
+    - podLogs:
+        selector: run=otel-logtest-plaintext
