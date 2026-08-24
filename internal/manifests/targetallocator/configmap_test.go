@@ -896,17 +896,17 @@ func TestGetGlobalConfig(t *testing.T) {
 func TestTelemetryOTLP(t *testing.T) {
 	t.Run("should emit telemetry block with all OTLP fields", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
-			Metrics: v1beta1.TargetAllocatorMetricsConfig{
-				Readers: []v1beta1.TAMetricReader{{
-					Periodic: &v1beta1.TAPeriodicMetricReader{
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
 						Interval: &metav1.Duration{Duration: 30 * time.Second},
 						Timeout:  &metav1.Duration{Duration: 15 * time.Second},
-						Exporter: v1beta1.TAMetricExporter{
-							OtlpHttp: &v1beta1.TAOTLPHttpExporter{
-								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+						Exporter: v1beta1.MetricExporter{
+							OtlpHttp: &v1beta1.OTLPHttpExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
 									Endpoint: "https://ingest.example.com:4318",
-									Headers: []v1beta1.TANameValuePair{
+									Headers: []v1beta1.NameValuePair{
 										{Name: "Authorization", Value: "Api-Token secret"},
 									},
 									TemporalityPreference: "delta",
@@ -944,13 +944,13 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("should omit optional fields when not set", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
-			Metrics: v1beta1.TargetAllocatorMetricsConfig{
-				Readers: []v1beta1.TAMetricReader{{
-					Periodic: &v1beta1.TAPeriodicMetricReader{
-						Exporter: v1beta1.TAMetricExporter{
-							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
-								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
 									Endpoint: "https://ingest.example.com:4318",
 								},
 							},
@@ -996,22 +996,22 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("grpc with all optional fields", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
-			Metrics: v1beta1.TargetAllocatorMetricsConfig{
-				Readers: []v1beta1.TAMetricReader{{
-					Periodic: &v1beta1.TAPeriodicMetricReader{
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
 						Interval: &metav1.Duration{Duration: 60 * time.Second},
 						Timeout:  &metav1.Duration{Duration: 10 * time.Second},
-						Exporter: v1beta1.TAMetricExporter{
-							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
-								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
 									Endpoint: "example.com:4317",
-									Headers: []v1beta1.TANameValuePair{
+									Headers: []v1beta1.NameValuePair{
 										{Name: "X-Token", Value: "abc"},
 									},
 									TemporalityPreference: "delta",
 								},
-								Tls: &v1beta1.TAGrpcTlsConfig{Insecure: true},
+								Tls: &v1beta1.GrpcTlsConfig{Insecure: true},
 							},
 						},
 					},
@@ -1039,10 +1039,10 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("non-periodic reader is skipped", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TargetAllocatorTelemetry{
-			Metrics: v1beta1.TargetAllocatorMetricsConfig{
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
 				// Periodic is nil — should produce no telemetry block.
-				Readers: []v1beta1.TAMetricReader{{Periodic: nil}},
+				Readers: []v1beta1.MetricReader{{Periodic: nil}},
 			},
 		}
 		params := Params{
@@ -1061,32 +1061,32 @@ func TestTelemetryOTLP(t *testing.T) {
 // buildTelemetryConfig is valid under the OTel declarative configuration schema.
 // If field names diverge (e.g. otlp_grpc → otlpGrpc), this test fails.
 func TestTelemetryConfigOtelconfCompatibility(t *testing.T) {
-	tel := v1beta1.TargetAllocatorTelemetry{
-		Metrics: v1beta1.TargetAllocatorMetricsConfig{
-			Readers: []v1beta1.TAMetricReader{
+	tel := v1beta1.TelemetryConfig{
+		Metrics: v1beta1.MetricsConfig{
+			Readers: []v1beta1.MetricReader{
 				{
-					Periodic: &v1beta1.TAPeriodicMetricReader{
+					Periodic: &v1beta1.PeriodicMetricReader{
 						Interval: &metav1.Duration{Duration: 60 * time.Second},
 						Timeout:  &metav1.Duration{Duration: 30 * time.Second},
-						Exporter: v1beta1.TAMetricExporter{
-							OtlpGrpc: &v1beta1.TAOTLPGrpcExporter{
-								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
 									Endpoint:              "example.com:4317",
 									TemporalityPreference: "delta",
-									Headers: []v1beta1.TANameValuePair{
+									Headers: []v1beta1.NameValuePair{
 										{Name: "Authorization", Value: "Bearer token"},
 									},
 								},
-								Tls: &v1beta1.TAGrpcTlsConfig{Insecure: true},
+								Tls: &v1beta1.GrpcTlsConfig{Insecure: true},
 							},
 						},
 					},
 				},
 				{
-					Periodic: &v1beta1.TAPeriodicMetricReader{
-						Exporter: v1beta1.TAMetricExporter{
-							OtlpHttp: &v1beta1.TAOTLPHttpExporter{
-								TAOTLPCommonConfig: v1beta1.TAOTLPCommonConfig{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Exporter: v1beta1.MetricExporter{
+							OtlpHttp: &v1beta1.OTLPHttpExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
 									Endpoint:              "https://ingest.example.com:4318",
 									TemporalityPreference: "delta",
 								},

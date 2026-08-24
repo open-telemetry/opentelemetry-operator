@@ -227,7 +227,7 @@ type taTlsConfig struct {
 
 // buildTelemetryConfig converts the CRD telemetry spec into the intermediate
 // struct that is serialized directly to YAML. Returns nil if no valid readers.
-func buildTelemetryConfig(tel v1beta1.TargetAllocatorTelemetry) *taTelemetryConfig {
+func buildTelemetryConfig(tel v1beta1.TelemetryConfig) *taTelemetryConfig {
 	readers := make([]taMetricReader, 0, len(tel.Metrics.Readers))
 	for _, r := range tel.Metrics.Readers {
 		if r.Periodic == nil {
@@ -266,7 +266,7 @@ func buildTelemetryConfig(tel v1beta1.TargetAllocatorTelemetry) *taTelemetryConf
 	return &taTelemetryConfig{Metrics: &taMetricsConfig{Readers: readers}}
 }
 
-func convertHeaders(headers []v1beta1.TANameValuePair) []taNameValue {
+func convertHeaders(headers []v1beta1.NameValuePair) []taNameValue {
 	if len(headers) == 0 {
 		return nil
 	}

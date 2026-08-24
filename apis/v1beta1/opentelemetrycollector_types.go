@@ -263,7 +263,7 @@ type TargetAllocatorEmbedded struct {
 	// to the Prometheus /metrics endpoint.
 	//
 	// +optional
-	Telemetry TargetAllocatorTelemetry `json:"telemetry,omitempty"`
+	Telemetry TelemetryConfig `json:"telemetry,omitempty"`
 }
 
 type TargetAllocatorMTLS struct {
@@ -427,29 +427,29 @@ type MetricsConfigSpec struct {
 	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
 }
 
-// TargetAllocatorTelemetry defines the self-telemetry configuration for the TargetAllocator.
-type TargetAllocatorTelemetry struct {
+// TelemetryConfig defines the self-telemetry configuration for the TargetAllocator.
+type TelemetryConfig struct {
 	// Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
 	// +optional
-	Metrics TargetAllocatorMetricsConfig `json:"metrics,omitempty"`
+	Metrics MetricsConfig `json:"metrics,omitempty"`
 }
 
-// TargetAllocatorMetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
-type TargetAllocatorMetricsConfig struct {
+// MetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
+type MetricsConfig struct {
 	// Readers configures one or more metric readers following the OTel declarative configuration spec.
 	// +optional
-	Readers []TAMetricReader `json:"readers,omitempty"`
+	Readers []MetricReader `json:"readers,omitempty"`
 }
 
-// TAMetricReader configures a metric reader.
-type TAMetricReader struct {
+// MetricReader configures a metric reader.
+type MetricReader struct {
 	// Periodic configures a periodic exporting metric reader.
 	// +optional
-	Periodic *TAPeriodicMetricReader `json:"periodic,omitempty"`
+	Periodic *PeriodicMetricReader `json:"periodic,omitempty"`
 }
 
-// TAPeriodicMetricReader configures a periodic exporting metric reader.
-type TAPeriodicMetricReader struct {
+// PeriodicMetricReader configures a periodic exporting metric reader.
+type PeriodicMetricReader struct {
 	// Interval is the delay between consecutive exports. Defaults to 60s.
 	// +optional
 	Interval *metav1.Duration `json:"interval,omitempty"`
@@ -457,55 +457,55 @@ type TAPeriodicMetricReader struct {
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// Exporter configures the push exporter for this reader.
-	Exporter TAMetricExporter `json:"exporter"`
+	Exporter MetricExporter `json:"exporter"`
 }
 
-// TAMetricExporter selects the push exporter for a metric reader.
-type TAMetricExporter struct {
+// MetricExporter selects the push exporter for a metric reader.
+type MetricExporter struct {
 	// OtlpGrpc configures an OTLP/gRPC metric exporter.
 	// +optional
-	OtlpGrpc *TAOTLPGrpcExporter `json:"otlpGrpc,omitempty"`
+	OtlpGrpc *OTLPGrpcExporter `json:"otlpGrpc,omitempty"`
 	// OtlpHttp configures an OTLP/HTTP metric exporter.
 	// +optional
-	OtlpHttp *TAOTLPHttpExporter `json:"otlpHttp,omitempty"`
+	OtlpHttp *OTLPHttpExporter `json:"otlpHttp,omitempty"`
 }
 
-// TAOTLPCommonConfig holds the fields shared by both gRPC and HTTP OTLP exporters.
-type TAOTLPCommonConfig struct {
+// OTLPCommonConfig holds the fields shared by both gRPC and HTTP OTLP exporters.
+type OTLPCommonConfig struct {
 	// Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
 	// (e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").
 	// +kubebuilder:validation:Required
 	Endpoint string `json:"endpoint"`
 	// Headers are additional key/value pairs sent with every export request.
 	// +optional
-	Headers []TANameValuePair `json:"headers,omitempty"`
+	Headers []NameValuePair `json:"headers,omitempty"`
 	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
 	// +optional
 	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
 	TemporalityPreference string `json:"temporalityPreference,omitempty"`
 }
 
-// TAOTLPGrpcExporter configures an OTLP/gRPC metric exporter.
-type TAOTLPGrpcExporter struct {
-	TAOTLPCommonConfig `json:",inline"`
+// OTLPGrpcExporter configures an OTLP/gRPC metric exporter.
+type OTLPGrpcExporter struct {
+	OTLPCommonConfig `json:",inline"`
 	// Tls configures TLS for the gRPC connection.
 	// +optional
-	Tls *TAGrpcTlsConfig `json:"tls,omitempty"`
+	Tls *GrpcTlsConfig `json:"tls,omitempty"`
 }
 
-// TAOTLPHttpExporter configures an OTLP/HTTP metric exporter.
-type TAOTLPHttpExporter struct {
-	TAOTLPCommonConfig `json:",inline"`
+// OTLPHttpExporter configures an OTLP/HTTP metric exporter.
+type OTLPHttpExporter struct {
+	OTLPCommonConfig `json:",inline"`
 }
 
-// TANameValuePair is a name/value pair used for OTLP export headers.
-type TANameValuePair struct {
+// NameValuePair is a name/value pair used for OTLP export headers.
+type NameValuePair struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-// TAGrpcTlsConfig configures TLS settings for a gRPC OTLP exporter.
-type TAGrpcTlsConfig struct {
+// GrpcTlsConfig configures TLS settings for a gRPC OTLP exporter.
+type GrpcTlsConfig struct {
 	// Insecure disables TLS. Only suitable for local development.
 	// +optional
 	Insecure bool `json:"insecure,omitempty"`

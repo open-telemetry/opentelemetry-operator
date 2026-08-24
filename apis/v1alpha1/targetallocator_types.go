@@ -113,5 +113,5 @@ type TargetAllocatorSpec struct {
 	// to the Prometheus /metrics endpoint.
 	//
 	// +optional
-	Telemetry v1beta1.TargetAllocatorTelemetry `json:"telemetry,omitempty"`
+	Telemetry v1beta1.TelemetryConfig `json:"telemetry,omitempty"`
 }
