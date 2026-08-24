@@ -61,3 +61,25 @@ The upstream SDK version for each language is read from:
 | apache-httpd | `apache-httpd/version.txt`                                                          |
 | python       | first line of `python/requirements.txt` (`opentelemetry-distro==<version>`)         |
 | nodejs       | `nodejs/package.json` → `dependencies["@opentelemetry/auto-instrumentations-node"]` |
+
+## Instrumentation CR examples
+
+Every `Instrumentation` CR example in the repo (READMEs, `config/samples`, and the
+`e2e`/`e2e-multi-instrumentation` test manifests) pins the per-language `image` to
+the canonical `<sdk-version>-<revision>` tag rather than relying on an
+operator-provided default (see [issue #5255](https://github.com/open-telemetry/opentelemetry-operator/issues/5255)).
+
+The [`hack/update-example-images`](../hack/update-example-images) tool writes those
+references, sourcing SDK versions and revisions from the same
+[`revision`](../hack/autoinstrumentation-revision/revision) package the revision
+tooling uses:
+
+```bash
+make update-example-images
+```
+
+`make update` runs this automatically, and `make ensure-update-is-noop` fails CI if
+any example drifts. On Renovate SDK bumps the
+[bump-autoinstrumentation-revision workflow](../.github/workflows/bump-autoinstrumentation-revision.yaml)
+re-pins the examples alongside the revision bump. Docs that intentionally show
+custom images (e.g. `docs/auto-instrumentation/custom-images.md`) are not managed.

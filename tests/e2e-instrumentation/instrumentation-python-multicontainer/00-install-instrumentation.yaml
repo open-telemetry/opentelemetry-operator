@@ -19,6 +19,7 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
     env:
       - name: OTEL_LOG_LEVEL
         value: "debug"

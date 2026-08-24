@@ -15,10 +15,12 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.78.0-1
     env:
       - name: OTEL_NODEJS_DEBUG
         value: "true"
   python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
     env:
       - name: OTEL_ENV_VAR
         value: "true"
