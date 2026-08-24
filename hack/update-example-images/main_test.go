@@ -149,12 +149,3 @@ func TestLanguageKeys(t *testing.T) {
 		t.Errorf("languageKeys() = %v, want %v", got, want)
 	}
 }
-
-func TestLeadingSpaces(t *testing.T) {
-	cases := map[string]int{"": 0, "x": 0, "  x": 2, "    ": 4, "\t x": 0}
-	for in, want := range cases {
-		if got := leadingSpaces(in); got != want {
-			t.Errorf("leadingSpaces(%q) = %d, want %d", in, got, want)
-		}
-	}
-}

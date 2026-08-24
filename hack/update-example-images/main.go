@@ -29,8 +29,6 @@ var dirOverride = map[string]string{
 	"nginx":       "apache-httpd",
 }
 
-var imageRe = regexp.MustCompile(`^[ \t]+image:[ \t]`)
-
 var scanRoots = []string{"tests", "docs", "config"}
 
 var managedExts = []string{".yaml", ".yml", ".md"}
@@ -99,30 +97,30 @@ func run() error {
 	return nil
 }
 
+// pinImages returns content with each language block's first-child image line
+// rewritten to refs[langKey]. A block whose first child is not an image is left
+// untouched: the tool replaces existing images but never inserts a missing one.
 func pinImages(content string, headerRe *regexp.Regexp, refs map[string]string) string {
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
 		m := headerRe.FindStringSubmatch(line)
-		if m == nil {
+		if m == nil || i+1 >= len(lines) {
 			continue
 		}
-		childIndent := len(m[1]) + 2
-		next := i + 1
-		if next < len(lines) && leadingSpaces(lines[next]) == childIndent && imageRe.MatchString(lines[next]) {
-			lines[next] = strings.Repeat(" ", childIndent) + "image: " + refs[m[2]]
+		// The block's first child is an image line one indent level (two spaces)
+		// deeper than the header; leave anything else untouched.
+		prefix := m[1] + "  image: "
+		if strings.HasPrefix(lines[i+1], prefix) {
+			lines[i+1] = prefix + refs[m[2]]
 		}
 	}
 	return strings.Join(lines, "\n")
 }
 
-func leadingSpaces(s string) int {
-	n := 0
-	for n < len(s) && s[n] == ' ' {
-		n++
-	}
-	return n
-}
-
+// languageKeys returns the Instrumentation CR spec field names that carry an
+// image, derived by reflection from InstrumentationSpec so new languages are
+// picked up automatically. A language field is a struct-typed field with an
+// Image field.
 func languageKeys() ([]string, error) {
 	var keys []string
 	for f := range reflect.TypeFor[v1alpha1.InstrumentationSpec]().Fields() {
@@ -132,7 +130,8 @@ func languageKeys() ([]string, error) {
 		if _, ok := f.Type.FieldByName("Image"); !ok {
 			continue
 		}
-		if name := jsonName(f.Tag.Get("json")); name != "" {
+		// The json tag (e.g. "java,omitempty") gives the CR spec field name.
+		if name, _, _ := strings.Cut(f.Tag.Get("json"), ","); name != "" && name != "-" {
 			keys = append(keys, name)
 		}
 	}
@@ -143,14 +142,8 @@ func languageKeys() ([]string, error) {
 	return keys, nil
 }
 
-func jsonName(tag string) string {
-	name, _, _ := strings.Cut(tag, ",")
-	if name == "-" {
-		return ""
-	}
-	return name
-}
-
+// headerRegex builds a regexp matching an indented `<language>:` block header
+// for any of keys, capturing the leading indentation and the matched key.
 func headerRegex(keys []string) *regexp.Regexp {
 	quoted := make([]string, len(keys))
 	for i, k := range keys {
@@ -159,6 +152,9 @@ func headerRegex(keys []string) *regexp.Regexp {
 	return regexp.MustCompile(`^([ \t]*)(` + strings.Join(quoted, "|") + `):[ \t]*$`)
 }
 
+// resolveRefs returns the canonical image reference for each language key,
+// sourcing SDK versions and revisions from the revision package. go uses the
+// upstream image and has no operator-owned revision.
 func resolveRefs(root string, keys []string) (map[string]string, error) {
 	repo := revision.New(root)
 	refs := make(map[string]string, len(keys))
@@ -188,6 +184,8 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 	return refs, nil
 }
 
+// goVersion returns the upstream go instrumentation version from versions.txt.
+// Go references the upstream image directly and has no operator-owned revision.
 func goVersion(root string) (string, error) {
 	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
 	if err != nil {
@@ -203,6 +201,8 @@ func goVersion(root string) (string, error) {
 	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
 }
 
+// managedFiles returns the repo-relative example files to pin: every YAML or
+// Markdown file under scanRoots that is not under excludedPaths.
 func managedFiles(root string) ([]string, error) {
 	var files []string
 	for _, r := range scanRoots {
@@ -234,6 +234,8 @@ func managedFiles(root string) ([]string, error) {
 	return files, nil
 }
 
+// hasManagedExt reports whether name has an extension that may hold an
+// Instrumentation CR.
 func hasManagedExt(name string) bool {
 	for _, ext := range managedExts {
 		if strings.HasSuffix(name, ext) {
@@ -243,6 +245,9 @@ func hasManagedExt(name string) bool {
 	return false
 }
 
+// repoRoot returns the module root by walking up from the working directory to
+// the directory containing go.mod, so the tool works regardless of where it is
+// invoked.
 func repoRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
