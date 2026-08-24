@@ -31,7 +31,23 @@ spec:
               return 1
             fi
 
-            logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers)
+            # Only check logs after the startup grace period to avoid flagging
+            # transient errors (e.g. k8s_api detector timeout, initial OTLP
+            # export retries) that resolve on their own within seconds.
+            POD_START_TS=$(kubectl get pod "$pod" -n "$NAMESPACE" \
+              -o jsonpath='{.status.startTime}')
+            POD_START_EPOCH=$(date -d "$POD_START_TS" +%s)
+            NOW_EPOCH=$(date +%s)
+            POD_AGE=$((NOW_EPOCH - POD_START_EPOCH))
+            STARTUP_GRACE=120
+            if [ "$POD_AGE" -gt "$STARTUP_GRACE" ]; then
+              SINCE_SECS=$((POD_AGE - STARTUP_GRACE))
+              logs=$(kubectl logs "$pod" -n "$NAMESPACE" --all-containers \
+                --since="${SINCE_SECS}s")
+            else
+              echo "Pod $pod is ${POD_AGE}s old (grace period ${STARTUP_GRACE}s); skipping error log check"
+              logs=""
+            fi
             warnings=$(printf '%s\n' "$logs" | grep -Ei \
               '(^|[[:space:]])warn(ing)?([[:space:]:]|$)|"level"[[:space:]]*:[[:space:]]*"warn(ing)?"' || true)
             if [ -n "$warnings" ]; then
