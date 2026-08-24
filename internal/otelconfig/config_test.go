@@ -9,12 +9,14 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/go-logr/logr"
 	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -260,6 +262,323 @@ service:
 `
 
 	assert.Equal(t, expected, yamlCollector)
+}
+
+// collectorDecode decodes a rendered collector config the way the collector's confmap does: with
+// go.yaml.in/yaml/v3 into untyped values.
+func collectorDecode(t *testing.T, doc string) map[string]any {
+	t.Helper()
+	var out any
+	require.NoError(t, yaml.Unmarshal([]byte(doc), &out))
+	m, ok := out.(map[string]any)
+	require.True(t, ok, "decoded document is a %T, not a map", out)
+	return m
+}
+
+// scalarCases are values whose plain YAML spelling a YAML decoder would resolve to a different type, or which
+// are otherwise easy to render ambiguously, along with what the collector must read back for each.
+var scalarCases = []struct {
+	name  string
+	value any
+	want  any
+}{
+	// Strings that look like numbers. "0e12" is https://github.com/open-telemetry/opentelemetry-operator/issues/4314.
+	{"exponent without dot", "0e12", "0e12"},
+	{"exponent without dot, positive", "1e10", "1e10"},
+	{"exponent without dot, upper case", "1E5", "1E5"},
+	{"negative exponent", "12e-3", "12e-3"},
+	{"integer", "10", "10"},
+	{"negative integer", "-3", "-3"},
+	{"signed integer", "+7", "+7"},
+	{"float", "1.5", "1.5"},
+	{"float with exponent", "1.5e3", "1.5e3"},
+	{"leading dot", ".5", ".5"},
+	{"trailing dot", "5.", "5."},
+	{"hex", "0x1F", "0x1F"},
+	{"octal", "0o17", "0o17"},
+	{"legacy octal", "017", "017"},
+	{"binary", "0b101", "0b101"},
+	{"underscored", "1_000", "1_000"},
+	{"negative zero", "-0", "-0"},
+	{"sexagesimal", "1:30", "1:30"},
+	{"sexagesimal, three parts", "1:30:00", "1:30:00"},
+	// Strings that look like other scalars.
+	{"true", "true", "true"},
+	{"True", "True", "True"},
+	{"TRUE", "TRUE", "TRUE"},
+	{"false", "false", "false"},
+	{"yes", "yes", "yes"},
+	{"no", "no", "no"},
+	{"on", "on", "on"},
+	{"off", "off", "off"},
+	{"y", "y", "y"},
+	{"n", "n", "n"},
+	{"null", "null", "null"},
+	{"Null", "Null", "Null"},
+	{"tilde", "~", "~"},
+	{"empty", "", ""},
+	{"positive infinity", ".inf", ".inf"},
+	{"negative infinity", "-.Inf", "-.Inf"},
+	{"not a number", ".NaN", ".NaN"},
+	{"nan word", "nan", "nan"},
+	{"date", "2001-12-14", "2001-12-14"},
+	{"timestamp", "2001-12-14t21:59:43.10-05:00", "2001-12-14t21:59:43.10-05:00"},
+	{"spaced timestamp", "2001-12-14 21:59:43.10 -5", "2001-12-14 21:59:43.10 -5"},
+	{"byte order mark", "\ufeffa", "\ufeffa"},
+	{"line separator", "a\u2028b", "a\u2028b"},
+	{"next line", "a\u0085b", "a\u0085b"},
+	{"nul", "a\x00b", "a\x00b"},
+	// Strings with YAML syntax in them.
+	{"mapping", "a: b", "a: b"},
+	{"sequence", "- a", "- a"},
+	{"flow sequence", "[a]", "[a]"},
+	{"flow mapping", "{a: b}", "{a: b}"},
+	{"comment", "a #b", "a #b"},
+	{"leading comment", "#a", "#a"},
+	{"anchor", "&a", "&a"},
+	{"alias", "*a", "*a"},
+	{"tag", "!a", "!a"},
+	{"literal indicator", "|", "|"},
+	{"folded indicator", ">", ">"},
+	{"single quote", "'", "'"},
+	{"double quote", `"`, `"`},
+	{"directive", "%a", "%a"},
+	{"reserved at", "@a", "@a"},
+	{"reserved backtick", "`a", "`a"},
+	{"backslash", `\`, `\`},
+	{"leading space", " leading", " leading"},
+	{"trailing space", "trailing ", "trailing "},
+	{"multi-line", "multi\nline", "multi\nline"},
+	{"trailing newline", "line\n", "line\n"},
+	{"leading newline", "\nline", "\nline"},
+	{"indented lines", "  a\n  b", "  a\n  b"},
+	{"tab", "tab\there", "tab\there"},
+	{"leading tab", "\ta", "\ta"},
+	{"tab-led lines", "\ta\n\tb", "\ta\n\tb"},
+	{"tab-led multi-line", "a\n\tb", "a\n\tb"},
+	{"tab line", "\t\n", "\t\n"},
+	{"carriage return", "a\rb", "a\rb"},
+	{"unicode", "unicode ☃", "unicode ☃"},
+	{"env expansion", "${env:FOO}", "${env:FOO}"},
+	{"escaped dollar", "$$1", "$$1"},
+	{"long", strings.Repeat("0123456789", 20), strings.Repeat("0123456789", 20)},
+	// Non-string scalars. Numbers arrive from the CR's JSON as float64 regardless of their spelling; the
+	// collector reads integer values as int and the rest as float64.
+	{"integral float", float64(10), 10},
+	{"zero", float64(0), 0},
+	{"million", float64(1000000), 1000000},
+	{"fraction", float64(1.5), 1.5},
+	{"large float", float64(1e21), 1e21},
+	{"large integral float", float64(9007199254740992), 9007199254740992},
+	{"largest int64 float", float64(1) * (1 << 62), 1 << 62},
+	{"negative float", float64(-2.25), -2.25},
+	{"int", 3, 3},
+	{"int64", int64(1) << 60, 1 << 60},
+	{"bool", true, true},
+	{"nil", nil, nil},
+}
+
+// scalarConfig builds a config that carries value in every position a user value can occupy: as a component
+// setting, in a list, in a nested map, in service.telemetry, and, when it is a string, as a map key.
+func scalarConfig(value any) *v1beta1.Config {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+		Processors: &v1beta1.AnyConfig{Object: map[string]any{
+			"metricstransform": map[string]any{
+				"setting": value,
+				"list":    []any{value, map[string]any{"nested": value}},
+			},
+		}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Telemetry: &v1beta1.AnyConfig{Object: map[string]any{"setting": value}},
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"metricstransform"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	if key, ok := value.(string); ok && renderableAsKey(key) {
+		cfg.Processors.Object["metricstransform"].(map[string]any)["keys"] = map[string]any{key: "value"}
+	}
+	return cfg
+}
+
+// renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for "<<", which its
+// decoder treats as a merge key even when quoted (https://github.com/go-yaml/yaml/issues/245), nor for a
+// multi-line key whose first line starts with a tab, which it writes as a literal block its own parser rejects
+// (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; Config.Yaml reports an error
+// for them instead of producing a document the collector would misread.
+func renderableAsKey(s string) bool {
+	return s != "<<" && !(strings.HasPrefix(s, "\t") && strings.Contains(s, "\n"))
+}
+
+// assertCollectorReads checks that the collector reads want at every position scalarConfig put the value.
+func assertCollectorReads(t *testing.T, doc string, value, want any) {
+	t.Helper()
+	decoded := collectorDecode(t, doc)
+	processor := decoded["processors"].(map[string]any)["metricstransform"].(map[string]any)
+	assert.Equal(t, want, processor["setting"], "component setting")
+	list := processor["list"].([]any)
+	assert.Equal(t, want, list[0], "list element")
+	assert.Equal(t, want, list[1].(map[string]any)["nested"], "nested map value")
+	assert.Equal(t, want, decoded["service"].(map[string]any)["telemetry"].(map[string]any)["setting"], "telemetry setting")
+	if key, ok := value.(string); ok && renderableAsKey(key) {
+		assert.Equal(t, map[string]any{key: "value"}, processor["keys"], "map key")
+	}
+}
+
+// TestConfigYamlPreservesScalarTypes is the contract behind Config.Yaml: whatever a value's type is in the CR,
+// the collector reads the same type and value from the generated ConfigMap. It covers the strings a YAML decoder
+// would resolve to numbers, booleans, null, timestamps or special floats if they were written unquoted, including
+// the exponent-without-dot case from https://github.com/open-telemetry/opentelemetry-operator/issues/4314, and
+// the number spellings and empty collections that differ between the CR's JSON and YAML.
+func TestConfigYamlPreservesScalarTypes(t *testing.T) {
+	for _, tc := range scalarCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := scalarConfig(tc.value)
+			doc, err := cfg.Yaml()
+			require.NoError(t, err)
+			assertCollectorReads(t, doc, tc.value, tc.want)
+		})
+	}
+}
+
+// FuzzConfigYamlPreservesStrings extends TestConfigYamlPreservesScalarTypes to arbitrary strings: none of them
+// may be rendered in a way the collector reads back as anything but the same string.
+func FuzzConfigYamlPreservesStrings(f *testing.F) {
+	for _, tc := range scalarCases {
+		if s, ok := tc.value.(string); ok {
+			f.Add(s)
+		}
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		if !utf8.ValidString(s) {
+			t.Skip("the CR cannot hold invalid UTF-8")
+		}
+		cfg := scalarConfig(s)
+		doc, err := cfg.Yaml()
+		require.NoError(t, err)
+		assertCollectorReads(t, doc, s, s)
+	})
+}
+
+func TestConfigYamlRendersAmbiguousStringsQuoted(t *testing.T) {
+	// The exact scenario from https://github.com/open-telemetry/opentelemetry-operator/issues/4314.
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+		Processors: &v1beta1.AnyConfig{Object: map[string]any{
+			"metricstransform/cluster-code": map[string]any{"new_value": "0e12"},
+		}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"metricstransform/cluster-code"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	doc, err := cfg.Yaml()
+	require.NoError(t, err)
+	assert.Contains(t, doc, `new_value: "0e12"`)
+}
+
+// TestVerifyYAMLEquivalence checks the safety net in Config.Yaml: a rendering that the collector would read
+// differently from the CR is rejected, while representational differences the collector cannot observe are not.
+func TestVerifyYAMLEquivalence(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{
+			"prometheus": map[string]any{
+				"config": map[string]any{
+					"scrape_configs": []any{map[string]any{
+						"job_name":    "0e12",
+						"scrape_port": float64(9090),
+						"honor":       true,
+						"labels":      map[string]any(nil),
+					}},
+				},
+			},
+		}},
+		Exporters:  v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Processors: &v1beta1.AnyConfig{Object: map[string]any{}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}}},
+		},
+	}
+	const good = `receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "0e12"
+          scrape_port: 9090
+          honor: true
+          labels: {}
+exporters:
+  debug: null
+processors: {}
+service:
+  pipelines:
+    metrics:
+      exporters:
+        - debug
+      receivers:
+        - prometheus
+`
+	variant := func(old, replacement string) []byte {
+		require.Contains(t, good, old)
+		return []byte(strings.Replace(good, old, replacement, 1))
+	}
+
+	t.Run("accepts equivalent renderings", func(t *testing.T) {
+		assert.NoError(t, cfg.VerifyYAMLEquivalence([]byte(good)))
+		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant(`"0e12"`, `'0e12'`)))
+		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("9090", "9.09e3")), "numbers are compared by value")
+		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("labels: {}", "labels: null")), "a nil map may be spelled null")
+		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("processors: {}", "processors:")), "an empty map may be spelled null")
+	})
+
+	for name, tc := range map[string]struct {
+		doc  []byte
+		want string
+	}{
+		"string read as float": {
+			// The rendering from issue 4314: unquoted, 0e12 is a float to the collector.
+			doc:  variant(`"0e12"`, `0e12`),
+			want: `$.receivers.prometheus.config.scrape_configs[0].job_name: the config holds string 0e12, the YAML decodes to float64 0`,
+		},
+		"number read as string": {
+			doc:  variant("scrape_port: 9090", `scrape_port: "9090"`),
+			want: `scrape_port: the config holds float64 9090, the YAML decodes to string 9090`,
+		},
+		"bool read as string": {
+			doc:  variant("honor: true", `honor: "true"`),
+			want: `honor: the config holds bool true, the YAML decodes to string true`,
+		},
+		"null read as map": {
+			doc:  variant("labels: {}", "labels: {a: b}"),
+			want: `labels: the config holds null, the YAML decodes to map[string]interface {} map[a:b]`,
+		},
+		"missing key": {
+			doc:  variant("          honor: true\n", ""),
+			want: `$.receivers.prometheus.config.scrape_configs[0]: key "honor" is missing from the YAML`,
+		},
+		"extra key": {
+			doc:  variant("  debug: null\n", "  debug: null\n  extra: 1\n"),
+			want: `$.exporters: key "extra" is not in the config`,
+		},
+		"list length": {
+			doc:  variant("        - job_name", "        - {}\n        - job_name"),
+			want: `$.receivers.prometheus.config.scrape_configs: 1 elements in the config, 2 in the YAML`,
+		},
+		"not YAML": {
+			doc:  []byte("receivers: [\n"),
+			want: "decode rendered YAML",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := cfg.VerifyYAMLEquivalence(tc.doc)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.want)
+		})
+	}
 }
 
 func TestGetTelemetryFromYAML(t *testing.T) {

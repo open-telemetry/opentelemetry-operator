@@ -6,30 +6,30 @@ metadata:
     app.kubernetes.io/name: ta-collector
 data:
   collector.yaml: |
-    exporters:
-        debug: {}
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://ta-targetallocator.chainsaw-targetallocator-label.svc:80
-                interval: 30s
+      prometheus:
+        config: {}
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://ta-targetallocator.chainsaw-targetallocator-label.svc:80
+          interval: 30s
+    exporters:
+      debug: {}
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - debug
-                receivers:
-                    - prometheus
-        telemetry:
-            metrics:
-                readers:
-                    - pull:
-                          exporter:
-                              prometheus:
-                                  host: 0.0.0.0
-                                  port: 8888
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+      pipelines:
+        metrics:
+          exporters:
+            - debug
+          receivers:
+            - prometheus
 ---
 apiVersion: v1
 data:
