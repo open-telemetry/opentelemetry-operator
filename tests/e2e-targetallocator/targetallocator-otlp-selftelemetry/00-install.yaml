@@ -41,8 +41,11 @@ spec:
               interval: 5s
               exporter:
                 otlpGrpc:
-                  # FQDN so CoreDNS answers authoritatively; the gRPC resolver does
-                  # not apply search-domain expansion to a bare service name.
-                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local:4317"
+                  # Trailing dot makes this an absolute name, so the resolver (which
+                  # honors /etc/resolv.conf ndots rules) skips search-domain expansion
+                  # entirely instead of issuing several extra queries per lookup before
+                  # trying the name as-is; fewer UDP round trips means fewer chances to
+                  # hit transient DNS packet loss in kind.
+                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local.:4317"
                   tls:
                     insecure: true
