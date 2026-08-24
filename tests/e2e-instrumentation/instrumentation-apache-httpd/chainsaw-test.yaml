@@ -48,6 +48,10 @@ spec:
     - assert:
         file: 01-assert.yaml
     catch:
+      - describe:
+          apiVersion: v1
+          kind: Pod
+      - events: {}
       - podLogs:
           selector: app=my-apache
   - name: Make a request to the app
@@ -101,6 +105,10 @@ spec:
         timeout: 2m
         content: ./02-verify-endpoint-interpolation.sh
     catch:
+      - describe:
+          apiVersion: v1
+          kind: Pod
+      - events: {}
       - podLogs:
           selector: app=my-apache
   - name: Make a request to the app via node-IP endpoint
