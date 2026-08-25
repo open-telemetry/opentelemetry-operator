@@ -13,10 +13,6 @@ spec:
     - assert:
         file: assert-install-target-allocator.yaml
     catch:
-    - describe:
-        apiVersion: v1
-        kind: Pod
-    - events: {}
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-targetallocator
   - name: Add OpenShift namespace annotations
@@ -30,11 +26,6 @@ spec:
         file: assert-install-collector-gather.yaml
     - apply:
         file: install-instrumentation.yaml
-    catch:
-    - describe:
-        apiVersion: v1
-        kind: Pod
-    - events: {}
   - name: Install app
     try:
     - apply:
@@ -42,10 +33,6 @@ spec:
     - assert:
         file: assert-install-app.yaml
     catch:
-      - describe:
-          apiVersion: v1
-          kind: Pod
-      - events: {}
       - podLogs:
           selector: app=my-nodejs
   - name: Run the must-gather and verify the contents
@@ -58,8 +45,3 @@ spec:
           value: (env('MUSTGATHER_IMG'))
         timeout: 5m
         content: ./check_must_gather.sh
-    catch:
-    - describe:
-        apiVersion: v1
-        kind: Pod
-    - events: {}
