@@ -16,7 +16,6 @@ metadata:
   namespace: ($namespace)
 status:
   readyReplicas: 1
-  updatedReplicas: 1
 
 ---
 # Collector pod is running.

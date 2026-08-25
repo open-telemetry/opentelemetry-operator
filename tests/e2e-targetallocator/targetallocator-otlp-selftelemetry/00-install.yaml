@@ -29,7 +29,19 @@ spec:
         metrics/selftelemetry:
           receivers: [otlp]
           exporters: [debug]
-  # TargetAllocator is enabled in a later step, once the collector's Service
-  # ClusterIP is known, so its pod is created exactly once, already configured
-  # with the resolved IP. This avoids both depending on in-cluster DNS
-  # resolution and replacing the TA pod mid-test (see chainsaw-test.yaml).
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    telemetry:
+      metrics:
+        readers:
+          - periodic:
+              interval: 5s
+              exporter:
+                otlpGrpc:
+                  # Trailing dot makes this an absolute name, so the resolver skips
+                  # search-domain expansion entirely instead of issuing several extra
+                  # queries per lookup before trying the name as-is.
+                  endpoint: "ta-selftelemetry-collector.${env:OTELCOL_NAMESPACE}.svc.cluster.local.:4317"
+                  tls:
+                    insecure: true

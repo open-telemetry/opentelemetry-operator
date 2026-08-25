@@ -19,3 +19,7 @@ subtext: |
   declarative configuration spec. The operator renders these
   fields into the TargetAllocator ConfigMap consumed by the binary-side OTLP self-telemetry
   support.
+  When the `operand.networkpolicy` feature gate is enabled, the TargetAllocator's generated
+  NetworkPolicy now leaves egress unrestricted if self-telemetry export is configured, since
+  its destination can be an arbitrary (often external) endpoint that can't be scoped with a
+  NetworkPolicy IPBlock/selector.
