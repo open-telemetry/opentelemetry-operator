@@ -334,14 +334,6 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecresizepolicyindex">resizePolicy</a></b></td>
-        <td>[]object</td>
-        <td>
-          ResizePolicy specifies how the OpenTelemetry Collector container responds
-to in-place resource resizes.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -10841,42 +10833,6 @@ More info: https://kubernetes.io/docs/concepts/services-networking/service/#defi
 </table>
 
 
-### OpenTelemetryCollector.spec.resizePolicy[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-ContainerResizePolicy represents resource resize policy for the container.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>resourceName</b></td>
-        <td>string</td>
-        <td>
-          Name of the resource to which this resource resize policy applies.
-Supported values: cpu, memory.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>restartPolicy</b></td>
-        <td>string</td>
-        <td>
-          Restart policy to apply when specified resource is resized.
-If not specified, it defaults to NotRequired.<br/>
-        </td>
-        <td>true</td>
-      </tr></tbody>
-</table>
-
-
 ### OpenTelemetryCollector.spec.resources
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
@@ -20538,7 +20494,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecresizepolicyindex-1">resizePolicy</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspecresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
           ResizePolicy specifies how the primary container responds to in-place

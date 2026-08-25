@@ -153,16 +153,6 @@ func Test_tov1beta1AndBack(t *testing.T) {
 					v1.ResourceMemory: resource.MustParse("128Mi"),
 				},
 			},
-			ResizePolicy: []v1.ContainerResizePolicy{
-				{
-					ResourceName:  v1.ResourceCPU,
-					RestartPolicy: v1.NotRequired,
-				},
-				{
-					ResourceName:  v1.ResourceMemory,
-					RestartPolicy: v1.RestartContainer,
-				},
-			},
 			NodeSelector: map[string]string{"aaa": "ccc"},
 			Args:         map[string]string{"foo": "bar"},
 			Replicas:     &one,

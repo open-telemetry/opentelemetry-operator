@@ -88,7 +88,6 @@ func tov1beta1(in v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollecto
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				ManagementState:               v1beta1.ManagementStateType(c.Spec.ManagementState),
 				Resources:                     c.Spec.Resources,
-				ResizePolicy:                  c.Spec.ResizePolicy,
 				NodeSelector:                  c.Spec.NodeSelector,
 				Args:                          c.Spec.Args,
 				Replicas:                      c.Spec.Replicas,
@@ -320,7 +319,6 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryColle
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ManagementState:      v1alpha1.ManagementStateType(c.Spec.ManagementState),
 			Resources:            c.Spec.Resources,
-			ResizePolicy:         c.Spec.ResizePolicy,
 			NodeSelector:         c.Spec.NodeSelector,
 			Args:                 c.Spec.Args,
 			Replicas:             c.Spec.Replicas,
