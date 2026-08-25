@@ -35,8 +35,8 @@ spec:
         # DNS-based endpoint path a real user would typically configure.
         - script:
             content: |
-              #!/bin/bash
-              set -euo pipefail
+              #!/bin/sh
+              set -eu
               kubectl get service ta-selftelemetry-collector -n ${NAMESPACE} -o jsonpath='{.spec.clusterIP}'
             outputs:
               - name: collectorClusterIP
@@ -46,8 +46,8 @@ spec:
               - name: COLLECTOR_CLUSTER_IP
                 value: ($collectorClusterIP)
             content: |
-              #!/bin/bash
-              set -euo pipefail
+              #!/bin/sh
+              set -eu
               kubectl patch opentelemetrycollector ta-selftelemetry -n ${NAMESPACE} --type merge -p "$(cat <<EOF
               {
                 "spec": {
