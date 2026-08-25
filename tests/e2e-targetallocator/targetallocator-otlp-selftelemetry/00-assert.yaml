@@ -8,9 +8,7 @@ status:
   readyReplicas: 1
 
 ---
-# TA deployment is ready and has finished rolling out its current pod template
-# (updatedReplicas guards against matching a stale pod from a prior revision
-# when this file is reused after patching the TA telemetry config).
+# TA deployment is ready.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

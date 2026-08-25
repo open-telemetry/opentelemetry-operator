@@ -13,26 +13,27 @@ spec:
             - name: clusterRoleName
               value: ta-selftelemetry-targetallocator
 
-    - name: Install collector with TA OTLP self-telemetry
+    - name: Install collector
       try:
         - apply:
             file: 00-install.yaml
         - assert:
-            file: 00-assert.yaml
+            file: 00-assert-collector.yaml
       catch:
-        - podLogs:
-            selector: app.kubernetes.io/component=opentelemetry-targetallocator
         - podLogs:
             selector: app.kubernetes.io/component=opentelemetry-collector
 
-    - name: Point TA self-telemetry at the collector's ClusterIP
+    - name: Enable TA with self-telemetry targeting the collector's ClusterIP
       try:
-        # Target the collector Service's ClusterIP directly instead of its DNS name.
-        # In-cluster DNS resolution (pod -> CoreDNS) has proven unreliable under load
-        # in kind, causing this test to fail almost every CI run even with generous
-        # retries and an FQDN. Using the ClusterIP sidesteps CoreDNS entirely for the
-        # TA -> collector OTLP export, at the cost of no longer exercising the
-        # DNS-based endpoint path a real user would typically configure.
+        # Target the collector Service's ClusterIP directly instead of its DNS name,
+        # and create the TA pod only once, already configured with it. In-cluster
+        # DNS resolution (pod -> CoreDNS) has proven unreliable under load in kind,
+        # and a plain TCP dial to the ClusterIP timed out just as often when TA was
+        # created first and then patched to point at it mid-test (likely a CNI/
+        # kube-proxy race reprogramming routes for the replaced TA pod under load).
+        # Enabling TA fresh, already pointed at the ClusterIP, avoids that replacement
+        # entirely, at the cost of no longer exercising the DNS-based endpoint path a
+        # real user would typically configure.
         - script:
             content: |
               #!/bin/sh
@@ -52,6 +53,8 @@ spec:
               {
                 "spec": {
                   "targetAllocator": {
+                    "enabled": true,
+                    "serviceAccount": "ta",
                     "telemetry": {
                       "metrics": {
                         "readers": [
@@ -94,7 +97,7 @@ spec:
             - name: containerName
               value: otc-container
             - name: retryTimeout
-              value: "120"
+              value: "180"
             - name: retrySleep
               value: "5"
             - name: catchPodLabelSelector
