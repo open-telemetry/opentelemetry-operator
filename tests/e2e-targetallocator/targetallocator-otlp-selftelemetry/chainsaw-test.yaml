@@ -23,29 +23,28 @@ spec:
         - podLogs:
             selector: app.kubernetes.io/component=opentelemetry-collector
 
-    - name: Enable TA with self-telemetry targeting the collector's ClusterIP
+    - name: Enable TA with self-telemetry targeting the collector's pod IP
       try:
-        # Target the collector Service's ClusterIP directly instead of its DNS name,
-        # and create the TA pod only once, already configured with it. In-cluster
-        # DNS resolution (pod -> CoreDNS) has proven unreliable under load in kind,
-        # and a plain TCP dial to the ClusterIP timed out just as often when TA was
-        # created first and then patched to point at it mid-test (likely a CNI/
-        # kube-proxy race reprogramming routes for the replaced TA pod under load).
-        # Enabling TA fresh, already pointed at the ClusterIP, avoids that replacement
-        # entirely, at the cost of no longer exercising the DNS-based endpoint path a
-        # real user would typically configure.
+        # Target the collector pod's IP directly instead of its DNS name or Service
+        # ClusterIP. DNS resolution and ClusterIP dialing (which goes through
+        # kube-proxy's iptables DNAT) have both shown persistent, 100%-reproducible
+        # "dial tcp ...: i/o timeout" failures in this CI environment regardless of
+        # test structure (mid-test pod replacement vs. TA created fresh, parallel
+        # test execution vs. serialized). Dialing the pod IP directly bypasses
+        # kube-proxy's Service DNAT path entirely, isolating whether the failure is
+        # specific to ClusterIP DNAT handling on kind-on-GH-Actions runners.
         - script:
             content: |
               #!/bin/sh
               set -eu
-              kubectl get service ta-selftelemetry-collector -n ${NAMESPACE} -o jsonpath='{.spec.clusterIP}'
+              kubectl get pod -n ${NAMESPACE} -l app.kubernetes.io/name=ta-selftelemetry-collector -o jsonpath='{.items[0].status.podIP}'
             outputs:
-              - name: collectorClusterIP
+              - name: collectorPodIP
                 value: ($stdout)
         - script:
             env:
-              - name: COLLECTOR_CLUSTER_IP
-                value: ($collectorClusterIP)
+              - name: COLLECTOR_POD_IP
+                value: ($collectorPodIP)
             content: |
               #!/bin/sh
               set -eu
@@ -63,7 +62,7 @@ spec:
                               "interval": "5s",
                               "exporter": {
                                 "otlpGrpc": {
-                                  "endpoint": "${COLLECTOR_CLUSTER_IP}:4317",
+                                  "endpoint": "${COLLECTOR_POD_IP}:4317",
                                   "tls": {
                                     "insecure": true
                                   }
