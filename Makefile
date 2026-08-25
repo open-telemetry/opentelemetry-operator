@@ -581,9 +581,13 @@ e2e-prometheuscr: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr --report-name e2e-prometheuscr $(CHAINSAW_SELECTOR)
 
 # Target allocator end-to-tests
+# --parallel 2 (default is 4): the targetallocator-otlp-selftelemetry test does a
+# live pod-to-pod OTLP export and has shown persistent TCP-level packet loss to the
+# collector's ClusterIP in CI under the default parallelism, even with DNS removed
+# from the path entirely. Same mitigation e2e-clusterobservability already uses below.
 .PHONY: e2e-targetallocator
 e2e-targetallocator: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator --report-name e2e-targetallocator
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator --report-name e2e-targetallocator --parallel 2
 
 # Target allocator CR end-to-tests
 .PHONY: e2e-targetallocator-cr
