@@ -180,9 +180,10 @@ type ServiceMetadataConfig struct {
 
 // CommonLanguageSpec contains fields shared by all language-specific configurations.
 type CommonLanguageSpec struct {
-	// Image is a container image with auto-instrumentation.
-	// +optional
-	Image string `json:"image,omitempty"`
+	// Image is a container image with auto-instrumentation. Required.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Image string `json:"image"`
 
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with a default size limit.
