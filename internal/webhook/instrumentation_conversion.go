@@ -126,73 +126,213 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 			UpgradeBlockedVersions: c.Status.UpgradeBlockedVersions,
 		},
 		Spec: v1beta1.InstrumentationSpec{
-			EnvConfig: envConfig,
-			Resource:  resource,
-			Env:       c.Spec.Env,
-			Java: v1beta1.Java{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.Java.Image,
-					VolumeClaimTemplate: c.Spec.Java.VolumeClaimTemplate,
-					Env:                 c.Spec.Java.Env,
-					Resources:           c.Spec.Java.Resources,
-				},
-				Extensions: convertExtensionsToV1beta1(c.Spec.Java.Extensions),
-			},
-			NodeJS: v1beta1.NodeJS{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.NodeJS.Image,
-					VolumeClaimTemplate: c.Spec.NodeJS.VolumeClaimTemplate,
-					Env:                 c.Spec.NodeJS.Env,
-					Resources:           c.Spec.NodeJS.Resources,
-				},
-			},
-			Python: v1beta1.Python{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.Python.Image,
-					VolumeClaimTemplate: c.Spec.Python.VolumeClaimTemplate,
-					Env:                 c.Spec.Python.Env,
-					Resources:           c.Spec.Python.Resources,
-				},
-			},
-			DotNet: v1beta1.DotNet{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.DotNet.Image,
-					VolumeClaimTemplate: c.Spec.DotNet.VolumeClaimTemplate,
-					Env:                 c.Spec.DotNet.Env,
-					Resources:           c.Spec.DotNet.Resources,
-				},
-			},
-			Go: v1beta1.Go{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.Go.Image,
-					VolumeClaimTemplate: c.Spec.Go.VolumeClaimTemplate,
-					Env:                 c.Spec.Go.Env,
-					Resources:           c.Spec.Go.Resources,
-				},
-				SecurityContext: c.Spec.Go.SecurityContext,
-			},
-			ApacheHttpd: v1beta1.ApacheHttpd{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.ApacheHttpd.Image,
-					VolumeClaimTemplate: c.Spec.ApacheHttpd.VolumeClaimTemplate,
-					Env:                 c.Spec.ApacheHttpd.Env,
-					Resources:           c.Spec.ApacheHttpd.Resources,
-				},
-				Version:    c.Spec.ApacheHttpd.Version,
-				ConfigPath: c.Spec.ApacheHttpd.ConfigPath,
-			},
-			Nginx: v1beta1.Nginx{
-				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
-					Image:               c.Spec.Nginx.Image,
-					VolumeClaimTemplate: c.Spec.Nginx.VolumeClaimTemplate,
-					Env:                 c.Spec.Nginx.Env,
-					Resources:           c.Spec.Nginx.Resources,
-				},
-				ConfigFile: c.Spec.Nginx.ConfigFile,
-			},
+			EnvConfig:                    envConfig,
+			Resource:                     resource,
+			Env:                          c.Spec.Env,
+			Java:                         toV1beta1Java(c.Spec.Java),
+			NodeJS:                       toV1beta1NodeJS(c.Spec.NodeJS),
+			Python:                       toV1beta1Python(c.Spec.Python),
+			DotNet:                       toV1beta1DotNet(c.Spec.DotNet),
+			Go:                           toV1beta1Go(c.Spec.Go),
+			ApacheHttpd:                  toV1beta1ApacheHttpd(c.Spec.ApacheHttpd),
+			Nginx:                        toV1beta1Nginx(c.Spec.Nginx),
 			ImagePullPolicy:              c.Spec.ImagePullPolicy,
 			InitContainerSecurityContext: c.Spec.InitContainerSecurityContext,
 		},
+	}
+}
+
+// v1beta1 requires an image whenever a language block is set, so a language is
+// only carried over when the v1alpha1 source pins one.
+func toV1beta1Java(in v1alpha1.Java) *v1beta1.Java {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.Java{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+		Extensions: convertExtensionsToV1beta1(in.Extensions),
+	}
+}
+
+func toV1beta1NodeJS(in v1alpha1.NodeJS) *v1beta1.NodeJS {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.NodeJS{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+	}
+}
+
+func toV1beta1Python(in v1alpha1.Python) *v1beta1.Python {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.Python{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+	}
+}
+
+func toV1beta1DotNet(in v1alpha1.DotNet) *v1beta1.DotNet {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.DotNet{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+	}
+}
+
+func toV1beta1Go(in v1alpha1.Go) *v1beta1.Go {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.Go{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+		SecurityContext: in.SecurityContext,
+	}
+}
+
+func toV1beta1ApacheHttpd(in v1alpha1.ApacheHttpd) *v1beta1.ApacheHttpd {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.ApacheHttpd{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+		Version:    in.Version,
+		ConfigPath: in.ConfigPath,
+	}
+}
+
+func toV1beta1Nginx(in v1alpha1.Nginx) *v1beta1.Nginx {
+	if in.Image == "" {
+		return nil
+	}
+	return &v1beta1.Nginx{
+		CommonLanguageSpec: v1beta1.CommonLanguageSpec{
+			Image:               in.Image,
+			VolumeClaimTemplate: in.VolumeClaimTemplate,
+			Env:                 in.Env,
+			Resources:           in.Resources,
+		},
+		ConfigFile: in.ConfigFile,
+	}
+}
+
+func toV1alpha1Java(in *v1beta1.Java) v1alpha1.Java {
+	if in == nil {
+		return v1alpha1.Java{}
+	}
+	return v1alpha1.Java{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+		Extensions:          convertExtensionsToV1alpha1(in.Extensions),
+	}
+}
+
+func toV1alpha1NodeJS(in *v1beta1.NodeJS) v1alpha1.NodeJS {
+	if in == nil {
+		return v1alpha1.NodeJS{}
+	}
+	return v1alpha1.NodeJS{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+	}
+}
+
+func toV1alpha1Python(in *v1beta1.Python) v1alpha1.Python {
+	if in == nil {
+		return v1alpha1.Python{}
+	}
+	return v1alpha1.Python{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+	}
+}
+
+func toV1alpha1DotNet(in *v1beta1.DotNet) v1alpha1.DotNet {
+	if in == nil {
+		return v1alpha1.DotNet{}
+	}
+	return v1alpha1.DotNet{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+	}
+}
+
+func toV1alpha1Go(in *v1beta1.Go) v1alpha1.Go {
+	if in == nil {
+		return v1alpha1.Go{}
+	}
+	return v1alpha1.Go{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+		SecurityContext:     in.SecurityContext,
+	}
+}
+
+func toV1alpha1ApacheHttpd(in *v1beta1.ApacheHttpd) v1alpha1.ApacheHttpd {
+	if in == nil {
+		return v1alpha1.ApacheHttpd{}
+	}
+	return v1alpha1.ApacheHttpd{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+		Version:             in.Version,
+		ConfigPath:          in.ConfigPath,
+	}
+}
+
+func toV1alpha1Nginx(in *v1beta1.Nginx) v1alpha1.Nginx {
+	if in == nil {
+		return v1alpha1.Nginx{}
+	}
+	return v1alpha1.Nginx{
+		Image:               in.Image,
+		Env:                 in.Env,
+		VolumeClaimTemplate: in.VolumeClaimTemplate,
+		Resources:           in.Resources,
+		ConfigFile:          in.ConfigFile,
 	}
 }
 
@@ -242,53 +382,14 @@ func tov1alpha1Instrumentation(in v1beta1.Instrumentation) v1alpha1.Instrumentat
 			Sampler:     sampler,
 			Defaults:    defaults,
 			Env:         c.Spec.Env,
-			Java: v1alpha1.Java{
-				Image:               c.Spec.Java.Image,
-				Env:                 c.Spec.Java.Env,
-				VolumeClaimTemplate: c.Spec.Java.VolumeClaimTemplate,
-				Resources:           c.Spec.Java.Resources,
-				Extensions:          convertExtensionsToV1alpha1(c.Spec.Java.Extensions),
-			},
-			NodeJS: v1alpha1.NodeJS{
-				Image:               c.Spec.NodeJS.Image,
-				Env:                 c.Spec.NodeJS.Env,
-				VolumeClaimTemplate: c.Spec.NodeJS.VolumeClaimTemplate,
-				Resources:           c.Spec.NodeJS.Resources,
-			},
-			Python: v1alpha1.Python{
-				Image:               c.Spec.Python.Image,
-				Env:                 c.Spec.Python.Env,
-				VolumeClaimTemplate: c.Spec.Python.VolumeClaimTemplate,
-				Resources:           c.Spec.Python.Resources,
-			},
-			DotNet: v1alpha1.DotNet{
-				Image:               c.Spec.DotNet.Image,
-				Env:                 c.Spec.DotNet.Env,
-				VolumeClaimTemplate: c.Spec.DotNet.VolumeClaimTemplate,
-				Resources:           c.Spec.DotNet.Resources,
-			},
-			Go: v1alpha1.Go{
-				Image:               c.Spec.Go.Image,
-				Env:                 c.Spec.Go.Env,
-				VolumeClaimTemplate: c.Spec.Go.VolumeClaimTemplate,
-				Resources:           c.Spec.Go.Resources,
-				SecurityContext:     c.Spec.Go.SecurityContext,
-			},
-			ApacheHttpd: v1alpha1.ApacheHttpd{
-				Image:               c.Spec.ApacheHttpd.Image,
-				Env:                 c.Spec.ApacheHttpd.Env,
-				VolumeClaimTemplate: c.Spec.ApacheHttpd.VolumeClaimTemplate,
-				Resources:           c.Spec.ApacheHttpd.Resources,
-				Version:             c.Spec.ApacheHttpd.Version,
-				ConfigPath:          c.Spec.ApacheHttpd.ConfigPath,
-			},
-			Nginx: v1alpha1.Nginx{
-				Image:               c.Spec.Nginx.Image,
-				Env:                 c.Spec.Nginx.Env,
-				VolumeClaimTemplate: c.Spec.Nginx.VolumeClaimTemplate,
-				Resources:           c.Spec.Nginx.Resources,
-				ConfigFile:          c.Spec.Nginx.ConfigFile,
-			},
+			Java:        toV1alpha1Java(c.Spec.Java),
+			NodeJS:      toV1alpha1NodeJS(c.Spec.NodeJS),
+			Python:      toV1alpha1Python(c.Spec.Python),
+			DotNet:      toV1alpha1DotNet(c.Spec.DotNet),
+			Go:          toV1alpha1Go(c.Spec.Go),
+			ApacheHttpd: toV1alpha1ApacheHttpd(c.Spec.ApacheHttpd),
+			Nginx:       toV1alpha1Nginx(c.Spec.Nginx),
+
 			ImagePullPolicy:              c.Spec.ImagePullPolicy,
 			InitContainerSecurityContext: c.Spec.InitContainerSecurityContext,
 		},

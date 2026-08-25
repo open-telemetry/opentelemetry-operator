@@ -451,13 +451,41 @@ func (in *InstrumentationSpec) DeepCopyInto(out *InstrumentationSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.Java.DeepCopyInto(&out.Java)
-	in.NodeJS.DeepCopyInto(&out.NodeJS)
-	in.Python.DeepCopyInto(&out.Python)
-	in.DotNet.DeepCopyInto(&out.DotNet)
-	in.Go.DeepCopyInto(&out.Go)
-	in.ApacheHttpd.DeepCopyInto(&out.ApacheHttpd)
-	in.Nginx.DeepCopyInto(&out.Nginx)
+	if in.Java != nil {
+		in, out := &in.Java, &out.Java
+		*out = new(Java)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.NodeJS != nil {
+		in, out := &in.NodeJS, &out.NodeJS
+		*out = new(NodeJS)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Python != nil {
+		in, out := &in.Python, &out.Python
+		*out = new(Python)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DotNet != nil {
+		in, out := &in.DotNet, &out.DotNet
+		*out = new(DotNet)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Go != nil {
+		in, out := &in.Go, &out.Go
+		*out = new(Go)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ApacheHttpd != nil {
+		in, out := &in.ApacheHttpd, &out.ApacheHttpd
+		*out = new(ApacheHttpd)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Nginx != nil {
+		in, out := &in.Nginx, &out.Nginx
+		*out = new(Nginx)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.InitContainerSecurityContext != nil {
 		in, out := &in.InitContainerSecurityContext, &out.InitContainerSecurityContext
 		*out = new(v1.SecurityContext)
