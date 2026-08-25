@@ -20,6 +20,11 @@ spec:
             values:
             - linux
   # pod-spec extras
+  resizePolicy:
+    - resourceName: cpu
+      restartPolicy: NotRequired
+    - resourceName: memory
+      restartPolicy: RestartContainer
   podAnnotations:
     pod-annotation1: value1
     pod-annotation2: value2

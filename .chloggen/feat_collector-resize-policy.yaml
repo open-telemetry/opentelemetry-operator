@@ -1,0 +1,5 @@
+change_type: enhancement
+component: collector
+note: "Add `resizePolicy` to the OpenTelemetryCollector CR to control how the primary container responds to in-place resource resizes."
+issues: [5501]
+subtext:

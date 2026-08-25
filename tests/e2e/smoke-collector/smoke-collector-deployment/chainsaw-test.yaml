@@ -57,3 +57,14 @@ spec:
         - assert:
             resource:
               (($minorVersion >= `31` && $trafficDistribution == 'PreferClose') || ($minorVersion < `31` && $trafficDistribution == '')): true
+        # resizePolicy is only honoured on k8s >= 1.33 (InPlacePodVerticalScaling
+        # is beta and enabled by default since 1.33); older API servers prune the
+        # field from the pod template. Gate the assertion on the server version.
+        - script:
+            content: kubectl get deployment smoke-collector-collector -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[?(@.name=="otc-container")].resizePolicy[*].restartPolicy}' || echo ""
+            outputs:
+              - name: resizeRestartPolicies
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `33` && $resizeRestartPolicies == 'NotRequired RestartContainer') || ($minorVersion < `33` && $resizeRestartPolicies == '')): true

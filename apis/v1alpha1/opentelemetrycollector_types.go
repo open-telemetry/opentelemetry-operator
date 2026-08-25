@@ -93,6 +93,11 @@ type OpenTelemetryCollectorSpec struct {
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// ResizePolicy specifies how the OpenTelemetry Collector container responds
+	// to in-place resource resizes.
+	// +optional
+	// +listType=atomic
+	ResizePolicy []v1.ContainerResizePolicy `json:"resizePolicy,omitempty"`
 	// NodeSelector to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
