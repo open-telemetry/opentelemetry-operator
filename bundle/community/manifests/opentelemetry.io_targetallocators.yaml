@@ -2897,6 +2897,19 @@ spec:
                 default: 1
                 format: int32
                 type: integer
+              resizePolicy:
+                items:
+                  properties:
+                    resourceName:
+                      type: string
+                    restartPolicy:
+                      type: string
+                  required:
+                  - resourceName
+                  - restartPolicy
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               resources:
                 properties:
                   claims:

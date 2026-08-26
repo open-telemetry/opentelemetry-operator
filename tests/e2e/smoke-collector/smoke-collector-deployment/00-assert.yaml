@@ -32,6 +32,10 @@ spec:
         - name: init-test-echo
       # additionalContainers landed
       (length(containers[?name == 'alpine'])): 1
+      # resizePolicy is only honoured on k8s >= 1.33 (InPlacePodVerticalScaling
+      # is beta and enabled by default since 1.33); older API servers prune the
+      # field from the pod template, so the value is only asserted on >= 1.33.
+      ($minorVersion < `33` || (containers[?name == 'otc-container'] | [0].resizePolicy[*].restartPolicy) == ['NotRequired', 'RestartContainer']): true
 status:
   readyReplicas: 1
 ---

@@ -120,6 +120,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Env:             getContainerEnvVars(cfg, otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
+		ResizePolicy:    otelcol.Spec.ResizePolicy,
 		SecurityContext: otelcol.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
