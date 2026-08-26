@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -43,9 +44,38 @@ const (
 	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
-	DefaultFilterStrategy                              = "relabel-config"
 	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
 )
+
+// FilterStrategy determines whether, and how, the Target Allocator filters targets before
+// allocating them among the collectors.
+type FilterStrategy string
+
+const (
+	// FilterStrategyRelabelConfig drops targets based on the scrape config's relabel_configs,
+	// as they are discovered.
+	FilterStrategyRelabelConfig FilterStrategy = "relabel-config"
+	// FilterStrategyNone disables target filtering.
+	FilterStrategyNone FilterStrategy = "none"
+	// FilterStrategyUnset is the empty value, kept for backward compatibility with configurations
+	// which disabled filtering that way. It normalizes to FilterStrategyNone on config load.
+	FilterStrategyUnset FilterStrategy = ""
+
+	// DefaultFilterStrategy is used if no filter strategy is set in the configuration.
+	DefaultFilterStrategy = FilterStrategyRelabelConfig
+)
+
+// validFilterStrategies are all the values the filter_strategy option accepts.
+var validFilterStrategies = []FilterStrategy{FilterStrategyRelabelConfig, FilterStrategyNone, FilterStrategyUnset}
+
+// normalize resolves the deprecated empty value to the equivalent explicit strategy. Any other
+// value is returned as-is, so that invalid ones can be rejected by ValidateConfig.
+func (f FilterStrategy) normalize() FilterStrategy {
+	if f == FilterStrategyUnset {
+		return FilterStrategyNone
+	}
+	return f
+}
 
 var DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 
@@ -69,7 +99,7 @@ type Config struct {
 	PromConfig                   *promconfig.Config    `yaml:"config"`
 	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
 	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
+	FilterStrategy               FilterStrategy        `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	Telemetry                    TelemetryConfig       `yaml:"telemetry,omitempty"`
@@ -504,6 +534,8 @@ func Load(args []string) (*Config, error) {
 		return nil, err
 	}
 
+	config.FilterStrategy = config.FilterStrategy.normalize()
+
 	return &config, nil
 }
 
@@ -518,6 +550,9 @@ func ValidateConfig(config *Config) error {
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
 		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
+	}
+	if !slices.Contains(validFilterStrategies, config.FilterStrategy) {
+		return fmt.Errorf("invalid filter strategy %q, must be one of: %s, %s", config.FilterStrategy, FilterStrategyRelabelConfig, FilterStrategyNone)
 	}
 	return validateTelemetry(config.Telemetry)
 }

@@ -82,9 +82,9 @@ func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocat
 	}
 
 	// Pass 1: filtering off — all discovered targets, post-merge / pre-relabel.
-	allItems := runDiscovery(t, tsets, "", nil)
+	allItems := runDiscovery(t, tsets, config.FilterStrategyNone, nil)
 	// Pass 2: filtering on — the survivors, carrying the relabel identity hash.
-	kept := runDiscovery(t, tsets, target.RelabelConfigFilterStrategy, cfg.ScrapeConfigs)
+	kept := runDiscovery(t, tsets, config.FilterStrategyRelabelConfig, cfg.ScrapeConfigs)
 
 	// Index survivors by (job, full pre-relabel label-set hash) — not by address, so
 	// targets that share a pre-relabel address are not confused. The Item carries the
@@ -117,7 +117,7 @@ func runAllocatorPipeline(t *testing.T, promYAML string) map[targetKey][]allocat
 //
 // Target sets are injected directly via UpdateTsets, so no real service discovery
 // runs — a fake discovery manager stands in for the real one.
-func runDiscovery(t *testing.T, tsets map[string][]*targetgroup.Group, filterStrategy string, scrapeConfigs []*promconfig.ScrapeConfig) []*target.Item {
+func runDiscovery(t *testing.T, tsets map[string][]*targetgroup.Group, filterStrategy config.FilterStrategy, scrapeConfigs []*promconfig.ScrapeConfig) []*target.Item {
 	t.Helper()
 	var captured []*target.Item
 	d, err := target.NewDiscoverer(logr.Discard(), fakeDiscoveryManager{}, filterStrategy, nil, func(items []*target.Item) {

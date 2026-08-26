@@ -83,7 +83,11 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
-	taConfig["filter_strategy"] = taSpec.FilterStrategy
+	filterStrategy := v1beta1.TargetAllocatorFilterStrategyRelabelConfig
+	if taSpec.FilterStrategy != nil {
+		filterStrategy = *taSpec.FilterStrategy
+	}
+	taConfig["filter_strategy"] = filterStrategy
 
 	if taSpec.PrometheusCR.Enabled {
 		prometheusCRConfig := map[any]any{

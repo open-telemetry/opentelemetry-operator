@@ -178,7 +178,9 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
-	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// The current options are relabel-config (drops targets based on Prometheus relabel_config)
+	// and none (disables filtering).
+	// For backward compatibility, an empty string also disables filtering, but none should be used.
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
