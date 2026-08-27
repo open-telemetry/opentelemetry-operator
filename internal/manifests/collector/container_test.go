@@ -633,6 +633,48 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 	assert.Empty(t, c.Resources)
 }
 
+func TestContainerResizePolicy(t *testing.T) {
+	resizePolicy := []corev1.ContainerResizePolicy{
+		{
+			ResourceName:  corev1.ResourceCPU,
+			RestartPolicy: corev1.NotRequired,
+		},
+		{
+			ResourceName:  corev1.ResourceMemory,
+			RestartPolicy: corev1.RestartContainer,
+		},
+	}
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ResizePolicy: resizePolicy,
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, testLogger, otelcol, true, nil)
+
+	// verify
+	assert.Equal(t, resizePolicy, c.ResizePolicy)
+}
+
+func TestContainerDefaultResizePolicy(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, testLogger, otelcol, true, nil)
+
+	// verify
+	assert.Empty(t, c.ResizePolicy)
+}
+
 func TestContainerArgs(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{

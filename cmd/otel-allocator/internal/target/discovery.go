@@ -24,15 +24,11 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 const labelBuilderPreallocSize = 100
-
-// RelabelConfigFilterStrategy is the filter strategy that drops targets while they are being
-// created, based on the scrape config's relabel_configs. It's the only filtering strategy
-// currently supported; any other value disables target filtering.
-const RelabelConfigFilterStrategy = "relabel-config"
 
 type Discoverer struct {
 	log                         logr.Logger
@@ -81,7 +77,7 @@ type discoveryManager interface {
 func NewDiscoverer(
 	log logr.Logger,
 	manager discoveryManager,
-	filterStrategy string,
+	filterStrategy config.FilterStrategy,
 	scrapeConfigsUpdater scrapeConfigsUpdater,
 	setTargets func(targets []*Item),
 	opts ...DiscovererOption,
@@ -109,7 +105,7 @@ func NewDiscoverer(
 		configsMap:                  make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
 		relabelCfg:                  make(map[string][]*relabel.Config),
 		scrapeSeeds:                 make(map[string][]labels.Label),
-		filterRelabelConfig:         filterStrategy == RelabelConfigFilterStrategy,
+		filterRelabelConfig:         filterStrategy == config.FilterStrategyRelabelConfig,
 		scrapeConfigsHash:           nil, // we want the first update to succeed even if the config is empty
 		scrapeConfigsUpdater:        scrapeConfigsUpdater,
 		processTargetsCallBack:      setTargets,

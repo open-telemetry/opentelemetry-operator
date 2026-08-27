@@ -30,10 +30,11 @@ spec:
               local lport=$((30000 + RANDOM % 10000))
               kubectl port-forward -n "$NAMESPACE" "pod/${pod}" "${lport}:${metricsPort}" &>/dev/null &
               local pf=$!
-              sleep 2
-              local out
-              out=$(curl -sf "http://localhost:${lport}/metrics" 2>/dev/null)
-              local rc=$?
+              local out rc=1
+              for _pf_wait in 1 2 3 4 5; do
+                sleep 1
+                out=$(curl -sf "http://localhost:${lport}/metrics" 2>/dev/null) && rc=0 && break
+              done
               kill $pf 2>/dev/null; wait $pf 2>/dev/null
               [ $rc -ne 0 ] && return 1
               echo "$out"

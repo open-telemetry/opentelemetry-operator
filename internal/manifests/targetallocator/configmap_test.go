@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	colfg "go.opentelemetry.io/collector/featuregate"
+	"go.opentelemetry.io/contrib/otelconf"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -62,6 +64,44 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
+	t.Run("should render filter strategies", func(t *testing.T) {
+		noneFilterStrategy := v1beta1.TargetAllocatorFilterStrategyNone
+		emptyFilterStrategy := v1beta1.TargetAllocatorFilterStrategy("")
+		testCases := []struct {
+			name           string
+			filterStrategy *v1beta1.TargetAllocatorFilterStrategy
+			expected       string
+		}{
+			{
+				name:           "none",
+				filterStrategy: &noneFilterStrategy,
+				expected:       "filter_strategy: none\n",
+			},
+			{
+				name:           "legacy empty value",
+				filterStrategy: &emptyFilterStrategy,
+				expected:       "filter_strategy: \"\"\n",
+			},
+			{
+				name:           "unset",
+				filterStrategy: nil,
+				expected:       "filter_strategy: relabel-config\n",
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				targetAllocator := targetAllocatorInstance()
+				targetAllocator.Spec.FilterStrategy = testCase.filterStrategy
+				actual, err := ConfigMap(Params{
+					Collector:       collectorInstance(),
+					TargetAllocator: targetAllocator,
+				})
+				require.NoError(t, err)
+				assert.Contains(t, actual.Data[targetAllocatorFilename], testCase.expected)
+			})
+		}
 	})
 	t.Run("should return target allocator config map without collector", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -889,6 +929,238 @@ func TestGetGlobalConfig(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestTelemetryOTLP(t *testing.T) {
+	t.Run("should emit telemetry block with all OTLP fields", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 30 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 15 * time.Second},
+						Exporter: v1beta1.MetricExporter{
+							OtlpHttp: &v1beta1.OTLPHttpExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+									Endpoint: "https://ingest.example.com:4318",
+									Headers: []v1beta1.NameValuePair{
+										{Name: "Authorization", Value: "Api-Token secret"},
+									},
+									TemporalityPreference: "delta",
+								},
+							},
+						},
+					},
+				}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "readers:")
+		assert.Contains(t, data, "periodic:")
+		assert.Contains(t, data, "otlp_http:")
+		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
+		assert.Contains(t, data, "name: Authorization")
+		assert.Contains(t, data, "value: Api-Token secret")
+		assert.Contains(t, data, "temporality_preference: delta")
+		assert.Contains(t, data, "interval: 30000")
+		assert.Contains(t, data, "timeout: 15000")
+		// HTTP exporter has no TLS/insecure field
+		assert.NotContains(t, data, "insecure:")
+	})
+
+	t.Run("should omit optional fields when not set", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+									Endpoint: "https://ingest.example.com:4318",
+								},
+							},
+						},
+					},
+				}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "telemetry:")
+		assert.Contains(t, data, "readers:")
+		assert.Contains(t, data, "periodic:")
+		assert.Contains(t, data, "otlp_grpc:") // default protocol
+		assert.Contains(t, data, "endpoint: https://ingest.example.com:4318")
+		assert.NotContains(t, data, "headers:")
+		assert.NotContains(t, data, "insecure:")
+		assert.NotContains(t, data, "temporality_preference:")
+		// "interval:" is intentionally not checked here because scrape_interval: appears in collector config
+		assert.NotContains(t, data, "timeout: ")
+	})
+
+	t.Run("no telemetry block when OTLP is nil", func(t *testing.T) {
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocatorInstance(),
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		assert.NotContains(t, actual.Data[targetAllocatorFilename], "telemetry:")
+	})
+
+	t.Run("grpc with all optional fields", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				Readers: []v1beta1.MetricReader{{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 60 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 10 * time.Second},
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+									Endpoint: "example.com:4317",
+									Headers: []v1beta1.NameValuePair{
+										{Name: "X-Token", Value: "abc"},
+									},
+									TemporalityPreference: "delta",
+								},
+								Tls: &v1beta1.GrpcTlsConfig{Insecure: true},
+							},
+						},
+					},
+				}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		data := actual.Data[targetAllocatorFilename]
+		assert.Contains(t, data, "otlp_grpc:")
+		assert.Contains(t, data, "endpoint: example.com:4317")
+		assert.Contains(t, data, "name: X-Token")
+		assert.Contains(t, data, "value: abc")
+		assert.Contains(t, data, "temporality_preference: delta")
+		assert.Contains(t, data, "insecure: true")
+		assert.Contains(t, data, "interval: 60000")
+		assert.Contains(t, data, "timeout: 10000")
+	})
+
+	t.Run("non-periodic reader is skipped", func(t *testing.T) {
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+			Metrics: v1beta1.MetricsConfig{
+				// Periodic is nil — should produce no telemetry block.
+				Readers: []v1beta1.MetricReader{{Periodic: nil}},
+			},
+		}
+		params := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+		assert.NotContains(t, actual.Data[targetAllocatorFilename], "telemetry:")
+	})
+}
+
+// TestTelemetryConfigOtelconfCompatibility verifies that the YAML rendered by
+// buildTelemetryConfig is valid under the OTel declarative configuration schema.
+// If field names diverge (e.g. otlp_grpc → otlpGrpc), this test fails.
+func TestTelemetryConfigOtelconfCompatibility(t *testing.T) {
+	tel := v1beta1.TelemetryConfig{
+		Metrics: v1beta1.MetricsConfig{
+			Readers: []v1beta1.MetricReader{
+				{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Interval: &metav1.Duration{Duration: 60 * time.Second},
+						Timeout:  &metav1.Duration{Duration: 30 * time.Second},
+						Exporter: v1beta1.MetricExporter{
+							OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+									Endpoint:              "example.com:4317",
+									TemporalityPreference: "delta",
+									Headers: []v1beta1.NameValuePair{
+										{Name: "Authorization", Value: "Bearer token"},
+									},
+								},
+								Tls: &v1beta1.GrpcTlsConfig{Insecure: true},
+							},
+						},
+					},
+				},
+				{
+					Periodic: &v1beta1.PeriodicMetricReader{
+						Exporter: v1beta1.MetricExporter{
+							OtlpHttp: &v1beta1.OTLPHttpExporter{
+								OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+									Endpoint:              "https://ingest.example.com:4318",
+									TemporalityPreference: "delta",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tc := buildTelemetryConfig(tel)
+	require.NotNil(t, tc)
+
+	// otelconf expects meter_provider; telemetry.metrics maps 1:1 to it.
+	type wrapper struct {
+		FileFormat    string           `yaml:"file_format"`
+		MeterProvider *taMetricsConfig `yaml:"meter_provider"`
+	}
+	raw, err := yaml.Marshal(wrapper{"0.4", tc.Metrics})
+	require.NoError(t, err)
+
+	cfg, err := otelconf.ParseYAML(raw)
+	require.NoError(t, err, "rendered telemetry YAML must be valid OTel declarative config:\n%s", string(raw))
+	require.NotNil(t, cfg.MeterProvider)
+	require.Len(t, cfg.MeterProvider.Readers, 2)
+
+	grpc := cfg.MeterProvider.Readers[0]
+	require.NotNil(t, grpc.Periodic)
+	require.NotNil(t, grpc.Periodic.Exporter.OTLPGrpc)
+	assert.Equal(t, "example.com:4317", string(*grpc.Periodic.Exporter.OTLPGrpc.Endpoint))
+
+	http := cfg.MeterProvider.Readers[1]
+	require.NotNil(t, http.Periodic)
+	require.NotNil(t, http.Periodic.Exporter.OTLPHttp)
+	assert.Equal(t, "https://ingest.example.com:4318", string(*http.Periodic.Exporter.OTLPHttp.Endpoint))
 }
 
 func TestGetCollectorNotReadyGracePeriod(t *testing.T) {

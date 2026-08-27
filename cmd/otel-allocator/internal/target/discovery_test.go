@@ -64,7 +64,7 @@ func TestDiscovery(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []string)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, config.FilterStrategyRelabelConfig, scu, func(targets []*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)
@@ -312,7 +312,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, config.FilterStrategyRelabelConfig, scu, nil)
 	require.NoError(t, err)
 
 	for _, tc := range tests {
@@ -403,7 +403,7 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []*Item)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, config.FilterStrategyRelabelConfig, scu, func(targets []*Item) {
 		var result []*Item
 		result = append(result, targets...)
 		results <- result
@@ -450,7 +450,7 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, config.FilterStrategyRelabelConfig, scu, nil)
 	require.NoError(t, err)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -494,7 +494,7 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, RelabelConfigFilterStrategy, scu, nil)
+	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, config.FilterStrategyRelabelConfig, scu, nil)
 	require.NoError(t, err)
 	results := d.processTargetGroups("test", groups, nil, nil)
 	require.Len(t, results, 1)
@@ -545,7 +545,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, RelabelConfigFilterStrategy, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, config.FilterStrategyRelabelConfig, scu, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -573,7 +573,7 @@ func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*pro
 	return nil
 }
 
-func newTestDiscoverer(t testing.TB, filterStrategy string, setTargets func([]*Item)) *Discoverer {
+func newTestDiscoverer(t testing.TB, filterStrategy config.FilterStrategy, setTargets func([]*Item)) *Discoverer {
 	t.Helper()
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
@@ -588,7 +588,7 @@ func newTestDiscoverer(t testing.TB, filterStrategy string, setTargets func([]*I
 // created: targets dropped by a keep/drop action are excluded, and kept targets carry a
 // precomputed hash derived from the relabeled labels.
 func TestProcessTargetGroupsRelabelFiltering(t *testing.T) {
-	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, nil)
 	groups := []*targetgroup.Group{
 		{
 			Labels: model.LabelSet{"job": "test"},
@@ -623,7 +623,7 @@ func TestProcessTargetGroupsRelabelFiltering(t *testing.T) {
 // served labels nor override labels already present on the target.
 // Regression test for https://github.com/open-telemetry/opentelemetry-operator/issues/5246.
 func TestProcessTargetGroupsSeededLabels(t *testing.T) {
-	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, nil)
 	scrapeCfg := &promconfig.ScrapeConfig{
 		JobName:        "seeded-job",
 		Scheme:         "http",
@@ -689,7 +689,7 @@ func TestProcessTargetGroupsSeededLabels(t *testing.T) {
 // TestProcessTargetGroupsNoRelabelConfig verifies that when there's no relabel config for a job,
 // all targets are kept and the hash is still computed from the labels at creation time.
 func TestProcessTargetGroupsNoRelabelConfig(t *testing.T) {
-	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, nil)
 	groups := []*targetgroup.Group{
 		{
 			Labels: model.LabelSet{"job": "test"},
@@ -713,7 +713,7 @@ func TestProcessTargetGroupsNoRelabelConfig(t *testing.T) {
 // TestProcessTargetGroupsDeduplicatesByHash verifies that targets which become identical after
 // relabeling share the same hash, so the allocator deduplicates them.
 func TestProcessTargetGroupsDeduplicatesByHash(t *testing.T) {
-	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, nil)
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, nil)
 	groups := []*targetgroup.Group{
 		{
 			Labels: model.LabelSet{"job": "test"},
@@ -739,7 +739,7 @@ func TestProcessTargetGroupsDeduplicatesByHash(t *testing.T) {
 // targets according to the scrape config's relabel_configs when the filter strategy is enabled.
 func TestReloadAppliesRelabelFilteringWhenEnabled(t *testing.T) {
 	var got []*Item
-	d := newTestDiscoverer(t, RelabelConfigFilterStrategy, func(targets []*Item) { got = targets })
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, func(targets []*Item) { got = targets })
 
 	scrapeConfigs := []*promconfig.ScrapeConfig{
 		{
@@ -772,7 +772,7 @@ func TestReloadAppliesRelabelFilteringWhenEnabled(t *testing.T) {
 // disables filtering during discovery: targets are kept even if relabel_configs would drop them.
 func TestReloadSkipsRelabelFilteringWhenDisabled(t *testing.T) {
 	var got []*Item
-	d := newTestDiscoverer(t, "", func(targets []*Item) { got = targets })
+	d := newTestDiscoverer(t, config.FilterStrategyNone, func(targets []*Item) { got = targets })
 
 	scrapeConfigs := []*promconfig.ScrapeConfig{
 		{

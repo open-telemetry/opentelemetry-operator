@@ -7493,6 +7493,19 @@ spec:
                 default: 1
                 format: int32
                 type: integer
+              resizePolicy:
+                items:
+                  properties:
+                    resourceName:
+                      type: string
+                    restartPolicy:
+                      type: string
+                  required:
+                  - resourceName
+                  - restartPolicy
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               resources:
                 properties:
                   claims:
@@ -8189,6 +8202,7 @@ spec:
                     default: relabel-config
                     enum:
                     - ""
+                    - none
                     - relabel-config
                     type: string
                   image:
@@ -8749,6 +8763,84 @@ spec:
                     type: object
                   serviceAccount:
                     type: string
+                  telemetry:
+                    properties:
+                      metrics:
+                        properties:
+                          readers:
+                            items:
+                              properties:
+                                periodic:
+                                  properties:
+                                    exporter:
+                                      properties:
+                                        otlpGrpc:
+                                          properties:
+                                            endpoint:
+                                              type: string
+                                            headers:
+                                              items:
+                                                properties:
+                                                  name:
+                                                    type: string
+                                                  value:
+                                                    type: string
+                                                required:
+                                                - name
+                                                - value
+                                                type: object
+                                              type: array
+                                            temporalityPreference:
+                                              enum:
+                                              - cumulative
+                                              - delta
+                                              - low_memory
+                                              type: string
+                                            tls:
+                                              properties:
+                                                insecure:
+                                                  type: boolean
+                                              type: object
+                                          required:
+                                          - endpoint
+                                          type: object
+                                        otlpHttp:
+                                          properties:
+                                            endpoint:
+                                              type: string
+                                            headers:
+                                              items:
+                                                properties:
+                                                  name:
+                                                    type: string
+                                                  value:
+                                                    type: string
+                                                required:
+                                                - name
+                                                - value
+                                                type: object
+                                              type: array
+                                            temporalityPreference:
+                                              enum:
+                                              - cumulative
+                                              - delta
+                                              - low_memory
+                                              type: string
+                                          required:
+                                          - endpoint
+                                          type: object
+                                      type: object
+                                    interval:
+                                      type: string
+                                    timeout:
+                                      type: string
+                                  required:
+                                  - exporter
+                                  type: object
+                              type: object
+                            type: array
+                        type: object
+                    type: object
                   tolerations:
                     items:
                       properties:

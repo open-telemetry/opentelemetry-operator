@@ -186,9 +186,9 @@ func createTestDiscoverer(allocationStrategy string, relabelConfig map[string][]
 
 	// Enable relabel-config filtering only when there are configs to apply, so the no-relabel
 	// benchmark measures the unfiltered path.
-	filterStrategy := ""
+	filterStrategy := config.FilterStrategyNone
 	if len(relabelConfig) > 0 {
-		filterStrategy = target.RelabelConfigFilterStrategy
+		filterStrategy = config.FilterStrategyRelabelConfig
 	}
 	targetDiscoverer, err := target.NewDiscoverer(logger, discoveryManager, filterStrategy, srv, allocator.SetTargets)
 	if err != nil {

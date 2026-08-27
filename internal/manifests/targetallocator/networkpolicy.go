@@ -29,16 +29,41 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	annotations := ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter)
 
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(params.Config.Internal.KubeAPIServerPort)
-	var apiSeverIPs []networkingv1.NetworkPolicyPeer
-	// Add IPBlock rules for API server IPs
-	for _, ip := range params.Config.Internal.KubeAPIServerIPs {
-		cidr := ip + "/32"
-		apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
-			IPBlock: &networkingv1.IPBlock{
-				CIDR: cidr,
+
+	// The target allocator's egress is normally restricted to the API server, since
+	// that's the only destination it needs to reach. Self-telemetry lets users point
+	// the exporter at an arbitrary (often external) endpoint that can't be expressed
+	// as a NetworkPolicy IPBlock/selector, so restricting egress in that case would
+	// silently break the very telemetry export the user configured. Leave egress
+	// unrestricted instead, matching the collector's own NetworkPolicy (see
+	// internal/manifests/collector/networkpolicy.go), which never restricts egress
+	// for the same reason: exporters can target arbitrary destinations.
+	policyTypes := []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}
+	var egress []networkingv1.NetworkPolicyEgressRule
+	if !hasSelfTelemetryExporter(params.TargetAllocator) {
+		apiServerPort := intstr.FromInt32(params.Config.Internal.KubeAPIServerPort)
+		var apiSeverIPs []networkingv1.NetworkPolicyPeer
+		// Add IPBlock rules for API server IPs
+		for _, ip := range params.Config.Internal.KubeAPIServerIPs {
+			cidr := ip + "/32"
+			apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
+				IPBlock: &networkingv1.IPBlock{
+					CIDR: cidr,
+				},
+			})
+		}
+		policyTypes = append(policyTypes, networkingv1.PolicyTypeEgress)
+		egress = []networkingv1.NetworkPolicyEgressRule{
+			{
+				Ports: []networkingv1.NetworkPolicyPort{
+					{
+						Protocol: &tcp,
+						Port:     &apiServerPort,
+					},
+				},
+				To: apiSeverIPs,
 			},
-		})
+		}
 	}
 
 	np := &networkingv1.NetworkPolicy{
@@ -55,18 +80,8 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 			Ingress: []networkingv1.NetworkPolicyIngressRule{
 				{},
 			},
-			Egress: []networkingv1.NetworkPolicyEgressRule{
-				{
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcp,
-							Port:     &apiServerPort,
-						},
-					},
-					To: apiSeverIPs,
-				},
-			},
-			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
+			Egress:      egress,
+			PolicyTypes: policyTypes,
 		},
 	}
 
@@ -83,6 +98,15 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	}
 
 	return np, nil
+}
+
+func hasSelfTelemetryExporter(ta v1alpha1.TargetAllocator) bool {
+	for _, reader := range ta.Spec.Telemetry.Metrics.Readers {
+		if reader.Periodic != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func getContainerPorts(instance v1alpha1.TargetAllocator, params Params) []corev1.ContainerPort {

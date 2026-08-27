@@ -11,6 +11,7 @@ spec:
   exporter:
     endpoint: http://deployment-collector:4317
   python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
     env:
       - name: OTEL_TRACES_EXPORTER
         value: otlp

@@ -25,12 +25,14 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
     env:
       - name: OTEL_SERVICE_NAME
         value: "pythonapp"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://deployment-collector:4318
   go:
+    image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.24.0
     env:
       - name: OTEL_SERVICE_NAME
         value: "goapp"
