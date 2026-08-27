@@ -90,20 +90,20 @@ var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
 var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 
 type Config struct {
-	ListenAddr         string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config          `yaml:"-"`
-	RootLogger         logr.Logger           `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	CollectorNamespace string                `yaml:"collector_namespace,omitempty"`
-	PromConfig         *promconfig.Config    `yaml:"config"`
-	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
+	ListenAddr         string                             `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath string                             `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig      *rest.Config                       `yaml:"-"`
+	RootLogger         logr.Logger                        `yaml:"-"`
+	CollectorSelector  *metav1.LabelSelector              `yaml:"collector_selector,omitempty"`
+	CollectorNamespace string                             `yaml:"collector_namespace,omitempty"`
+	PromConfig         *promconfig.Config                 `yaml:"config"`
+	AllocationStrategy string                             `yaml:"allocation_strategy,omitempty"`
 	// AllocationFallbackStrategy is the deprecated, top-level way of setting the fallback strategy for
 	// the per-node allocation strategy. Prefer AllocationStrategyConfig.PerNode.FallbackStrategy instead.
 	// When both are set, AllocationStrategyConfig.PerNode.FallbackStrategy takes precedence.
 	AllocationFallbackStrategy   string                   `yaml:"allocation_fallback_strategy,omitempty"`
 	AllocationStrategyConfig     AllocationStrategyConfig `yaml:"allocation_strategy_config,omitempty"`
-	FilterStrategy               FilterStrategy        `yaml:"filter_strategy,omitempty"`
+	FilterStrategy               FilterStrategy           `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                 PrometheusCRConfig       `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig        `yaml:"https,omitempty"`
 	Telemetry                    TelemetryConfig          `yaml:"telemetry,omitempty"`
