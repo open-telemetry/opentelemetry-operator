@@ -153,11 +153,11 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedPodAnnotationValues := map[string]string{
-		"annotation-key":                                         "annotation-value",
-		"opentelemetry-operator-config/sha256":                   "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
-		"prometheus.io/path":                                     "/metrics",
-		"prometheus.io/port":                                     "8888",
-		"prometheus.io/scrape":                                   "true",
+		"annotation-key":                       "annotation-value",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
 		"operator.opentelemetry.io/prometheus-annotations-added": "true",
 	}
 
