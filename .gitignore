@@ -44,6 +44,7 @@ config/rbac/certmanager-permissions/
 
 # locally-built test app binaries
 tests/test-e2e-apps/bridge-server/bridge-server
+tests/test-e2e-apps/otlp-sink/otlp-sink
 
 # autoinstrumentation artifacts
 build
