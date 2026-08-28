@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,9 +51,18 @@ func Start(env *ctrlenvtest.Environment, scheme *runtime.Scheme) (*Environment, 
 	}
 	env.DownloadBinaryAssets = true
 	env.BinaryAssetsDirectory = binaryAssetsDir
+	// Pin to the K8s minor version used for local/CI testing (KUBE_VERSION in
+	// Makefile). Without this, controller-runtime downloads whatever is newest
+	// in the release index, which can silently pick up a breaking kube-apiserver
+	// version. Accepts minor ("1.36") or full semver ("1.36.1"); empty falls
+	// back to latest.
+	env.DownloadBinaryAssetsVersion = os.Getenv("ENVTEST_K8S_VERSION")
 	// In sandbox environments the network namespace has no default route, so
 	// kube-apiserver cannot auto-detect its advertise address. Set it explicitly.
+	// kube-apiserver 1.37+ rejects loopback addresses for the lease endpoint
+	// reconciler, so disable reconciliation entirely (appropriate for tests).
 	env.ControlPlane.GetAPIServer().Configure().Set("advertise-address", "127.0.0.1")
+	env.ControlPlane.GetAPIServer().Configure().Set("endpoint-reconciler-type", "none")
 
 	cfg, err := env.Start()
 	if err != nil {
