@@ -73,7 +73,7 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # registry versions, letting tests run against local changes before they are merged
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
-TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs python
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink python
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -427,7 +427,7 @@ manifests: controller-gen
 # no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
@@ -890,7 +890,7 @@ KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.1
+GOLANGCI_LINT_VERSION ?= v2.13.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.33.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
