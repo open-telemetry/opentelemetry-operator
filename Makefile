@@ -427,7 +427,7 @@ manifests: controller-gen
 # no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
