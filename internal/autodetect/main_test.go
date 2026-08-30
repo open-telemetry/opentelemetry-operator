@@ -83,12 +83,12 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
 		resources    *metav1.APIResourceList
-		expected     prometheus.Availability
+		expected     prometheus.AvailableCRDs
 	}{
 		{
 			&metav1.APIGroupList{},
 			&metav1.APIResourceList{},
-			prometheus.NotAvailable,
+			nil,
 		},
 		{
 			&metav1.APIGroupList{
@@ -100,9 +100,9 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 				},
 			},
 			&metav1.APIResourceList{
-				APIResources: []metav1.APIResource{{Kind: "ServiceMonitor"}},
+				APIResources: []metav1.APIResource{{Name: "servicemonitors"}},
 			},
-			prometheus.NotAvailable,
+			prometheus.AvailableCRDs{"servicemonitors"},
 		},
 		{
 			&metav1.APIGroupList{
@@ -114,9 +114,9 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 				},
 			},
 			&metav1.APIResourceList{
-				APIResources: []metav1.APIResource{{Kind: "PodMonitor"}},
+				APIResources: []metav1.APIResource{{Name: "podmonitors"}},
 			},
-			prometheus.NotAvailable,
+			prometheus.AvailableCRDs{"podmonitors"},
 		},
 		{
 			&metav1.APIGroupList{
@@ -128,9 +128,11 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 				},
 			},
 			&metav1.APIResourceList{
-				APIResources: []metav1.APIResource{{Kind: "PodMonitor"}, {Kind: "ServiceMonitor"}},
+				APIResources: []metav1.APIResource{
+					{Name: "servicemonitors"}, {Name: "podmonitors"}, {Name: "probes"}, {Name: "scrapeconfigs"},
+				},
 			},
-			prometheus.Available,
+			prometheus.AvailableCRDs{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -361,8 +363,8 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
 			return openshift.RoutesAvailable, nil
 		},
-		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
-			return prometheus.Available, nil
+		PrometheusCRsAvailabilityFunc: func() (prometheus.AvailableCRDs, error) {
+			return prometheus.AvailableCRDs{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"}, nil
 		},
 		RBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
 			return autoRBAC.Available, nil
@@ -384,7 +386,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
-	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability)
+	require.Empty(t, cfg.PrometheusCRAvailability)
 	require.Equal(t, autoRBAC.NotAvailable, cfg.CreateRBACPermissions)
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
@@ -397,7 +399,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
-	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
+	require.Equal(t, prometheus.AvailableCRDs{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"}, cfg.PrometheusCRAvailability)
 	require.Equal(t, autoRBAC.Available, cfg.CreateRBACPermissions)
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
@@ -409,7 +411,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.AvailableCRDs, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
@@ -444,11 +446,11 @@ func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailabi
 	return openshift.RoutesNotAvailable, nil
 }
 
-func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.AvailableCRDs, error) {
 	if m.PrometheusCRsAvailabilityFunc != nil {
 		return m.PrometheusCRsAvailabilityFunc()
 	}
-	return prometheus.NotAvailable, nil
+	return nil, nil
 }
 
 func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {

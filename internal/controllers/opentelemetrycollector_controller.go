@@ -37,7 +37,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -409,8 +408,10 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
 
-	if r.config.PrometheusCRAvailability == prometheus.Available {
+	if r.config.PrometheusCRAvailability.AvailablePodMonitor() {
 		ownedResources = append(ownedResources, &monitoringv1.PodMonitor{})
+	}
+	if r.config.PrometheusCRAvailability.AvailableServiceMonitor() {
 		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
 	}
 
