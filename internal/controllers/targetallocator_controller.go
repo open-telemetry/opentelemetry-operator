@@ -180,7 +180,7 @@ func (r *TargetAllocatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, buildErr
 	}
 
-	err = reconcileDesiredObjects(ctx, r.Client, log, &params.TargetAllocator, params.Scheme, desiredObjects, nil)
+	err = reconcileDesiredObjects(ctx, r.Client, log, &params.TargetAllocator, params.Scheme, params.Config, desiredObjects, nil)
 	return taStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 

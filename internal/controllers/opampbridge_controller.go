@@ -92,7 +92,7 @@ func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OpAMPBridge, params.Scheme, desiredObjects, nil)
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OpAMPBridge, params.Scheme, params.Config, desiredObjects, nil)
 	return opampbridgeStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 

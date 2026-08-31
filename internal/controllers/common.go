@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
@@ -121,7 +122,7 @@ func getList[T client.Object](ctx context.Context, cl client.Client, l T, option
 }
 
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
-func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects []client.Object, ownedObjects map[types.UID]client.Object) error {
+func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, cfg config.Config, desiredObjects []client.Object, ownedObjects map[types.UID]client.Object) error {
 	var errs []error
 	for _, desired := range desiredObjects {
 		l := logger.WithValues(
@@ -138,7 +139,7 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
-		mutateFn := manifests.MutateFuncFor(existing, desired)
+		mutateFn := manifests.MutateFuncFor(existing, desired, cfg)
 		var op controllerutil.OperationResult
 		crudErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			result, createOrUpdateErr := ctrl.CreateOrUpdate(ctx, kubeClient, existing, mutateFn)

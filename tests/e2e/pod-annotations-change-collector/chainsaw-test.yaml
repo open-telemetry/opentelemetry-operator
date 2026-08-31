@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: pod-annotations-change-collector
+spec:
+  steps:
+    - name: step-00
+      description: collector with spec.podAnnotations entries
+      try:
+        - apply:
+            file: 00-install-collector-with-pod-annotations.yaml
+        - assert:
+            file: 00-assert-deployment-with-pod-annotations.yaml
+
+    - name: step-01
+      description: spec.podAnnotations emptied, entries must be removed from the pod template
+      try:
+        - update:
+            file: 01-install-collector-with-empty-pod-annotations.yaml
+        - assert:
+            file: 01-assert-deployment-with-empty-pod-annotations.yaml
+
+    - name: step-02
+      description: spec.podAnnotations replaced, old entries must be gone from the pod template
+      try:
+        - update:
+            file: 02-install-collector-with-new-pod-annotations.yaml
+        - assert:
+            file: 02-assert-deployment-with-new-pod-annotations.yaml

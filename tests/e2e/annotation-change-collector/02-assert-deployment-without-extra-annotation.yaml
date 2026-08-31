@@ -9,7 +9,6 @@ metadata:
 spec:
   template:
     metadata:
-      (contains(keys(annotations), 'user-annotation')): true
-      (contains(keys(annotations), 'new-annotation')): true
-      annotations:
-        manual-annotation: "true"
+      (contains(keys(annotations), 'user-annotation')): false
+      (contains(keys(annotations), 'new-annotation')): false
+      (contains(keys(annotations), 'manual-annotation')): false

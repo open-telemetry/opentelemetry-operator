@@ -51,6 +51,8 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("auto-instrumentation-nginx-image", cfg.AutoInstrumentationNginxImage, "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.StringArray("labels-filter", cfg.LabelsFilter, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
 	f.StringArray("annotations-filter", cfg.AnnotationsFilter, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
+	f.StringArray("preserved-labels", cfg.PreservedLabels, "Label keys on managed pod templates to preserve during reconciliation even when they are no longer present in the CR. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --preserved-labels=argocd.argoproj.io/* keeps labels stamped by external tools. Note: a key matching both the CR and a preserve pattern can only be changed, not deleted, via the CR.")
+	f.StringArray("preserved-annotations", cfg.PreservedAnnotations, "Annotation keys on managed pod templates to preserve during reconciliation even when they are no longer present in the CR. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --preserved-annotations=kubectl.kubernetes.io/* keeps annotations stamped by external tools. Note: a key matching both the CR and a preserve pattern can only be changed, not deleted, via the CR.")
 	f.String("fips-disabled-components", cfg.FipsDisabledComponents, "Disabled collector components when operator runs on FIPS enabled platform. Example flag value =receiver.foo,receiver.bar,exporter.baz")
 	f.Int("webhook-port", cfg.WebhookPort, "The port the webhook endpoint binds to.")
 	f.Bool("tls-cluster-profile", false, "Retrieves the TLS profile (min version and ciphers) from the cluster. Supported only on OpenShift clusters. The TLS profile is obtained from APIServer CR.")
@@ -122,6 +124,10 @@ func ApplyCLI(cfg *Config) error {
 				cfg.LabelsFilter, _ = f.GetStringArray("labels-filter")
 			case "annotations-filter":
 				cfg.AnnotationsFilter, _ = f.GetStringArray("annotations-filter")
+			case "preserved-labels":
+				cfg.PreservedLabels, _ = f.GetStringArray("preserved-labels")
+			case "preserved-annotations":
+				cfg.PreservedAnnotations, _ = f.GetStringArray("preserved-annotations")
 			case "openshift-create-dashboard":
 				cfg.OpenshiftCreateDashboard, _ = f.GetBool("openshift-create-dashboard")
 			case "metrics-addr":
