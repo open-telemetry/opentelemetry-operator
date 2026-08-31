@@ -606,8 +606,8 @@ go.opentelemetry.io/collector/featuregate v1.65.0 h1:Dh+uYVB+POc5DTebZRWjtKJolGh
 go.opentelemetry.io/collector/featuregate v1.65.0/go.mod h1:4ga1QBMPEejXXmpyJS8lmaRpknJ3Lb9Bvk6e420bUFU=
 go.opentelemetry.io/contrib/bridges/prometheus v0.70.0 h1:qU2CqTGdlstwoVhu1WfjJJ3z2ntcNjTJO0ksTsFKzPI=
 go.opentelemetry.io/contrib/bridges/prometheus v0.70.0/go.mod h1:Ekh3I2XXfhdWkqbRq4PrivJS4BS/se7Er9ZsbK6YEtQ=
-go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 h1:LMuyCAyfalSjDyjdC65nK6N0zoTT63+E/u95X0JovZI=
-go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0/go.mod h1:085m8qbm4hgc8rZWGDEa4vmyyo2c3nPxUslYUKUIU04=
+go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0 h1:3g7B90UzBltIDKq1/5mrTGxTnOFDV0ICOhLoxiZ8jlg=
+go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0/go.mod h1:Ef8SuTh59BT7+ofpDxN9z+yOlc4t2GjLmKDgYNJL/NU=
 go.opentelemetry.io/contrib/otelconf v0.26.0 h1:L+OMLLT4m3JGN3F9A3C7JjNkJHoZC2Z1P/lpLh64BZY=
 go.opentelemetry.io/contrib/otelconf v0.26.0/go.mod h1:ZBqDjPZVgESW3uQHBnk4b1DwtrZYgCrM9Zls3zHYjLo=
 go.opentelemetry.io/contrib/propagators/autoprop v0.71.0 h1:uy7dcw6v3XK3LMGj2sB9CXtJtTHX8QA9pjSrLhvf86c=
