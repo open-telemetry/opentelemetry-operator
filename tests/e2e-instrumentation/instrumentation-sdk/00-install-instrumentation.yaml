@@ -20,7 +20,7 @@ spec:
       - name: OTEL_NODEJS_DEBUG
         value: "true"
   python:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-2
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-3
     env:
       - name: OTEL_ENV_VAR
         value: "true"
