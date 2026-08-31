@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: gather-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
   name: gather-collector
   namespace: chainsaw-must-gather
 spec:
@@ -26,7 +25,6 @@ spec:
         app.kubernetes.io/managed-by: opentelemetry-operator
         app.kubernetes.io/name: gather-collector
         app.kubernetes.io/part-of: opentelemetry
-        app.kubernetes.io/version: latest
     spec:
       containers:
       - name: otc-container

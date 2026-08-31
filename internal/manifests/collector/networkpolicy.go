@@ -20,7 +20,7 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 	}
 
 	name := naming.CollectorNetworkPolicy(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+	labels := Labels(params.OtelCol, name, params.Config, params.Config.LabelsFilter)
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err

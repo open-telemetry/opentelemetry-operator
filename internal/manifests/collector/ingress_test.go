@@ -110,7 +110,7 @@ func TestDesiredIngresses(t *testing.T) {
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 					"app.kubernetes.io/component":  "opentelemetry-collector",
 					"app.kubernetes.io/part-of":    "opentelemetry",
-					"app.kubernetes.io/version":    "latest",
+					"app.kubernetes.io/version":    "0.0.0",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
