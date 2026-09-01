@@ -46,24 +46,30 @@ spec:
           # OLM may require multiple reconciliation cycles to propagate Subscription spec.config.env
           # to the running deployment when no new CSV version is available (AtLatestKnown state).
           # Poll the Deployment spec until LABELS_FILTER appears before waiting for the rollout.
-          echo "Waiting for OLM to propagate LABELS_FILTER from Subscription to operator Deployment..."
+          # Wait for OLM to propagate the exact LABELS_FILTER value from the
+          # Subscription to the operator Deployment.  Check the value, not just
+          # presence — the CSV may already carry a different LABELS_FILTER from
+          # a prior test step.
+          EXPECTED_VALUE="^env-config-test-label\$"
+          echo "Waiting for OLM to propagate LABELS_FILTER=${EXPECTED_VALUE} from Subscription to operator Deployment..."
           TIMEOUT=120
           ELAPSED=0
-          DEP_ENV=""
+          FOUND=false
           while [ $ELAPSED -lt $TIMEOUT ]; do
-            DEP_ENV=$(kubectl get deployment opentelemetry-operator-controller-manager \
+            CURRENT_VALUE=$(kubectl get deployment opentelemetry-operator-controller-manager \
               -n "$OTEL_NAMESPACE" \
-              -o jsonpath='{.spec.template.spec.containers[0].env}' 2>/dev/null || true)
-            if echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
-              echo "LABELS_FILTER found in Deployment spec after ${ELAPSED}s"
+              -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="LABELS_FILTER")].value}' 2>/dev/null || true)
+            if [ "$CURRENT_VALUE" = "$EXPECTED_VALUE" ]; then
+              echo "LABELS_FILTER value matches after ${ELAPSED}s"
+              FOUND=true
               break
             fi
             sleep 5
             ELAPSED=$((ELAPSED + 5))
           done
 
-          if ! echo "$DEP_ENV" | grep -q "LABELS_FILTER"; then
-            echo "ERROR: OLM did not propagate LABELS_FILTER from Subscription to the Deployment within ${TIMEOUT}s"
+          if [ "$FOUND" != "true" ]; then
+            echo "ERROR: OLM did not propagate LABELS_FILTER from Subscription to the Deployment within ${TIMEOUT}s (current value: ${CURRENT_VALUE:-<not set>})"
             exit 1
           fi
 
@@ -136,7 +142,7 @@ spec:
         env:
         - name: OTEL_NAMESPACE
           value: opentelemetry-operator-system
-        timeout: 360s
+        timeout: 180s
         content: |
           #!/bin/bash
           set -e
@@ -153,13 +159,11 @@ spec:
           # can cause brief transient API errors when querying deployments.
           WEBHOOK_FOUND=false
           for attempt in $(seq 1 10); do
-            rc=0
-            kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" 2>/dev/null && rc=0 || rc=$?
-            if [ $rc -eq 0 ]; then
+            if kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
               WEBHOOK_FOUND=true
               break
             fi
-            echo "Webhook deployment not accessible (attempt $attempt/10, rc=$rc), retrying in 3s..."
+            echo "Webhook deployment not accessible (attempt $attempt/10), retrying in 3s..."
             sleep 3
           done
 
@@ -234,13 +238,11 @@ spec:
           # Check if pod-webhook deployment exists (retry for OLM stability)
           WEBHOOK_FOUND=false
           for attempt in $(seq 1 10); do
-            rc=0
-            kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" 2>/dev/null && rc=0 || rc=$?
-            if [ $rc -eq 0 ]; then
+            if kubectl get deployment opentelemetry-operator-webhook -n "$OTEL_NAMESPACE" &>/dev/null; then
               WEBHOOK_FOUND=true
               break
             fi
-            echo "Webhook deployment not accessible (attempt $attempt/10, rc=$rc), retrying in 3s..."
+            echo "Webhook deployment not accessible (attempt $attempt/10), retrying in 3s..."
             sleep 3
           done
 
@@ -270,8 +272,11 @@ spec:
             -n "$OTEL_NAMESPACE" --timeout=120s
 
           # Wait for CSV reconciler to restore default replicas (2)
+          # OLM reconciliation chain: Subscription change → operator rollout → leader
+          # election → CSV reconciler → OLM reconciles CSV → webhook scales.
+          # This can take well over 60s; use 120s to match other timeouts in this test.
           echo "Waiting for pod-webhook to scale back to 2 replicas..."
-          TIMEOUT=60
+          TIMEOUT=120
           ELAPSED=0
           while [ $ELAPSED -lt $TIMEOUT ]; do
             REPLICAS=$(kubectl get deployment opentelemetry-operator-webhook \
