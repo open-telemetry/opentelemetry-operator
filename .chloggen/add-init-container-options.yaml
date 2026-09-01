@@ -1,0 +1,9 @@
+change_type: enhancement
+
+component: auto-instrumentation
+
+note: Add support for overriding the command and arguments of Java, Node.js, Python, and .NET auto-instrumentation init containers.
+
+issues: [5485]
+
+subtext:

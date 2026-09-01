@@ -136,7 +136,8 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 					Env:                 c.Spec.Java.Env,
 					Resources:           c.Spec.Java.Resources,
 				},
-				Extensions: convertExtensionsToV1beta1(c.Spec.Java.Extensions),
+				InitContainer: convertInitContainerToV1beta1(c.Spec.Java.InitContainer),
+				Extensions:    convertExtensionsToV1beta1(c.Spec.Java.Extensions),
 			},
 			NodeJS: v1beta1.NodeJS{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
@@ -145,6 +146,7 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 					Env:                 c.Spec.NodeJS.Env,
 					Resources:           c.Spec.NodeJS.Resources,
 				},
+				InitContainer: convertInitContainerToV1beta1(c.Spec.NodeJS.InitContainer),
 			},
 			Python: v1beta1.Python{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
@@ -153,6 +155,7 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 					Env:                 c.Spec.Python.Env,
 					Resources:           c.Spec.Python.Resources,
 				},
+				InitContainer: convertInitContainerToV1beta1(c.Spec.Python.InitContainer),
 			},
 			DotNet: v1beta1.DotNet{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
@@ -161,6 +164,7 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 					Env:                 c.Spec.DotNet.Env,
 					Resources:           c.Spec.DotNet.Resources,
 				},
+				InitContainer: convertInitContainerToV1beta1(c.Spec.DotNet.InitContainer),
 			},
 			Go: v1beta1.Go{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
@@ -244,6 +248,7 @@ func tov1alpha1Instrumentation(in v1beta1.Instrumentation) v1alpha1.Instrumentat
 			Env:         c.Spec.Env,
 			Java: v1alpha1.Java{
 				Image:               c.Spec.Java.Image,
+				InitContainer:       convertInitContainerToV1alpha1(c.Spec.Java.InitContainer),
 				Env:                 c.Spec.Java.Env,
 				VolumeClaimTemplate: c.Spec.Java.VolumeClaimTemplate,
 				Resources:           c.Spec.Java.Resources,
@@ -251,18 +256,21 @@ func tov1alpha1Instrumentation(in v1beta1.Instrumentation) v1alpha1.Instrumentat
 			},
 			NodeJS: v1alpha1.NodeJS{
 				Image:               c.Spec.NodeJS.Image,
+				InitContainer:       convertInitContainerToV1alpha1(c.Spec.NodeJS.InitContainer),
 				Env:                 c.Spec.NodeJS.Env,
 				VolumeClaimTemplate: c.Spec.NodeJS.VolumeClaimTemplate,
 				Resources:           c.Spec.NodeJS.Resources,
 			},
 			Python: v1alpha1.Python{
 				Image:               c.Spec.Python.Image,
+				InitContainer:       convertInitContainerToV1alpha1(c.Spec.Python.InitContainer),
 				Env:                 c.Spec.Python.Env,
 				VolumeClaimTemplate: c.Spec.Python.VolumeClaimTemplate,
 				Resources:           c.Spec.Python.Resources,
 			},
 			DotNet: v1alpha1.DotNet{
 				Image:               c.Spec.DotNet.Image,
+				InitContainer:       convertInitContainerToV1alpha1(c.Spec.DotNet.InitContainer),
 				Env:                 c.Spec.DotNet.Env,
 				VolumeClaimTemplate: c.Spec.DotNet.VolumeClaimTemplate,
 				Resources:           c.Spec.DotNet.Resources,
@@ -331,6 +339,20 @@ func restoreV1alpha1Fields(inst *v1alpha1.Instrumentation) {
 }
 
 // Helper functions
+
+func convertInitContainerToV1beta1(in v1alpha1.InitContainer) v1beta1.InitContainer {
+	return v1beta1.InitContainer{
+		Command: in.Command,
+		Args:    in.Args,
+	}
+}
+
+func convertInitContainerToV1alpha1(in v1beta1.InitContainer) v1alpha1.InitContainer {
+	return v1alpha1.InitContainer{
+		Command: in.Command,
+		Args:    in.Args,
+	}
+}
 
 func hasLossyFields(fields v1alpha1Fields) bool {
 	return fields.JavaVolumeSizeLimit != nil ||

@@ -20,6 +20,13 @@ import (
 
 var defaultSize = resource.MustParse("200Mi")
 
+func initContainerCommand(defaultCommand, command, args []string) (resolvedCommand, resolvedArgs []string) {
+	if len(command) == 0 {
+		command = defaultCommand
+	}
+	return command, args
+}
+
 // Calculate if we already inject InitContainers.
 func isInitContainerMissing(pod corev1.Pod, containerName string) bool {
 	for _, initContainer := range pod.Spec.InitContainers {

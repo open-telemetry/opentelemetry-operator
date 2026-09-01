@@ -82,11 +82,17 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, pythonInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		command, args := initContainerCommand(
+			[]string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath},
+			pythonSpec.InitContainer.Command,
+			pythonSpec.InitContainer.Args,
+		)
 
 		initContainer := corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath},
+			Command:   command,
+			Args:      args,
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,

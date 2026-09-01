@@ -41,11 +41,17 @@ func injectNodeJSSDKToPod(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, firstConta
 	// We just inject Volumes and init containers for the first processed container
 	if isInitContainerMissing(pod, nodejsInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		command, args := initContainerCommand(
+			[]string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
+			nodeJSSpec.InitContainer.Command,
+			nodeJSSpec.InitContainer.Args,
+		)
 
 		initContainer := corev1.Container{
 			Name:      nodejsInitContainerName,
 			Image:     nodeJSSpec.Image,
-			Command:   []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
+			Command:   command,
+			Args:      args,
 			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,

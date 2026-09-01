@@ -167,6 +167,10 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
+
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
@@ -201,11 +205,28 @@ type Extensions struct {
 	Dir string `json:"dir"`
 }
 
+// InitContainer defines command overrides for the auto-instrumentation init container.
+// When omitted, the operator uses the language's default command.
+// +kubebuilder:validation:XValidation:rule="!has(self.args) || size(self.command) > 0",message="command must be set when args are set"
+type InitContainer struct {
+	// Command overrides the init container image's ENTRYPOINT.
+	// +optional
+	Command []string `json:"command,omitempty"`
+
+	// Args overrides the init container image's CMD.
+	// +optional
+	Args []string `json:"args,omitempty"`
+}
+
 // NodeJS defines NodeJS SDK and instrumentation configuration.
 type NodeJS struct {
 	// Image is a container image with NodeJS SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
@@ -234,6 +255,10 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
+
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
@@ -260,6 +285,10 @@ type DotNet struct {
 	// Image is a container image with DotNet SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
