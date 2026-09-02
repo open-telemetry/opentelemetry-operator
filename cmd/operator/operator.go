@@ -340,6 +340,7 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	}
 
 	var policyOpts []operatornetworkpolicy.Option
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithLogger(ctrl.Log.WithName("operator-networkpolicy")))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerPort(cfg.Internal.KubeAPIServerPort))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerIPs(cfg.Internal.KubeAPIServerIPs))
