@@ -1,0 +1,13 @@
+# Two targets share a pre-relabel __address__ but are relabeled to different
+# __metrics_path__ values from a per-target meta label. They must stay DISTINCT
+# identities. Exercises the harness's same-address bucket matching and the
+# allocator's identity computation when the distinguishing label is set by relabel.
+scrape_configs:
+  - job_name: same-address
+    static_configs:
+      - targets: ['10.30.0.1:9100']
+        labels: {__meta_path: /a}
+      - targets: ['10.30.0.1:9100']
+        labels: {__meta_path: /b}
+    relabel_configs:
+      - {source_labels: [__meta_path], target_label: __metrics_path__, action: replace}

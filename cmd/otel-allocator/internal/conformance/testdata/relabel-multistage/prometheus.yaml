@@ -1,0 +1,25 @@
+# Multi-stage, real-life-like relabel pipelines.
+scrape_configs:
+  # Parse a packed __meta_sd_tags string into metrics_path, job, and a label.
+  - job_name: sd-tags
+    static_configs:
+      - targets: ['10.8.0.1:9100']
+        labels:
+          __meta_sd_tags: 'path:/secret,job:some-job,label:foo=bar'
+    relabel_configs:
+      - {source_labels: [__meta_sd_tags], regex: '(?:.+,|^)path:(/[^,]+).*', action: replace, replacement: '${1}', target_label: __metrics_path__}
+      - {source_labels: [__meta_sd_tags], regex: '(?:.+,|^)job:([^,]+).*', action: replace, replacement: '${1}', target_label: job}
+      - {source_labels: [__meta_sd_tags], regex: '(?:.+,|^)label:([^=]+)=([^,]+).*', action: replace, replacement: '${2}', target_label: '${1}'}
+
+  # https://github.com/prometheus/prometheus/issues/12283 — promote an annotation
+  # to the container port name, then keep only the matching target.
+  - job_name: k8s-port-name
+    static_configs:
+      - targets: ['10.8.0.2:9100']
+        labels:
+          __meta_kubernetes_pod_container_port_name: foo
+          __meta_kubernetes_pod_annotation_XXX_metrics_port: "9091"
+    relabel_configs:
+      - {regex: '^__meta_kubernetes_pod_container_port_name$', action: labeldrop}
+      - {source_labels: [__meta_kubernetes_pod_annotation_XXX_metrics_port], regex: '(.+)', action: replace, replacement: metrics, target_label: __meta_kubernetes_pod_container_port_name}
+      - {source_labels: [__meta_kubernetes_pod_container_port_name], regex: '^metrics$', action: keep}

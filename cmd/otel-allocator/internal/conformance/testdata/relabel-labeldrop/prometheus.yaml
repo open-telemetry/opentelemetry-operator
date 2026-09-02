@@ -1,0 +1,9 @@
+# LabelDrop removes label names matching a regex (keeps the rest, incl. scrape
+# internals). LabelKeep, which would remove __address__, is covered separately.
+scrape_configs:
+  - job_name: labeldrop-prefix
+    static_configs:
+      - targets: ['10.7.0.1:9100']
+        labels: {a: foo, b1: bar, b2: baz}
+    relabel_configs:
+      - {regex: '(b.*)', action: labeldrop}

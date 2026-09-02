@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-opamp-bridge-standalone-config
+  namespace: opentelemetry-opamp-bridge
+data:
+  config.yaml: |
+    mode: standalone
+    endpoint: http://host.docker.internal:8080/v1/opamp
+    healthListenAddr: ":8081"
+    heartbeatInterval: 30s
+    name: opamp-bridge-standalone
+    capabilities:
+      AcceptsRemoteConfig: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnMetrics: true
+      ReportsRemoteConfig: true
+    standalone:
+      agents:
+        - namespace: opentelemetry-opamp-bridge
+          type: otel-collector
+          workloadRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: otel-collector
+          config:
+            collector:
+              kind: configmap
+              name: otel-collector-conf
+              key: otel-collector-config
+        - namespace: opentelemetry-opamp-bridge
+          type: otel-agent
+          workloadRef:
+            apiVersion: apps/v1
+            kind: DaemonSet
+            name: otel-agent
+          config:
+            agent:
+              kind: configmap
+              name: otel-agent-conf
+              key: otel-agent-config

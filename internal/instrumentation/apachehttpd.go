@@ -128,7 +128,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			// User-controlled value is passed as a positional arg (read as $1
 			// in the script) so it is never parsed by the shell.
 			Args: []string{apacheHttpdAgentScript, "--", getApacheConfDir(apacheSpec.ConfigPath)},
-			Env: []corev1.EnvVar{
+			Env: initContainerUserEnv([]corev1.EnvVar{
 				{
 					Name:  apacheAttributesEnvVar,
 					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, container, otlpEndpoint, resourceMap),
@@ -141,7 +141,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 						},
 					},
 				},
-			},
+			}, apacheSpec.Env, instSpec.Env),
 			Resources: apacheSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{
 				{

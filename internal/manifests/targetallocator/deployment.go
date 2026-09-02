@@ -26,9 +26,10 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: params.TargetAllocator.Namespace,
-			Labels:    labels,
+			Name:        name,
+			Namespace:   params.TargetAllocator.Namespace,
+			Labels:      labels,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.TargetAllocator.Spec.Replicas,

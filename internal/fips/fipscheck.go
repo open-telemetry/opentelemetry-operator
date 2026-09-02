@@ -57,7 +57,7 @@ func (fips fipsCheck) DisabledComponents(receivers, exporters, processors, exten
 
 func isDisabled(denyList map[string]bool, cfg map[string]any) string {
 	for id := range cfg {
-		component := strings.Split(id, "/")[0]
+		component, _, _ := strings.Cut(id, "/")
 		if denyList[component] {
 			return component
 		}

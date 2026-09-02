@@ -160,6 +160,7 @@ service:
 
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		param.TargetAllocator = &v1alpha1.TargetAllocator{}
+		param.TargetAllocator.Name = param.OtelCol.Name
 		param.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 		actual, err := ConfigMap(param)
 
@@ -174,6 +175,57 @@ service:
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 		assert.NoError(t, err)
+	})
+
+	t.Run("should use the standalone TargetAllocator's own name for the https endpoint", func(t *testing.T) {
+		// Guards against https://github.com/open-telemetry/opentelemetry-operator/issues/4297:
+		// a collector associated with a standalone TargetAllocator CR (e.g. via the
+		// opentelemetry.io/target-allocator label) must address the TA by its own name,
+		// not the collector's, since the two commonly differ in that scenario.
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  debug:
+receivers:
+  prometheus:
+    config: {}
+    target_allocator:
+      collector_id: ${POD_NAME}
+      endpoint: https://standalone-ta-targetallocator:443
+      interval: 30s
+      tls:
+        ca_file: /tls/ca.crt
+        cert_file: /tls/tls.crt
+        key_file: /tls/tls.key
+        reload_interval: 5m
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - debug
+      receivers:
+      - prometheus
+`,
+		}
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", &config.Config{
+			CollectorImage:              defaultCollectorImage,
+			TargetAllocatorImage:        defaultTaAllocationImage,
+			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+			PrometheusCRAvailability:    prometheus.Available,
+			CertManagerAvailability:     certmanager.Available,
+		})
+		require.NoError(t, err)
+
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		param.TargetAllocator = &v1alpha1.TargetAllocator{}
+		param.TargetAllocator.Name = "standalone-ta"
+		param.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
+		actual, err := ConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
 	})
 
 	t.Run("Should return expected collector config map without mTLS config", func(t *testing.T) {

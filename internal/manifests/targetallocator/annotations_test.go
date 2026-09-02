@@ -24,6 +24,42 @@ func TestPodAnnotations(t *testing.T) {
 	assert.Subset(t, annotations, instance.Spec.PodAnnotations)
 }
 
+func TestResourceAnnotations(t *testing.T) {
+	t.Run("propagates CR metadata annotations", func(t *testing.T) {
+		instance := targetAllocatorInstance()
+		instance.Annotations = map[string]string{
+			"key":        "value",
+			"foo.bar.io": "filtered",
+		}
+		annotations := ResourceAnnotations(instance, []string{".*\\.bar\\.io"})
+		assert.Equal(t, map[string]string{"key": "value"}, annotations)
+	})
+
+	t.Run("does not include pod annotations", func(t *testing.T) {
+		instance := targetAllocatorInstance()
+		instance.Spec.PodAnnotations = map[string]string{"key": "value"}
+		instance.Annotations = map[string]string{"meta": "value"}
+		annotations := ResourceAnnotations(instance, nil)
+		assert.Equal(t, map[string]string{"meta": "value"}, annotations)
+	})
+
+	t.Run("returns an empty map when the CR has no annotations", func(t *testing.T) {
+		instance := targetAllocatorInstance()
+		instance.Annotations = nil
+		annotations := ResourceAnnotations(instance, nil)
+		assert.NotNil(t, annotations)
+		assert.Empty(t, annotations)
+	})
+
+	t.Run("does not mutate the instance annotations", func(t *testing.T) {
+		instance := targetAllocatorInstance()
+		instance.Annotations = map[string]string{"key": "value"}
+		annotations := ResourceAnnotations(instance, nil)
+		annotations["other"] = "other"
+		assert.Equal(t, map[string]string{"key": "value"}, instance.Annotations)
+	})
+}
+
 func TestConfigMapHash(t *testing.T) {
 	cfg := config.New()
 	collector := collectorInstance()

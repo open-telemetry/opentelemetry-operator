@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: daemonset-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: daemonset-collector
+spec:
+  template:
+    spec:
+      hostNetwork: true
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+  labels:
+    app: my-apache
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: otel-agent-source-container-clone
+    ready: true
+  - name: otel-agent-attach-apache
+    ready: true
+  phase: Running

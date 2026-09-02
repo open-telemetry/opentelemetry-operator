@@ -92,7 +92,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 // AddExtraLabels adds extra labels to the ServiceMonitor labels map.
 func AddExtraLabels(logger *logr.Logger, labels, extraLabels map[string]string) {
 	for k, v := range extraLabels {
-		if existingValue, exists := (labels)[k]; exists {
+		if existingValue, exists := labels[k]; exists {
 			if existingValue != v {
 				logger.Info("Overwriting label", "label", k, "old value", existingValue, "new value", v)
 			}

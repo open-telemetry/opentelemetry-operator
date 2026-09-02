@@ -683,3 +683,92 @@ func TestInsertInitContainer(t *testing.T) {
 		})
 	}
 }
+
+func TestInitContainerUserEnv(t *testing.T) {
+	required := []corev1.EnvVar{
+		{Name: "OTEL_APACHE_AGENT_CONF", Value: "endpoint $(CUSTOM_ENDPOINT)"},
+		{Name: "APACHE_SERVICE_INSTANCE_ID", ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"},
+		}},
+	}
+
+	t.Run("with no user env returns pod/node defaults plus required", func(t *testing.T) {
+		env := initContainerUserEnv(required, nil, nil)
+		assert.Equal(t, []string{
+			constants.EnvPodIP,
+			constants.EnvNodeIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+	})
+
+	t.Run("places language and common env before required for kubelet expansion", func(t *testing.T) {
+		env := initContainerUserEnv(required,
+			[]corev1.EnvVar{{Name: "OTEL_SERVICE_NAME", Value: "apache"}},
+			[]corev1.EnvVar{
+				{Name: "CUSTOM_ENDPOINT", Value: "http://collector:4317"},
+				{Name: constants.EnvNodeIP, ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.hostIP"},
+				}},
+			},
+		)
+		assert.Equal(t, []string{
+			"OTEL_SERVICE_NAME",
+			"CUSTOM_ENDPOINT",
+			constants.EnvNodeIP,
+			constants.EnvPodIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+	})
+
+	t.Run("does not duplicate env already set by language spec", func(t *testing.T) {
+		env := initContainerUserEnv(required,
+			[]corev1.EnvVar{{Name: "SHARED", Value: "from-language"}},
+			[]corev1.EnvVar{{Name: "SHARED", Value: "from-common"}},
+		)
+		assert.Equal(t, []string{
+			"SHARED",
+			constants.EnvPodIP,
+			constants.EnvNodeIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+		assert.Equal(t, "from-language", env[0].Value)
+	})
+
+	t.Run("common env overriding an operator-managed default wins over the default", func(t *testing.T) {
+		env := initContainerUserEnv(required, nil,
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "203.0.113.5"}},
+		)
+		assert.Equal(t, []string{
+			constants.EnvNodeIP,
+			constants.EnvPodIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+		assert.Equal(t, "203.0.113.5", env[0].Value)
+	})
+
+	t.Run("language env overriding an operator-managed default wins over common env and the default", func(t *testing.T) {
+		env := initContainerUserEnv(required,
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "198.51.100.9"}},
+			[]corev1.EnvVar{{Name: constants.EnvNodeIP, Value: "203.0.113.5"}},
+		)
+		assert.Equal(t, []string{
+			constants.EnvNodeIP,
+			constants.EnvPodIP,
+			"OTEL_APACHE_AGENT_CONF",
+			"APACHE_SERVICE_INSTANCE_ID",
+		}, envNames(env))
+		assert.Equal(t, "198.51.100.9", env[0].Value)
+	})
+}
+
+func envNames(envs []corev1.EnvVar) []string {
+	names := make([]string, len(envs))
+	for i, e := range envs {
+		names[i] = e.Name
+	}
+	return names
+}

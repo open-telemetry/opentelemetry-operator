@@ -1,0 +1,102 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "b": "bar",
+      "job": "drop-match"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "drop-then-replace-pipeline"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "drop-nomatch-keeps"
+    },
+    "labels": {
+      "__address__": "10.2.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "instance": "10.2.0.3:9100",
+      "job": "drop-nomatch-keeps"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "drop-partial-regex-keeps"
+    },
+    "labels": {
+      "__address__": "10.2.0.4:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "instance": "10.2.0.4:9100",
+      "job": "drop-partial-regex-keeps"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.5:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "keep-nomatch-drops"
+    },
+    "labels": {}
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.2.0.6:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "job": "keep-match"
+    },
+    "labels": {
+      "__address__": "10.2.0.6:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "a": "foo",
+      "instance": "10.2.0.6:9100",
+      "job": "keep-match"
+    }
+  }
+]

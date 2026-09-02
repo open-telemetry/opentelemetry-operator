@@ -19,9 +19,10 @@ func ServiceMonitor(params Params) *monitoringv1.ServiceMonitor {
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: params.TargetAllocator.Namespace,
-			Name:      name,
-			Labels:    labels,
+			Namespace:   params.TargetAllocator.Namespace,
+			Name:        name,
+			Labels:      labels,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{

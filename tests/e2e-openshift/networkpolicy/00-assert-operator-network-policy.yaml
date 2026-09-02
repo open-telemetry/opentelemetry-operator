@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: opentelemetry-operator
+  namespace: opentelemetry-operator-system
+spec:
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+    - ports:
+        - port: 6443
+          protocol: TCP
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+  policyTypes:
+    - Ingress
+    - Egress

@@ -10,8 +10,53 @@ permissions:
   contents: read
 
 jobs:
+  # The e2e test app images are normally used as published from main. When this
+  # change set touches them, they must be built from source instead — otherwise
+  # incompatibilities between changed apps and the tests only surface after the
+  # merge publishes the new images. On detection failure, err on the side of
+  # building.
+  check-test-app-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.diff.outputs.build }}
+    steps:
+      # Deliberately no checkout: the compare API answers this in one request,
+      # where cloning the repo would fetch every file just to name-diff two trees.
+      - name: Check for e2e test app changes
+        id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.after }}
+          PREFIX: tests/test-e2e-apps/
+        run: |
+          set -uo pipefail
+          build=true
+          # A three-dot compare gives the changes the branch introduces, ignoring
+          # whatever landed on the base since it forked. On push, the merge base
+          # of before...after is before itself, so the same call fits both events.
+          if resp=$(gh api "repos/${REPO}/compare/${BASE_SHA}...${HEAD_SHA}"); then
+            # The endpoint caps `files` at 300 with no way to page further and no
+            # truncation flag, so a full page means "can't tell" -> build.
+            n=$(jq 'if (.files | type) == "array" then .files | length else -1 end' <<<"$resp")
+            if [ "${n:--1}" -ge 0 ] && [ "$n" -lt 300 ]; then
+              # Any jq failure leaves build=true rather than reading as "no match".
+              if touched=$(jq --arg p "$PREFIX" \
+                  '[.files[] | .filename, (.previous_filename // empty)]
+                   | any(startswith($p))' <<<"$resp"); then
+                [ "$touched" = true ] || build=false
+              fi
+            fi
+          fi
+          echo "Building e2e test apps from source: $build"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   run-e2e-tests:
+    needs: [ check-test-app-changes ]
     uses: ./.github/workflows/e2e-reusable.yaml
+    with:
+      build-test-apps: ${{ needs.check-test-app-changes.outputs.build == 'true' }}
 
   # This job is here to ensure the check has the right name we have set in Github's required checks.
   e2e-tests-check:

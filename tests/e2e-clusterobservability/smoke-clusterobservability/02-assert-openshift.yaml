@@ -1,0 +1,53 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: assert-openshift
+spec:
+  try:
+  - script:
+      timeout: 2m
+      content: |
+        set -eu
+
+        if ! kubectl api-resources --api-group=security.openshift.io -o name \
+          | grep -q '^securitycontextconstraints'; then
+          echo "Not an OpenShift cluster; skipping OpenShift-specific assertions"
+          exit 0
+        fi
+
+        AGENT_POD=$(kubectl get pod -n "$NAMESPACE" \
+          -l app.kubernetes.io/name=cluster-obs-agent \
+          -o jsonpath='{.items[0].metadata.name}')
+
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.metadata.annotations.openshift\.io/scc}')" = \
+          "cluster-obs-agent-hostaccess"
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.spec.securityContext.runAsUser}')" = "0"
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.spec.securityContext.seLinuxOptions.type}')" = "spc_t"
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.spec.containers[?(@.name=="otc-container")].securityContext.runAsUser}')" = "0"
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.spec.containers[?(@.name=="otc-container")].securityContext.allowPrivilegeEscalation}')" = "false"
+        test "$(kubectl get pod "$AGENT_POD" -n "$NAMESPACE" \
+          -o jsonpath='{.spec.containers[?(@.name=="otc-container")].securityContext.capabilities.drop[0]}')" = "ALL"
+
+        AGENT_IMAGE=$(kubectl get opentelemetrycollector cluster-obs-agent -n "$NAMESPACE" \
+          -o jsonpath='{.spec.image}')
+        case "$AGENT_IMAGE" in
+          *opentelemetry-collector-k8s:*) ;;
+          *) echo "unexpected agent image: $AGENT_IMAGE"; exit 1 ;;
+        esac
+
+        test "$(kubectl get opentelemetrycollector cluster-obs-agent -n "$NAMESPACE" \
+          -o jsonpath='{.spec.config.receivers.kubelet_stats.ca_file}')" = \
+          "/etc/kubelet-serving-ca/ca-bundle.crt"
+        test "$(kubectl get opentelemetrycollector cluster-obs-agent -n "$NAMESPACE" \
+          -o jsonpath='{.spec.config.receivers.kubelet_stats.insecure_skip_verify}')" = "false"
+        test "$(kubectl get opentelemetrycollector cluster-obs-agent -n "$NAMESPACE" \
+          -o jsonpath='{.spec.volumeMounts[?(@.name=="hostfs")].mountPath}')" = "/hostfs"
+        test "$(kubectl get opentelemetrycollector cluster-obs-agent -n "$NAMESPACE" \
+          -o jsonpath='{.spec.volumeMounts[?(@.name=="hostfs")].readOnly}')" = "true"
+
+        echo "OpenShift agent SCC, UID, SELinux, image, host mount, and kubelet TLS verified"

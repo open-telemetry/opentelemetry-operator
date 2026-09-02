@@ -42,7 +42,7 @@ spec:
     - name: CORECLR_PROFILER
       value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
     - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      value: /otel-auto-instrumentation-dotnet/linux/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
       value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
     - name: DOTNET_ADDITIONAL_DEPS
@@ -135,6 +135,8 @@ spec:
       value: "0.85"
     - name: NODE_OPTIONS
       value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -372,6 +374,22 @@ spec:
     - /bin/sh
     - -c
     env:
+    - name: OTEL_SERVICE_NAME
+      value: apache-httpd-app
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
     - name: OTEL_APACHE_AGENT_CONF
     - name: APACHE_SERVICE_INSTANCE_ID
       valueFrom:

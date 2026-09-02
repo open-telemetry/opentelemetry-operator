@@ -49,10 +49,10 @@ func TestAllocationPerNode(t *testing.T) {
 		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
 	)
 
-	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
-	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
-	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "", target.HashLabels(thirdLabels, "sample-name"))
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "", target.HashLabels(fourthLabels, "sample-name"))
 
 	targetList := []*target.Item{
 		firstTarget,
@@ -93,7 +93,9 @@ func TestAllocationPerNode(t *testing.T) {
 // Tests that four targets, with one of them missing node labels, are all assigned.
 func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := New("per-node", loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
+	s, _ := New("per-node", loggerPerNode, WithStrategyConfig(StrategyConfig{
+		PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: consistentHashingStrategyName}},
+	}))
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
@@ -114,10 +116,10 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
 	)
 
-	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
-	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
-	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "", target.HashLabels(thirdLabels, "sample-name"))
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "", target.HashLabels(fourthLabels, "sample-name"))
 
 	targetList := []*target.Item{
 		firstTarget,

@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-operator-webhook
+  namespace: opentelemetry-operator-system
+spec:
+  replicas: ($webhook_replicas)
+status:
+  availableReplicas: ($webhook_replicas)

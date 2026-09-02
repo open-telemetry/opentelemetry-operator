@@ -48,24 +48,15 @@ echo "Searching for ${#SEARCH_STRINGS[@]} strings:"
 printf "  - '%s'\n" "${SEARCH_STRINGS[@]}" # Print strings for verification, quoting them
 
 
-# --- Get Initial Pod Name ---
-echo "Finding target pod..."
-# Ensure kubectl uses the namespace chainsaw provides. Use --request-timeout for robustness.
-PODS_JSONPATH_OUTPUT=$(kubectl get pods -n "$NAMESPACE" -l "$LABEL_SELECTOR" --request-timeout=10s -o jsonpath='{.items[0].metadata.name}')
-KUBECTL_GET_EXIT_CODE=$?
-if [ $KUBECTL_GET_EXIT_CODE -ne 0 ]; then
-    echo "ERROR: Failed to run initial kubectl get pods (Exit Code: $KUBECTL_GET_EXIT_CODE). Is kubectl configured correctly for namespace '$NAMESPACE'?"
-    exit 1
-fi
-# Handle case where no pod is found gracefully
-if [[ -z "$PODS_JSONPATH_OUTPUT" ]]; then
+# --- Verify Matching Pods Exist ---
+echo "Finding target pods..."
+POD_COUNT=$(kubectl get pods -n "$NAMESPACE" -l "$LABEL_SELECTOR" --request-timeout=10s -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep -c . || true)
+if [ "$POD_COUNT" -eq 0 ]; then
     echo "ERROR: No pods found with label '$LABEL_SELECTOR' in namespace '$NAMESPACE'"
     exit 1
 fi
-# Assuming only one pod matches, if multiple could match, logic needs adjustment
-POD=$PODS_JSONPATH_OUTPUT
-echo "Target Pod: $POD"
-# --- End Get Initial Pod Name ---
+echo "Found $POD_COUNT pod(s) matching '$LABEL_SELECTOR'"
+# --- End Verify Matching Pods Exist ---
 
 # --- Main Retry Loop ---
 START_TIME=$(date +%s)
@@ -78,29 +69,27 @@ while true; do
     # 1. Check for Timeout
     if [ "$ELAPSED_TIME" -ge "$RETRY_TIMEOUT" ]; then
         echo "-----------------------------------------------------"
-        echo "ERROR: Timeout ($RETRY_TIMEOUT seconds) reached. Not all required strings were found in container '$CONTAINER_NAME' of pod '$POD'."
-        # Attempt to print last known missing strings, might be empty if loop never found anything
+        echo "ERROR: Timeout ($RETRY_TIMEOUT seconds) reached. Not all required strings were found in container '$CONTAINER_NAME' of pods matching '$LABEL_SELECTOR'."
         if [[ ${#MISSING_STRINGS_THIS_ATTEMPT[@]} -gt 0 ]]; then
             echo "Last known missing strings:"
             printf "  - '%s'\n" "${MISSING_STRINGS_THIS_ATTEMPT[@]}"
         fi
-        # Display last few lines of logs for debugging
-        echo "Last 20 lines of logs from $POD/$CONTAINER_NAME:"
-        kubectl logs "$POD" -n "$NAMESPACE" -c "$CONTAINER_NAME" --tail=20 || echo "  (failed to retrieve final logs)"
+        echo "Last 20 lines of logs from matching pods:"
+        kubectl logs -n "$NAMESPACE" -l "$LABEL_SELECTOR" -c "$CONTAINER_NAME" --tail=20 || echo "  (failed to retrieve final logs)"
         echo "-----------------------------------------------------"
         exit 1
     fi
 
-    # echo "-----------------------------------------------------" # Reduced verbosity
-    echo "Attempting log check on $POD/$CONTAINER_NAME (Elapsed: ${ELAPSED_TIME}s / ${RETRY_TIMEOUT}s)"
+    echo "Attempting log check on pods matching '$LABEL_SELECTOR' / $CONTAINER_NAME (Elapsed: ${ELAPSED_TIME}s / ${RETRY_TIMEOUT}s)"
 
-    # 2. Get Logs for this attempt from the SPECIFIC container
-    # Using --tail=-1 to get all logs. Consider limiting if logs are huge and only recent ones matter.
-    LOGS=$(kubectl logs "$POD" -n "$NAMESPACE" -c "$CONTAINER_NAME" --tail=-1 --request-timeout=10s)
+    # 2. Get Logs from ALL pods matching the label selector.
+    # This is essential for DaemonSets where spans land on the node-local pod,
+    # which may not be the first pod returned by kubectl.
+    LOGS=$(kubectl logs -n "$NAMESPACE" -l "$LABEL_SELECTOR" -c "$CONTAINER_NAME" --tail=-1 --request-timeout=10s)
     KUBECTL_LOGS_EXIT_CODE=$?
 
     if [ $KUBECTL_LOGS_EXIT_CODE -ne 0 ]; then
-         echo "Warning: Failed to get logs for container '$CONTAINER_NAME' in pod '$POD' (Exit code: $KUBECTL_LOGS_EXIT_CODE). Retrying after sleep..."
+         echo "Warning: Failed to get logs for container '$CONTAINER_NAME' in pods matching '$LABEL_SELECTOR' (Exit code: $KUBECTL_LOGS_EXIT_CODE). Retrying after sleep..."
          sleep "$RETRY_SLEEP"
          continue # Go to next loop iteration
     fi
@@ -129,7 +118,7 @@ while true; do
     # 4. Evaluate outcome of this attempt
     if [ "$ALL_FOUND_THIS_ATTEMPT" = true ]; then
         echo "-----------------------------------------------------"
-        echo "Success: All ${#SEARCH_STRINGS[@]} strings found simultaneously in container '$CONTAINER_NAME' of pod '$POD'."
+        echo "Success: All ${#SEARCH_STRINGS[@]} strings found in container '$CONTAINER_NAME' of pods matching '$LABEL_SELECTOR'."
         echo "-----------------------------------------------------"
         exit 0 # Successful exit!
     else

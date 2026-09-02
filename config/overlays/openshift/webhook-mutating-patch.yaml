@@ -1,0 +1,31 @@
+# Patch mutating webhooks to use the dedicated webhook deployment service
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- name: minstrumentation.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: mopampbridge.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: mopentelemetrycollectorbeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: mpod.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system
+- name: mtargetallocatorbeta.kb.io
+  clientConfig:
+    service:
+      name: opentelemetry-operator-webhook-service
+      namespace: system

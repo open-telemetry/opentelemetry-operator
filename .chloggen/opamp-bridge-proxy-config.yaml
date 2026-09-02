@@ -1,0 +1,5 @@
+change_type: enhancement
+component: opampbridge
+note: "Add explicit proxy configuration for OpAMP Bridge server connections."
+issues: [5351]
+subtext:

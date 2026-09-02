@@ -99,6 +99,17 @@ spec:
           fi
           echo "Using old images: dotnet=$OLD_DOTNET_IMG  java=$OLD_JAVA_IMG"
 
+          # Record the current pod name before patching so we can wait for it to
+          # fully terminate later. After kubectl rollout status returns the old pod
+          # may still be in Terminating and serving webhook requests with its
+          # original (pre-patch) image defaults. We must wait for it to disappear
+          # before creating upgrade-test, otherwise the old webhook may stamp the
+          # wrong default-image annotations on the new resource.
+          OLD_POD=$(kubectl get pods -n "$NS" \
+            -l app.kubernetes.io/name=opentelemetry-operator \
+            --no-headers 2>/dev/null | awk '{print $1}' | head -1 || true)
+          echo "Pod before patch: $OLD_POD"
+
           # Detect whether OLM is managing the operator by checking for a CSV.
           # On kind (upstream CI): no OLM, no CSV — patch the Deployment directly (persists).
           # On OpenShift (OLM): OLM reconciles Deployment back to CSV template within seconds,
@@ -154,6 +165,17 @@ spec:
           fi
 
           kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s
+
+          # Wait for the pre-patch pod to fully terminate. kubectl rollout status
+          # returns once the new pod is Ready, but the old pod may still be in the
+          # Terminating phase (default 30 s grace period) and serving webhook
+          # requests with its original image defaults. Waiting here ensures the
+          # next step's Instrumentation creation is handled by the newly-patched
+          # webhook, which stamps the correct (old-image) annotations.
+          if [ -n "$OLD_POD" ]; then
+            echo "Waiting for old pod $OLD_POD to fully terminate..."
+            kubectl wait pod -n "$NS" "$OLD_POD" --for=delete --timeout=60s 2>/dev/null || true
+          fi
   - name: Create instrumentation that will be subject to upgrade
     try:
     - apply:

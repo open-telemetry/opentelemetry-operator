@@ -126,4 +126,42 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})
 	})
+
+	t.Run("mTLS with user-provided server certificate secret", func(t *testing.T) {
+		ta := v1alpha1.TargetAllocator{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-targetallocator",
+			},
+			Spec: v1alpha1.TargetAllocatorSpec{
+				Mtls: &v1beta1.TargetAllocatorMTLS{
+					Enabled:        true,
+					UseCertManager: new(false),
+					TLS: &v1beta1.TargetAllocatorTLS{
+						CertificateAuthorityCertificate: &v1beta1.CAReference{Secret: &v1beta1.SecretKeySelector{Name: "my-ca-secret"}},
+						ServerCertificate: &v1beta1.CertificateReference{
+							CertificateSecret: v1beta1.SecretKeySelector{Name: "my-server-secret"},
+							KeySecret:         v1beta1.SecretKeySelector{Name: "my-server-secret"},
+						},
+						ClientCertificate: &v1beta1.CertificateReference{
+							CertificateSecret: v1beta1.SecretKeySelector{Name: "my-client-secret"},
+							KeySecret:         v1beta1.SecretKeySelector{Name: "my-client-secret"},
+						},
+					},
+				},
+			},
+		}
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
+
+		volumes := Volumes(cfg, ta)
+
+		var found bool
+		for _, v := range volumes {
+			if v.Secret != nil && v.Secret.SecretName == "my-server-secret" {
+				found = true
+			}
+		}
+		assert.True(t, found, "expected a volume backed by the user-provided server secret")
+	})
 }

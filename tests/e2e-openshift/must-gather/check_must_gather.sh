@@ -3,8 +3,15 @@
 # Create a temporary directory to store must-gather
 MUST_GATHER_DIR=$(mktemp -d)
 
+# Use MUSTGATHER_IMG if set, otherwise derive from the operator version in versions.txt
+if [ -z "$MUSTGATHER_IMG" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  OPERATOR_VERSION=$(awk -F= '/^operator=/ {print $2}' "${SCRIPT_DIR}/../../../versions.txt")
+  MUSTGATHER_IMG="ghcr.io/open-telemetry/opentelemetry-operator/must-gather:${OPERATOR_VERSION}"
+fi
+
 # Run the must-gather script
-oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather:main -- /usr/bin/gather --operator-namespace $otelnamespace
+oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=$MUSTGATHER_IMG -- /usr/bin/gather --operator-namespace $otelnamespace
 
 # Define required files and directories
 REQUIRED_ITEMS=(

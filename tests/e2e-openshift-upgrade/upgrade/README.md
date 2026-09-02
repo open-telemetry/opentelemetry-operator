@@ -29,7 +29,8 @@ The test is designed to be run as part of the chainsaw test suite and requires s
 
 The test requires the following values to be provided:
 - `upgrade_fbc_image`: File-based catalog (FBC) image for upgrading the operator
-- `upgrade_otel_version`: Target OpenTelemetry Operator version 
+- `upgrade_collector_version`: Expected OpenTelemetry Collector version after upgrade (from `opentelemetry-collector` in `versions.txt`)
+- `upgrade_ta_version`: Expected Target Allocator version after upgrade (from `targetallocator` in `versions.txt`)
 - `upgrade_operator_csv_name`: CSV name for the operator upgrade
 
 ### Running the Test
@@ -40,7 +41,8 @@ Use one of the following methods to run the upgrade test:
 ```bash
 chainsaw test tests/e2e-openshift-upgrade --values - <<EOF
 upgrade_fbc_image: brew.registry.redhat.io/rh-osbs/iib:986879
-upgrade_otel_version: 0.127.0
+upgrade_collector_version: 0.127.0
+upgrade_ta_version: 0.127.0
 upgrade_operator_csv_name: opentelemetry-operator.v0.127.0-1
 EOF
 ```
@@ -49,7 +51,8 @@ EOF
 Create a `values.yaml` file:
 ```yaml
 upgrade_fbc_image: brew.registry.redhat.io/rh-osbs/iib:986879
-upgrade_otel_version: 0.127.0
+upgrade_collector_version: 0.127.0
+upgrade_ta_version: 0.127.0
 upgrade_operator_csv_name: opentelemetry-operator.v0.127.0-1
 ```
 

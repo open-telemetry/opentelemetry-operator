@@ -160,8 +160,8 @@ type OpenTelemetryCollectorSpec struct {
 // OpenTelemetryCollector spec.
 type TargetAllocatorEmbedded struct {
 	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-	// that can be run in a high availability mode is consistent-hashing.
+	// other than 1 if a strategy that allows for high availability is chosen. Currently, the allocation strategies
+	// that can be run in a high availability mode are consistent-hashing and per-node.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
@@ -178,7 +178,9 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
-	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// The current options are relabel-config (drops targets based on Prometheus relabel_config)
+	// and none (disables filtering).
+	// For backward compatibility, an empty string also disables filtering, but none should be used.
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
@@ -257,6 +259,13 @@ type TargetAllocatorEmbedded struct {
 	// Mtls defines the mTLS configuration for the target allocator. If enabled, the target allocator will communicate with the collector over mTLS.
 	// +optional
 	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
+
+	// Telemetry defines the self-telemetry configuration for the TargetAllocator.
+	// When set, the TargetAllocator exports its own metrics via OTLP in addition
+	// to the Prometheus /metrics endpoint.
+	//
+	// +optional
+	Telemetry TelemetryConfig `json:"telemetry,omitempty"`
 }
 
 type TargetAllocatorMTLS struct {
@@ -268,6 +277,80 @@ type TargetAllocatorMTLS struct {
 	// +optional
 	// +kubebuilder:default:=true
 	UseCertManager *bool `json:"useCertManager,omitempty"`
+	// TLS references user-provided certificates used for mTLS. It allows managing
+	// the certificates outside of the operator (e.g. without cert-manager) and
+	// is only consulted when UseCertManager is set to false.
+	// +optional
+	TLS *TargetAllocatorTLS `json:"tls,omitempty"`
+}
+
+// TargetAllocatorTLS references user-provided sources holding the certificates used for mTLS
+// between the target allocator and the collector. The CA may come from a Secret or a ConfigMap;
+// the leaf certificate and its private key may live in different Secrets. The referenced keys are
+// projected into the pods via subPath volume mounts, which means certificate rotation requires the
+// pods to be restarted.
+type TargetAllocatorTLS struct {
+	// CertificateAuthorityCertificate references the CA certificate used to verify the peer's
+	// certificate. Exactly one of secret or configMap must be set. It is required when
+	// UseCertManager is false.
+	// +optional
+	CertificateAuthorityCertificate *CAReference `json:"certificateAuthorityCertificate,omitempty"`
+	// ServerCertificate references the server certificate and key used by the target allocator when
+	// exposing its HTTPS server.
+	// +optional
+	ServerCertificate *CertificateReference `json:"serverCertificate,omitempty"`
+	// ClientCertificate references the client certificate and key used by the collector when talking
+	// to the target allocator's HTTPS server.
+	// +optional
+	ClientCertificate *CertificateReference `json:"clientCertificate,omitempty"`
+}
+
+// SecretKeySelector selects a key from a Secret in the same namespace as the workload.
+type SecretKeySelector struct {
+	// Name of the Secret, in the same namespace as the workload.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Key within the Secret's data. When omitted, a role-specific default is applied: tls.crt for a
+	// certificate, tls.key for a private key.
+	// +optional
+	Key string `json:"key,omitempty"`
+}
+
+// ConfigMapKeySelector selects a key from a ConfigMap in the same namespace as the workload.
+type ConfigMapKeySelector struct {
+	// Name of the ConfigMap, in the same namespace as the workload.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Key within the ConfigMap's data. Defaults to ca.crt when omitted.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:default="ca.crt"
+	// +optional
+	Key string `json:"key,omitempty"`
+}
+
+// CAReference points to a CA certificate stored in either a Secret or a ConfigMap. CA certificates
+// are public, so distributing them via a ConfigMap is common. Exactly one of secret or configMap
+// must be set.
+type CAReference struct {
+	// Secret sources the CA certificate from a Secret.
+	// +optional
+	Secret *SecretKeySelector `json:"secret,omitempty"`
+	// ConfigMap sources the CA certificate from a ConfigMap.
+	// +optional
+	ConfigMap *ConfigMapKeySelector `json:"configMap,omitempty"`
+}
+
+// CertificateReference points to a certificate and its private key. The certificate and the key may
+// be stored in different Secrets.
+type CertificateReference struct {
+	// CertificateSecret selects the certificate. Its key defaults to tls.crt.
+	// +kubebuilder:validation:Required
+	CertificateSecret SecretKeySelector `json:"certificateSecret"`
+	// KeySecret selects the private key. Its key defaults to tls.key.
+	// +kubebuilder:validation:Required
+	KeySecret SecretKeySelector `json:"keySecret"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
@@ -344,6 +427,90 @@ type MetricsConfigSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
+}
+
+// TelemetryConfig defines the self-telemetry configuration for the TargetAllocator.
+type TelemetryConfig struct {
+	// Metrics defines the metrics export settings for the TargetAllocator's own telemetry.
+	// +optional
+	Metrics MetricsConfig `json:"metrics,omitempty"`
+}
+
+// MetricsConfig holds metric-export settings for the TargetAllocator's own telemetry.
+type MetricsConfig struct {
+	// Readers configures one or more metric readers following the OTel declarative configuration spec.
+	// +optional
+	Readers []MetricReader `json:"readers,omitempty"`
+}
+
+// MetricReader configures a metric reader.
+type MetricReader struct {
+	// Periodic configures a periodic exporting metric reader.
+	// +optional
+	Periodic *PeriodicMetricReader `json:"periodic,omitempty"`
+}
+
+// PeriodicMetricReader configures a periodic exporting metric reader.
+type PeriodicMetricReader struct {
+	// Interval is the delay between consecutive exports. Defaults to 60s.
+	// +optional
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Timeout is the maximum allowed export duration. Defaults to 30s.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
+	// Exporter configures the push exporter for this reader.
+	Exporter MetricExporter `json:"exporter"`
+}
+
+// MetricExporter selects the push exporter for a metric reader.
+type MetricExporter struct {
+	// OtlpGrpc configures an OTLP/gRPC metric exporter.
+	// +optional
+	OtlpGrpc *OTLPGrpcExporter `json:"otlpGrpc,omitempty"`
+	// OtlpHttp configures an OTLP/HTTP metric exporter.
+	// +optional
+	OtlpHttp *OTLPHttpExporter `json:"otlpHttp,omitempty"`
+}
+
+// OTLPCommonConfig holds the fields shared by both gRPC and HTTP OTLP exporters.
+type OTLPCommonConfig struct {
+	// Endpoint is the receiver address. For gRPC use host:port or a full URL with scheme
+	// (e.g. "example.com:4317"). For HTTP use a base URL (e.g. "https://example.com:4318").
+	// +kubebuilder:validation:Required
+	Endpoint string `json:"endpoint"`
+	// Headers are additional key/value pairs sent with every export request.
+	// +optional
+	Headers []NameValuePair `json:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
+	// +optional
+	// +kubebuilder:validation:Enum=cumulative;delta;low_memory
+	TemporalityPreference string `json:"temporalityPreference,omitempty"`
+}
+
+// OTLPGrpcExporter configures an OTLP/gRPC metric exporter.
+type OTLPGrpcExporter struct {
+	OTLPCommonConfig `json:",inline"`
+	// Tls configures TLS for the gRPC connection.
+	// +optional
+	Tls *GrpcTlsConfig `json:"tls,omitempty"`
+}
+
+// OTLPHttpExporter configures an OTLP/HTTP metric exporter.
+type OTLPHttpExporter struct {
+	OTLPCommonConfig `json:",inline"`
+}
+
+// NameValuePair is a name/value pair used for OTLP export headers.
+type NameValuePair struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// GrpcTlsConfig configures TLS settings for a gRPC OTLP exporter.
+type GrpcTlsConfig struct {
+	// Insecure disables TLS. Only suitable for local development.
+	// +optional
+	Insecure bool `json:"insecure,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's

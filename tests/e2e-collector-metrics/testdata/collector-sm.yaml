@@ -1,0 +1,29 @@
+# A collector whose target allocator discovers targets via prometheusCR, selecting
+# only the ServiceMonitors of the `ta` pipeline, and exports OTLP to the oracle
+# Prometheus.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true
+      scrapeInterval: 5s
+      serviceMonitorSelector:
+        matchLabels: {group: ta}
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+    exporters:
+      otlphttp:
+        endpoint: http://prometheus-operated:9090/api/v1/otlp
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [otlphttp]

@@ -132,6 +132,9 @@ type Parser interface {
 
 	// ParserName is an internal name for the parser
 	ParserName() string
+
+	// ParserAliases returns alternative names that resolve to this parser.
+	ParserAliases() []string
 }
 
 func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.ServicePort {

@@ -23,6 +23,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 type ImmutableFieldChangeErr struct {
@@ -390,9 +391,40 @@ func mutateIssuer(existing, desired *cmv1.Issuer) {
 	existing.Spec = desired.Spec
 }
 
+// operatorPrometheusAnnotationKeys is the set of pod-template annotation keys
+// the operator stamps when it adds the default prometheus.io/* scrape
+// annotations. The mutate path treats these as operator-owned only when the
+// marker manifestutils.PrometheusAnnotationsAddedKey is present on the
+// existing pod template; in that case any key in this set that is absent from
+// the desired pod template is stripped from the existing pod template before
+// the preserve-external-annotations merge runs. This lets the
+// spec.observability.metrics.disablePrometheusAnnotations feature toggle take
+// effect on already-running collectors without clobbering prometheus.io/*
+// annotations the user set out of band.
+var operatorPrometheusAnnotationKeys = []string{
+	"prometheus.io/scrape",
+	"prometheus.io/port",
+	"prometheus.io/path",
+	manifestutils.PrometheusAnnotationsAddedKey,
+}
+
 func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
 		return err
+	}
+
+	// Strip operator-stamped prometheus annotations when the marker on the
+	// existing pod template signals operator ownership and the desired pod
+	// template no longer includes them. See the comment on
+	// operatorPrometheusAnnotationKeys for the rationale.
+	if existing.Annotations != nil {
+		if _, hasMarker := existing.Annotations[manifestutils.PrometheusAnnotationsAddedKey]; hasMarker {
+			for _, key := range operatorPrometheusAnnotationKeys {
+				if _, inDesired := desired.Annotations[key]; !inDesired {
+					delete(existing.Annotations, key)
+				}
+			}
+		}
 	}
 
 	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {

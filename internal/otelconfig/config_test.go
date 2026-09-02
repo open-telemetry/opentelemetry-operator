@@ -15,12 +15,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -1553,20 +1551,8 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
-// withTelemetryShapeGate temporarily flips the operator.collector.usedefaulttelemetryshape
-// gate to the given value for the duration of the test and restores it on cleanup.
-func withTelemetryShapeGate(t *testing.T, enabled bool) {
-	t.Helper()
-	registry := colfeaturegate.GlobalRegistry()
-	original := featuregate.UseCollectorDefaultTelemetryShape.IsEnabled()
-	require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), enabled))
-	t.Cleanup(func() {
-		require.NoError(t, registry.Set(featuregate.UseCollectorDefaultTelemetryShape.ID(), original))
-	})
-}
-
-// Default behavior (beta gate enabled): the injected reader carries no shape overrides,
-// so the collector's defaults apply.
+// The operator.collector.usedefaulttelemetryshape gate is stable (always on):
+// the injected reader carries no shape overrides, so the collector's defaults apply.
 func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T) {
 	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
 	require.NotNil(t, reader.Pull)
@@ -1576,21 +1562,4 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-}
-
-// Opt-out behavior: when the gate is disabled, the operator pins all three
-// fields to false to preserve the pre-v0.154.0 metric name shape.
-func TestAddPrometheusMetricsEndpointPreservesShapeWhenGateDisabled(t *testing.T) {
-	withTelemetryShapeGate(t, false)
-
-	reader := AddPrometheusMetricsEndpoint("0.0.0.0", 8888)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus)
-	require.Equal(t, "0.0.0.0", *reader.Pull.Exporter.Prometheus.Host)
-	require.Equal(t, 8888, *reader.Pull.Exporter.Prometheus.Port)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
-	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutUnits)
-	require.NotNil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-	require.False(t, *reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }

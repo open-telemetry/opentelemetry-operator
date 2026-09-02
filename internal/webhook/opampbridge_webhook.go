@@ -83,6 +83,10 @@ func (*OpAMPBridgeWebhook) validate(r *v1alpha1.OpAMPBridge) (admission.Warnings
 		return warnings, errors.New("the OpAMP server endpoint is not specified")
 	}
 
+	if r.Spec.TLS != nil && r.Spec.TLS.Insecure && r.Spec.TLS.InsecureSkipVerify {
+		return warnings, errors.New("tls.insecure and tls.insecure_skip_verify cannot both be true")
+	}
+
 	// validate OpAMPBridge capabilities
 	if len(r.Spec.Capabilities) == 0 {
 		return warnings, errors.New("the capabilities supported by OpAMP Bridge are not specified")

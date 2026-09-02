@@ -15,9 +15,17 @@ import (
 )
 
 func TestInjectJavaagent(t *testing.T) {
+	testSecurityContext := &corev1.SecurityContext{
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(int64(1000)),
+		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+	}
+
 	tests := []struct {
-		name string
-		v1alpha1.Java
+		name     string
+		Java     v1alpha1.Java
+		instSpec v1alpha1.InstrumentationSpec
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
@@ -379,6 +387,161 @@ func TestInjectJavaagent(t *testing.T) {
 			},
 			err: nil,
 		},
+		{
+			name: "security context applied to java init container and all extensions",
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+				{Image: "ex/ex:0", Dir: "/ex0"},
+				{Image: "ex/ex:1", Dir: "/ex1"},
+			}},
+			instSpec: v1alpha1.InstrumentationSpec{
+				InitContainerSecurityContext: testSecurityContext,
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test-container"},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:            "opentelemetry-auto-instrumentation-java",
+							Image:           "foo/bar:1",
+							Command:         []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:            "opentelemetry-auto-instrumentation-extension-0",
+							Image:           "ex/ex:0",
+							Command:         []string{"cp", "-r", "/ex0/.", "/otel-auto-instrumentation-java/extensions"},
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:            "opentelemetry-auto-instrumentation-extension-1",
+							Image:           "ex/ex:1",
+							Command:         []string{"cp", "-r", "/ex1/.", "/otel-auto-instrumentation-java/extensions"},
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "security context inherited from app container when initContainerSecurityContext unset",
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+				{Image: "ex/ex:0", Dir: "/ex0"},
+			}},
+			instSpec: v1alpha1.InstrumentationSpec{
+				// InitContainerSecurityContext intentionally nil — should fall back to app container SC
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:            "test-container",
+							SecurityContext: testSecurityContext,
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:            "opentelemetry-auto-instrumentation-java",
+							Image:           "foo/bar:1",
+							Command:         []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:            "opentelemetry-auto-instrumentation-extension-0",
+							Image:           "ex/ex:0",
+							Command:         []string{"cp", "-r", "/ex0/.", "/otel-auto-instrumentation-java/extensions"},
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:            "test-container",
+							SecurityContext: testSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	injector := sdkInjector{}
@@ -395,7 +558,7 @@ func TestInjectJavaagent(t *testing.T) {
 				containers = append(containers, &pod.Spec.InitContainers[i])
 			}
 
-			err := injectJavaagent(test.Java, &pod, containers, v1alpha1.InstrumentationSpec{})
+			err := injectJavaagent(test.Java, &pod, containers, test.instSpec)
 			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)

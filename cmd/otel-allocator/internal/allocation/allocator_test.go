@@ -166,8 +166,8 @@ func TestAllocationCollision(t *testing.T) {
 		allocator.SetCollectors(cols)
 		firstLabels := labels.New(labels.Label{Name: "test", Value: "test1"})
 		secondLabels := labels.New(labels.Label{Name: "test", Value: "test2"})
-		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "", target.HashLabels(firstLabels, "sample-name"))
+		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "", target.HashLabels(secondLabels, "sample-name"))
 
 		targetList := []*target.Item{firstTarget, secondTarget}
 
@@ -269,6 +269,49 @@ func TestTargetUpdatePreservesCount(t *testing.T) {
 	})
 }
 
+// TestSetTargetsUpdatesMetaLabelsForUnchangedHash covers
+// https://github.com/open-telemetry/opentelemetry-operator/issues/4839: for a hostNetwork
+// DaemonSet pod, __address__ (and therefore the target's hash, which excludes meta labels) stays
+// the same across pod restarts, but meta labels such as __meta_kubernetes_pod_name change. The
+// allocator must still surface the refreshed meta labels, while keeping the existing collector
+// assignment since the target's identity is unchanged.
+func TestSetTargetsUpdatesMetaLabelsForUnchangedHash(t *testing.T) {
+	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
+		cols := MakeNCollectors(3, 0)
+		allocator.SetCollectors(cols)
+
+		jobName := "sample-job"
+		nonMetaLabels := labels.New(labels.Label{Name: "test", Value: "test1"})
+		hash := target.HashLabels(nonMetaLabels, jobName)
+
+		firstLabels := labels.New(
+			labels.Label{Name: "test", Value: "test1"},
+			labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+			labels.Label{Name: "__meta_kubernetes_pod_name", Value: "pod-1"},
+		)
+		firstTarget := target.NewItem(jobName, "0.0.0.0:8000", firstLabels, "", hash)
+		allocator.SetTargets([]*target.Item{firstTarget})
+
+		targetItems := allocator.TargetItems()
+		assert.Len(t, targetItems, 1)
+		originalCollector := targetItems[hash].CollectorName
+		assert.NotEmpty(t, originalCollector)
+
+		secondLabels := labels.New(
+			labels.Label{Name: "test", Value: "test1"},
+			labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+			labels.Label{Name: "__meta_kubernetes_pod_name", Value: "pod-2"},
+		)
+		secondTarget := target.NewItem(jobName, "0.0.0.0:8000", secondLabels, "", hash)
+		allocator.SetTargets([]*target.Item{secondTarget})
+
+		targetItems = allocator.TargetItems()
+		assert.Len(t, targetItems, 1)
+		assert.Equal(t, "pod-2", targetItems[hash].Labels.Get("__meta_kubernetes_pod_name"))
+		assert.Equal(t, originalCollector, targetItems[hash].CollectorName)
+	})
+}
+
 func TestNewAllocatorInvalidStrategy(t *testing.T) {
 	_, err := New("invalid-strategy", logger)
 	assert.Error(t, err)
@@ -291,36 +334,6 @@ func TestNewCollector(t *testing.T) {
 	assert.NotNil(t, col.TargetsPerJob)
 	assert.Equal(t, "my-collector", col.Hash())
 	assert.Equal(t, "my-collector", col.String())
-}
-
-func TestWithFilterOption(t *testing.T) {
-	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
-		filterCalled := false
-		mockFilter := &mockFilterImpl{
-			applyFunc: func(_ []*target.Item) []*target.Item {
-				filterCalled = true
-				// drop all targets
-				return []*target.Item{}
-			},
-		}
-		allocator.SetFilter(mockFilter)
-
-		cols := MakeNCollectors(3, 0)
-		allocator.SetCollectors(cols)
-		targets := MakeNNewTargetsWithEmptyCollectors(5, 0)
-		allocator.SetTargets(targets)
-
-		assert.True(t, filterCalled)
-		assert.Empty(t, allocator.TargetItems())
-	})
-}
-
-type mockFilterImpl struct {
-	applyFunc func([]*target.Item) []*target.Item
-}
-
-func (m *mockFilterImpl) Apply(targets []*target.Item) []*target.Item {
-	return m.applyFunc(targets)
 }
 
 func TestRepeatedSetCollectorsIdempotent(t *testing.T) {

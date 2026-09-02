@@ -1,0 +1,30 @@
+# KeepEqual / DropEqual: keep or drop the target when source value equals the
+# target label's current value.
+scrape_configs:
+  - job_name: keepequal-match
+    static_configs:
+      - targets: ['10.6.0.1:9100']
+        labels: {__tmp_port: "1234", __port1: "1234", __port2: "5678"}
+    relabel_configs:
+      - {source_labels: [__tmp_port], action: keepequal, target_label: __port1}
+
+  - job_name: keepequal-nomatch-drops
+    static_configs:
+      - targets: ['10.6.0.2:9100']
+        labels: {__tmp_port: "1234", __port1: "1234", __port2: "5678"}
+    relabel_configs:
+      - {source_labels: [__tmp_port], action: keepequal, target_label: __port2}
+
+  - job_name: dropequal-match-drops
+    static_configs:
+      - targets: ['10.6.0.3:9100']
+        labels: {__tmp_port: "1234", __port1: "1234", __port2: "5678"}
+    relabel_configs:
+      - {source_labels: [__tmp_port], action: dropequal, target_label: __port1}
+
+  - job_name: dropequal-nomatch
+    static_configs:
+      - targets: ['10.6.0.4:9100']
+        labels: {__tmp_port: "1234", __port1: "1234", __port2: "5678"}
+    relabel_configs:
+      - {source_labels: [__tmp_port], action: dropequal, target_label: __port2}

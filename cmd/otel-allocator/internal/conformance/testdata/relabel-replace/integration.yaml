@@ -1,0 +1,11 @@
+# Consumed only by cmd/otel-allocator/integrationtest. All jobs scrape the same
+# mock; each expect matches the series produced by one replace job, confirming
+# the replace-produced target labels reach the emitted metric.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {d: choo-choo} # job replace-basic
+  - metric: widgets_total
+    labels: {name: value} # job replace-named-target

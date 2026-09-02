@@ -602,6 +602,31 @@ func TestServiceWithIpFamily(t *testing.T) {
 	})
 }
 
+func TestServiceWithSessionAffinity(t *testing.T) {
+	t.Run("should set SessionAffinity when specified", func(t *testing.T) {
+		params := deploymentParams()
+		sessionAffinity := v1.ServiceAffinityClientIP
+		timeoutSeconds := int32(10800)
+		sessionAffinityConfig := &v1.SessionAffinityConfig{
+			ClientIP: &v1.ClientIPConfig{TimeoutSeconds: &timeoutSeconds},
+		}
+		params.OtelCol.Spec.SessionAffinity = &sessionAffinity
+		params.OtelCol.Spec.SessionAffinityConfig = sessionAffinityConfig
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, sessionAffinity, actual.Spec.SessionAffinity)
+		assert.Equal(t, sessionAffinityConfig, actual.Spec.SessionAffinityConfig)
+	})
+
+	t.Run("should not set SessionAffinity when not specified", func(t *testing.T) {
+		params := deploymentParams()
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Empty(t, actual.Spec.SessionAffinity)
+		assert.Nil(t, actual.Spec.SessionAffinityConfig)
+	})
+}
+
 func TestServiceWithTrafficDistribution(t *testing.T) {
 	t.Run("should set TrafficDistribution when specified", func(t *testing.T) {
 		params := deploymentParams()

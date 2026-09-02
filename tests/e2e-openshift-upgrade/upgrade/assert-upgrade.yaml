@@ -38,7 +38,7 @@ metadata:
 status:
   scale:
     replicas: 1
-  version: ($upgrade_otel_version)
+  version: ($upgrade_collector_version)
 
 ---
 apiVersion: opentelemetry.io/v1alpha1
@@ -47,4 +47,4 @@ metadata:
   name: simplest
   namespace: chainsaw-upgrade
 status:
-  version: ($upgrade_otel_version)
+  version: ($upgrade_ta_version)

@@ -99,6 +99,35 @@ var tests = []test{
 	},
 }
 
+func TestPDBResourceAnnotations(t *testing.T) {
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"meta-annotation-key": "meta-annotation-value",
+			},
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodAnnotations: map[string]string{"pod-annotation-key": "pod-annotation-value"},
+			},
+		},
+	}
+	configuration := config.New()
+
+	pdb, err := PodDisruptionBudget(Params{
+		TargetAllocator: targetAllocator,
+		Config:          configuration,
+		Log:             logger,
+	})
+
+	// verify: CR metadata annotations propagate, pod annotations do not
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"meta-annotation-key": "meta-annotation-value"}, pdb.Annotations)
+}
+
 func TestPDBWithValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		for _, strategy := range []v1beta1.TargetAllocatorAllocationStrategy{v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.TargetAllocatorAllocationStrategyConsistentHashing} {

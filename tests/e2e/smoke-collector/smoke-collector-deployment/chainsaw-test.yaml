@@ -28,9 +28,24 @@ spec:
     - name: install
       description: install a collector with all propagatable fields set
       try:
+        - script:
+            content: |
+              VERSION=$(kubectl logs deployment/opentelemetry-operator-controller-manager \
+                -n opentelemetry-operator-system | \
+                grep -o '"collector-image":"[^"]*"' | head -1 | \
+                grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+              # --collector-image may be pinned to a non-semver tag (e.g. a
+              # ":latest" dev build); fall back to "latest" so the test still
+              # gets a resolvable image instead of a version-less tag.
+              printf '%s' "${VERSION:-latest}"
+            outputs:
+              - name: collectorVersion
+                value: ($stdout)
         - apply:
+            template: true
             file: 00-install.yaml
         - assert:
+            template: true
             file: 00-assert.yaml
         # trafficDistribution is only honoured on k8s >= 1.31; on older API
         # servers the field is pruned. Gate the assertion on the server version.

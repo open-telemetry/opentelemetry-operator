@@ -1,0 +1,10 @@
+# Consumed only by cmd/otel-allocator/integrationtest. hashmod must produce the
+# deterministic bucket labels on the emitted metric.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {d: "976"} # job hashmod-basic (hashmod of c=baz)
+  - metric: widgets_total
+    labels: {b: "734"} # job hashmod-multiline

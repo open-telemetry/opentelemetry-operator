@@ -36,3 +36,10 @@ metadata:
 (x_k8s_exists($client, 'policy/v1', 'PodDisruptionBudget', $namespace, 'stateful-targetallocator')): false
 ---
 (x_k8s_exists($client, 'monitoring.coreos.com/v1', 'ServiceMonitor', $namespace, 'stateful-targetallocator')): false
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stateful-collector-networkpolicy
+---
+(x_k8s_exists($client, 'networking.k8s.io/v1', 'NetworkPolicy', $namespace, 'stateful-targetallocator-networkpolicy')): false

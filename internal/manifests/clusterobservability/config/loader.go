@@ -149,7 +149,7 @@ func (c *ConfigLoader) loadDistroOverrides(collectorType CollectorType, distroPr
 func (*ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]any {
 	exporters := make(map[string]any)
 
-	// Build the otlphttp exporter configuration - map exactly to collector fields
+	// Build the OTLP HTTP exporter configuration.
 	otlpConfig := map[string]any{}
 
 	// Handle endpoints - either base endpoint or per-signal endpoints
@@ -252,7 +252,7 @@ func (*ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec
 		}
 	}
 
-	exporters["otlphttp"] = otlpConfig
+	exporters["otlp_http"] = otlpConfig
 	return exporters
 }
 
@@ -260,32 +260,31 @@ func (*ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec
 func (*ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) map[string]PipelineConfig {
 	pipelines := make(map[string]PipelineConfig)
 
-	// We only use the otlphttp exporter for now
-	exporterName := "otlphttp"
+	exporterName := "otlp_http"
 
 	switch collectorType {
 	case AgentCollectorType:
 		// Agent collector: metrics, logs, traces
 		pipelines["metrics"] = PipelineConfig{
-			Receivers:  []string{"otlp", "hostmetrics", "kubeletstats"},
-			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
+			Receivers:  []string{"otlp", "host_metrics", "kubelet_stats"},
+			Processors: []string{"resource_detection", "k8s_attributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["logs"] = PipelineConfig{
-			Receivers:  []string{"filelog"},
-			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
+			Receivers:  []string{"file_log"},
+			Processors: []string{"resource_detection", "k8s_attributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["traces"] = PipelineConfig{
 			Receivers:  []string{"otlp"},
-			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
+			Processors: []string{"resource_detection", "k8s_attributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
 	case ClusterCollectorType:
 		// Cluster collector: metrics, logs (k8s events)
 		pipelines["metrics"] = PipelineConfig{
 			Receivers:  []string{"k8s_cluster"},
-			Processors: []string{"resourcedetection", "batch"},
+			Processors: []string{"resource_detection", "batch"},
 			Exporters:  []string{exporterName},
 		}
 		pipelines["metrics/prometheus"] = PipelineConfig{

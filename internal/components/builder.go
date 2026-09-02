@@ -29,6 +29,7 @@ type Settings[ComponentConfigType any] struct {
 	startupGen      ProbeGenerator[ComponentConfigType]
 	defaultsApplier Defaulter[ComponentConfigType]
 	envVarGen       EnvVarGenerator[ComponentConfigType]
+	aliases         []string
 }
 
 func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
@@ -94,6 +95,17 @@ func (b Builder[ComponentConfigType]) WithName(name string) Builder[ComponentCon
 	})
 }
 
+// WithAlias registers one or more additional names that resolve to the same
+// parser. This is used for components that accept more than one spelling - for
+// example the lower_snake_case names introduced by the collector-contrib
+// component rename - so the operator produces the same RBAC and environment
+// variables regardless of which spelling a Collector config uses.
+func (b Builder[ComponentConfigType]) WithAlias(aliases ...string) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.aliases = append(o.aliases, aliases...)
+	})
+}
+
 func (b Builder[ComponentConfigType]) WithPort(port int32) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.port = port
@@ -150,6 +162,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 	}
 	return &GenericParser[ComponentConfigType]{
 		name:            o.name,
+		aliases:         o.aliases,
 		portParser:      o.portParser,
 		rbacGen:         o.rbacGen,
 		envVarGen:       o.envVarGen,

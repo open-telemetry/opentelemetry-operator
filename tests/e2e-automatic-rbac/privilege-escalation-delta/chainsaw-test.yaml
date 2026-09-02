@@ -23,11 +23,28 @@ spec:
   - name: limited-user-request-accepted-because-sa-already-has-permissions
     try:
     - script:
+        timeout: 60s
         content: |
-          kubectl apply \
-            --namespace $NAMESPACE \
-            --dry-run=server \
-            --as=limited-user \
-            -f 02-collector.yaml
+          # Retry to absorb transient startup races that are unrelated to what this test
+          # asserts. Right after the operator rolls out, two things can briefly fail:
+          #   1. the webhook Service endpoint may not be programmed yet, so the apply
+          #      fails with "dial ... connect: connection refused";
+          #   2. the pre-existing ClusterRoleBinding may not have propagated to the
+          #      authorizer yet, so the delta looks non-empty and the request is rejected.
+          # A one-shot apply turns either condition into a spurious failure (unlike the
+          # apply/assert operations elsewhere, chainsaw does not retry script steps). A
+          # genuine rejection still fails the test once the retries are exhausted.
+          for i in $(seq 1 30); do
+            if kubectl apply \
+                --namespace $NAMESPACE \
+                --dry-run=server \
+                --as=limited-user \
+                -f 02-collector.yaml; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "request was not accepted within timeout"
+          exit 1
         check:
           ($error != null): false

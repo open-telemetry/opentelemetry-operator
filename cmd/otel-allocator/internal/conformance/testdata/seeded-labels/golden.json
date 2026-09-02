@@ -1,0 +1,51 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.20.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "gap-keep-on-job"
+    },
+    "labels": {
+      "__address__": "10.20.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.20.0.1:9100",
+      "job": "gap-keep-on-job"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.20.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "gap-keep-on-scheme"
+    },
+    "labels": {
+      "__address__": "10.20.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "instance": "10.20.0.2:9100",
+      "job": "gap-keep-on-scheme"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.20.0.3:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "gap-drop-on-job"
+    },
+    "labels": {}
+  }
+]

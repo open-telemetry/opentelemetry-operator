@@ -40,6 +40,28 @@ func Test0_111_0Upgrade(t *testing.T) {
 		},
 	}
 
+	defaultCollectorWithReaders := defaultCollector.DeepCopy()
+	defaultCollectorWithReaders.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
+		Object: map[string]any{
+			"metrics": map[string]any{
+				"readers": []any{
+					map[string]any{
+						"pull": map[string]any{
+							"exporter": map[string]any{
+								"prometheus": map[string]any{
+									"host": "0.0.0.0",
+									// float64, matching how the fake client's/DeepCopy's JSON round-trip
+									// decodes numbers into map[string]any.
+									"port": float64(8888),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	tt := []struct {
 		name     string
 		input    v1beta1.OpenTelemetryCollector
@@ -64,6 +86,17 @@ func Test0_111_0Upgrade(t *testing.T) {
 				}
 				return *col
 			}(),
+		},
+		{
+			// Reproduces https://github.com/open-telemetry/opentelemetry-operator/issues/5416:
+			// a collector already configured with the newer service.telemetry.metrics.readers
+			// format must not also get the deprecated address field backfilled, since a later
+			// upgrade step migrates address into an additional reader, leaving two readers
+			// bound to the same host:port and making the collector fail at startup with
+			// "address already in use".
+			name:     "telemetry readers already configured",
+			input:    *defaultCollectorWithReaders,
+			expected: *defaultCollectorWithReaders,
 		},
 	}
 

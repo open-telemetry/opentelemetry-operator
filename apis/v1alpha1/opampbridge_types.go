@@ -13,10 +13,16 @@ type OpAMPBridgeSpec struct {
 	// OpAMP backend Server endpoint
 	// +required
 	Endpoint string `json:"endpoint"`
+	// TLS configuration for the connection to the OpAMP backend server.
+	// +optional
+	TLS *OpAMPBridgeTLSConfig `json:"tls,omitempty"`
 	// Headers is an optional map of headers to use when connecting to the OpAMP Server,
 	// typically used to set access tokens or other authorization headers.
 	// +optional
 	Headers map[string]string `json:"headers,omitempty"`
+	// Proxy is the optional proxy configuration used only for the OpAMP backend connection.
+	// +optional
+	Proxy *OpAMPBridgeProxyConfig `json:"proxy,omitempty"`
 	// Capabilities supported by the OpAMP Bridge
 	// +required
 	Capabilities map[OpAMPBridgeCapability]bool `json:"capabilities"`
@@ -117,7 +123,28 @@ type OpAMPBridgeStatus struct {
 type AgentDescription struct {
 	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
 	// extra information about the agent to the OpAMP server.
-	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes"`
+	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes" yaml:"non_identifying_attributes"`
+}
+
+type OpAMPBridgeTLSConfig struct {
+	// Insecure indicates whether the endpoint should use TLS or not.
+	// When true, TLS is completely disabled.
+	// +optional
+	Insecure bool `json:"insecure,omitempty" yaml:"insecure,omitempty"`
+	// InsecureSkipVerify indicates to keep TLS but skip certificate validation.
+	// +optional
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty" yaml:"insecure_skip_verify,omitempty"`
+}
+
+type OpAMPBridgeProxyConfig struct {
+	// URL is the proxy URL used only for the OpAMP backend connection.
+	// Supported schemes are http, https, socks5, and socks5h. If the scheme is omitted, http is assumed.
+	// SOCKS username/password authentication can be configured with URL userinfo.
+	// +optional
+	URL string `json:"url,omitempty" yaml:"url,omitempty"`
+	// Headers are sent to HTTP/HTTPS proxies during CONNECT requests.
+	// +optional
+	Headers map[string]string `json:"headers,omitempty" yaml:"headers,omitempty"`
 }
 
 // +kubebuilder:object:root=true

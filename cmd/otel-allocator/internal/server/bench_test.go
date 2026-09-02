@@ -243,11 +243,14 @@ func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item 
 	builder := labels.NewBuilder(labels.EmptyLabels())
 	items := make([]*target.Item, 0, numItems)
 	for range numItems {
+		jobName := randSeq(random, 80)
+		itemLabels := makeNNewLabels(builder, random, numLabels)
 		items = append(items, target.NewItem(
-			randSeq(random, 80),
+			jobName,
 			randSeq(random, 150),
-			makeNNewLabels(builder, random, numLabels),
+			itemLabels,
 			randSeq(random, 30),
+			target.HashLabels(itemLabels, jobName),
 		))
 	}
 	return items

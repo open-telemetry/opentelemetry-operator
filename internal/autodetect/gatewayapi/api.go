@@ -14,5 +14,5 @@ const (
 )
 
 func (p ApiAvailability) String() string {
-	return [...]string{"Available", "NotAvailable"}[p]
+	return [...]string{"NotAvailable", "Available"}[p]
 }

@@ -34,7 +34,7 @@ func ServiceAccount(params Params) *corev1.ServiceAccount {
 			Name:        name,
 			Namespace:   params.TargetAllocator.Namespace,
 			Labels:      labels,
-			Annotations: params.TargetAllocator.Annotations,
+			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 	}
 }

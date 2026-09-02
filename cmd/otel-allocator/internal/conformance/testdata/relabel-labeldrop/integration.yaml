@@ -1,0 +1,11 @@
+# Consumed only by cmd/otel-allocator/integrationtest. labeldrop removes b1/b2;
+# only the dropped labels must be gone from the emitted metric, a kept.
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {a: foo}
+expect_absent:
+  - metric: widgets_total
+    labels: {b1: bar}

@@ -9,10 +9,10 @@
     "devDependencies": {
         "copyfiles": "^2.4.1",
         "rimraf": "^6.0.1",
-        "typescript": "^6.0.0"
+        "typescript": "^7.0.0"
     },
     "dependencies": {
         "@opentelemetry/api": "1.9.1",
-        "@opentelemetry/auto-instrumentations-node": "0.77.0"
+        "@opentelemetry/auto-instrumentations-node": "0.78.0"
     }
 }

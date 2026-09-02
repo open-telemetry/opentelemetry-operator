@@ -174,6 +174,39 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
+func TestDeploymentResourceAnnotations(t *testing.T) {
+	// prepare
+	testMetaAnnotations := map[string]string{"meta-annotation-key": "meta-annotation-value"}
+	testPodAnnotations := map[string]string{"pod-annotation-key": "pod-annotation-value"}
+	otelcol := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
+	targetAllocator.Annotations = map[string]string{
+		"meta-annotation-key": "meta-annotation-value",
+		"filtered.io/key":     "excluded",
+	}
+	targetAllocator.Spec.PodAnnotations = testPodAnnotations
+	cfg := config.New()
+	cfg.AnnotationsFilter = []string{"filtered\\.io/.*"}
+
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	assert.NoError(t, err)
+
+	// CR metadata annotations land on the Deployment itself and on the pod template, filtered
+	assert.Equal(t, testMetaAnnotations, d.Annotations)
+	assert.Subset(t, d.Spec.Template.Annotations, testMetaAnnotations)
+	// pod annotations only land on the pod template
+	assert.NotContains(t, d.Annotations, "pod-annotation-key")
+	assert.Subset(t, d.Spec.Template.Annotations, testPodAnnotations)
+}
+
 func collectorInstance() *v1beta1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {

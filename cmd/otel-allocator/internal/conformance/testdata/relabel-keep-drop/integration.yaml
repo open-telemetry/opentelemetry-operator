@@ -1,0 +1,9 @@
+# Consumed only by cmd/otel-allocator/integrationtest. The kept jobs all carry
+# a=foo, so the emitted metric must have it (target-level drops are covered by
+# drop-by-label; the dropped jobs here are not address-distinguishable post-repoint).
+exposition: |
+  # TYPE widgets_total counter
+  widgets_total 7
+expect:
+  - metric: widgets_total
+    labels: {a: foo}

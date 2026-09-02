@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -43,9 +44,38 @@ const (
 	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
-	DefaultFilterStrategy                              = "relabel-config"
 	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
 )
+
+// FilterStrategy determines whether, and how, the Target Allocator filters targets before
+// allocating them among the collectors.
+type FilterStrategy string
+
+const (
+	// FilterStrategyRelabelConfig drops targets based on the scrape config's relabel_configs,
+	// as they are discovered.
+	FilterStrategyRelabelConfig FilterStrategy = "relabel-config"
+	// FilterStrategyNone disables target filtering.
+	FilterStrategyNone FilterStrategy = "none"
+	// FilterStrategyUnset is the empty value, kept for backward compatibility with configurations
+	// which disabled filtering that way. It normalizes to FilterStrategyNone on config load.
+	FilterStrategyUnset FilterStrategy = ""
+
+	// DefaultFilterStrategy is used if no filter strategy is set in the configuration.
+	DefaultFilterStrategy = FilterStrategyRelabelConfig
+)
+
+// validFilterStrategies are all the values the filter_strategy option accepts.
+var validFilterStrategies = []FilterStrategy{FilterStrategyRelabelConfig, FilterStrategyNone, FilterStrategyUnset}
+
+// normalize resolves the deprecated empty value to the equivalent explicit strategy. Any other
+// value is returned as-is, so that invalid ones can be rejected by ValidateConfig.
+func (f FilterStrategy) normalize() FilterStrategy {
+	if f == FilterStrategyUnset {
+		return FilterStrategyNone
+	}
+	return f
+}
 
 var DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 
@@ -60,20 +90,70 @@ var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
 var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 
 type Config struct {
-	ListenAddr                   string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath           string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig                *rest.Config          `yaml:"-"`
-	RootLogger                   logr.Logger           `yaml:"-"`
-	CollectorSelector            *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	CollectorNamespace           string                `yaml:"collector_namespace,omitempty"`
-	PromConfig                   *promconfig.Config    `yaml:"config"`
-	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
-	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
-	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
-	AllowInsecureAuthSecrets     bool                  `yaml:"allow_insecure_auth_secrets,omitempty"`
+	ListenAddr         string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig      *rest.Config          `yaml:"-"`
+	RootLogger         logr.Logger           `yaml:"-"`
+	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	CollectorNamespace string                `yaml:"collector_namespace,omitempty"`
+	PromConfig         *promconfig.Config    `yaml:"config"`
+	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
+	// AllocationFallbackStrategy is the deprecated, top-level way of setting the fallback strategy for
+	// the per-node allocation strategy. Prefer AllocationStrategyConfig.PerNode.FallbackStrategy instead.
+	// When both are set, AllocationStrategyConfig.PerNode.FallbackStrategy takes precedence.
+	AllocationFallbackStrategy   string                   `yaml:"allocation_fallback_strategy,omitempty"`
+	AllocationStrategyConfig     AllocationStrategyConfig `yaml:"allocation_strategy_config,omitempty"`
+	FilterStrategy               FilterStrategy           `yaml:"filter_strategy,omitempty"`
+	PrometheusCR                 PrometheusCRConfig       `yaml:"prometheus_cr,omitempty"`
+	HTTPS                        HTTPSServerConfig        `yaml:"https,omitempty"`
+	Telemetry                    TelemetryConfig          `yaml:"telemetry,omitempty"`
+	CollectorNotReadyGracePeriod time.Duration            `yaml:"collector_not_ready_grace_period,omitempty"`
+	AllowInsecureAuthSecrets     bool                     `yaml:"allow_insecure_auth_secrets,omitempty"`
+}
+
+// AllocationStrategyConfig holds the per-strategy configuration for allocation strategies.
+// Each allocation strategy has its own section because strategies accept different configuration options.
+type AllocationStrategyConfig struct {
+	ConsistentHashing ConsistentHashingStrategyConfig `yaml:"consistent_hashing,omitempty"`
+	LeastWeighted     LeastWeightedStrategyConfig     `yaml:"least_weighted,omitempty"`
+	PerNode           PerNodeStrategyConfig           `yaml:"per_node,omitempty"`
+}
+
+// ConsistentHashingStrategyConfig holds the configuration options for the consistent-hashing allocation strategy.
+type ConsistentHashingStrategyConfig struct{}
+
+// LeastWeightedStrategyConfig holds the configuration options for the least-weighted allocation strategy.
+type LeastWeightedStrategyConfig struct{}
+
+// PerNodeStrategyConfig holds the configuration options for the per-node allocation strategy.
+type PerNodeStrategyConfig struct {
+	// FallbackStrategy configures the allocation strategy used for targets the per-node strategy can't
+	// assign on its own, for example targets which don't have a node label. If unset, such targets are
+	// left unassigned.
+	FallbackStrategy *FallbackStrategyConfig `yaml:"fallback_strategy,omitempty"`
+}
+
+// FallbackStrategyConfig configures an allocation strategy used as a fallback: the strategy name plus
+// the options for that strategy. It mirrors AllocationStrategyConfig, except that strategies used as
+// fallbacks can't have fallbacks of their own, which keeps fallback chains bounded to a single level.
+type FallbackStrategyConfig struct {
+	// Name is the name of the allocation strategy to use as the fallback.
+	Name              string                          `yaml:"name"`
+	ConsistentHashing ConsistentHashingStrategyConfig `yaml:"consistent_hashing,omitempty"`
+	LeastWeighted     LeastWeightedStrategyConfig     `yaml:"least_weighted,omitempty"`
+}
+
+// GetTargetAllocatorFallbackStrategy returns the effective fallback allocation strategy configuration,
+// or nil if no fallback is configured. The strategy-specific allocation_strategy_config.per_node.fallback_strategy
+// takes precedence over the deprecated top-level allocation_fallback_strategy option.
+func (c *Config) GetTargetAllocatorFallbackStrategy() *FallbackStrategyConfig {
+	if c.AllocationStrategyConfig.PerNode.FallbackStrategy != nil {
+		return c.AllocationStrategyConfig.PerNode.FallbackStrategy
+	}
+	if c.AllocationFallbackStrategy != "" {
+		return &FallbackStrategyConfig{Name: c.AllocationFallbackStrategy}
+	}
+	return nil
 }
 
 type PrometheusCRConfig struct {
@@ -111,6 +191,85 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+// TelemetryConfig holds the self-telemetry settings for the Target Allocator.
+// The Metrics field follows the OTel declarative configuration spec (MeterProvider
+// section), which means a telemetry YAML fragment can be validated with
+// otelconf.ParseYAML for compatibility checking.
+type TelemetryConfig struct {
+	Metrics *MetricsConfig `yaml:"metrics,omitempty"`
+}
+
+// MetricsConfig mirrors otelconf's MeterProvider schema for the readers list.
+type MetricsConfig struct {
+	// Readers configures one or more metric readers, following the OTel
+	// declarative configuration spec.
+	Readers []MetricReader `yaml:"readers,omitempty"`
+}
+
+// MetricReader mirrors otelconf's MetricReader type.
+type MetricReader struct {
+	Periodic *PeriodicMetricReader `yaml:"periodic,omitempty"`
+}
+
+// PeriodicMetricReader mirrors otelconf's PeriodicMetricReader type.
+// Interval and Timeout are in milliseconds, matching the otelconf spec.
+type PeriodicMetricReader struct {
+	// Interval is the delay between consecutive exports in milliseconds (default 60000).
+	Interval int `yaml:"interval,omitempty"`
+	// Timeout is the maximum allowed export duration in milliseconds (default 30000).
+	Timeout int `yaml:"timeout,omitempty"`
+	// Exporter configures the push exporter for this reader.
+	Exporter MetricExporter `yaml:"exporter"`
+}
+
+// MetricExporter mirrors otelconf's PushMetricExporter type.
+type MetricExporter struct {
+	// OTLPGrpc configures an OTLP/gRPC metric exporter.
+	OTLPGrpc *OTLPGrpcExporterConfig `yaml:"otlp_grpc,omitempty"`
+	// OTLPHttp configures an OTLP/HTTP metric exporter.
+	OTLPHttp *OTLPHttpExporterConfig `yaml:"otlp_http,omitempty"`
+}
+
+// OTLPGrpcExporterConfig mirrors otelconf's OTLPGrpcMetricExporter type.
+type OTLPGrpcExporterConfig struct {
+	// Endpoint is the gRPC receiver address. Accepts host:port or a full URL with scheme.
+	Endpoint string `yaml:"endpoint,omitempty"`
+	// Headers are additional key/value pairs sent with every export request.
+	// Values support ${env:VAR} substitution.
+	Headers []NameValuePair `yaml:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default),
+	// "delta", or "low_memory".
+	TemporalityPreference string `yaml:"temporality_preference,omitempty"`
+	// Tls configures TLS for the gRPC connection.
+	Tls *GrpcTlsConfig `yaml:"tls,omitempty"`
+}
+
+// OTLPHttpExporterConfig mirrors otelconf's OTLPHttpMetricExporter type.
+type OTLPHttpExporterConfig struct {
+	// Endpoint is the OTLP/HTTP receiver base URL (e.g. "https://example.com:4318").
+	// /v1/metrics is appended automatically unless already present.
+	// Values support ${env:VAR} substitution.
+	Endpoint string `yaml:"endpoint,omitempty"`
+	// Headers are additional key/value pairs sent with every export request.
+	// Values support ${env:VAR} substitution.
+	Headers []NameValuePair `yaml:"headers,omitempty"`
+	// TemporalityPreference sets aggregation temporality: "cumulative" (default),
+	// "delta", or "low_memory".
+	TemporalityPreference string `yaml:"temporality_preference,omitempty"`
+}
+
+// NameValuePair mirrors otelconf's NameStringValuePair type for HTTP/gRPC headers.
+type NameValuePair struct {
+	Name  string  `yaml:"name"`
+	Value *string `yaml:"value"`
+}
+
+// GrpcTlsConfig mirrors otelconf's GrpcTls type.
+type GrpcTlsConfig struct {
+	// Insecure disables TLS — only suitable for local development.
+	Insecure bool `yaml:"insecure,omitempty"`
 }
 
 // StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
@@ -424,6 +583,8 @@ func Load(args []string) (*Config, error) {
 		return nil, err
 	}
 
+	config.FilterStrategy = config.FilterStrategy.normalize()
+
 	return &config, nil
 }
 
@@ -438,6 +599,51 @@ func ValidateConfig(config *Config) error {
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
 		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
+	}
+	if !slices.Contains(validFilterStrategies, config.FilterStrategy) {
+		return fmt.Errorf("invalid filter strategy %q, must be one of: %s, %s", config.FilterStrategy, FilterStrategyRelabelConfig, FilterStrategyNone)
+	}
+	return validateTelemetry(config.Telemetry)
+}
+
+// validateTelemetry validates the self-telemetry configuration. The operator sets these
+// values from a validated CRD, but the Target Allocator can also be run standalone with a
+// config file, so we validate here as well for a clear error instead of a runtime failure.
+func validateTelemetry(t TelemetryConfig) error {
+	if t.Metrics == nil {
+		return nil
+	}
+	for i, reader := range t.Metrics.Readers {
+		if reader.Periodic == nil {
+			continue
+		}
+		exp := reader.Periodic.Exporter
+		if exp.OTLPGrpc == nil && exp.OTLPHttp == nil {
+			return fmt.Errorf("telemetry.metrics.readers[%d].periodic: must configure otlp_grpc or otlp_http exporter", i)
+		}
+		if exp.OTLPGrpc != nil && exp.OTLPHttp != nil {
+			return fmt.Errorf("telemetry.metrics.readers[%d].periodic: otlp_grpc and otlp_http are mutually exclusive, configure only one", i)
+		}
+		if exp.OTLPGrpc != nil {
+			if exp.OTLPGrpc.Endpoint == "" {
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_grpc: endpoint must be set", i)
+			}
+			switch exp.OTLPGrpc.TemporalityPreference {
+			case "", "cumulative", "delta", "low_memory":
+			default:
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_grpc: temporality_preference must be 'cumulative', 'delta', or 'low_memory', got %q", i, exp.OTLPGrpc.TemporalityPreference)
+			}
+		}
+		if exp.OTLPHttp != nil {
+			if exp.OTLPHttp.Endpoint == "" {
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_http: endpoint must be set", i)
+			}
+			switch exp.OTLPHttp.TemporalityPreference {
+			case "", "cumulative", "delta", "low_memory":
+			default:
+				return fmt.Errorf("telemetry.metrics.readers[%d].periodic.otlp_http: temporality_preference must be 'cumulative', 'delta', or 'low_memory', got %q", i, exp.OTLPHttp.TemporalityPreference)
+			}
+		}
 	}
 	return nil
 }

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-annotations
+# Verifies that a standalone TargetAllocator CR's metadata.annotations propagate
+# to every resource the operator creates for it (Deployment, Service, ConfigMap,
+# PodDisruptionBudget), that spec.podAnnotations only lands on the pod template,
+# and that the operator's default annotations filter keeps
+# kubectl.kubernetes.io/last-applied-configuration from propagating.
+spec:
+  steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: targetallocator-annotations
+        - name: clusterRoleBindingName
+          value: (join('-', ['ta', $namespace]))
+  - name: step-00
+    try:
+    - apply:
+        template: true
+        file: 00-install.yaml
+    - assert:
+        template: true
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator

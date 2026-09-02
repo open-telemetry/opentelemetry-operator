@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: fsgroup-test
+spec:
+  mode: statefulset
+  replicas: 1
+  volumes:
+    - name: testvolume
+  volumeMounts:
+    - name: testvolume
+      mountPath: /usr/share/testvolume
+  volumeClaimTemplates:
+    - metadata:
+        name: testvolume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

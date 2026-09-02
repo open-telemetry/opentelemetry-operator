@@ -1,0 +1,31 @@
+# UTF-8 label names and multiline label values in relabeling (ported from
+# relabel_test.go). promtool and the allocator share the same relabel engine, so
+# the differential check holds regardless of dotall/UTF-8 matching subtleties.
+scrape_configs:
+  - job_name: replace-multiline
+    static_configs:
+      - targets: ['10.9.0.1:9100']
+        labels: {a: "line1\nline2", b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: [a], regex: 'line1.*line2', target_label: d, separator: ';', replacement: 'match${1}', action: replace}
+
+  - job_name: replace-utf8-source
+    static_configs:
+      - targets: ['10.9.0.2:9100']
+        labels: {"utf-8.label": "line1\nline2", b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: ["utf-8.label"], regex: 'line1.*line2', target_label: d, separator: ';', replacement: 'match${1}', action: replace}
+
+  - job_name: replace-utf8-target
+    static_configs:
+      - targets: ['10.9.0.3:9100']
+        labels: {a: "line1\nline2", b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: [a], regex: 'line1.*line2', target_label: "utf-8.label", separator: ';', replacement: 'match${1}', action: replace}
+
+  - job_name: replace-utf8-target-var
+    static_configs:
+      - targets: ['10.9.0.4:9100']
+        labels: {a: "line1\nline2", b: bar, c: baz}
+    relabel_configs:
+      - {source_labels: [a], regex: 'line1.*line2', target_label: "utf-8.label${1}", separator: ';', replacement: 'match${1}', action: replace}

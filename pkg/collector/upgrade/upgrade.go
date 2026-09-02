@@ -98,7 +98,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 		return otelcol, err
 	}
 
-	updated := *(otelcol.DeepCopy())
+	updated := *otelcol.DeepCopy()
 	if instanceV.GreaterThan(u.semVer()) {
 		// Update with the latest known version, which is what we have from versions.txt
 		u.Log.V(4).Info("no upgrade routines are needed for the OpenTelemetry instance", "name", updated.Name, "namespace", updated.Namespace, "version", updated.Status.Version, "latest", u.semVer().String())

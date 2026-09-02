@@ -6,8 +6,7 @@ metadata:
     regular-annotation: regular-value
 spec:
   mode: deployment
-  # pinned image so we can assert the version label is derived from it
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.121.0
+  image: (join('', ['ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:', $collectorVersion]))
   # scheduling: nodeSelector + affinity
   nodeSelector:
     kubernetes.io/os: linux
@@ -21,6 +20,11 @@ spec:
             values:
             - linux
   # pod-spec extras
+  resizePolicy:
+    - resourceName: cpu
+      restartPolicy: NotRequired
+    - resourceName: memory
+      restartPolicy: RestartContainer
   podAnnotations:
     pod-annotation1: value1
     pod-annotation2: value2
@@ -43,6 +47,10 @@ spec:
     - IPv4
   ipFamilyPolicy: SingleStack
   trafficDistribution: PreferClose
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   ports:
     - name: extra-port
       port: 9090

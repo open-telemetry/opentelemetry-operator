@@ -1,0 +1,13 @@
+# Multiple targets share a group label (`vendor`) that sorts AFTER __address__,
+# and a relabel rule reads __address__ into a new label. If the group+target
+# label merge is not globally sorted (#4967/#4082), the __address__ binary-search
+# lookup fails, every target's addr_copy collapses to the same value, and their
+# identities collide. With a correct merge the three stay distinct.
+scrape_configs:
+  - job_name: sorted-merge
+    static_configs:
+      - targets: ['10.40.0.1:9100', '10.40.0.2:9100', '10.40.0.3:9100']
+        labels:
+          vendor: acme
+    relabel_configs:
+      - {source_labels: [__address__], target_label: addr_copy, action: replace}

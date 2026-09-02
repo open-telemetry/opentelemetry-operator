@@ -20,6 +20,7 @@ We gratefully welcome improvements to documentation as well as to code.
 * `make lint` - Run golangci-lint
 * `make fmt` - Format Go code and auto-fix issues
 * `make vet` - Run go vet
+* `make tidy` - Run `go mod tidy` in every Go module in the repository
 * `make update` - Generate code and manifests based on Go struct definitions for CRDs (includes generate, manifests, bundle, api-docs)
 * `make precommit` - Run all checks: fmt, vet, lint, test, ensure-update-is-noop (run before committing)
 
@@ -337,6 +338,7 @@ operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:l
 The operator can be uninstalled by deleting `subscriptions.operators.coreos.com` and `clusterserviceversion.operators.coreos.com` objects from the current namespace.
 
 ```bash
+kubectl delete catalogsources.operators.coreos.com --all
 kubectl delete clusterserviceversion.operators.coreos.com --all
 kubectl delete subscriptions.operators.coreos.com --all
 ```

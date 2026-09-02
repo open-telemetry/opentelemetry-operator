@@ -1,0 +1,48 @@
+[
+  {
+    "discoveredLabels": {
+      "__address__": "10.0.0.1:9100",
+      "__meta_kubernetes_pod_label_app": "web",
+      "__meta_kubernetes_pod_label_tier": "frontend",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "lm"
+    },
+    "labels": {
+      "__address__": "10.0.0.1:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "app": "web",
+      "instance": "10.0.0.1:9100",
+      "job": "lm",
+      "tier": "frontend"
+    }
+  },
+  {
+    "discoveredLabels": {
+      "__address__": "10.0.0.2:9100",
+      "__meta_kubernetes_pod_label_app": "web",
+      "__meta_kubernetes_pod_label_tier": "frontend",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "job": "lm"
+    },
+    "labels": {
+      "__address__": "10.0.0.2:9100",
+      "__metrics_path__": "/metrics",
+      "__scheme__": "http",
+      "__scrape_interval__": "1m",
+      "__scrape_timeout__": "10s",
+      "app": "web",
+      "instance": "10.0.0.2:9100",
+      "job": "lm",
+      "tier": "frontend"
+    }
+  }
+]

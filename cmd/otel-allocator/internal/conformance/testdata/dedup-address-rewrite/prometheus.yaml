@@ -1,0 +1,14 @@
+# Two distinct discovered targets are relabeled to the SAME __address__, so they
+# collapse to one identity in Prometheus. Exercises the dedup scenario (#3617)
+# and assertion B's positive branch: the allocator must give both the same hash.
+scrape_configs:
+  - job_name: dedup
+    static_configs:
+      - targets: ['10.0.0.1:9100', '10.0.0.2:9100']
+        labels:
+          cluster: a
+    relabel_configs:
+      - source_labels: [cluster]
+        target_label: __address__
+        replacement: collector.local:9100
+        action: replace

@@ -1,0 +1,19 @@
+# LabelMap action: copy label names matching a regex into new names.
+scrape_configs:
+  - job_name: labelmap-prefix
+    static_configs:
+      - targets: ['10.4.0.1:9100']
+        labels: {a: foo, b1: bar, b2: baz}
+    relabel_configs:
+      - {regex: '(b.*)', replacement: 'bar_${1}', action: labelmap}
+
+  - job_name: labelmap-meta
+    static_configs:
+      - targets: ['10.4.0.2:9100']
+        labels:
+          a: foo
+          __meta_my_bar: aaa
+          __meta_my_baz: bbb
+          __meta_other: ccc
+    relabel_configs:
+      - {regex: '__meta_(my.*)', replacement: '${1}', action: labelmap}

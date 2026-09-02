@@ -3,7 +3,7 @@
 e2e-httproute: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
-VERSION ?= $(shell git describe --tags | sed 's/^v//')
+VERSION ?= $(shell git describe --tags --match 'v*' | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= github.com/open-telemetry/opentelemetry-operator/internal/version
 OTELCOL_VERSION ?= "$(shell awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"
@@ -26,6 +26,14 @@ INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentati
 INSTRUMENTATION_RUBY_VERSION ?= "$(shell grep -m1 'gem "opentelemetry-auto-instrumentation"' autoinstrumentation/ruby/Gemfile | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
 INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
 INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
+
+# Operator-owned build revisions appended to the published image tags (see autoinstrumentation/README.md).
+# Nginx shares the apache-httpd image and therefore its revision.
+INSTRUMENTATION_JAVA_REVISION ?= "$(shell cat autoinstrumentation/java/revision.txt)"
+INSTRUMENTATION_NODEJS_REVISION ?= "$(shell cat autoinstrumentation/nodejs/revision.txt)"
+INSTRUMENTATION_PYTHON_REVISION ?= "$(shell cat autoinstrumentation/python/revision.txt)"
+INSTRUMENTATION_DOTNET_REVISION ?= "$(shell cat autoinstrumentation/dotnet/revision.txt)"
+INSTRUMENTATION_APACHE_HTTPD_REVISION ?= "$(shell cat autoinstrumentation/apache-httpd/revision.txt)"
 
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
@@ -61,28 +69,34 @@ TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,$
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
-BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
-BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+# E2E test app images (tests/test-e2e-apps). Their manifests reference the images
+# published from main (ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-*:main),
+# so the prefix is fixed and independent of IMG_PREFIX. Building locally tags images
+# exactly as the manifests reference them; loading them into kind then shadows the
+# registry versions, letting tests run against local changes before they are merged
+# and published.
+TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink python
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
 INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
-INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
+INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}-${INSTRUMENTATION_JAVA_REVISION}
 
 INSTRUMENTATION_NODEJS_IMG_REPO ?= autoinstrumentation-nodejs
-INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}
+INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}
 
 INSTRUMENTATION_PYTHON_IMG_REPO ?= autoinstrumentation-python
-INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}
+INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}
 
 INSTRUMENTATION_RUBY_IMG_REPO ?= autoinstrumentation-ruby
 INSTRUMENTATION_RUBY_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_RUBY_IMG_REPO}:${INSTRUMENTATION_RUBY_VERSION}
 
 INSTRUMENTATION_DOTNET_IMG_REPO ?= autoinstrumentation-dotnet
-INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}
+INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}
 
 INSTRUMENTATION_APACHE_HTTPD_IMG_REPO ?= autoinstrumentation-apache-httpd
-INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}
+INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
@@ -106,9 +120,24 @@ else
 GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
+# Unit-test coverage profile. Generated automatically in CI (where the workflow
+# uploads coverage.out to Codecov) and on demand locally with
+# `make test GOTEST_COVER=true`. coverage.out is matched by the *.out entry in
+# .gitignore. -covermode=atomic is required for correct counts under -race.
+GOTEST_COVER ?= $(if $(CI),true,)
+ifeq ($(GOTEST_COVER),true)
+GOTEST_COVER_OPTS = -coverprofile=coverage.out -covermode=atomic
+# The target allocator integration tests live in a separate module (so the
+# collector/receiver deps stay out of the TA binary) and exercise the real TA
+# code from the main module. -coverpkg attributes that coverage to the
+# otel-allocator packages; the profile is written to the repo root ($(CURDIR))
+# because the recipe cds into the module directory.
+GOTEST_COVER_INTEGRATION_OPTS = -coverprofile=$(CURDIR)/coverage-integration.out -covermode=atomic -coverpkg=github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/...
+endif
+
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.35
+KUBE_VERSION ?= 1.36
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 CHAINSAW_SELECTOR := $(shell [ "$(shell printf '%s\n' "$(KUBE_VERSION)" "1.29" | sort -V | head -n1)" = "1.29" ] && echo "--selector sidecar=native" || echo "--selector sidecar=legacy")
@@ -169,6 +198,12 @@ BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../
 MIN_KUBERNETES_VERSION ?= 1.25.0
 MIN_OPENSHIFT_VERSION ?= 4.12
 
+## Directories of all Go modules in the repository, root first. The ./... patterns of
+## the root module do not descend into nested modules, so anything that has to happen
+## per module iterates over this list. Hidden directories (.git, worktrees, ...) are
+## skipped.
+GO_MODULE_DIRS ?= $(shell find . -path './.*' -prune -o -name go.mod -print | sed 's|/go\.mod$$||' | sort)
+
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
@@ -210,6 +245,7 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code tests docs/auto-instrumentation || (echo "Build failed: Instrumentation example images are out of date. Run 'make update-example-images' and update your PR." && git diff && exit 1)
 
 # Build manager binary
 .PHONY: all
@@ -222,7 +258,7 @@ ci: generate fmt vet test ensure-update-is-noop
 
 # Update manifests
 .PHONY: update
-update: generate manifests bundle api-docs reset
+update: generate manifests bundle api-docs update-example-images reset
 
 # Build manager binary
 .PHONY: manager
@@ -242,7 +278,7 @@ targetallocator:
 # Build opamp bridge binary
 .PHONY: operator-opamp-bridge
 operator-opamp-bridge: generate
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -264,6 +300,7 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -354,6 +391,28 @@ deploy-no-crds: set-image-controller
 undeploy-no-crds: set-image-controller
 	$(KUSTOMIZE) build config/no-crds | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Standalone OpAMP Bridge (no operator / CRDs required)
+
+STANDALONE_BRIDGE_MANIFESTS ?= cmd/operator-opamp-bridge/manifests/standalone
+
+# Deploy the standalone OpAMP bridge into the current Kubernetes context.
+# Does not require the operator, CRDs, or cert-manager.
+.PHONY: deploy-standalone-bridge
+deploy-standalone-bridge: kustomize
+	cd $(STANDALONE_BRIDGE_MANIFESTS) && $(KUSTOMIZE) edit set image operator-opamp-bridge=${OPERATOROPAMPBRIDGE_IMG}
+	$(KUSTOMIZE) build $(STANDALONE_BRIDGE_MANIFESTS) | kubectl apply -f -
+	kubectl rollout status deployment/otel-opamp-bridge-standalone -n opentelemetry-opamp-bridge --timeout=120s
+
+# Undeploy the standalone OpAMP bridge from the current Kubernetes context.
+.PHONY: undeploy-standalone-bridge
+undeploy-standalone-bridge: kustomize
+	$(KUSTOMIZE) build $(STANDALONE_BRIDGE_MANIFESTS) | kubectl delete --ignore-not-found=true -f -
+
+# Build, load, and deploy the standalone bridge to a kind cluster.
+# Assumes a kind cluster is already running (use start-kind first).
+.PHONY: deploy-standalone-bridge-kind
+deploy-standalone-bridge-kind: load-image-operator-opamp-bridge deploy-standalone-bridge
+
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
@@ -362,14 +421,35 @@ release-artifacts: set-image-controller
 	$(KUSTOMIZE) build config/overlays/openshift -o dist/opentelemetry-operator-openshift.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
+# apis/ is a nested Go module, which the "./..." pattern does not descend into, so
+# controller-gen only sees the CRD types as an imported dependency. Passing ./apis/...
+# explicitly loads them as source roots, keeping generation deterministic even when a
+# stray copy of the apis module exists on disk (e.g. a git worktree under .claude/),
+# which can otherwise shadow the types and silently drop fields from the CRDs.
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
-# Run tests
+# Run tests, including the in-process target allocator integration tests (they need
+# no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	$(MAKE) ta-integration-test
+
+# Regenerate the conformance goldens from raw Prometheus (promtool).
+# Run this after adding/changing fixtures or bumping the prometheus dependency.
+.PHONY: ta-conformance-regen
+ta-conformance-regen: promtool
+	PROMTOOL=$(PROMTOOL) go test -count=1 ./cmd/otel-allocator/internal/conformance/... -update
+
+# Run only the in-process target allocator + prometheus receiver integration tests.
+# They live in a separate Go module so the collector/receiver dependency graph stays
+# out of the target allocator binary, but they are in-process (no cluster/network) and
+# `make test` runs them too; this target is for iterating on them in isolation.
+.PHONY: ta-integration-test
+ta-integration-test: gotestsum
+	cd cmd/otel-allocator/integrationtest && $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_INTEGRATION_OPTS} ./...
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
@@ -392,10 +472,20 @@ vet:
 lint: golangci-lint
 	$(GOLANGCI_LINT) run
 
+# Run go mod tidy in every Go module in the repository
+.PHONY: tidy
+tidy:
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "go mod tidy: $$dir"; \
+		(cd $$dir && go mod tidy); \
+	done
+
 # Generate code
+# apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
+# for the API types (the "./..." pattern does not descend into nested modules).
 .PHONY: generate
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..." paths="./apis/..."
 
 ##@ E2E
 # end-to-tests
@@ -407,6 +497,14 @@ e2e: chainsaw
 .PHONY: e2e-sidecar
 e2e-sidecar: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar $(CHAINSAW_SELECTOR)
+
+# End-to-end tests for ClusterObservability. The CRD is not bundled, so install
+# it directly from config/crd/bases/. --parallel 1 because only the oldest
+# active ClusterObservability CR reconciles.
+.PHONY: e2e-clusterobservability
+e2e-clusterobservability: chainsaw
+	kubectl apply -f config/crd/bases/opentelemetry.io_clusterobservabilities.yaml
+	$(CHAINSAW) test --test-dir ./tests/e2e-clusterobservability --report-name e2e-clusterobservability --parallel 1
 
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
@@ -450,6 +548,20 @@ e2e-log-operator:
 check-chainsaw-test-names:
 	./hack/check-chainsaw-test-names.sh
 
+.PHONY: check-autoinstrumentation-revision
+check-autoinstrumentation-revision:
+	go run ./hack/autoinstrumentation-revision check
+
+.PHONY: bump-autoinstrumentation-revision
+bump-autoinstrumentation-revision:
+	go run ./hack/autoinstrumentation-revision apply
+
+# Pin the auto-instrumentation image on every Instrumentation CR example to the
+# canonical <sdk-version>-<revision> reference. Enforced by ensure-update-is-noop.
+.PHONY: update-example-images
+update-example-images:
+	go run ./hack/update-example-images
+
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
 .PHONY: e2e-multi-instrumentation-default
@@ -463,7 +575,7 @@ e2e-multi-instrumentation: chainsaw
 # OpAMPBridge CR end-to-tests
 .PHONY: e2e-opampbridge
 e2e-opampbridge: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-opampbridge --report-name e2e-opampbridge
+	OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) $(CHAINSAW) test --test-dir ./tests/e2e-opampbridge --report-name e2e-opampbridge
 
 # end-to-end-test for testing pdb support
 .PHONY: e2e-pdb
@@ -539,6 +651,13 @@ e2e-ta-standalone: kustomize gotestsum
 	KUSTOMIZE=$(KUSTOMIZE) \
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-ta-standalone.xml -- -tags e2e -count=1 -timeout 10m ./tests/e2e-ta-standalone/...
 
+# End to end metrics collection test comparing against prometheus-operator.
+# Deploys via the operator, so run `make prepare-e2e` first.
+.PHONY: e2e-collector-metrics
+e2e-collector-metrics: gotestsum
+	@mkdir -p ./.testresults/e2e
+	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-collector-metrics.xml -- -tags e2e -count=1 -timeout 15m ./tests/e2e-collector-metrics/...
+
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
@@ -547,6 +666,11 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 .PHONY: prepare-e2e-no-crds
 prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy-no-crds
 	@mkdir -p ./.testresults/e2e
+
+.PHONY: prepare-e2e-clusterobservability
+prepare-e2e-clusterobservability: add-rbac-permissions-to-operator
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.clusterobservability
+	@$(MAKE) prepare-e2e
 
 # Run operator-sdk scorecard tests for bundles
 .PHONY: scorecard-tests
@@ -589,11 +713,17 @@ container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
 	docker build --load -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
-# Build bridge test server container image for e2e tests
-.PHONY: container-bridge-test-server
-container-bridge-test-server: GOOS = linux
-container-bridge-test-server:
-	docker build --load -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
+# Build every e2e test app image from tests/test-e2e-apps, tagged as the test
+# manifests reference them. The python app is built twice, matching the two
+# variants published from main (latest and oldest supported python).
+.PHONY: container-test-e2e-apps
+container-test-e2e-apps:
+	@for app in $(TEST_E2E_APPS); do \
+		echo "Building $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main"; \
+		docker build --load -t $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main tests/test-e2e-apps/$$app || exit 1; \
+	done
+	docker build --load -t $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10 \
+		--build-arg BASE_IMAGE=docker.io/library/python:3.10-alpine tests/test-e2e-apps/python
 
 # Build must-gather container image
 .PHONY: container-must-gather
@@ -685,7 +815,7 @@ install-targetallocator-prometheus-crds:
 .PHONY: load-image-all
 load-image-all:
 ifeq ($(IMAGE_ARCHIVE),)
-	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 else
 	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
 endif
@@ -709,10 +839,14 @@ else
 	$(MAKE) container-target-allocator-push
 endif
 
-# Load bridge test server image into kind cluster
-.PHONY: load-image-bridge-test-server
-load-image-bridge-test-server: container-bridge-test-server kind
-	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${BRIDGETESTSERVER_IMG}
+# Build all e2e test app images and load them into the kind cluster, shadowing the
+# published images the test manifests reference. Run this (or let CI run it) after
+# changing anything under tests/test-e2e-apps.
+.PHONY: load-image-test-e2e-apps
+load-image-test-e2e-apps: container-test-e2e-apps kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image \
+		$(foreach app,$(TEST_E2E_APPS),$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$(app):main) \
+		$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10
 
 # Load operator OpAMP bridge image into kind cluster
 .PHONY: load-image-operator-opamp-bridge
@@ -770,15 +904,21 @@ KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.12.2
+GOLANGCI_LINT_VERSION ?= v2.13.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.32.0
+KIND_VERSION ?= v0.33.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.3.0
+GOVULNCHECK_VERSION ?= v1.7.0
+PROMTOOL ?= $(LOCALBIN)/promtool
+# promtool is the golden source for the target-allocator conformance suite. It must match
+# the prometheus/prometheus library the operator links against, so derive the release version
+# straight from go.mod. The library is tagged v0.<major><minor>.<patch> (e.g. v0.312.0 ==
+# Prometheus 3.12.0), hence the awk arithmetic below.
+PROMTOOL_VERSION ?= $(shell awk '$$1=="github.com/prometheus/prometheus"{split($$2,v,".");printf "%d.%d.%d",int(v[2]/100),v[2]%100,v[3]}' go.mod)
 
 # Install all development tools
 .PHONY: install-tools
@@ -824,6 +964,24 @@ gotestsum: ## Find or download gotestsum
 .PHONY: govulncheck
 govulncheck: ## Download govulncheck locally if necessary.
 	$(call go-install-tool,$(GOVULNCHECK),golang.org/x/vuln/cmd/govulncheck,$(GOVULNCHECK_VERSION))
+
+# Download promtool locally if necessary (conformance suite golden source; can't be go-installed
+# because prometheus/prometheus uses replace directives, so pull the release binary).
+.PHONY: promtool
+promtool: ## Download promtool locally if necessary.
+	@{ \
+	set -e ;\
+	if ($(PROMTOOL) --version 2>&1 | grep $(PROMTOOL_VERSION)) > /dev/null 2>&1 ; then \
+		exit 0; \
+	fi ;\
+	TMP_DIR=$$(mktemp -d) ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/prometheus.tar.gz https://github.com/prometheus/prometheus/releases/download/v$(PROMTOOL_VERSION)/prometheus-$(PROMTOOL_VERSION).`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	gzip -t $$TMP_DIR/prometheus.tar.gz || { echo "ERROR: downloaded prometheus archive is corrupt or incomplete" >&2; exit 1; } ;\
+	tar xzf $$TMP_DIR/prometheus.tar.gz -C $$TMP_DIR --strip-components=1 --wildcards '*/promtool' ;\
+	[ -d $(LOCALBIN) ] || mkdir -p $(LOCALBIN) ;\
+	mv $$TMP_DIR/promtool $(PROMTOOL) ;\
+	rm -rf $$TMP_DIR ;\
+	}
 
 # Run govulncheck with the project's CVE exception list
 .PHONY: govulncheck-run
@@ -905,7 +1063,7 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle/community
 	$(OPERATOR_SDK) bundle validate ./bundle/openshift
 	rm bundle.Dockerfile
-	git checkout config/manager/kustomization.yaml
+	git checkout config/manager/kustomization.yaml config/overlays/openshift/kustomization.yaml
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
@@ -976,14 +1134,14 @@ chlog-insert-components:
 	@echo "" >>components.md
 	@echo "* [OpenTelemetry Collector - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v${OTELCOL_VERSION})" >>components.md
 	@echo "* [OpenTelemetry Contrib - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v${OTELCOL_VERSION})" >>components.md
-	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
-	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
-	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
-	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}-${INSTRUMENTATION_JAVA_REVISION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
+	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
+	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
+	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
 	@echo "* [Ruby - v${AUTO_INSTRUMENTATION_RUBY_VERSION}](https://github.com/open-telemetry/opentelemetry-ruby-contrib/releases/tag/v${AUTO_INSTRUMENTATION_RUBY_VERSION})" >>components.md
 	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md
-	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
-	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
+	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
+	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
 	@$(SED_INPLACE) '/<!-- next version -->/r ./components.md' CHANGELOG.md
 	@$(SED_INPLACE) '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
@@ -1035,7 +1193,7 @@ catalog-push: ## Push a catalog image.
 
 # Tool versions for supply chain securitya
 # renovate: datasource=github-releases depName=sigstore/cosign
-COSIGN_VERSION ?= v2.6.3
+COSIGN_VERSION ?= v2.6.5
 COSIGN ?= $(LOCALBIN)/cosign
 UPLOAD ?= true
 
@@ -1074,9 +1232,15 @@ else
 	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION))
 endif
 
-# Create container image archive with all images
+# Create container image archive with all images. Set BUILD_TEST_E2E_APPS=true to
+# also build the e2e test app images from source and include them, so tests run
+# against local changes to tests/test-e2e-apps instead of the published images (CI
+# does this whenever those files change).
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-instrumentation-all
+ifeq ($(BUILD_TEST_E2E_APPS),true)
+container-image-archive: container-test-e2e-apps
+endif
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -1084,13 +1248,18 @@ endif
 	@echo "$(IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
-	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_JAVA_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_NODEJS_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_RUBY_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
+ifeq ($(BUILD_TEST_E2E_APPS),true)
+	@for app in $(TEST_E2E_APPS); do \
+		echo "$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-$$app:main" >>$(IMAGE_LIST_FILE); \
+	done
+	@echo "$(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-python:main-3.10" >>$(IMAGE_LIST_FILE)
+endif
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
 
 ##@ Validation
