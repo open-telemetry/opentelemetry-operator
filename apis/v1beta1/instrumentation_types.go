@@ -27,31 +27,31 @@ type InstrumentationSpec struct {
 
 	// Java defines configuration for Java auto-instrumentation.
 	// +optional
-	Java Java `json:"java,omitempty"`
+	Java *Java `json:"java,omitempty"`
 
 	// NodeJS defines configuration for NodeJS auto-instrumentation.
 	// +optional
-	NodeJS NodeJS `json:"nodejs,omitempty"`
+	NodeJS *NodeJS `json:"nodejs,omitempty"`
 
 	// Python defines configuration for Python auto-instrumentation.
 	// +optional
-	Python Python `json:"python,omitempty"`
+	Python *Python `json:"python,omitempty"`
 
 	// DotNet defines configuration for DotNet auto-instrumentation.
 	// +optional
-	DotNet DotNet `json:"dotnet,omitempty"`
+	DotNet *DotNet `json:"dotnet,omitempty"`
 
 	// Go defines configuration for Go auto-instrumentation.
 	// +optional
-	Go Go `json:"go,omitempty"`
+	Go *Go `json:"go,omitempty"`
 
 	// ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
-	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
+	ApacheHttpd *ApacheHttpd `json:"apacheHttpd,omitempty"`
 
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
-	Nginx Nginx `json:"nginx,omitempty"`
+	Nginx *Nginx `json:"nginx,omitempty"`
 
 	// ImagePullPolicy defines the image pull policy for init containers.
 	// +optional
@@ -180,9 +180,10 @@ type ServiceMetadataConfig struct {
 
 // CommonLanguageSpec contains fields shared by all language-specific configurations.
 type CommonLanguageSpec struct {
-	// Image is a container image with auto-instrumentation.
-	// +optional
-	Image string `json:"image,omitempty"`
+	// Image is a container image with auto-instrumentation. Required.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Image string `json:"image"`
 
 	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with a default size limit.
