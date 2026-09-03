@@ -32,9 +32,9 @@ RUN bundle install --path ./
 
 RUN mv ruby/3.3.0/* .
 
-RUN mkdir -p src/ && \
+RUN mkdir -p src/opentelemetry/auto_instrumentation/ && \
     cp gems/opentelemetry-auto-instrumentation-*/lib/opentelemetry-auto-instrumentation.rb src/autoinstrumentation.rb && \
-    cp gems/opentelemetry-auto-instrumentation-*/lib/version.rb src/version.rb
+    cp gems/opentelemetry-auto-instrumentation-*/lib/opentelemetry/auto_instrumentation/version.rb src/opentelemetry/auto_instrumentation/version.rb
 RUN rm -rf ruby/
 
 FROM busybox
