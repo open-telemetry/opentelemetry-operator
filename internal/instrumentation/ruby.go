@@ -35,7 +35,7 @@ func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Containe
 			Value: rubyRequireArgument,
 		})
 	} else if idx > -1 {
-		container.Env[idx].Value = container.Env[idx].Value + rubyRequireArgument
+		container.Env[idx].Value += rubyRequireArgument
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{

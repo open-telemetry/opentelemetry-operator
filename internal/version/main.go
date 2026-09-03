@@ -138,7 +138,7 @@ func AutoInstrumentationPython() string {
 }
 
 func AutoInstrumentationRuby() string {
-	if len(autoInstrumentationRuby) > 0 {
+	if autoInstrumentationRuby != "" {
 		return autoInstrumentationRuby
 	}
 	return "0.0.0"
