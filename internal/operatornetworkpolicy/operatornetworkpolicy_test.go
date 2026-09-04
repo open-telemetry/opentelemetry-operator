@@ -419,6 +419,46 @@ func TestStart_PodWithoutReplicaSetOwner(t *testing.T) {
 	require.ErrorContains(t, err, "not owned by a ReplicaSet")
 }
 
+func TestStart_ReplicaSetNotFound(t *testing.T) {
+	const namespace = "test-ns"
+	pod := operatorObjects(namespace)[2]
+	clientset := fake.NewClientset(pod)
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
+		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
+	)
+	err := n.(*networkPolicy).Start(context.Background())
+	require.ErrorContains(t, err, "failed to get operator ReplicaSet")
+}
+
+func TestStart_ReplicaSetWithoutDeploymentOwner(t *testing.T) {
+	const namespace = "test-ns"
+	objects := operatorObjects(namespace)
+	objects[1].(*appsv1.ReplicaSet).OwnerReferences = nil
+	clientset := fake.NewClientset(objects[1], objects[2])
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
+		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
+	)
+	err := n.(*networkPolicy).Start(context.Background())
+	require.ErrorContains(t, err, "not owned by a Deployment")
+}
+
+func TestStart_DeploymentNotFound(t *testing.T) {
+	const namespace = "test-ns"
+	objects := operatorObjects(namespace)
+	clientset := fake.NewClientset(objects[1], objects[2])
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
+		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
+	)
+	err := n.(*networkPolicy).Start(context.Background())
+	require.ErrorContains(t, err, "failed to get operator Deployment")
+}
+
 func TestNeedLeaderElection(t *testing.T) {
 	n := &networkPolicy{}
 	assert.True(t, n.NeedLeaderElection())
