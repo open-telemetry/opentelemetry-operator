@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-ruby-multi
+spec:
+  selector:
+    matchLabels:
+      app: my-ruby-multi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-ruby-multi
+      annotations:
+        instrumentation.opentelemetry.io/inject-ruby: "true"
+        instrumentation.opentelemetry.io/ruby-container-names: "myapp,myapp-secondary"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+        - name: myapp
+          image: ($appImage)
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /rolldice
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+        - name: myapp-secondary
+          image: ($appImage)
+          env:
+            - name: PORT
+              value: "8081"
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /rolldice
+              port: 8081
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
