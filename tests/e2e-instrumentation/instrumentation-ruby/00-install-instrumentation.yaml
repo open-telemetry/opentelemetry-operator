@@ -1,0 +1,24 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: ruby
+spec:
+  env:
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+  exporter:
+    endpoint: http://deployment-collector:4318
+  ruby:
+    env:
+      - name: OTEL_LOG_LEVEL
+        value: debug
+      - name: OTEL_TRACES_EXPORTER
+        value: otlp
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://deployment-collector:4318
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: http/protobuf
+      - name: OTEL_OPERATOR
+        value: "true"
