@@ -28,10 +28,21 @@ func newTestScheme() *runtime.Scheme {
 	return s
 }
 
-func operatorDeployment(namespace string) *appsv1.Deployment {
-	return &appsv1.Deployment{
+// A Helm-style deployment name proves nothing depends on the kustomize name
+// opentelemetry-operator-controller-manager anymore.
+const (
+	operatorDeploymentName = "my-release-opentelemetry-operator"
+	testReplicaSetName     = operatorDeploymentName + "-6b9f7c"
+	testPodName            = testReplicaSetName + "-x2x9z"
+)
+
+// operatorObjects returns the pod → ReplicaSet → Deployment ownership chain
+// Start() walks to resolve the operator's own deployment.
+func operatorObjects(namespace string) []runtime.Object {
+	trueVal := true
+	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      operatorName,
+			Name:      operatorDeploymentName,
 			Namespace: namespace,
 			UID:       "test-uid",
 		},
@@ -49,6 +60,27 @@ func operatorDeployment(namespace string) *appsv1.Deployment {
 			},
 		},
 	}
+	rs := &appsv1.ReplicaSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testReplicaSetName,
+			Namespace: namespace,
+			UID:       "rs-uid",
+			OwnerReferences: []metav1.OwnerReference{
+				{APIVersion: "apps/v1", Kind: "Deployment", Name: operatorDeploymentName, UID: "test-uid", Controller: &trueVal},
+			},
+		},
+	}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: namespace,
+			UID:       "pod-uid",
+			OwnerReferences: []metav1.OwnerReference{
+				{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: testReplicaSetName, UID: "rs-uid", Controller: &trueVal},
+			},
+		},
+	}
+	return []runtime.Object{dep, rs, pod}
 }
 
 // startAndCapture runs Start() and captures the created NetworkPolicy
@@ -80,7 +112,7 @@ func ownerRef() []metav1.OwnerReference {
 		{
 			APIVersion:         "apps/v1",
 			Kind:               "Deployment",
-			Name:               operatorName,
+			Name:               operatorDeploymentName,
 			UID:                types.UID("test-uid"),
 			Controller:         &trueVal,
 			BlockOwnerDeletion: &trueVal,
@@ -90,10 +122,11 @@ func ownerRef() []metav1.OwnerReference {
 
 func TestStart_IPBlockPeersOnly(t *testing.T) {
 	const namespace = "test-ns"
-	clientset := fake.NewClientset(operatorDeployment(namespace))
+	clientset := fake.NewClientset(operatorObjects(namespace)...)
 
 	np := startAndCapture(t, clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
 		WithAPIServerPort(6443),
 		WithAPIServerIPs([]string{"10.0.0.1", "10.0.0.2"}),
 	)
@@ -129,7 +162,7 @@ func TestStart_IPBlockPeersOnly(t *testing.T) {
 
 func TestStart_SelectorPeersOnly(t *testing.T) {
 	const namespace = "test-ns"
-	clientset := fake.NewClientset(operatorDeployment(namespace))
+	clientset := fake.NewClientset(operatorObjects(namespace)...)
 
 	podSelector := &metav1.LabelSelector{
 		MatchLabels: map[string]string{"apiserver": "true"},
@@ -140,6 +173,7 @@ func TestStart_SelectorPeersOnly(t *testing.T) {
 
 	np := startAndCapture(t, clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
 		WithAPIServerPort(6443),
 		WithAPISererPodLabelSelector(podSelector),
 		WithAPISererNamespaceLabelSelector(nsSelector),
@@ -178,7 +212,7 @@ func TestStart_SelectorPeersOnly(t *testing.T) {
 
 func TestStart_CombinedIPBlockAndSelectors(t *testing.T) {
 	const namespace = "openshift-opentelemetry-operator"
-	clientset := fake.NewClientset(operatorDeployment(namespace))
+	clientset := fake.NewClientset(operatorObjects(namespace)...)
 
 	podSelector := &metav1.LabelSelector{
 		MatchLabels: map[string]string{"apiserver": "true"},
@@ -189,6 +223,7 @@ func TestStart_CombinedIPBlockAndSelectors(t *testing.T) {
 
 	np := startAndCapture(t, clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
 		WithAPIServerPort(6443),
 		WithAPIServerIPs([]string{"10.0.0.1"}),
 		WithAPISererPodLabelSelector(podSelector),
@@ -227,10 +262,11 @@ func TestStart_CombinedIPBlockAndSelectors(t *testing.T) {
 
 func TestStart_WithIngressPorts(t *testing.T) {
 	const namespace = "test-ns"
-	clientset := fake.NewClientset(operatorDeployment(namespace))
+	clientset := fake.NewClientset(operatorObjects(namespace)...)
 
 	np := startAndCapture(t, clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
 		WithAPIServerPort(6443),
 		WithAPIServerIPs([]string{"10.0.0.1"}),
 		WithWebhookPort(9443),
@@ -274,7 +310,7 @@ func TestStart_WithIngressPorts(t *testing.T) {
 
 func TestStart_FullOpenShiftConfig(t *testing.T) {
 	const namespace = "openshift-opentelemetry-operator"
-	clientset := fake.NewClientset(operatorDeployment(namespace))
+	clientset := fake.NewClientset(operatorObjects(namespace)...)
 
 	podSelector := &metav1.LabelSelector{
 		MatchLabels: map[string]string{"apiserver": "true"},
@@ -285,6 +321,7 @@ func TestStart_FullOpenShiftConfig(t *testing.T) {
 
 	np := startAndCapture(t, clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
 		WithAPIServerPort(6443),
 		WithAPIServerIPs([]string{"10.0.0.1", "10.0.0.2"}),
 		WithAPISererPodLabelSelector(podSelector),
@@ -333,6 +370,53 @@ func TestStart_FullOpenShiftConfig(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, np)
+}
+
+func TestStart_PodSelectorFromDeployment(t *testing.T) {
+	const namespace = "test-ns"
+	customSelector := &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"app.kubernetes.io/name": "custom-operator",
+			"control-plane":          "controller-manager",
+		},
+	}
+	objects := operatorObjects(namespace)
+	objects[0].(*appsv1.Deployment).Spec.Selector = customSelector
+	clientset := fake.NewClientset(objects...)
+
+	np := startAndCapture(t, clientset, newTestScheme(),
+		WithOperatorNamespace(namespace),
+		WithOperatorPodName(testPodName),
+		WithAPIServerPort(6443),
+		WithAPIServerIPs([]string{"10.0.0.1"}),
+	)
+
+	assert.Equal(t, *customSelector, np.Spec.PodSelector)
+}
+
+func TestStart_PodNotFound(t *testing.T) {
+	clientset := fake.NewClientset()
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
+		WithOperatorNamespace("test-ns"),
+		WithOperatorPodName("missing-pod"),
+	)
+	err := n.(*networkPolicy).Start(context.Background())
+	require.ErrorContains(t, err, `failed to get operator pod "missing-pod"`)
+}
+
+func TestStart_PodWithoutReplicaSetOwner(t *testing.T) {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "bare-pod", Namespace: "test-ns"},
+	}
+	clientset := fake.NewClientset(pod)
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
+		WithOperatorNamespace("test-ns"),
+		WithOperatorPodName("bare-pod"),
+	)
+	err := n.(*networkPolicy).Start(context.Background())
+	require.ErrorContains(t, err, "not owned by a ReplicaSet")
 }
 
 func TestNeedLeaderElection(t *testing.T) {
