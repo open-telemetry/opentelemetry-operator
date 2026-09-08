@@ -46,11 +46,17 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, javaInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		command, args := initContainerCommand(
+			[]string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+			javaSpec.InitContainer.Command,
+			javaSpec.InitContainer.Args,
+		)
 
 		initContainer := corev1.Container{
 			Name:            javaInitContainerName,
 			Image:           javaSpec.Image,
-			Command:         []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+			Command:         command,
+			Args:            args,
 			Resources:       javaSpec.Resources,
 			SecurityContext: sc,
 			VolumeMounts: []corev1.VolumeMount{{

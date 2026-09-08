@@ -199,9 +199,26 @@ type CommonLanguageSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
+// InitContainer defines command overrides for the auto-instrumentation init container.
+// When omitted, the operator uses the language's default command.
+// +kubebuilder:validation:XValidation:rule="!has(self.args) || size(self.command) > 0",message="command must be set when args are set"
+type InitContainer struct {
+	// Command overrides the init container image's ENTRYPOINT.
+	// +optional
+	Command []string `json:"command,omitempty"`
+
+	// Args overrides the init container image's CMD.
+	// +optional
+	Args []string `json:"args,omitempty"`
+}
+
 // Java defines Java SDK and instrumentation configuration.
 type Java struct {
 	CommonLanguageSpec `json:",inline"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 
 	// Extensions defines java specific extensions.
 	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
@@ -221,16 +238,28 @@ type Extensions struct {
 // NodeJS defines NodeJS SDK and instrumentation configuration.
 type NodeJS struct {
 	CommonLanguageSpec `json:",inline"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
 type Python struct {
 	CommonLanguageSpec `json:",inline"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 }
 
 // DotNet defines DotNet SDK and instrumentation configuration.
 type DotNet struct {
 	CommonLanguageSpec `json:",inline"`
+
+	// InitContainer defines command overrides for the auto-instrumentation init container.
+	// +optional
+	InitContainer InitContainer `json:"initContainer,omitempty"`
 }
 
 // Go defines Go SDK and instrumentation configuration.

@@ -1587,6 +1587,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetinitcontainer">initContainer</a></b></td>
+        <td>object</td>
+        <td>
+          InitContainer defines command overrides for the auto-instrumentation init container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecdotnetresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -1949,6 +1956,40 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.initContainer
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+InitContainer defines command overrides for the auto-instrumentation init container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Args overrides the init container image's CMD.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the init container image's ENTRYPOINT.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4729,6 +4770,13 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecjavainitcontainer">initContainer</a></b></td>
+        <td>object</td>
+        <td>
+          InitContainer defines command overrides for the auto-instrumentation init container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecjavaresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -5127,6 +5175,40 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
           Image is a container image with extensions auto-instrumentation JAR.<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.initContainer
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+InitContainer defines command overrides for the auto-instrumentation init container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Args overrides the init container image's CMD.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the init container image's ENTRYPOINT.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -7024,6 +7106,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsinitcontainer">initContainer</a></b></td>
+        <td>object</td>
+        <td>
+          InitContainer defines command overrides for the auto-instrumentation init container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecnodejsresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -7386,6 +7475,40 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.initContainer
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+InitContainer defines command overrides for the auto-instrumentation init container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Args overrides the init container image's CMD.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the init container image's ENTRYPOINT.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -7976,6 +8099,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecpythoninitcontainer">initContainer</a></b></td>
+        <td>object</td>
+        <td>
+          InitContainer defines command overrides for the auto-instrumentation init container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecpythonresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -8338,6 +8468,40 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.initContainer
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+InitContainer defines command overrides for the auto-instrumentation init container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Args overrides the init container image's CMD.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command overrides the init container image's ENTRYPOINT.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
