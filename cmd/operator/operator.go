@@ -335,12 +335,20 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 		return errors.New("NAMESPACE environment variable is not set, it is required for the Operator Network Policy to work")
 	}
 
+	// The pod hostname defaults to the pod name; it is used to resolve the
+	// operator's own Deployment without assuming its name.
+	operatorPodName, err := os.Hostname()
+	if err != nil {
+		return fmt.Errorf("failed to determine the operator pod name from the hostname: %w", err)
+	}
+
 	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
 		return errors.New("Kubernetes API server info not discovered from EndpointSlice") //nolint:staticcheck // ST1005
 	}
 
 	var policyOpts []operatornetworkpolicy.Option
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorPodName(operatorPodName))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerPort(cfg.Internal.KubeAPIServerPort))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerIPs(cfg.Internal.KubeAPIServerIPs))
 
