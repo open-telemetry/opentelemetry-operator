@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,18 +16,24 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var reconcilerTestScheme *runtime.Scheme
@@ -265,6 +272,102 @@ func TestRemoveFinalizer(t *testing.T) {
 				assert.False(t, controllerutil.ContainsFinalizer(instance, collectorFinalizer),
 					"expected finalizer to be removed")
 			}
+		})
+	}
+}
+
+func TestReconcileReportsParamsAndBuildErrors(t *testing.T) {
+	const configYAML = `
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+exporters:
+  debug: {}
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]
+`
+	testCases := []struct {
+		name       string
+		collector  func() *v1beta1.OpenTelemetryCollector
+		wantErrMsg string
+	}{
+		{
+			name: "target allocator referenced by label does not exist",
+			collector: func() *v1beta1.OpenTelemetryCollector {
+				return &v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "default",
+						Labels:    map[string]string{constants.LabelTargetAllocator: "missing-ta"},
+					},
+				}
+			},
+			wantErrMsg: `"missing-ta" not found`,
+		},
+		{
+			name: "target allocator enabled without prometheus receiver",
+			collector: func() *v1beta1.OpenTelemetryCollector {
+				var cfg v1beta1.Config
+				require.NoError(t, yaml.Unmarshal([]byte(configYAML), &cfg))
+				return &v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "default",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:            v1beta1.ModeStatefulSet,
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{Enabled: true},
+						Config:          cfg,
+					},
+				}
+			},
+			wantErrMsg: "no prometheus available as part of the configuration",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			instance := tc.collector()
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(reconcilerTestScheme).
+				WithObjects(instance).
+				WithStatusSubresource(instance).
+				Build()
+			recorder := events.NewFakeRecorder(10)
+			reconciler := NewReconciler(Params{
+				Client:   fakeClient,
+				Recorder: recorder,
+				Scheme:   reconcilerTestScheme,
+				Log:      logr.Discard(),
+				Config: config.Config{
+					CollectorConfigMapEntry:       "collector.yaml",
+					TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				},
+			})
+			nsn := types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}
+
+			_, err := reconciler.Reconcile(context.Background(), reconcile.Request{NamespacedName: nsn})
+			require.ErrorContains(t, err, tc.wantErrMsg)
+
+			select {
+			case event := <-recorder.Events:
+				assert.Contains(t, event, corev1.EventTypeWarning)
+				assert.Contains(t, event, tc.wantErrMsg)
+			default:
+				t.Errorf("expected a %s event containing %q, got none", corev1.EventTypeWarning, tc.wantErrMsg)
+			}
+
+			updated := &v1beta1.OpenTelemetryCollector{}
+			require.NoError(t, fakeClient.Get(context.Background(), nsn, updated))
+			ready := meta.FindStatusCondition(updated.Status.Conditions, "Ready")
+			require.NotNil(t, ready, "expected a Ready condition on the collector status")
+			assert.Equal(t, metav1.ConditionFalse, ready.Status)
+			assert.Equal(t, "ReconcileError", ready.Reason)
+			assert.True(t, strings.Contains(ready.Message, tc.wantErrMsg), "condition message %q should contain %q", ready.Message, tc.wantErrMsg)
 		})
 	}
 }
