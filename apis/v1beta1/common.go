@@ -99,6 +99,11 @@ type OpenTelemetryCommonFields struct {
 	// Resources to set on generated pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// ResizePolicy specifies how the primary container responds to in-place
+	// resource resizes.
+	// +optional
+	// +listType=atomic
+	ResizePolicy []v1.ContainerResizePolicy `json:"resizePolicy,omitempty"`
 	// NodeSelector to schedule generated pods.
 	// This only works with the following OpenTelemetryCollector mode's: daemonset, statefulset, and deployment.
 	// +optional

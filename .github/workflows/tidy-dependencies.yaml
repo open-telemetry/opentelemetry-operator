@@ -1,12 +1,13 @@
-name: "Tidy Go modules"
+name: "Update Go dependency artifacts"
 
 # Renovate runs `go mod tidy` only in the modules whose go.mod it edited. The
 # cmd/otel-allocator/integrationtest module follows the root and apis modules through
 # local replace directives, so a bump of a dependency it shares with the root module
 # leaves it untidy and its tests then fail with "updates to go.mod needed". Renovate
 # cannot tidy across a module graph joined by replace directives yet
-# (https://github.com/renovatebot/renovate/issues/12999), so until it can, tidy every
-# module here and push the result back to the Renovate branch.
+# (https://github.com/renovatebot/renovate/issues/12999). Dependency bumps can also
+# affect generated CRDs, bundles, and API docs. Tidy every module, regenerate the
+# artifacts, and push the result back to the Renovate branch.
 #
 # This needs an otelbot GitHub App with `contents: write` installed on this repository,
 # exposed as the OTELBOT_CLIENT_ID variable and the OTELBOT_PRIVATE_KEY secret - the
@@ -31,11 +32,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  COMMIT_MESSAGE: "Run go mod tidy in every module"
+  COMMIT_MESSAGE: "Update Go modules and generated artifacts"
 
 jobs:
   tidy:
-    name: Tidy Go modules
+    name: Update Go dependency artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # This job holds credentials that can write to the repository, so it must only ever
@@ -62,12 +63,12 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         persist-credentials: false
 
-    # Our own push re-triggers this workflow; stop here instead of tidying again.
-    - name: Skip branches that were tidied already
+    # Our own push re-triggers this workflow; stop here instead of updating again.
+    - name: Skip branches that were updated already
       id: guard
       run: |
         if [ "$(git log -1 --format=%s)" = "$COMMIT_MESSAGE" ]; then
-          echo "The branch tip is already a tidy commit, nothing to do."
+          echo "The branch tip is already an update commit, nothing to do."
         else
           echo "run=true" >> "$GITHUB_OUTPUT"
         fi
@@ -82,14 +83,18 @@ jobs:
       if: steps.guard.outputs.run == 'true'
       run: make tidy
 
-    - name: Commit and push the tidied modules
+    - name: Update generated artifacts
+      if: steps.guard.outputs.run == 'true'
+      run: make update
+
+    - name: Commit and push the updated modules and artifacts
       if: steps.guard.outputs.run == 'true'
       env:
         GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
       run: |
-        if git diff --quiet -- ':(glob)**/go.mod' ':(glob)**/go.sum'; then
-          echo "All modules are tidy already."
+        if [ -z "$(git status --porcelain)" ]; then
+          echo "All modules and generated artifacts are up to date already."
           exit 0
         fi
 
@@ -97,7 +102,7 @@ jobs:
         git config user.name otelbot
         git config user.email 197425009+otelbot@users.noreply.github.com
 
-        git add -- ':(glob)**/go.mod' ':(glob)**/go.sum'
+        git add --all
         git commit -m "$COMMIT_MESSAGE"
 
         auth_header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"

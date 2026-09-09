@@ -89,7 +89,18 @@ func main() {
 		}
 	}()
 
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	strategyConfig := allocation.StrategyConfig{
+		ConsistentHashing: allocation.ConsistentHashingStrategyConfig(cfg.AllocationStrategyConfig.ConsistentHashing),
+		LeastWeighted:     allocation.LeastWeightedStrategyConfig(cfg.AllocationStrategyConfig.LeastWeighted),
+	}
+	if fallback := cfg.GetTargetAllocatorFallbackStrategy(); fallback != nil {
+		strategyConfig.PerNode.FallbackStrategy = &allocation.FallbackStrategyConfig{
+			Name:              fallback.Name,
+			ConsistentHashing: allocation.ConsistentHashingStrategyConfig(fallback.ConsistentHashing),
+			LeastWeighted:     allocation.LeastWeightedStrategyConfig(fallback.LeastWeighted),
+		}
+	}
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithStrategyConfig(strategyConfig))
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
