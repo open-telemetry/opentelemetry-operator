@@ -13,7 +13,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func TestFallbackToEnvVars(t *testing.T) {
+func TestDiscoverKubeAPIServer_FallbackToEnvVars(t *testing.T) {
 	tests := []struct {
 		name      string
 		host      string
