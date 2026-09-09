@@ -120,6 +120,7 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 	apiServerPort := intstr.FromInt32(n.apiServerPort)
 
 	var apiSeverIPs []networkingv1.NetworkPolicyPeer
+	// Add IPBlock rules for API server IPs
 	for _, ip := range n.apiServerIPs {
 		cidr := ip + "/32"
 		apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
@@ -183,6 +184,7 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		})
 	}
 
+	// set owner reference to the operator deployment
 	err = controllerutil.SetControllerReference(operatorDep, np, n.scheme)
 	if err != nil {
 		return err
