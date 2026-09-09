@@ -359,6 +359,11 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		if !apiequality.Semantic.DeepEqual(desired.Spec.ServiceName, existing.Spec.ServiceName) {
 			return &ImmutableFieldChangeErr{Field: "Spec.ServiceName"}
 		}
+		// PodManagementPolicy is immutable, so a change must recreate the StatefulSet
+		// rather than fail the update with a forbidden error.
+		if !apiequality.Semantic.DeepEqual(desired.Spec.PodManagementPolicy, existing.Spec.PodManagementPolicy) {
+			return &ImmutableFieldChangeErr{Field: "Spec.PodManagementPolicy"}
+		}
 	}
 
 	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
