@@ -64,6 +64,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
 	f.String("watch-namespace", cfg.WatchNamespace, "Comma-separated list of namespaces the operator should watch for CustomResources. Empty means watch all namespaces.")
 	f.Int32("openshift-webhook-replicas", cfg.OpenShiftWebhookReplicas, "Number of replicas for the standalone pod webhook deployment on OpenShift. Set 0 to disable.")
+
 	return f
 }
 
