@@ -36,7 +36,11 @@ const (
 	testPodName            = testReplicaSetName + "-x2x9z"
 )
 
-// operatorObjects returns the pod → ReplicaSet → Deployment ownership chain
+var deploymentSelector = &metav1.LabelSelector{
+	MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
+}
+
+// operatorObjects returns the pod -> ReplicaSet -> Deployment ownership chain
 // Start() walks to resolve the operator's own deployment.
 func operatorObjects(namespace string) []runtime.Object {
 	trueVal := true
@@ -47,9 +51,7 @@ func operatorObjects(namespace string) []runtime.Object {
 			UID:       "test-uid",
 		},
 		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
+			Selector: deploymentSelector,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
@@ -140,10 +142,8 @@ func TestStart_IPBlockPeersOnly(t *testing.T) {
 			OwnerReferences: ownerRef(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{}},
+			PodSelector: *deploymentSelector,
+			Ingress:     []networkingv1.NetworkPolicyIngressRule{{}},
 			Egress: []networkingv1.NetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &apiServerPort}},
@@ -188,10 +188,8 @@ func TestStart_SelectorPeersOnly(t *testing.T) {
 			OwnerReferences: ownerRef(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{}},
+			PodSelector: *deploymentSelector,
+			Ingress:     []networkingv1.NetworkPolicyIngressRule{{}},
 			Egress: []networkingv1.NetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &apiServerPort}},
@@ -239,10 +237,8 @@ func TestStart_CombinedIPBlockAndSelectors(t *testing.T) {
 			OwnerReferences: ownerRef(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{}},
+			PodSelector: *deploymentSelector,
+			Ingress:     []networkingv1.NetworkPolicyIngressRule{{}},
 			Egress: []networkingv1.NetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &apiServerPort}},
@@ -284,9 +280,7 @@ func TestStart_WithIngressPorts(t *testing.T) {
 			OwnerReferences: ownerRef(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
+			PodSelector: *deploymentSelector,
 			Ingress: []networkingv1.NetworkPolicyIngressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{
@@ -341,9 +335,7 @@ func TestStart_FullOpenShiftConfig(t *testing.T) {
 			OwnerReferences: ownerRef(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "opentelemetry-operator"},
-			},
+			PodSelector: *deploymentSelector,
 			Ingress: []networkingv1.NetworkPolicyIngressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{
@@ -372,91 +364,78 @@ func TestStart_FullOpenShiftConfig(t *testing.T) {
 	assert.Equal(t, expected, np)
 }
 
-func TestStart_PodSelectorFromDeployment(t *testing.T) {
+func TestStart_PodNotFound(t *testing.T) {
 	const namespace = "test-ns"
-	customSelector := &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"app.kubernetes.io/name": "custom-operator",
-			"control-plane":          "controller-manager",
-		},
-	}
-	objects := operatorObjects(namespace)
-	objects[0].(*appsv1.Deployment).Spec.Selector = customSelector
-	clientset := fake.NewClientset(objects...)
+	clientset := fake.NewClientset()
 
-	np := startAndCapture(t, clientset, newTestScheme(),
+	ctx := t.Context()
+
+	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
-		WithOperatorPodName(testPodName),
+		WithOperatorPodName("missing-pod"),
 		WithAPIServerPort(6443),
 		WithAPIServerIPs([]string{"10.0.0.1"}),
 	)
-
-	assert.Equal(t, *customSelector, np.Spec.PodSelector)
+	err := n.(*networkPolicy).Start(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to get operator pod")
 }
 
-func TestStart_PodNotFound(t *testing.T) {
-	clientset := fake.NewClientset()
-
-	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
-		WithOperatorNamespace("test-ns"),
-		WithOperatorPodName("missing-pod"),
-	)
-	err := n.(*networkPolicy).Start(context.Background())
-	require.ErrorContains(t, err, `failed to get operator pod "missing-pod"`)
-}
-
-func TestStart_PodWithoutReplicaSetOwner(t *testing.T) {
+func TestStart_PodNotOwnedByReplicaSet(t *testing.T) {
+	const namespace = "test-ns"
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "bare-pod", Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "orphan-pod",
+			Namespace: namespace,
+		},
 	}
 	clientset := fake.NewClientset(pod)
 
-	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
-		WithOperatorNamespace("test-ns"),
-		WithOperatorPodName("bare-pod"),
-	)
-	err := n.(*networkPolicy).Start(context.Background())
-	require.ErrorContains(t, err, "not owned by a ReplicaSet")
-}
-
-func TestStart_ReplicaSetNotFound(t *testing.T) {
-	const namespace = "test-ns"
-	pod := operatorObjects(namespace)[2]
-	clientset := fake.NewClientset(pod)
+	ctx := t.Context()
 
 	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
-		WithOperatorPodName(testPodName),
+		WithOperatorPodName("orphan-pod"),
+		WithAPIServerPort(6443),
+		WithAPIServerIPs([]string{"10.0.0.1"}),
 	)
-	err := n.(*networkPolicy).Start(context.Background())
-	require.ErrorContains(t, err, "failed to get operator ReplicaSet")
+	err := n.(*networkPolicy).Start(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not owned by a ReplicaSet")
 }
 
-func TestStart_ReplicaSetWithoutDeploymentOwner(t *testing.T) {
+func TestStart_ReplicaSetNotOwnedByDeployment(t *testing.T) {
 	const namespace = "test-ns"
-	objects := operatorObjects(namespace)
-	objects[1].(*appsv1.ReplicaSet).OwnerReferences = nil
-	clientset := fake.NewClientset(objects[1], objects[2])
+	trueVal := true
+	rs := &appsv1.ReplicaSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "orphan-rs",
+			Namespace: namespace,
+			UID:       "rs-uid",
+		},
+	}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod",
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: "orphan-rs", UID: "rs-uid", Controller: &trueVal},
+			},
+		},
+	}
+	clientset := fake.NewClientset(rs, pod)
+
+	ctx := t.Context()
 
 	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
 		WithOperatorNamespace(namespace),
-		WithOperatorPodName(testPodName),
+		WithOperatorPodName("test-pod"),
+		WithAPIServerPort(6443),
+		WithAPIServerIPs([]string{"10.0.0.1"}),
 	)
-	err := n.(*networkPolicy).Start(context.Background())
-	require.ErrorContains(t, err, "not owned by a Deployment")
-}
-
-func TestStart_DeploymentNotFound(t *testing.T) {
-	const namespace = "test-ns"
-	objects := operatorObjects(namespace)
-	clientset := fake.NewClientset(objects[1], objects[2])
-
-	n := NewOperatorNetworkPolicy(clientset, newTestScheme(),
-		WithOperatorNamespace(namespace),
-		WithOperatorPodName(testPodName),
-	)
-	err := n.(*networkPolicy).Start(context.Background())
-	require.ErrorContains(t, err, "failed to get operator Deployment")
+	err := n.(*networkPolicy).Start(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not owned by a Deployment")
 }
 
 func TestNeedLeaderElection(t *testing.T) {

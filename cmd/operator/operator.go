@@ -235,16 +235,24 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 		if namespace == "" {
 			namespace = "opentelemetry-operator-system"
 		}
-		setupLog.Info("Setting up pod-webhook replica controller",
-			"namespace", namespace,
-			"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
-		if err := (&controllers.CSVWebhookReconciler{
-			Client:          mgr.GetClient(),
-			Namespace:       namespace,
-			DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
-			os.Exit(1)
+
+		// Check if ClusterServiceVersion CRD exists before starting controller
+		_, err := clientset.Discovery().ServerResourcesForGroupVersion("operators.coreos.com/v1alpha1")
+		if err != nil {
+			setupLog.Info("ClusterServiceVersion CRD not found, skipping CSV webhook controller",
+				"reason", "OLM not installed or CRD not registered")
+		} else {
+			setupLog.Info("Setting up pod-webhook replica controller",
+				"namespace", namespace,
+				"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
+			if err := (&controllers.CSVWebhookReconciler{
+				Client:          mgr.GetClient(),
+				Namespace:       namespace,
+				DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
+			}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
+				os.Exit(1)
+			}
 		}
 	}
 
@@ -294,15 +302,14 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 }
 
 func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, cfg *config.Config) error {
+	// Try EndpointSlice discovery first
 	endpointSlices, err := clientset.DiscoveryV1().EndpointSlices("default").List(ctx, metav1.ListOptions{
 		LabelSelector: "kubernetes.io/service-name=kubernetes",
 	})
-	if err != nil {
-		return fmt.Errorf("failed to list kubernetes EndpointSlices: %w", err)
-	}
 
-	if len(endpointSlices.Items) == 0 {
-		return errors.New("no EndpointSlice found for kubernetes service in default namespace")
+	if err != nil || len(endpointSlices.Items) == 0 {
+		setupLog.Info("EndpointSlice discovery failed, falling back to environment variables", "error", err)
+		return fallbackToEnvVars(cfg)
 	}
 
 	for _, endpointSlice := range endpointSlices.Items {
@@ -317,15 +324,36 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 		}
 	}
 
-	if cfg.Internal.KubeAPIServerPort == 0 {
-		return errors.New("no https port found in kubernetes EndpointSlice")
+	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
+		setupLog.Info("EndpointSlice incomplete, falling back to environment variables")
+		return fallbackToEnvVars(cfg)
 	}
 
-	if len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return errors.New("no endpoint IPs found in kubernetes EndpointSlice")
+	setupLog.Info("Discovered Kubernetes API server from EndpointSlice",
+		"port", cfg.Internal.KubeAPIServerPort,
+		"ips", cfg.Internal.KubeAPIServerIPs)
+	return nil
+}
+
+func fallbackToEnvVars(cfg *config.Config) error {
+	host := os.Getenv("KUBERNETES_SERVICE_HOST")
+	portStr := os.Getenv("KUBERNETES_SERVICE_PORT")
+
+	if host == "" || portStr == "" {
+		return errors.New("KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT not available")
 	}
 
-	setupLog.Info("Discovered Kubernetes API server", "port", cfg.Internal.KubeAPIServerPort, "ips", cfg.Internal.KubeAPIServerIPs)
+	port, err := strconv.ParseInt(portStr, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid KUBERNETES_SERVICE_PORT: %w", err)
+	}
+
+	cfg.Internal.KubeAPIServerPort = int32(port)
+	cfg.Internal.KubeAPIServerIPs = []string{host}
+
+	setupLog.Info("Discovered Kubernetes API server from environment variables",
+		"port", cfg.Internal.KubeAPIServerPort,
+		"ips", cfg.Internal.KubeAPIServerIPs)
 	return nil
 }
 
