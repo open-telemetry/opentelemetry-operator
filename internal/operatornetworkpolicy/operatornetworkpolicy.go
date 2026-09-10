@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"sort"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -160,13 +159,13 @@ func (n *networkPolicy) watchEndpointSlices(ctx context.Context, ownerRef []meta
 	informer := factory.Discovery().V1().EndpointSlices().Informer()
 
 	handler := cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(_ any) {
 			n.handleEndpointSliceEvent(ctx, ownerRef)
 		},
-		UpdateFunc: func(_, _ interface{}) {
+		UpdateFunc: func(_, _ any) {
 			n.handleEndpointSliceEvent(ctx, ownerRef)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(_ any) {
 			n.handleEndpointSliceEvent(ctx, ownerRef)
 		},
 	}
@@ -219,7 +218,7 @@ func (n *networkPolicy) discoverAPIServerIPs(ctx context.Context) ([]string, err
 			ips = append(ips, endpoint.Addresses...)
 		}
 	}
-	sort.Strings(ips)
+	slices.Sort(ips)
 	return ips, nil
 }
 
@@ -227,11 +226,11 @@ func (n *networkPolicy) discoverAPIServerIPs(ctx context.Context) ([]string, err
 func ipsEqual(a, b []string) bool {
 	sortedA := make([]string, len(a))
 	copy(sortedA, a)
-	sort.Strings(sortedA)
+	slices.Sort(sortedA)
 
 	sortedB := make([]string, len(b))
 	copy(sortedB, b)
-	sort.Strings(sortedB)
+	slices.Sort(sortedB)
 
 	return slices.Equal(sortedA, sortedB)
 }
