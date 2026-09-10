@@ -2085,6 +2085,36 @@ func TestMutateStatefulSetError(t *testing.T) {
 	}
 }
 
+func TestMutateStatefulSetPodManagementPolicy(t *testing.T) {
+	// #4203: PodManagementPolicy is immutable, so a change on an existing
+	// StatefulSet must be reported as an immutable change. That lets the
+	// reconciler recreate the object instead of failing the update with a
+	// forbidden error.
+	existing := appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			CreationTimestamp: metav1.Now(),
+			Name:              "statefulset",
+		},
+		Spec: appsv1.StatefulSetSpec{
+			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app.kubernetes.io/instance": "default.statefulset"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app.kubernetes.io/instance": "default.statefulset"},
+				},
+			},
+		},
+	}
+	desired := existing.DeepCopy()
+	desired.CreationTimestamp = metav1.Time{}
+	desired.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
+
+	err := MutateFuncFor(&existing, desired)()
+	assert.Error(t, err)
+}
+
 func TestMutateDaemonsetLabelChange(t *testing.T) {
 	tests := []struct {
 		name     string
