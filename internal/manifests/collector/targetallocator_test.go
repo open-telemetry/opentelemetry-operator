@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -45,6 +46,8 @@ func TestTargetAllocator(t *testing.T) {
 	privileged := true
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
+	emptyFilterStrategy := v1beta1.TargetAllocatorFilterStrategy("")
+	relabelConfigFilterStrategy := v1beta1.TargetAllocatorFilterStrategyRelabelConfig
 
 	testCases := []struct {
 		name    string
@@ -76,7 +79,8 @@ func TestTargetAllocator(t *testing.T) {
 			want: &v1alpha1.TargetAllocator{
 				ObjectMeta: expectedObjectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
-					GlobalConfig: v1beta1.AnyConfig{},
+					FilterStrategy: &emptyFilterStrategy,
+					GlobalConfig:   v1beta1.AnyConfig{},
 				},
 			},
 		},
@@ -265,7 +269,7 @@ func TestTargetAllocator(t *testing.T) {
 						},
 					},
 					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
-					FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
+					FilterStrategy:     &relabelConfigFilterStrategy,
 					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 						Enabled:        true,
 						ScrapeInterval: &metav1.Duration{Duration: time.Second},
@@ -295,6 +299,48 @@ func TestTargetAllocator(t *testing.T) {
 			actual, err := TargetAllocator(params)
 			assert.Equal(t, testCase.wantErr, err)
 			assert.Equal(t, testCase.want, actual)
+		})
+	}
+}
+
+func TestTargetAllocatorPreservesExplicitFilterStrategy(t *testing.T) {
+	testCases := []struct {
+		name           string
+		filterStrategy v1beta1.TargetAllocatorFilterStrategy
+	}{
+		{
+			name:           "none",
+			filterStrategy: v1beta1.TargetAllocatorFilterStrategyNone,
+		},
+		{
+			name:           "legacy empty value",
+			filterStrategy: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			targetAllocator, err := TargetAllocator(manifests.Params{
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+							Enabled:        true,
+							FilterStrategy: testCase.filterStrategy,
+						},
+					},
+				},
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.filterStrategy, *targetAllocator.Spec.FilterStrategy)
+
+			encoded, err := json.Marshal(targetAllocator)
+			assert.NoError(t, err)
+			var object map[string]any
+			assert.NoError(t, json.Unmarshal(encoded, &object))
+			spec := object["spec"].(map[string]any)
+			value, present := spec["filterStrategy"]
+			assert.True(t, present)
+			assert.Equal(t, string(testCase.filterStrategy), value)
 		})
 	}
 }

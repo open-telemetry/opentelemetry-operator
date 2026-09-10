@@ -862,6 +862,42 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name: "empty filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyUnset,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "none filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyNone,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "relabel-config filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     FilterStrategyRelabelConfig,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "invalid filter strategy",
+			fileConfig: Config{
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
+				FilterStrategy:     "not-a-strategy",
+			},
+			expectedErr: errors.New(`invalid filter strategy "not-a-strategy", must be one of: relabel-config, none`),
+		},
+		{
 			name: "both allowNamespaces and denyNamespaces set",
 			fileConfig: Config{
 				PrometheusCR: PrometheusCRConfig{
@@ -968,6 +1004,80 @@ func TestGetSecretsAllowList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			secretsAllowList := tc.promCRConfig.GetSecretsAllowList(tc.collectorNamespace)
 			assert.Equal(t, tc.expectedSecretsAllowList, secretsAllowList)
+		})
+	}
+}
+
+func TestLoadAllocationStrategyConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	configContent := `
+collector_namespace: default
+config:
+  scrape_configs:
+    - job_name: prometheus
+allocation_strategy: per-node
+allocation_strategy_config:
+  consistent_hashing: {}
+  least_weighted: {}
+  per_node:
+    fallback_strategy:
+      name: consistent-hashing
+      consistent_hashing: {}
+`
+	configPath := filepath.Join(tempDir, "config.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0o600))
+
+	cfg := CreateDefaultConfig()
+	require.NoError(t, LoadFromFile(configPath, &cfg))
+
+	assert.Equal(t, "per-node", cfg.AllocationStrategy)
+	assert.Equal(t, AllocationStrategyConfig{
+		PerNode: PerNodeStrategyConfig{
+			FallbackStrategy: &FallbackStrategyConfig{Name: "consistent-hashing"},
+		},
+	}, cfg.AllocationStrategyConfig)
+}
+
+func TestGetTargetAllocatorFallbackStrategy(t *testing.T) {
+	testCases := []struct {
+		name     string
+		config   Config
+		expected *FallbackStrategyConfig
+	}{
+		{
+			name:     "neither set",
+			config:   Config{},
+			expected: nil,
+		},
+		{
+			name:     "only deprecated top-level option set",
+			config:   Config{AllocationFallbackStrategy: "consistent-hashing"},
+			expected: &FallbackStrategyConfig{Name: "consistent-hashing"},
+		},
+		{
+			name: "only strategy-specific option set",
+			config: Config{
+				AllocationStrategyConfig: AllocationStrategyConfig{
+					PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: "least-weighted"}},
+				},
+			},
+			expected: &FallbackStrategyConfig{Name: "least-weighted"},
+		},
+		{
+			name: "strategy-specific option takes precedence over deprecated option",
+			config: Config{
+				AllocationFallbackStrategy: "consistent-hashing",
+				AllocationStrategyConfig: AllocationStrategyConfig{
+					PerNode: PerNodeStrategyConfig{FallbackStrategy: &FallbackStrategyConfig{Name: "least-weighted"}},
+				},
+			},
+			expected: &FallbackStrategyConfig{Name: "least-weighted"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.config.GetTargetAllocatorFallbackStrategy())
 		})
 	}
 }
@@ -1217,5 +1327,35 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.Equal(t, testNamespace, config.CollectorNamespace, "Env var should override config file for namespace")
 		assert.Equal(t, cliListenAddr, config.ListenAddr, "CLI should override config file for listen address")
 		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
+	})
+
+	t.Run("filter strategy is normalized on load", func(t *testing.T) {
+		for _, tc := range []struct {
+			name     string
+			value    string
+			expected FilterStrategy
+		}{
+			{name: "unset", value: "", expected: DefaultFilterStrategy},
+			{name: "empty", value: `filter_strategy: ""`, expected: FilterStrategyNone},
+			{name: "none", value: "filter_strategy: none", expected: FilterStrategyNone},
+			{name: "relabel-config", value: "filter_strategy: relabel-config", expected: FilterStrategyRelabelConfig},
+			{name: "invalid values are left for validation", value: "filter_strategy: invalid", expected: "invalid"},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				tempDir := t.TempDir()
+				kubeConfigPath := createDummyKubeConfig(t, tempDir)
+				configPath := filepath.Join(tempDir, "config.yaml")
+				require.NoError(t, os.WriteFile(configPath, []byte(tc.value+"\n"), 0o600))
+
+				args := []string{
+					"--" + configFilePathFlagName + "=" + configPath,
+					"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+				}
+
+				config, err := Load(args)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, config.FilterStrategy)
+			})
+		}
 	})
 }

@@ -1,0 +1,5 @@
+change_type: bug_fix
+component: operator
+note: "Resolve the operator's own Deployment through pod owner references instead of a hardcoded name, so the operator NetworkPolicy no longer crashes the operator or selects no pods when installed with custom names (e.g. via the Helm chart)."
+issues: [5493]
+subtext:

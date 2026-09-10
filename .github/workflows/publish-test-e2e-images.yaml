@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [ bridge-server ]
+        app: [ bridge-server, otlp-sink ]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -138,4 +138,15 @@ jobs:
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: metrics-basic-auth
+      platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+  otlp-sink:
+    needs: [ test-go-apps ]
+    permissions: # required by the reusable workflow
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
+    with:
+      path: otlp-sink
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le

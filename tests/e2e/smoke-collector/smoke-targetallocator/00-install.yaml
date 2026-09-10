@@ -30,4 +30,5 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
+    filterStrategy: none
     serviceAccount: ta

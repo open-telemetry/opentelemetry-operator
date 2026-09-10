@@ -114,7 +114,7 @@ type (
 	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
 	TargetAllocatorAllocationStrategy string
 	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
-	// +kubebuilder:validation:Enum="";relabel-config
+	// +kubebuilder:validation:Enum="";none;relabel-config
 	TargetAllocatorFilterStrategy string
 )
 
@@ -130,4 +130,7 @@ const (
 
 	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
 	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
+
+	// TargetAllocatorFilterStrategyNone disables filtering of targets before they are assigned to collectors.
+	TargetAllocatorFilterStrategyNone TargetAllocatorFilterStrategy = "none"
 )

@@ -14,7 +14,7 @@ spec:
     - jaeger
     - b3
   python:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-3
     env:
       - name: OTEL_LOG_LEVEL
         value: "debug"

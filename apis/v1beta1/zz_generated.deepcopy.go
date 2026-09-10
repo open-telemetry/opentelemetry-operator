@@ -943,6 +943,11 @@ func (in *OpenTelemetryCollectorStatus) DeepCopy() *OpenTelemetryCollectorStatus
 func (in *OpenTelemetryCommonFields) DeepCopyInto(out *OpenTelemetryCommonFields) {
 	*out = *in
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.ResizePolicy != nil {
+		in, out := &in.ResizePolicy, &out.ResizePolicy
+		*out = make([]v1.ContainerResizePolicy, len(*in))
+		copy(*out, *in)
+	}
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
