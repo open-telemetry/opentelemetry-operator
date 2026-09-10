@@ -12,7 +12,6 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -194,10 +193,14 @@ func (n *networkPolicy) handleEndpointSliceEvent(ctx context.Context, ownerRef [
 	}
 
 	n.logger.Info("API server IPs changed, updating NetworkPolicy", "oldIPs", n.apiServerIPs, "newIPs", newIPs)
+
+	oldIPs := n.apiServerIPs
 	n.apiServerIPs = newIPs
 
 	if err := n.createOrUpdateNetworkPolicy(ctx, ownerRef); err != nil {
 		n.logger.Error(err, "Failed to update NetworkPolicy after IP change")
+		// Revert in-memory state so the next event retries the update.
+		n.apiServerIPs = oldIPs
 	}
 }
 
@@ -385,19 +388,6 @@ func (n *networkPolicy) operatorDeployment(ctx context.Context) (*appsv1.Deploym
 		return nil, fmt.Errorf("failed to get operator Deployment %q: %w", depRef.Name, err)
 	}
 	return dep, nil
-}
-
-// extractIPsFromEndpointSlice extracts endpoint addresses from an EndpointSlice.
-func extractIPsFromEndpointSlice(obj interface{}) []string {
-	es, ok := obj.(*discoveryv1.EndpointSlice)
-	if !ok {
-		return nil
-	}
-	var ips []string
-	for _, endpoint := range es.Endpoints {
-		ips = append(ips, endpoint.Addresses...)
-	}
-	return ips
 }
 
 func (*networkPolicy) NeedLeaderElection() bool {
