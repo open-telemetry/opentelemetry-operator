@@ -144,7 +144,7 @@ func TestLanguageKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("languageKeys() error: %v", err)
 	}
-	want := []string{"apacheHttpd", "dotnet", "go", "java", "nginx", "nodejs", "python"}
+	want := []string{"apacheHttpd", "dotnet", "go", "java", "nginx", "nodejs", "python", "ruby"}
 	if !slices.Equal(got, want) {
 		t.Errorf("languageKeys() = %v, want %v", got, want)
 	}

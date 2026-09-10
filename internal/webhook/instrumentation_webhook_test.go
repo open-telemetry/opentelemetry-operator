@@ -38,6 +38,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				AutoInstrumentationJavaImage:        "java-img:1",
 				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
 				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationRubyImage:        "ruby-img:1",
 				AutoInstrumentationDotNetImage:      "dotnet-img:1",
 				AutoInstrumentationGoImage:          "go-img:1",
 				AutoInstrumentationNginxImage:       "nginx-img:1",
@@ -47,6 +48,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 				assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 				assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
+				assert.Equal(t, "ruby-img:1", inst.Spec.Ruby.Image)
 				assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
 				assert.Equal(t, "go-img:1", inst.Spec.Go.Image)
 				assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
@@ -74,6 +76,9 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 					Python: v1alpha1.Python{
 						Image: "custom-python-img:2",
 					},
+					Ruby: v1alpha1.Ruby{
+						Image: "custom-ruby-img:2",
+					},
 					DotNet: v1alpha1.DotNet{
 						Image: "custom-dotnet-img:2",
 					},
@@ -92,6 +97,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				AutoInstrumentationJavaImage:        "java-img:1",
 				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
 				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationRubyImage:        "ruby-img:1",
 				AutoInstrumentationDotNetImage:      "dotnet-img:1",
 				AutoInstrumentationGoImage:          "go-img:1",
 				AutoInstrumentationNginxImage:       "nginx-img:1",
@@ -101,6 +107,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, "custom-java-img:2", inst.Spec.Java.Image)
 				assert.Equal(t, "custom-nodejs-img:2", inst.Spec.NodeJS.Image)
 				assert.Equal(t, "custom-python-img:2", inst.Spec.Python.Image)
+				assert.Equal(t, "custom-ruby-img:2", inst.Spec.Ruby.Image)
 				assert.Equal(t, "custom-dotnet-img:2", inst.Spec.DotNet.Image)
 				assert.Equal(t, "custom-go-img:2", inst.Spec.Go.Image)
 				assert.Equal(t, "custom-nginx-img:2", inst.Spec.Nginx.Image)
@@ -134,6 +141,11 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Python.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Python.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Python.Resources.Requests[corev1.ResourceMemory])
+
+				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Ruby.Resources.Limits[corev1.ResourceCPU])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Ruby.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Ruby.Resources.Requests[corev1.ResourceCPU])
+				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Ruby.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceMemory])
@@ -189,6 +201,18 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 						},
 					},
 					Python: v1alpha1.Python{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("400m"),
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("150m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Ruby: v1alpha1.Ruby{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("400m"),
@@ -269,6 +293,11 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Python.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("150m"), inst.Spec.Python.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Python.Resources.Requests[corev1.ResourceMemory])
+
+				assert.Equal(t, resource.MustParse("400m"), inst.Spec.Ruby.Resources.Limits[corev1.ResourceCPU])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Ruby.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("150m"), inst.Spec.Ruby.Resources.Requests[corev1.ResourceCPU])
+				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Ruby.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("600m"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("400Mi"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceMemory])
@@ -529,6 +558,23 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			warnings: []string{"sampler type not set"},
 		},
 		{
+			name: "Ruby with volume and volumeSizeLimit",
+			err:  "spec.ruby.volumeClaimTemplate and spec.ruby.volumeSizeLimit cannot both be defined",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Ruby: v1alpha1.Ruby{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
 			name: "Go with volume and volumeSizeLimit",
 			err:  "spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined",
 			inst: v1alpha1.Instrumentation{
@@ -648,6 +694,11 @@ func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 			name: "python volumeSizeLimit deprecated",
 			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Python: v1alpha1.Python{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead",
+		},
+		{
+			name: "ruby volumeSizeLimit deprecated",
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Ruby: v1alpha1.Ruby{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.ruby.volumeSizeLimit is deprecated and will be removed in a future release; use spec.ruby.volume.size instead",
 		},
 		{
 			name: "dotnet volumeSizeLimit deprecated",

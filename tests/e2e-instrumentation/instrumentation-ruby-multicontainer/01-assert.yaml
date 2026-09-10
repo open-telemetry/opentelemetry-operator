@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-ruby: "true"
+    instrumentation.opentelemetry.io/ruby-container-names: myapp,myapp-secondary
+  labels:
+    app: my-ruby-multi
+spec:
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-ruby'] | length(@)): 1
+  (containers[?name == 'myapp']):
+    - name: myapp
+      (env[?name == 'RUBYOPT']):
+        - name: RUBYOPT
+          value: " -r /otel-auto-instrumentation-ruby/src/autoinstrumentation"
+      (volumeMounts[?name == 'opentelemetry-auto-instrumentation-ruby']):
+        - mountPath: /otel-auto-instrumentation-ruby
+          name: opentelemetry-auto-instrumentation-ruby
+  (containers[?name == 'myapp-secondary']):
+    - name: myapp-secondary
+      (env[?name == 'RUBYOPT']):
+        - name: RUBYOPT
+          value: " -r /otel-auto-instrumentation-ruby/src/autoinstrumentation"
+      (volumeMounts[?name == 'opentelemetry-auto-instrumentation-ruby']):
+        - mountPath: /otel-auto-instrumentation-ruby
+          name: opentelemetry-auto-instrumentation-ruby
+status:
+  (containerStatuses[?name == 'myapp']):
+    - name: myapp
+      ready: true
+      started: true
+  (containerStatuses[?name == 'myapp-secondary']):
+    - name: myapp-secondary
+      ready: true
+      started: true
+  phase: Running

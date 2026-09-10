@@ -1,0 +1,101 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-ruby-multicontainer
+spec:
+  bindings:
+    - name: appImage
+      value: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-ruby:main
+    - name: podLabelSelector
+      value: app=my-ruby-multi
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /rolldice
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "240"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: "k8s.container.name: Str(myapp)"
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: catchContainer
+      value: otc-container
+  steps:
+    - name: Add OpenShift namespace annotations
+      use:
+        template: ../../step-templates/openshift-namespace-annotations.yaml
+    - name: Setup instrumentation and collector
+      try:
+        - apply:
+            file: 00-install-collector.yaml
+        - apply:
+            file: 00-install-instrumentation.yaml
+        - sleep:
+            duration: 1s
+    - name: Instrument both Ruby containers
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=my-ruby-multi
+    - name: Make a request to the app
+      use:
+        template: ../../step-templates/app-http-request.yaml
+    - name: Wait for telemetry from the app
+      use:
+        template: ../../step-templates/wait-for-telemetry.yaml
+    - name: Check the instrumented app sent spans
+      use:
+        template: ../../step-templates/validate-collector-spans.yaml
+    - name: Instrument only the selected Ruby container
+      try:
+        - command:
+            entrypoint: kubectl
+            args:
+              - get
+              - pod
+              - -n
+              - ${NAMESPACE}
+              - -l
+              - app=my-ruby-multi
+              - -o
+              - jsonpath={.items[0].metadata.name}
+            outputs:
+              - name: podName
+                value: ($stdout)
+        - apply:
+            file: 02-install-app.yaml
+        - assert:
+            file: 02-assert.yaml
+        - wait:
+            apiVersion: v1
+            kind: Pod
+            name: ($podName)
+            namespace: ($namespace)
+            timeout: 1m
+            for:
+              deletion: {}
+      catch:
+        - podLogs:
+            selector: app=my-ruby-multi
+    - name: Make a request after narrowing container selection
+      use:
+        template: ../../step-templates/app-http-request.yaml
+    - name: Wait for telemetry after narrowing container selection
+      use:
+        template: ../../step-templates/wait-for-telemetry.yaml
+    - name: Check the selected app still sends spans
+      use:
+        template: ../../step-templates/validate-collector-spans.yaml
