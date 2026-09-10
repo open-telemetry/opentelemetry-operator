@@ -17,7 +17,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/healthcheck"
 	bridgemanager "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/manager"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operatorbridge"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/standalone"
 )
@@ -108,7 +107,7 @@ func operatorManagerOptions(log logr.Logger, cfg *config.Config, c client.Client
 	opampAgent := opampagent.NewAgent(log.WithName("agent"), applier, cfg, opampClient, opampProxy)
 	return []bridgemanager.Option{
 		bridgemanager.WithOpAMPProxy(opampProxy),
-		bridgemanager.WithRequiredPermissions(operatorbridge.ListRequiredPermissions),
+		bridgemanager.WithRequiredPermissions(cfg.OperatorPermissions),
 		bridgemanager.WithRuntimes([]bridgemanager.Runtime{
 			{
 				Name:       cfg.Name,

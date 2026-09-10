@@ -1394,9 +1394,15 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 	})
 }
 
+func restartEnabledConfig() *config.Config {
+	cfg := config.NewConfig(logr.Discard())
+	cfg.Capabilities = map[config.Capability]bool{config.AcceptsRestartCommand: true}
+	return cfg
+}
+
 func TestAgent_onCommand_Restart(t *testing.T) {
 	applier := &recordingConfigApplier{}
-	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent := NewAgent(logr.Discard(), applier, restartEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
 
 	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
 		Type: protobufs.CommandType_CommandType_Restart,
@@ -1409,7 +1415,7 @@ func TestAgent_onCommand_Restart(t *testing.T) {
 func TestAgent_onCommand_RestartError(t *testing.T) {
 	restartErr := errors.New("rollout failed")
 	applier := &recordingConfigApplier{restartErr: restartErr}
-	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent := NewAgent(logr.Discard(), applier, restartEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
 
 	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
 		Type: protobufs.CommandType_CommandType_Restart,
@@ -1417,6 +1423,18 @@ func TestAgent_onCommand_RestartError(t *testing.T) {
 
 	require.ErrorIs(t, err, restartErr)
 	assert.Equal(t, 1, applier.restartCalled)
+}
+
+func TestAgent_onCommand_RestartCapabilityDisabled(t *testing.T) {
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+
+	err := agent.onCommand(context.Background(), &protobufs.ServerToAgentCommand{
+		Type: protobufs.CommandType_CommandType_Restart,
+	})
+
+	require.Error(t, err)
+	assert.Equal(t, 0, applier.restartCalled, "Restart should not be called without the capability")
 }
 
 func TestAgent_onCommand_UnknownType(t *testing.T) {

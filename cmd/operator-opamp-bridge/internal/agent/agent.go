@@ -487,6 +487,11 @@ func (agent *Agent) Shutdown() {
 func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
 	switch command.GetType() {
 	case protobufs.CommandType_CommandType_Restart:
+		if !agent.config.RestartCommandEnabled() {
+			err := errors.New("restart command rejected: AcceptsRestartCommand capability is not enabled")
+			agent.logger.Error(err, "Received restart command without capability")
+			return err
+		}
 		agent.logger.Info("Received restart command, triggering collector restart")
 		if err := agent.applier.Restart(ctx); err != nil {
 			agent.logger.Error(err, "Failed to restart collector on command")

@@ -467,6 +467,11 @@ func (c *Config) RemoteConfigEnabled() bool {
 	return capabilities&protobufs.AgentCapabilities_AgentCapabilities_AcceptsRemoteConfig != 0
 }
 
+func (c *Config) RestartCommandEnabled() bool {
+	capabilities := c.GetCapabilities()
+	return capabilities&protobufs.AgentCapabilities_AgentCapabilities_AcceptsRestartCommand != 0
+}
+
 func (c *Config) GetKubernetesClient() (client.Client, error) {
 	if c.Mode != standaloneMode {
 		err := schemeBuilder.AddToScheme(scheme.Scheme)
