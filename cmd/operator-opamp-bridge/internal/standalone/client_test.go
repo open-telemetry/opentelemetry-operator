@@ -358,7 +358,7 @@ func TestPermissionsCheckerRejectsDeniedPermission(t *testing.T) {
 		return false
 	})
 
-	err := bridgemanager.CheckPermissions(context.Background(), k8sClient, []bridgemanager.Permission{{
+	err := bridgemanager.CheckPermissions(context.Background(), k8sClient, []config.Permission{{
 		Verb:      "update",
 		APIGroup:  "apps",
 		Resource:  "deployments",

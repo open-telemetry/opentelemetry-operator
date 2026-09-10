@@ -94,7 +94,7 @@ func standaloneManagerOptions(log logr.Logger, cfg *config.Config, c client.Clie
 	return []bridgemanager.Option{
 		bridgemanager.WithRuntimes(runtimes),
 		bridgemanager.WithKubernetesClient(standaloneClient),
-		bridgemanager.WithRequiredPermissions(func() ([]bridgemanager.Permission, error) {
+		bridgemanager.WithRequiredPermissions(func() ([]config.Permission, error) {
 			return standalone.ListRequiredPermissions(cfg.Standalone.Agents, cfg.RemoteConfigEnabled())
 		}),
 	}
