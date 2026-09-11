@@ -75,9 +75,11 @@ type OpAMPBridgeSpec struct {
 	Ports []v1.ServicePort `json:"ports,omitempty"`
 	// ENV vars to set on the OpAMPBridge Pods.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// List of sources to populate environment variables on the OpAMPBridge Pods.
 	// +optional
+	// +listType=atomic
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// Toleration to schedule OpAMPBridge pods.
 	// +optional
@@ -110,6 +112,7 @@ type OpAMPBridgeSpec struct {
 	// IPFamily represents the IP Family (IPv4 or IPv6). This type is used
 	// to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
 	// +optional
+	// +listType=atomic
 	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`

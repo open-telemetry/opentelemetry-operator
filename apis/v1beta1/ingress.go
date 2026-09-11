@@ -85,6 +85,7 @@ type Ingress struct {
 
 	// TLS configuration.
 	// +optional
+	// +listType=atomic
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
 
 	// IngressClassName is the name of an IngressClass cluster resource. Ingress

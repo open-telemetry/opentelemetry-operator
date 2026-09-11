@@ -23,6 +23,7 @@ type InstrumentationSpec struct {
 	// Values in this list will be set in the OTEL_PROPAGATORS env var.
 	// Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
 	// +optional
+	// +listType=atomic
 	Propagators []Propagator `json:"propagators,omitempty"`
 
 	// Sampler defines sampling configuration.
@@ -36,6 +37,7 @@ type InstrumentationSpec struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Java defines configuration for java auto-instrumentation.
@@ -181,6 +183,7 @@ type Java struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -190,6 +193,7 @@ type Java struct {
 	// Extensions defines java specific extensions.
 	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
 	// +optional
+	// +listType=atomic
 	Extensions []Extensions `json:"extensions,omitempty"`
 }
 
@@ -221,6 +225,7 @@ type NodeJS struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -248,6 +253,7 @@ type Python struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -275,6 +281,7 @@ type DotNet struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// Resources describes the compute resource requirements.
 	// +optional
@@ -300,6 +307,7 @@ type Go struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -334,12 +342,14 @@ type ApacheHttpd struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Attrs defines Apache HTTPD agent specific attributes. The precedence is:
 	// `agent default attributes` > `instrument spec attributes` .
 	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
 	// +optional
+	// +listType=atomic
 	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
 
 	// Apache HTTPD server version. One of 2.4 or 2.2. Default is 2.4
@@ -378,12 +388,14 @@ type Nginx struct {
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Attrs defines Nginx agent specific attributes. The precedence order is:
 	// `agent default attributes` > `instrument spec attributes` .
 	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
 	// +optional
+	// +listType=atomic
 	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
 
 	// Location of Nginx configuration file.

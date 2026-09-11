@@ -23,6 +23,7 @@ type InstrumentationSpec struct {
 	// Env defines common env vars injected into all instrumented containers.
 	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Java defines configuration for Java auto-instrumentation.
@@ -70,6 +71,7 @@ type EnvConfig struct {
 
 	// Propagators defines inter-process context propagation configuration.
 	// +optional
+	// +listType=atomic
 	Propagators []Propagator `json:"propagators,omitempty"`
 
 	// Sampler defines sampling configuration.
@@ -78,6 +80,7 @@ type EnvConfig struct {
 
 	// Env defines common env vars to typically configure OpenTelemetry SDK or instrumentation.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
@@ -192,6 +195,7 @@ type CommonLanguageSpec struct {
 	// Env defines language-specific env vars injected into containers instrumented with this language.
 	// Precedence: original pod env > spec.<language>.env > spec.env > operator-generated env.
 	// +optional
+	// +listType=atomic
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -206,6 +210,7 @@ type Java struct {
 	// Extensions defines java specific extensions.
 	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
 	// +optional
+	// +listType=atomic
 	Extensions []Extensions `json:"extensions,omitempty"`
 }
 

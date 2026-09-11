@@ -582,6 +582,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               envFrom:
                 items:
                   properties:
@@ -607,6 +608,7 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               headers:
                 additionalProperties:
                   type: string
@@ -621,6 +623,7 @@ spec:
                 items:
                   type: string
                 type: array
+                x-kubernetes-list-type: atomic
               ipFamilyPolicy:
                 type: string
               nodeSelector:

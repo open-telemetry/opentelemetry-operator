@@ -782,6 +782,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               affinity:
                 properties:
                   nodeAffinity:
@@ -1323,6 +1324,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               envFrom:
                 items:
                   properties:
@@ -1348,6 +1350,7 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               filterStrategy:
                 default: relabel-config
                 enum:
@@ -2125,10 +2128,12 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               ipFamilies:
                 items:
                   type: string
                 type: array
+                x-kubernetes-list-type: atomic
               ipFamilyPolicy:
                 default: SingleStack
                 type: string
@@ -2620,12 +2625,14 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                   denyFSAccessThroughSMs:
                     type: boolean
                   denyNamespaces:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                   enabled:
                     type: boolean
                   evaluationInterval:
@@ -2805,10 +2812,12 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                   secretNamespaces:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                   serviceMonitorNamespaceSelector:
                     default: {}
                     properties:
@@ -3191,6 +3200,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               topologySpreadConstraints:
                 items:
                   properties:
@@ -3245,6 +3255,7 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               trafficDistribution:
                 type: string
               volumeMounts:
