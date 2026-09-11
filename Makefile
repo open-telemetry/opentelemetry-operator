@@ -76,27 +76,27 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # registry versions, letting tests run against local changes before they are merged
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
-TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs php python
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink php python
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
 INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
-INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
+INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}-${INSTRUMENTATION_JAVA_REVISION}
 
 INSTRUMENTATION_NODEJS_IMG_REPO ?= autoinstrumentation-nodejs
-INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}
+INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}
 
 INSTRUMENTATION_PHP_IMG_REPO ?= autoinstrumentation-php
 INSTRUMENTATION_PHP_IMG ?= ghcr.io/jerrytfleung/${INSTRUMENTATION_PHP_IMG_REPO}:${INSTRUMENTATION_PHP_VERSION}
 
 INSTRUMENTATION_PYTHON_IMG_REPO ?= autoinstrumentation-python
-INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}
+INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}
 
 INSTRUMENTATION_DOTNET_IMG_REPO ?= autoinstrumentation-dotnet
-INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}
+INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}
 
 INSTRUMENTATION_APACHE_HTTPD_IMG_REPO ?= autoinstrumentation-apache-httpd
-INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}
+INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
@@ -245,6 +245,7 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code tests docs/auto-instrumentation || (echo "Build failed: Instrumentation example images are out of date. Run 'make update-example-images' and update your PR." && git diff && exit 1)
 
 # Build manager binary
 .PHONY: all
@@ -257,7 +258,7 @@ ci: generate fmt vet test ensure-update-is-noop
 
 # Update manifests
 .PHONY: update
-update: generate manifests bundle api-docs reset
+update: generate manifests bundle api-docs update-example-images reset
 
 # Build manager binary
 .PHONY: manager
@@ -432,7 +433,7 @@ manifests: controller-gen
 # no cluster or network, so they run unconditionally here).
 .PHONY: test
 test: gotestsum
-	$(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
@@ -548,11 +549,17 @@ check-chainsaw-test-names:
 
 .PHONY: check-autoinstrumentation-revision
 check-autoinstrumentation-revision:
-	./hack/autoinstrumentation-revision.sh check
+	go run ./hack/autoinstrumentation-revision check
 
 .PHONY: bump-autoinstrumentation-revision
 bump-autoinstrumentation-revision:
-	./hack/autoinstrumentation-revision.sh apply
+	go run ./hack/autoinstrumentation-revision apply
+
+# Pin the auto-instrumentation image on every Instrumentation CR example to the
+# canonical <sdk-version>-<revision> reference. Enforced by ensure-update-is-noop.
+.PHONY: update-example-images
+update-example-images:
+	go run ./hack/update-example-images
 
 # multi-instrumentation end-to-tests, alias to make matrix tests more convenient
 # the tests are the same, but the setup is different
@@ -890,15 +897,15 @@ KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.21.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.1
+GOLANGCI_LINT_VERSION ?= v2.13.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.32.0
+KIND_VERSION ?= v0.33.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.7.0
+GOVULNCHECK_VERSION ?= v1.8.0
 PROMTOOL ?= $(LOCALBIN)/promtool
 # promtool is the golden source for the target-allocator conformance suite. It must match
 # the prometheus/prometheus library the operator links against, so derive the release version

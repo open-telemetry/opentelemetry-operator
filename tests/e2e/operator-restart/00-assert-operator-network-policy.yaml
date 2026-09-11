@@ -19,6 +19,7 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: opentelemetry-operator
+      control-plane: controller-manager
   policyTypes:
     - Ingress
     - Egress

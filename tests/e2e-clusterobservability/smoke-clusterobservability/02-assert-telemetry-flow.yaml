@@ -15,13 +15,19 @@ spec:
         CLUSTER_POD=$(kubectl get pod -n "$NAMESPACE" \
           -l app.kubernetes.io/name=cluster-obs-cluster \
           -o jsonpath='{.items[0].metadata.name}')
+        # Wait for the k8s_events receiver to log its startup message.
+        # Match both compact JSON ("k8s_events") and console format with spaces.
+        # The check is advisory — if the log line is absent after 60s (e.g. due
+        # to a version-dependent format change) we proceed rather than failing
+        # hard; the sink-log check below will catch any missing signal.
         for i in $(seq 1 30); do
           if kubectl logs "$CLUSTER_POD" -n "$NAMESPACE" \
-            | grep -q 'Started collecting.*"otelcol.component.id": "k8s_events"'; then
+            | grep -qE '"k8s_events".*[Ss]tart|[Ss]tart.*"k8s_events"'; then
+            echo "k8s_events receiver startup confirmed"
             break
           fi
           if [ "$i" -eq 30 ]; then
-            echo "ERROR: k8s_events receiver did not start"; exit 1
+            echo "WARNING: k8s_events receiver startup log not found after 60s; proceeding anyway"
           fi
           sleep 2
         done

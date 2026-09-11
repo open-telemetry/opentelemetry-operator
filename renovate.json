@@ -141,11 +141,6 @@
       "commitMessageTopic": "kind node images"
     },
     {
-      "matchManagers": ["gomod"],
-      "matchFileNames": ["tests/test-e2e-apps/**/go.mod"],
-      "enabled": false
-    },
-    {
       "description": "Never bump the in-repo module references (resolved via local replace directives)",
       "matchManagers": ["gomod"],
       "matchDepNames": [

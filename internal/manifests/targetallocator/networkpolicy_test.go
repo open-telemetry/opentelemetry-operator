@@ -136,6 +136,51 @@ func TestNetworkPolicy(t *testing.T) {
 	}
 }
 
+func TestNetworkPolicyLeavesEgressOpenForSelfTelemetry(t *testing.T) {
+	testConfig := config.Config{}
+	testConfig.Internal.KubeAPIServerPort = 6443
+	testConfig.Internal.KubeAPIServerIPs = []string{"10.0.0.1"}
+
+	ta := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ta",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			NetworkPolicy: v1beta1.NetworkPolicy{
+				Enabled: &[]bool{true}[0],
+			},
+			Telemetry: v1beta1.TelemetryConfig{
+				Metrics: v1beta1.MetricsConfig{
+					Readers: []v1beta1.MetricReader{
+						{
+							Periodic: &v1beta1.PeriodicMetricReader{
+								Exporter: v1beta1.MetricExporter{
+									OtlpGrpc: &v1beta1.OTLPGrpcExporter{
+										OTLPCommonConfig: v1beta1.OTLPCommonConfig{
+											Endpoint: "some-external-collector.example.com:4317",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	actual, err := NetworkPolicy(Params{TargetAllocator: ta, Config: testConfig})
+	require.NoError(t, err)
+	require.NotNil(t, actual)
+
+	// Egress can't be scoped to an arbitrary, possibly-external self-telemetry
+	// endpoint via a NetworkPolicy IPBlock, so it must be left unrestricted
+	// rather than silently blocking the configured exporter.
+	assert.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, actual.Spec.PolicyTypes)
+	assert.Empty(t, actual.Spec.Egress)
+}
+
 func TestNetworkPolicyResourceAnnotations(t *testing.T) {
 	testConfig := config.Config{}
 	testConfig.Internal.KubeAPIServerPort = 6443

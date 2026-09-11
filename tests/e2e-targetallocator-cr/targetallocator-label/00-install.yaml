@@ -4,6 +4,7 @@ kind: TargetAllocator
 metadata:
   name: ta
 spec:
+  filterStrategy: none
 ---
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
@@ -27,4 +28,3 @@ spec:
         metrics:
           receivers: [prometheus]
           exporters: [debug]
-

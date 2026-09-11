@@ -5,7 +5,9 @@ package operatornetworkpolicy
 
 import (
 	"context"
+	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,15 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const (
-	operatorName = "opentelemetry-operator-controller-manager"
-)
-
 type networkPolicy struct {
 	clientset kubernetes.Interface
 	scheme    *runtime.Scheme
 
 	operatorNamespace          string
+	operatorPodName            string
 	apiServerPort              int32
 	apiServerIPs               []string
 	webhookPort                int32
@@ -57,6 +56,15 @@ type Option func(policy *networkPolicy)
 func WithOperatorNamespace(operatorNamespace string) Option {
 	return func(s *networkPolicy) {
 		s.operatorNamespace = operatorNamespace
+	}
+}
+
+// WithOperatorPodName sets the name of the pod the operator runs in. It is
+// used to resolve the operator's own Deployment, whose name depends on how
+// the operator was installed (kustomize, Helm chart, OLM).
+func WithOperatorPodName(podName string) Option {
+	return func(s *networkPolicy) {
+		s.operatorPodName = podName
 	}
 }
 
@@ -103,6 +111,11 @@ func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
 }
 
 func (n *networkPolicy) Start(ctx context.Context) error {
+	operatorDep, err := n.operatorDeployment(ctx)
+	if err != nil {
+		return err
+	}
+
 	tcp := corev1.ProtocolTCP
 	apiServerPort := intstr.FromInt32(n.apiServerPort)
 
@@ -123,12 +136,8 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 			Namespace: n.operatorNamespace,
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": "opentelemetry-operator",
-				},
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{}},
+			PodSelector: *operatorDep.Spec.Selector,
+			Ingress:     []networkingv1.NetworkPolicyIngressRule{{}},
 			Egress: []networkingv1.NetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{
@@ -175,11 +184,6 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		})
 	}
 
-	operatorDep, err := n.clientset.AppsV1().Deployments(n.operatorNamespace).Get(ctx, operatorName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
 	// set owner reference to the operator deployment
 	err = controllerutil.SetControllerReference(operatorDep, np, n.scheme)
 	if err != nil {
@@ -193,6 +197,38 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 
 	<-ctx.Done()
 	return nil
+}
+
+// operatorDeployment resolves the Deployment the operator runs in by walking
+// the owner references of its own pod. The deployment name cannot be assumed:
+// it depends on the installation method (kustomize, Helm chart with name
+// overrides, OLM).
+func (n *networkPolicy) operatorDeployment(ctx context.Context) (*appsv1.Deployment, error) {
+	pod, err := n.clientset.CoreV1().Pods(n.operatorNamespace).Get(ctx, n.operatorPodName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operator pod %q: %w", n.operatorPodName, err)
+	}
+
+	rsRef := metav1.GetControllerOf(pod)
+	if rsRef == nil || rsRef.Kind != "ReplicaSet" {
+		return nil, fmt.Errorf("operator pod %q is not owned by a ReplicaSet", pod.Name)
+	}
+
+	rs, err := n.clientset.AppsV1().ReplicaSets(n.operatorNamespace).Get(ctx, rsRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operator ReplicaSet %q: %w", rsRef.Name, err)
+	}
+
+	depRef := metav1.GetControllerOf(rs)
+	if depRef == nil || depRef.Kind != "Deployment" {
+		return nil, fmt.Errorf("operator ReplicaSet %q is not owned by a Deployment", rs.Name)
+	}
+
+	dep, err := n.clientset.AppsV1().Deployments(n.operatorNamespace).Get(ctx, depRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operator Deployment %q: %w", depRef.Name, err)
+	}
+	return dep, nil
 }
 
 func (*networkPolicy) NeedLeaderElection() bool {

@@ -21,6 +21,7 @@ spec:
     - jaeger
     - b3
   apacheHttpd:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-1
     attrs:
       - name: ApacheModuleOtelMaxQueueSize
         value: "4096"
