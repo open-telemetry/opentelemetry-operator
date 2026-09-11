@@ -196,6 +196,82 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "config with label from job",
+			args: args{
+				config: map[string]any{
+					"extract": map[string]any{
+						"metadata": []string{"invalid.metadata"},
+						"labels": []any{
+							map[string]any{"from": "job"},
+						},
+						"annotations": []any{},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"batch"},
+					Resources: []string{"jobs"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "config with annotation from job",
+			args: args{
+				config: map[string]any{
+					"extract": map[string]any{
+						"metadata": []string{"invalid.metadata"},
+						"labels":   []any{},
+						"annotations": []any{
+							map[string]any{"from": "job"},
+						},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"batch"},
+					Resources: []string{"jobs"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "config with label from pod",
+			args: args{
+				config: map[string]any{
+					"extract": map[string]any{
+						"metadata": []string{"invalid.metadata"},
+						"labels": []any{
+							map[string]any{"from": "pod"},
+						},
+						"annotations": []any{},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

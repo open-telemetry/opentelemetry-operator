@@ -75,5 +75,16 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 			addedJobsPolicy = true
 		}
 	}
+
+	fieldExtractConfigs := make([]FieldExtractConfig, 0, len(config.Extract.Labels)+len(config.Extract.Annotations))
+	fieldExtractConfigs = append(fieldExtractConfigs, config.Extract.Labels...)
+	fieldExtractConfigs = append(fieldExtractConfigs, config.Extract.Annotations...)
+	for _, f := range fieldExtractConfigs {
+		if f.From == "job" && !addedJobsPolicy {
+			prs = append(prs, jobsPolicy)
+			addedJobsPolicy = true
+		}
+	}
+
 	return prs, nil
 }
