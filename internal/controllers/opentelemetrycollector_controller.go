@@ -52,9 +52,16 @@ import (
 
 const collectorOwnerKind = "OpenTelemetryCollector"
 
-var ownedClusterObjectTypes = []client.Object{
+// ownedUnreferencedRBACTypes lists RBAC object types that do not carry an
+// owner reference: cluster-scoped objects (ClusterRole, ClusterRoleBinding)
+// and namespace-scoped objects created in a different namespace than the
+// collector CR (Role, RoleBinding for filter.namespace). These are cleaned
+// up explicitly by the finalizer.
+var ownedUnreferencedRBACTypes = []client.Object{
 	&rbacv1.ClusterRole{},
 	&rbacv1.ClusterRoleBinding{},
+	&rbacv1.Role{},
+	&rbacv1.RoleBinding{},
 }
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -103,17 +110,16 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	return ownedObjects, nil
 }
 
-// The cluster scope objects do not have owner reference.
-func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+// findUnreferencedRBACObjects finds RBAC objects that do not carry an owner
+// reference (cluster-scoped and cross-namespace namespace-scoped objects).
+func (r *OpenTelemetryCollectorReconciler) findUnreferencedRBACObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-	// Remove cluster roles and bindings.
-	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
-	listOpsCluster := &client.ListOptions{
+	listOps := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(
 			manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
-	for _, objectType := range ownedClusterObjectTypes {
-		objs, err := getList(ctx, r, objectType, listOpsCluster)
+	for _, objectType := range ownedUnreferencedRBACTypes {
+		objs, err := getList(ctx, r, objectType, listOps)
 		if err != nil {
 			return nil, err
 		}
@@ -394,10 +400,14 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 
 const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 
+func rbacEnabled(cfg config.Config) bool {
+	return cfg.Internal.CreateRBACPermissions == rbac.Available || cfg.Internal.CreateNamespacedRBACPermissions == rbac.Available
+}
+
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
-	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
-	if params.Config.Internal.CreateRBACPermissions == rbac.Available {
-		objects, err := r.findClusterRoleObjects(ctx, params)
+	// RBAC objects without owner references need to be deleted explicitly.
+	if rbacEnabled(params.Config) {
+		objects, err := r.findUnreferencedRBACObjects(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -407,7 +417,7 @@ func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context
 }
 
 func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryCollector) bool {
-	if params.Config.Internal.CreateRBACPermissions == rbac.Available && !controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
+	if rbacEnabled(params.Config) && !controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
 		return controllerutil.AddFinalizer(instance, collectorFinalizer)
 	}
 	return false
@@ -415,7 +425,7 @@ func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryC
 
 func removeFinalizer(ctx context.Context, r *OpenTelemetryCollectorReconciler, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
 	deletionTimestamp := instance.GetDeletionTimestamp()
-	if deletionTimestamp != nil || params.Config.Internal.CreateRBACPermissions != rbac.Available {
+	if deletionTimestamp != nil || !rbacEnabled(params.Config) {
 		if controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
 			// If the finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.

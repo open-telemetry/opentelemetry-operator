@@ -165,6 +165,8 @@ type Config struct {
 type Internal struct {
 	// CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Autodetected.
 	CreateRBACPermissions autoRBAC.Availability `yaml:"-"`
+	// CreateNamespacedRBACPermissions is true when the operator can create namespace-scoped RBAC (Role/RoleBinding). Autodetected.
+	CreateNamespacedRBACPermissions autoRBAC.Availability `yaml:"-"`
 	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
 	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
 	// KubeAPIServerPort is the port of the Kubernetes API server discovered from EndpointSlices.
@@ -238,8 +240,9 @@ func New() Config {
 		},
 		EnableWebhooks: true,
 		Internal: Internal{
-			CreateRBACPermissions: autoRBAC.NotAvailable,
-			NativeSidecarSupport:  false,
+			CreateRBACPermissions:           autoRBAC.NotAvailable,
+			CreateNamespacedRBACPermissions: autoRBAC.NotAvailable,
+			NativeSidecarSupport:            false,
 		},
 		EnableInstrumentationCRDs: true,
 		OpenShiftWebhookReplicas:  defaultOpenShiftWebhookReplicas,
