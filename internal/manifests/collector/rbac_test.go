@@ -167,6 +167,47 @@ func TestDesiredClusterRoles(t *testing.T) {
 	}
 }
 
+func TestK8sAttributesFilterNamespaceNoClusterRole(t *testing.T) {
+	params, err := newParams("", "testdata/rbac_k8sattributes_filter_namespace.yaml", nil)
+	assert.NoError(t, err)
+
+	cr, err := ClusterRole(params)
+	require.NoError(t, err)
+	assert.Nil(t, cr, "ClusterRole should be nil when k8sattributes has filter.namespace set")
+
+	crb, err := ClusterRoleBinding(params)
+	require.NoError(t, err)
+	assert.Nil(t, crb, "ClusterRoleBinding should be nil when k8sattributes has filter.namespace set")
+}
+
+func TestK8sAttributesFilterNamespaceRoles(t *testing.T) {
+	params, err := newParams("", "testdata/rbac_k8sattributes_filter_namespace.yaml", nil)
+	assert.NoError(t, err)
+
+	roles, err := Roles(params)
+	require.NoError(t, err)
+	require.Len(t, roles, 1)
+	assert.Equal(t, "my-namespace", roles[0].Namespace)
+	assert.Equal(t, []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods", "namespaces"},
+			Verbs:     []string{"get", "watch", "list"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"replicasets"},
+			Verbs:     []string{"get", "watch", "list"},
+		},
+	}, roles[0].Rules)
+
+	bindings, err := RoleBindings(params)
+	require.NoError(t, err)
+	require.Len(t, bindings, 1)
+	assert.Equal(t, "my-namespace", bindings[0].Namespace)
+	assert.Equal(t, "Role", bindings[0].RoleRef.Kind)
+}
+
 func TestDesiredClusterRolBinding(t *testing.T) {
 	// No ClusterRoleBinding
 	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)

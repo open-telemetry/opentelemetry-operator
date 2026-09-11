@@ -90,6 +90,7 @@ type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
@@ -122,6 +123,13 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
 	if m.RBACPermissionsFunc != nil {
 		return m.RBACPermissionsFunc(ctx)
+	}
+	return autoRBAC.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) NamespacedRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	if m.NamespacedRBACPermissionsFunc != nil {
+		return m.NamespacedRBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
 }

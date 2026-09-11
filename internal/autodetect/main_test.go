@@ -451,6 +451,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		RBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
 			return autoRBAC.Available, nil
 		},
+		NamespacedRBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
+			return autoRBAC.Available, nil
+		},
 		CertManagerAvailabilityFunc: func(context.Context) (certmanager.Availability, error) {
 			return certmanager.Available, nil
 		},
@@ -470,6 +473,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
 	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability)
 	require.Equal(t, autoRBAC.NotAvailable, cfg.Internal.CreateRBACPermissions)
+	require.Equal(t, autoRBAC.NotAvailable, cfg.Internal.CreateNamespacedRBACPermissions)
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
@@ -483,6 +487,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
 	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
 	require.Equal(t, autoRBAC.Available, cfg.Internal.CreateRBACPermissions)
+	require.Equal(t, autoRBAC.Available, cfg.Internal.CreateNamespacedRBACPermissions)
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
@@ -495,6 +500,7 @@ type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorAvailabilityFunc       func() (collector.Availability, error)
@@ -538,6 +544,13 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
 	if m.RBACPermissionsFunc != nil {
 		return m.RBACPermissionsFunc(ctx)
+	}
+	return autoRBAC.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) NamespacedRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	if m.NamespacedRBACPermissionsFunc != nil {
+		return m.NamespacedRBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
 }

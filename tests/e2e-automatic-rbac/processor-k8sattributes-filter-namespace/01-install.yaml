@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: chainsaw-k8sattr-filter-ns
+spec:
+  image: (join('', ['ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:', $collectorVersion]))
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    processors:
+      k8sattributes:
+        filter:
+          namespace: k8sattr-filter-target
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [k8sattributes]
+          exporters: [debug]
