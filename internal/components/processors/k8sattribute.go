@@ -24,14 +24,20 @@ type Extract struct {
 	Annotations []FieldExtractConfig `mapstructure:"annotations"`
 }
 
+type K8sAttributeFilter struct {
+	Namespace string `mapstructure:"namespace"`
+}
+
 // K8sAttributeConfig is a minimal struct needed for parsing a valid k8sattribute processor configuration
 // This only contains the fields necessary for parsing, other fields can be added in the future.
 type K8sAttributeConfig struct {
-	Extract Extract `mapstructure:"extract"`
+	Filter  K8sAttributeFilter `mapstructure:"filter"`
+	Extract Extract            `mapstructure:"extract"`
 }
 
-func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
-	// These policies need to be added always
+// generateK8SAttrPolicyRules builds the RBAC policy rules needed by the
+// k8sattributes processor based on its extract configuration.
+func generateK8SAttrPolicyRules(config K8sAttributeConfig) []rbacv1.PolicyRule {
 	prs := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
@@ -65,5 +71,27 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 			)
 		}
 	}
-	return prs, nil
+	return prs
+}
+
+// GenerateK8SAttrRbacRules returns cluster-scoped RBAC rules for the
+// k8sattributes processor. When filter.namespace is set, the rules are
+// namespace-scoped instead and this returns nil.
+func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
+	if config.Filter.Namespace != "" {
+		return nil, nil
+	}
+	return generateK8SAttrPolicyRules(config), nil
+}
+
+// GenerateK8SAttrNamespacedRbacRules returns namespace-scoped RBAC rules for
+// the k8sattributes processor. When filter.namespace is set, the rules are
+// scoped to that namespace (Role instead of ClusterRole).
+func GenerateK8SAttrNamespacedRbacRules(_ logr.Logger, config K8sAttributeConfig) (map[string][]rbacv1.PolicyRule, error) {
+	if config.Filter.Namespace == "" {
+		return nil, nil
+	}
+	return map[string][]rbacv1.PolicyRule{
+		config.Filter.Namespace: generateK8SAttrPolicyRules(config),
+	}, nil
 }

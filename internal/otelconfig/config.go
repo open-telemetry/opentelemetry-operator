@@ -302,9 +302,66 @@ func GetEnvironmentVariables(c *v1beta1.Config, logger logr.Logger) ([]corev1.En
 	return getEnvironmentVariablesForComponentKinds(c, logger, v1beta1.KindReceiver)
 }
 
-// GetAllRbacRules gets the RBAC rules for all component kinds.
+// GetAllRbacRules gets the cluster-scoped RBAC rules for all component kinds.
 func GetAllRbacRules(c *v1beta1.Config, logger logr.Logger) ([]rbacv1.PolicyRule, error) {
 	return getRbacRulesForComponentKinds(c, logger, v1beta1.KindReceiver, v1beta1.KindExporter, v1beta1.KindProcessor, v1beta1.KindExtension)
+}
+
+// getNamespacedRbacRulesForComponentKinds collects namespace-scoped RBAC rules from components
+// that implement the NamespacedRBACRuleProvider interface.
+func getNamespacedRbacRulesForComponentKinds(c *v1beta1.Config, logger logr.Logger, componentKinds ...v1beta1.ComponentKind) (map[string][]rbacv1.PolicyRule, error) {
+	result := map[string][]rbacv1.PolicyRule{}
+	enabledComponents := GetEnabledComponents(c)
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg v1beta1.AnyConfig
+		switch componentKind {
+		case v1beta1.KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case v1beta1.KindExporter:
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
+		case v1beta1.KindProcessor:
+			retriever = processors.ProcessorFor
+			if c.Processors == nil {
+				cfg = v1beta1.AnyConfig{}
+			} else {
+				cfg = *c.Processors
+			}
+		case v1beta1.KindExtension:
+			retriever = extensions.ParserFor
+			if c.Extensions == nil {
+				cfg = v1beta1.AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
+		default:
+			logger.V(1).Info("unknown component kind", "kind", componentKind)
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			if provider, ok := parser.(components.NamespacedRBACRuleProvider); ok {
+				nsRules, err := provider.GetNamespacedRBACRules(logger, cfg.Object[componentName])
+				if err != nil {
+					return nil, err
+				}
+				for ns, rules := range nsRules {
+					result[ns] = append(result[ns], rules...)
+				}
+			}
+		}
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	return result, nil
+}
+
+// GetAllNamespacedRbacRules gets namespace-scoped RBAC rules for all component kinds.
+func GetAllNamespacedRbacRules(c *v1beta1.Config, logger logr.Logger) (map[string][]rbacv1.PolicyRule, error) {
+	return getNamespacedRbacRulesForComponentKinds(c, logger, v1beta1.KindReceiver, v1beta1.KindExporter, v1beta1.KindProcessor, v1beta1.KindExtension)
 }
 
 // ApplyDefaults applies default configuration values to the collector config.
