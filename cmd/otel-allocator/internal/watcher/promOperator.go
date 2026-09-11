@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"sync"
 	"time"
@@ -272,11 +273,11 @@ func createInformerIfAvailable(
 
 // getInformers returns a map of created informers, a map of CRDs absent at startup (by resource name → GVR),
 // the discovery client (for later re-checks), and any error.
-func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger, metaDataInformerFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, map[string]schema.GroupVersionResource, discovery.DiscoveryInterface, error) {
-	informersMap := make(map[string]*informers.ForResource)
-	missingCRDs := make(map[string]schema.GroupVersionResource)
+func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger, metaDataInformerFactory informers.FactoriesForNamespaces) (informersMap map[string]*informers.ForResource, missingCRDs map[string]schema.GroupVersionResource, dcl discovery.DiscoveryInterface, err error) {
+	informersMap = make(map[string]*informers.ForResource)
+	missingCRDs = make(map[string]schema.GroupVersionResource)
 
-	dcl, err := discovery.NewDiscoveryClientForConfig(clusterConfig)
+	dcl, err = discovery.NewDiscoveryClientForConfig(clusterConfig)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
@@ -358,9 +359,7 @@ func (w *PrometheusCRWatcher) recheckMissingCRDs(notifyEvents chan struct{}) {
 		return
 	}
 	toCheck := make(map[string]schema.GroupVersionResource, len(w.missingCRDs))
-	for k, v := range w.missingCRDs {
-		toCheck[k] = v
-	}
+	maps.Copy(toCheck, w.missingCRDs)
 	w.mu.RUnlock()
 
 	for resourceName, gvr := range toCheck {
