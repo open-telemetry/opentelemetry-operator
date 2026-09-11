@@ -1,0 +1,12 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta-retry-crds
+spec:
+  serviceAccount: ta-retry-crds
+  prometheusCR:
+    enabled: true
+    retryMissingCRDs: true
+    waitForCRDs:
+      - servicemonitors
+      - podmonitors

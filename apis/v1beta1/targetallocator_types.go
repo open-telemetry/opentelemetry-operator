@@ -32,6 +32,15 @@ type TargetAllocatorPrometheusCR struct {
 	// the Prometheus Operator.
 	// +optional
 	DenyFSAccessThroughSMs bool `json:"denyFSAccessThroughSMs,omitempty"`
+	// RetryMissingCRDs enables periodic re-check for Prometheus CRDs absent at TA startup.
+	// When true, the TA retries every 5 minutes until absent CRDs appear, then starts their
+	// informers without requiring a pod restart. Defaults to false.
+	// +optional
+	RetryMissingCRDs bool `json:"retryMissingCRDs,omitempty"`
+	// WaitForCRDs scopes which absent CRDs are retried when RetryMissingCRDs is true.
+	// Empty means all absent CRDs. Valid values: servicemonitors, podmonitors, probes, scrapeconfigs.
+	// +optional
+	WaitForCRDs []string `json:"waitForCRDs,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//
 	// Default: "30s"

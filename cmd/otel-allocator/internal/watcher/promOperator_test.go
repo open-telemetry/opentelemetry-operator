@@ -1806,6 +1806,198 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	}
 }
 
+// TestFilterMissingCRDs tests the filterMissingCRDs function.
+func TestFilterMissingCRDs(t *testing.T) {
+	smGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName)
+	pmGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName)
+
+	allMissing := map[string]schema.GroupVersionResource{
+		"servicemonitors": smGVR,
+		"podmonitors":     pmGVR,
+	}
+
+	tests := []struct {
+		name    string
+		missing map[string]schema.GroupVersionResource
+		cfg     allocatorconfig.PrometheusCRConfig
+		want    map[string]schema.GroupVersionResource
+	}{
+		{
+			name:    "retry disabled returns nil",
+			missing: allMissing,
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: false},
+			want:    nil,
+		},
+		{
+			name:    "nil missing with retry enabled returns nil",
+			missing: nil,
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: true},
+			want:    nil,
+		},
+		{
+			name:    "empty missing with retry enabled returns nil",
+			missing: map[string]schema.GroupVersionResource{},
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: true},
+			want:    nil,
+		},
+		{
+			name:    "retry enabled no WaitForCRDs filter returns all missing",
+			missing: allMissing,
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: true},
+			want:    allMissing,
+		},
+		{
+			name:    "retry enabled WaitForCRDs filters to subset",
+			missing: allMissing,
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: true, WaitForCRDs: []string{"servicemonitors"}},
+			want:    map[string]schema.GroupVersionResource{"servicemonitors": smGVR},
+		},
+		{
+			name:    "retry enabled WaitForCRDs unrecognized name returns empty map",
+			missing: allMissing,
+			cfg:     allocatorconfig.PrometheusCRConfig{RetryMissingCRDs: true, WaitForCRDs: []string{"unknown"}},
+			want:    map[string]schema.GroupVersionResource{},
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := filterMissingCRDs(tt.missing, tt.cfg, logger)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+// TestRecheckMissingCRDs verifies that recheckMissingCRDs creates an informer when a
+// previously absent CRD becomes available.
+func TestRecheckMissingCRDs(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		smGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName)
+
+		smSource := fcache.NewFakeControllerSource()
+		t.Cleanup(func() { smSource.Broadcaster.Shutdown() })
+
+		fakeFactory := &fakeFactoriesForNamespaces{
+			sources:    map[schema.GroupVersionResource]*fcache.FakeControllerSource{smGVR: smSource},
+			exemplars:  map[schema.GroupVersionResource]runtime.Object{smGVR: &monitoringv1.ServiceMonitor{}},
+			namespaces: sets.New[string](v1.NamespaceAll),
+		}
+
+		fakeDisc := &fakediscovery.FakeDiscovery{
+			Fake: &fake.NewClientset().Fake,
+		}
+		fakeDisc.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "monitoring.coreos.com/v1",
+				APIResources: []metav1.APIResource{{Name: monitoringv1.ServiceMonitorName}},
+			},
+		}
+
+		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+		w := &PrometheusCRWatcher{
+			logger:          logger,
+			informers:       make(map[string]*informers.ForResource),
+			missingCRDs:     map[string]schema.GroupVersionResource{monitoringv1.ServiceMonitorName: smGVR},
+			informerFactory: fakeFactory,
+			dcl:             fakeDisc,
+			stopChannel:     make(chan struct{}),
+		}
+
+		notifyEvents := make(chan struct{}, 1)
+
+		go w.recheckMissingCRDs(notifyEvents)
+		time.Sleep(watchSyncDuration)
+		synctest.Wait()
+
+		w.mu.RLock()
+		inf, ok := w.informers[monitoringv1.ServiceMonitorName]
+		remaining := len(w.missingCRDs)
+		w.mu.RUnlock()
+
+		assert.True(t, ok, "servicemonitors informer should be added after CRD becomes available")
+		assert.NotNil(t, inf)
+		assert.Zero(t, remaining, "missingCRDs should be empty after successful recheck")
+
+		select {
+		case <-notifyEvents:
+			// expected: notify was sent
+		default:
+			t.Error("expected notify event after CRD became available")
+		}
+
+		close(w.stopChannel)
+		synctest.Wait()
+	})
+}
+
+// TestWatchTickerRechecksMissingCRDs verifies that Watch starts a ticker goroutine that
+// periodically calls recheckMissingCRDs and activates an informer once the CRD appears.
+func TestWatchTickerRechecksMissingCRDs(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		smGVR := monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName)
+
+		smSource := fcache.NewFakeControllerSource()
+		t.Cleanup(func() { smSource.Broadcaster.Shutdown() })
+
+		fakeFactory := &fakeFactoriesForNamespaces{
+			sources:    map[schema.GroupVersionResource]*fcache.FakeControllerSource{smGVR: smSource},
+			exemplars:  map[schema.GroupVersionResource]runtime.Object{smGVR: &monitoringv1.ServiceMonitor{}},
+			namespaces: sets.New[string](v1.NamespaceAll),
+		}
+
+		fakeDisc := &fakediscovery.FakeDiscovery{
+			Fake: &fake.NewClientset().Fake,
+		}
+		fakeDisc.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "monitoring.coreos.com/v1",
+				APIResources: []metav1.APIResource{{Name: monitoringv1.ServiceMonitorName}},
+			},
+		}
+
+		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+		w := &PrometheusCRWatcher{
+			logger:          logger,
+			informers:       make(map[string]*informers.ForResource),
+			missingCRDs:     map[string]schema.GroupVersionResource{monitoringv1.ServiceMonitorName: smGVR},
+			informerFactory: fakeFactory,
+			dcl:             fakeDisc,
+			stopChannel:     make(chan struct{}),
+			eventInterval:   5 * time.Millisecond,
+		}
+
+		upstreamEvents := make(chan Event, 1)
+		go func() {
+			watchErr := w.Watch(upstreamEvents, make(chan error))
+			require.NoError(t, watchErr)
+		}()
+
+		// Let Watch() start and the ticker goroutine spin up.
+		time.Sleep(watchSyncDuration)
+		synctest.Wait()
+
+		// Advance past resyncPeriod so the CRD-recheck ticker fires.
+		time.Sleep(resyncPeriod)
+		synctest.Wait()
+		// Allow WaitForNamedCacheSync to complete its 100ms polling.
+		time.Sleep(watchSyncDuration)
+		synctest.Wait()
+
+		w.mu.RLock()
+		inf, ok := w.informers[monitoringv1.ServiceMonitorName]
+		remaining := len(w.missingCRDs)
+		w.mu.RUnlock()
+
+		assert.True(t, ok, "servicemonitors informer should be registered after ticker fires and CRD is available")
+		assert.NotNil(t, inf)
+		assert.Zero(t, remaining, "missingCRDs should be cleared after recheck")
+
+		w.Close()
+		synctest.Wait()
+	})
+}
+
 // TestCRDAvailabilityChecks tests the CRDs' availability.
 func TestCRDAvailabilityChecks(t *testing.T) {
 	tests := []struct {
