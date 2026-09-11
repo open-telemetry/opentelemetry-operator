@@ -3558,6 +3558,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   topologySpreadConstraints:
                     items:
                       properties:
@@ -3612,6 +3613,7 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               terminationGracePeriodSeconds:
                 format: int64
@@ -3632,6 +3634,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               topologySpreadConstraints:
                 items:
                   properties:
@@ -3686,6 +3689,7 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               trafficDistribution:
                 type: string
               updateStrategy:
@@ -8971,6 +8975,7 @@ spec:
                                                 - value
                                                 type: object
                                               type: array
+                                              x-kubernetes-list-type: atomic
                                             temporalityPreference:
                                               enum:
                                               - cumulative
@@ -9001,6 +9006,7 @@ spec:
                                                 - value
                                                 type: object
                                               type: array
+                                              x-kubernetes-list-type: atomic
                                             temporalityPreference:
                                               enum:
                                               - cumulative
@@ -9020,6 +9026,7 @@ spec:
                                   type: object
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                         type: object
                     type: object
                   tolerations:
@@ -9038,6 +9045,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   topologySpreadConstraints:
                     items:
                       properties:
@@ -9092,6 +9100,7 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               terminationGracePeriodSeconds:
                 format: int64

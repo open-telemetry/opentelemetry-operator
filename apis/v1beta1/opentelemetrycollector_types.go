@@ -215,10 +215,12 @@ type TargetAllocatorEmbedded struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Toleration embedded kubernetes pod configuration option,
 	// controls how pods can be scheduled with matching taints
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
 	// consumed in the config file for the TargetAllocator.
@@ -440,6 +442,7 @@ type TelemetryConfig struct {
 type MetricsConfig struct {
 	// Readers configures one or more metric readers following the OTel declarative configuration spec.
 	// +optional
+	// +listType=atomic
 	Readers []MetricReader `json:"readers,omitempty"`
 }
 
@@ -480,6 +483,7 @@ type OTLPCommonConfig struct {
 	Endpoint string `json:"endpoint"`
 	// Headers are additional key/value pairs sent with every export request.
 	// +optional
+	// +listType=atomic
 	Headers []NameValuePair `json:"headers,omitempty"`
 	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
 	// +optional

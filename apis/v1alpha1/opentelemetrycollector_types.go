@@ -196,6 +196,7 @@ type OpenTelemetryCollectorSpec struct {
 	// Toleration to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying collector deployment(s).
 	// +optional
@@ -277,6 +278,7 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// This is only relevant to statefulset, and deployment mode
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
@@ -361,10 +363,12 @@ type OpenTelemetryTargetAllocator struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Toleration embedded kubernetes pod configuration option,
 	// controls how pods can be scheduled with matching taints
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
 	// consumed in the config file for the TargetAllocator.

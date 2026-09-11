@@ -3118,6 +3118,7 @@ spec:
                                             - value
                                             type: object
                                           type: array
+                                          x-kubernetes-list-type: atomic
                                         temporalityPreference:
                                           enum:
                                           - cumulative
@@ -3148,6 +3149,7 @@ spec:
                                             - value
                                             type: object
                                           type: array
+                                          x-kubernetes-list-type: atomic
                                         temporalityPreference:
                                           enum:
                                           - cumulative
@@ -3167,6 +3169,7 @@ spec:
                               type: object
                           type: object
                         type: array
+                        x-kubernetes-list-type: atomic
                     type: object
                 type: object
               terminationGracePeriodSeconds:

@@ -81,6 +81,7 @@ type OpAMPBridgeSpec struct {
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// Toleration to schedule OpAMPBridge pods.
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying OpAMPBridge deployment(s).
 	// +optional
@@ -102,6 +103,7 @@ type OpAMPBridgeSpec struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`

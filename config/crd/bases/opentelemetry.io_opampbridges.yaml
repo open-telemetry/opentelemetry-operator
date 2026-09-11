@@ -902,6 +902,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               topologySpreadConstraints:
                 items:
                   properties:
@@ -956,6 +957,7 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               upgradeStrategy:
                 enum:
                 - automatic
