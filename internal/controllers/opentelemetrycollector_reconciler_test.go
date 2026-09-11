@@ -350,7 +350,7 @@ service:
 			})
 			nsn := types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}
 
-			_, err := reconciler.Reconcile(context.Background(), reconcile.Request{NamespacedName: nsn})
+			_, err := reconciler.Reconcile(t.Context(), reconcile.Request{NamespacedName: nsn})
 			require.ErrorContains(t, err, tc.wantErrMsg)
 
 			select {
@@ -362,7 +362,7 @@ service:
 			}
 
 			updated := &v1beta1.OpenTelemetryCollector{}
-			require.NoError(t, fakeClient.Get(context.Background(), nsn, updated))
+			require.NoError(t, fakeClient.Get(t.Context(), nsn, updated))
 			ready := meta.FindStatusCondition(updated.Status.Conditions, "Ready")
 			require.NotNil(t, ready, "expected a Ready condition on the collector status")
 			assert.Equal(t, metav1.ConditionFalse, ready.Status)
