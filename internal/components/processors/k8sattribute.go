@@ -46,10 +46,17 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 		Verbs:     []string{"get", "watch", "list"},
 	}
 
+	jobsPolicy := rbacv1.PolicyRule{
+		APIGroups: []string{"batch"},
+		Resources: []string{"jobs"},
+		Verbs:     []string{"get", "watch", "list"},
+	}
+
 	if len(config.Extract.Metadata) == 0 {
 		prs = append(prs, replicasetPolicy)
 	}
 	addedReplicasetPolicy := false
+	addedJobsPolicy := false
 	for _, m := range config.Extract.Metadata {
 		metadataField := m
 		if (metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name" || metadataField == "service.name") && !addedReplicasetPolicy {
@@ -63,6 +70,9 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 					Verbs:     []string{"get", "watch", "list"},
 				},
 			)
+		} else if metadataField == "k8s.cronjob.uid" && !addedJobsPolicy {
+			prs = append(prs, jobsPolicy)
+			addedJobsPolicy = true
 		}
 	}
 	return prs, nil

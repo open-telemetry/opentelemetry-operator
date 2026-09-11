@@ -151,6 +151,51 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "config with cronjob uid metadata",
+			args: args{
+				config: map[string]any{
+					"extract": map[string]any{
+						"metadata":    []string{"k8s.cronjob.uid"},
+						"labels":      []any{},
+						"annotations": []any{},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"batch"},
+					Resources: []string{"jobs"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "config with cronjob name metadata only",
+			args: args{
+				config: map[string]any{
+					"extract": map[string]any{
+						"metadata":    []string{"k8s.cronjob.name"},
+						"labels":      []any{},
+						"annotations": []any{},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
