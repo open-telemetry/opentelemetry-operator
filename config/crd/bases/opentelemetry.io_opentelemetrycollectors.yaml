@@ -8714,6 +8714,8 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      retryMissingCRDs:
+                        type: boolean
                       scrapeClasses:
                         items:
                           type: object
@@ -8838,6 +8840,10 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      waitForCRDs:
+                        items:
+                          type: string
+                        type: array
                     type: object
                   replicas:
                     format: int32
