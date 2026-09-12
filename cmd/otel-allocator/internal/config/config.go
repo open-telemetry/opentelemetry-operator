@@ -183,6 +183,16 @@ type PrometheusCRConfig struct {
 	// Prometheus Operator.
 	// +optional
 	DenyFSAccessThroughSMs bool `yaml:"deny_fs_access_through_sms,omitempty"`
+
+	// RetryMissingCRDs enables periodic re-check for Prometheus CRDs absent at startup.
+	// The check runs every resync period (5 min). Defaults to true.
+	// +optional
+	RetryMissingCRDs bool `yaml:"retry_missing_crds,omitempty"`
+
+	// WaitForCRDs scopes which absent CRDs are retried. Empty means all absent CRDs.
+	// Valid values: servicemonitors, podmonitors, probes, scrapeconfigs.
+	// +optional
+	WaitForCRDs []string `yaml:"wait_for_crds,omitempty"`
 }
 
 type HTTPSServerConfig struct {

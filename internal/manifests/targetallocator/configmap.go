@@ -123,6 +123,14 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_fs_access_through_sms"] = true
 		}
 
+		if taSpec.PrometheusCR.RetryMissingCRDs {
+			prometheusCRConfig["retry_missing_crds"] = true
+		}
+
+		if len(taSpec.PrometheusCR.WaitForCRDs) > 0 {
+			prometheusCRConfig["wait_for_crds"] = taSpec.PrometheusCR.WaitForCRDs
+		}
+
 		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
