@@ -80,6 +80,24 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
+	if params.Config.CreateRBACPermissions == rbac.Available {
+		roles, err := Roles(params)
+		if err != nil {
+			return nil, err
+		}
+		for _, role := range roles {
+			resourceManifests = append(resourceManifests, role)
+		}
+
+		roleBindings, err := RoleBindings(params)
+		if err != nil {
+			return nil, err
+		}
+		for _, rb := range roleBindings {
+			resourceManifests = append(resourceManifests, rb)
+		}
+	}
+
 	if needsCheckSaPermissions(params) {
 		warnings, err := CheckRbacRules(params, params.OtelCol.Spec.ServiceAccount)
 		if err != nil {
