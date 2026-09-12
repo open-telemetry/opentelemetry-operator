@@ -13,6 +13,7 @@ import (
 	opampclient "github.com/open-telemetry/opamp-go/client"
 
 	opampagent "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/healthcheck"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
@@ -36,7 +37,7 @@ type Manager struct {
 	opampProxy              *proxy.OpAMPProxy
 	kubernetesClient        KubernetesClient
 	permissionReviewClient  PermissionReviewClient
-	listRequiredPermissions func() ([]Permission, error)
+	listRequiredPermissions func() ([]config.Permission, error)
 	cancelKubernetesClient  context.CancelFunc
 	shutdownOnce            sync.Once
 }
@@ -77,7 +78,7 @@ func WithPermissionReviewClient(permissionReviewClient PermissionReviewClient) O
 	}
 }
 
-func WithRequiredPermissions(listRequiredPermissions func() ([]Permission, error)) Option {
+func WithRequiredPermissions(listRequiredPermissions func() ([]config.Permission, error)) Option {
 	return func(m *Manager) {
 		m.listRequiredPermissions = listRequiredPermissions
 	}
