@@ -75,12 +75,15 @@ type OpAMPBridgeSpec struct {
 	Ports []v1.ServicePort `json:"ports,omitempty"`
 	// ENV vars to set on the OpAMPBridge Pods.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// List of sources to populate environment variables on the OpAMPBridge Pods.
 	// +optional
+	// +listType=atomic
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// Toleration to schedule OpAMPBridge pods.
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying OpAMPBridge deployment(s).
 	// +optional
@@ -102,12 +105,14 @@ type OpAMPBridgeSpec struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 	// IPFamily represents the IP Family (IPv4 or IPv6). This type is used
 	// to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
 	// +optional
+	// +listType=atomic
 	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`

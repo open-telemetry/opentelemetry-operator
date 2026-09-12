@@ -95,9 +95,12 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 
 // Pipeline is a struct of component type to a list of component IDs.
 type Pipeline struct {
-	Exporters  []string `json:"exporters" yaml:"exporters"`
+	// +listType=atomic
+	Exporters []string `json:"exporters" yaml:"exporters"`
+	// +listType=atomic
 	Processors []string `json:"processors,omitempty" yaml:"processors,omitempty"`
-	Receivers  []string `json:"receivers" yaml:"receivers"`
+	// +listType=atomic
+	Receivers []string `json:"receivers" yaml:"receivers"`
 }
 
 // Config encapsulates collector config.
@@ -126,6 +129,7 @@ func (c *Config) Yaml() (string, error) {
 }
 
 type Service struct {
+	// +listType=atomic
 	Extensions []string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`

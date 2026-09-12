@@ -49,6 +49,7 @@ type AutoscalerSpec struct {
 	// currently the only supported custom metrics is type=Pod.
 	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
 	// +optional
+	// +listType=atomic
 	Metrics []MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
@@ -166,13 +167,16 @@ type OpenTelemetryCommonFields struct {
 	Ports []PortsSpec `json:"ports,omitempty"`
 	// Environment variables to set on the generated pods.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// List of sources to populate environment variables on the generated pods.
 	// +optional
+	// +listType=atomic
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// Toleration to schedule the generated pods.
 	// This only works with the following OpenTelemetryCollector mode's: daemonset, statefulset, and deployment.
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying deployment(s).
 	// +optional
@@ -193,6 +197,7 @@ type OpenTelemetryCommonFields struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// This only works with the following OpenTelemetryCollector mode's: statefulset, and deployment.
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
@@ -217,6 +222,7 @@ type OpenTelemetryCommonFields struct {
 	// an initContainer will lead to a restart of the Pod. More info:
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
+	// +listType=atomic
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
 	// AdditionalContainers allows injecting additional containers into the generated pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
@@ -230,12 +236,14 @@ type OpenTelemetryCommonFields struct {
 	// doing so, you wil accept the risk of it breaking things.
 	//
 	// +optional
+	// +listType=atomic
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 	// IPFamily represents the IP Family (IPv4 or IPv6). This type is used
 	// to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
 	// +optional
+	// +listType=atomic
 	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
 	// +kubebuilder:default:=SingleStack

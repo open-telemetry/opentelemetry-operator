@@ -64,6 +64,8 @@ type OpenTelemetryCollectorStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// Conditions represents the latest available observations of the OpenTelemetryCollector's current state.
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
@@ -138,6 +140,7 @@ type OpenTelemetryCollectorSpec struct {
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
+	// +listType=atomic
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
@@ -215,14 +218,17 @@ type TargetAllocatorEmbedded struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Toleration embedded kubernetes pod configuration option,
 	// controls how pods can be scheduled with matching taints
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
 	// consumed in the config file for the TargetAllocator.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -440,6 +446,7 @@ type TelemetryConfig struct {
 type MetricsConfig struct {
 	// Readers configures one or more metric readers following the OTel declarative configuration spec.
 	// +optional
+	// +listType=atomic
 	Readers []MetricReader `json:"readers,omitempty"`
 }
 
@@ -480,6 +487,7 @@ type OTLPCommonConfig struct {
 	Endpoint string `json:"endpoint"`
 	// Headers are additional key/value pairs sent with every export request.
 	// +optional
+	// +listType=atomic
 	Headers []NameValuePair `json:"headers,omitempty"`
 	// TemporalityPreference sets aggregation temporality: "cumulative" (default), "delta", or "low_memory".
 	// +optional
