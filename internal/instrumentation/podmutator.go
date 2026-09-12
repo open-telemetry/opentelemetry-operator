@@ -44,6 +44,7 @@ type instrumentationWithContainers struct {
 type languageInstrumentations struct {
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
+	Php         instrumentationWithContainers
 	Python      instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
@@ -56,6 +57,7 @@ func instrumentationsList(langInsts *languageInstrumentations) []*instrumentatio
 	return []*instrumentationWithContainers{
 		&langInsts.Java,
 		&langInsts.NodeJS,
+		&langInsts.Php,
 		&langInsts.Python,
 		&langInsts.DotNet,
 		&langInsts.ApacheHttpd,
@@ -159,6 +161,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod
 			annotation: annotationInjectNodeJSContainersName,
 		},
 		{
+			iwc:        &langInsts.Php,
+			annotation: annotationInjectPhpContainersName,
+		},
+		{
 			iwc:        &langInsts.Python,
 			annotation: annotationInjectPythonContainersName,
 		},
@@ -250,6 +256,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
 		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPhp); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnablePhpAutoInstrumentation || inst == nil {
+		insts.Php.Instrumentation = inst
+	} else {
+		logger.Error(nil, "support for PHP auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for PHP auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
