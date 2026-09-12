@@ -79,7 +79,8 @@ jobs:
         - e2e
         - e2e-automatic-rbac
         - e2e-autoscale
-        - e2e-clusterobservability
+        # Disabled for being flaky, see https://github.com/open-telemetry/opentelemetry-operator/issues/5582
+        # - e2e-clusterobservability
         - e2e-collector-metrics
         - e2e-instrumentation-default
         - e2e-instrumentation
@@ -99,10 +100,11 @@ jobs:
         - e2e-crd-validations
         - e2e-ta-standalone
         include:
-        - group: e2e-clusterobservability
+        # Disabled for being flaky, see https://github.com/open-telemetry/opentelemetry-operator/issues/5582
+        #- group: e2e-clusterobservability
           # ClusterObservability is behind a feature gate and still maturing
-          experimental: true
-          setup: "prepare-e2e-clusterobservability"
+        #  experimental: true
+        #  setup: "prepare-e2e-clusterobservability"
         - group: e2e-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation
