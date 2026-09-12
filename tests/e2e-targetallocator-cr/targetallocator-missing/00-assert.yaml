@@ -1,0 +1,11 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ta-missing
+status:
+  conditions:
+  - type: Ready
+    status: "False"
+    reason: ReconcileError
+    (contains(message, 'not found')): true
