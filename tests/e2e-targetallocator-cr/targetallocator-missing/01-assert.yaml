@@ -1,0 +1,24 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ta-missing
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+    reason: Reconciled
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: ta-missing-collector
+data:
+  collector.yaml:
+    ( contains(@, 'ta-missing-targetallocator') ): true
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ta-missing-collector
