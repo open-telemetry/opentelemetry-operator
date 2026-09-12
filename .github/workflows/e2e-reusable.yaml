@@ -79,7 +79,8 @@ jobs:
         - e2e
         - e2e-automatic-rbac
         - e2e-autoscale
-        - e2e-clusterobservability
+        # Disabled for being flaky, see https://github.com/open-telemetry/opentelemetry-operator/issues/5582
+        # - e2e-clusterobservability
         - e2e-collector-metrics
         - e2e-instrumentation-default
         - e2e-instrumentation
