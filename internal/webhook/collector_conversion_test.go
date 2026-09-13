@@ -436,6 +436,27 @@ func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
 	assert.Equal(t, two, *colalpha1.Spec.Autoscaler.MaxReplicas)
 }
 
+func Test_tov1beta1AndBack_enableServiceLinks(t *testing.T) {
+	enableServiceLinks := false
+	colalpha1 := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			EnableServiceLinks: &enableServiceLinks,
+		},
+	}
+
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := OtelColConvertTo(&colalpha1, &colbeta1)
+	require.NoError(t, err)
+	require.NotNil(t, colbeta1.Spec.EnableServiceLinks)
+	assert.False(t, *colbeta1.Spec.EnableServiceLinks)
+
+	colalpha1 = v1alpha1.OpenTelemetryCollector{}
+	err = OtelColConvertFrom(&colalpha1, &colbeta1)
+	require.NoError(t, err)
+	require.NotNil(t, colalpha1.Spec.EnableServiceLinks)
+	assert.False(t, *colalpha1.Spec.EnableServiceLinks)
+}
+
 func createConvertTestTA() v1alpha1.OpenTelemetryTargetAllocator {
 	replicas := int32(2)
 	runAsNonRoot := true

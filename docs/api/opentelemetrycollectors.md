@@ -161,6 +161,17 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>enableServiceLinks</b></td>
+        <td>boolean</td>
+        <td>
+          EnableServiceLinks indicates whether information about services should be injected into pod's
+environment variables, matching the syntax of Docker links.
+Optional: Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -20687,6 +20698,17 @@ This is only applicable to Deployment mode.<br/>
         <td>string</td>
         <td>
           DNSPolicy defines how a pod's DNS will be configured.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enableServiceLinks</b></td>
+        <td>boolean</td>
+        <td>
+          EnableServiceLinks indicates whether information about services should be injected into pod's
+environment variables, matching the syntax of Docker links.
+Optional: Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr><tr>
