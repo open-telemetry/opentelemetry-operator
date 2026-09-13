@@ -212,12 +212,6 @@ type OpenTelemetryCollectorSpec struct {
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
-	// EnableServiceLinks indicates whether information about services should be injected into pod's
-	// environment variables, matching the syntax of Docker links.
-	// Optional: Defaults to true.
-	// +optional
-	// +kubebuilder:default:=true
-	EnableServiceLinks *bool `json:"enableServiceLinks,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.

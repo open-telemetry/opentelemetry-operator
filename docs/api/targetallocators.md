@@ -157,9 +157,7 @@ The default is 30s, which means that if a collector becomes not Ready, the targe
         <td><b>enableServiceLinks</b></td>
         <td>boolean</td>
         <td>
-          EnableServiceLinks indicates whether information about services should be injected into pod's
-environment variables, matching the syntax of Docker links.
-Optional: Defaults to true.<br/>
+          EnableServiceLinks sets enableServiceLinks on the generated pods. Defaults to true.<br/>
           <br/>
             <i>Default</i>: true<br/>
         </td>

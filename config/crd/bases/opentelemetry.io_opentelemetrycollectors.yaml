@@ -1424,9 +1424,6 @@ spec:
                   type:
                     type: string
                 type: object
-              enableServiceLinks:
-                default: true
-                type: boolean
               env:
                 items:
                   properties:
