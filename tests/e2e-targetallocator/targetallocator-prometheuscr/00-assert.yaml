@@ -30,7 +30,7 @@ data:
         prometheus:
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://prometheus-cr-targetallocator:80
+                endpoint: http://prometheus-cr-targetallocator.chainsaw-targetallocator-prometheuscr.svc:80
                 interval: 30s
     service:
         pipelines:
