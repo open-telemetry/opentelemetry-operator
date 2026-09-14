@@ -504,7 +504,7 @@ func Test_terminatingPodIsNotACollector(t *testing.T) {
 				var actual map[string]*allocation.Collector
 				mapMutex := sync.Mutex{}
 				for _, p := range []*v1.Pod{pod("test-pod-ready"), terminating} {
-					_, err := podWatcher.k8sClient.CoreV1().Pods(namespace).Create(context.Background(), p, metav1.CreateOptions{})
+					_, err := podWatcher.k8sClient.CoreV1().Pods(namespace).Create(t.Context(), p, metav1.CreateOptions{})
 					assert.NoError(t, err)
 				}
 
