@@ -110,7 +110,7 @@ data:
             config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://test-targetallocator:80
+                endpoint: http://test-targetallocator.test.svc:80
                 interval: 30s
     service:
         pipelines:

@@ -205,7 +205,7 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 receivers:
   prometheus:
     target_allocator:
-      endpoint: http://collector-with-ta-targetallocator:80
+      endpoint: http://collector-with-ta-targetallocator.<namespace>.svc:80
       interval: 30s
       collector_id: $POD_NAME
 
