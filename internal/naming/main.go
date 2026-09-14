@@ -4,6 +4,8 @@
 // Package naming is for determining the names for components (containers, services, ...).
 package naming
 
+import "fmt"
+
 // ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
 // The configHash should be calculated using manifestutils.GetConfigMapSHA.
 func ConfigMap(otelcol, configHash string) string {
@@ -153,6 +155,15 @@ func ClusterRoleBinding(otelcol, namespace string) string {
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(taName string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, taName))
+}
+
+// TAServiceFQDN returns the fully-qualified .svc name of the TargetAllocator service.
+// The .svc suffix ensures the endpoint matches the standard NO_PROXY entry (".svc") on
+// clusters behind a corporate HTTP proxy, so the collector reaches the TargetAllocator
+// directly instead of via the proxy. The cluster domain (e.g. .cluster.local) is
+// intentionally omitted, as hardcoding it breaks clusters with custom cluster domains.
+func TAServiceFQDN(taName, namespace string) string {
+	return fmt.Sprintf("%s.%s.svc", TAService(taName), namespace)
 }
 
 // OpAMPBridgeService returns the name to use for the OpAMPBridge service.

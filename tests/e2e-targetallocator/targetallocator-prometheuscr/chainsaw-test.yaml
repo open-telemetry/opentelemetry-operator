@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: targetallocator-prometheuscr
 spec:
+  namespace: chainsaw-targetallocator-prometheuscr
   steps:
   - name: Setup Target Allocator RBAC
     use:

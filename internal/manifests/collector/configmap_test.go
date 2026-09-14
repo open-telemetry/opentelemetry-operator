@@ -79,7 +79,7 @@ receivers:
     config: {}
     target_allocator:
       collector_id: ${POD_NAME}
-      endpoint: http://test-targetallocator:80
+      endpoint: http://test-targetallocator.default.svc:80
       interval: 30s
 service:
   pipelines:
@@ -126,7 +126,7 @@ receivers:
     config: {}
     target_allocator:
       collector_id: ${POD_NAME}
-      endpoint: https://test-targetallocator:443
+      endpoint: https://test-targetallocator.default.svc:443
       interval: 30s
       tls:
         ca_file: /tls/ca.crt
@@ -161,6 +161,7 @@ service:
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		param.TargetAllocator = &v1alpha1.TargetAllocator{}
 		param.TargetAllocator.Name = param.OtelCol.Name
+		param.TargetAllocator.Namespace = param.OtelCol.Namespace
 		param.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 		actual, err := ConfigMap(param)
 
@@ -190,7 +191,7 @@ receivers:
     config: {}
     target_allocator:
       collector_id: ${POD_NAME}
-      endpoint: https://standalone-ta-targetallocator:443
+      endpoint: https://standalone-ta-targetallocator.default.svc:443
       interval: 30s
       tls:
         ca_file: /tls/ca.crt
@@ -218,6 +219,7 @@ service:
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		param.TargetAllocator = &v1alpha1.TargetAllocator{}
 		param.TargetAllocator.Name = "standalone-ta"
+		param.TargetAllocator.Namespace = param.OtelCol.Namespace
 		param.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
 		actual, err := ConfigMap(param)
 
