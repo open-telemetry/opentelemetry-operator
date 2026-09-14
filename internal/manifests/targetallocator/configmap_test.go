@@ -545,7 +545,6 @@ https:
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 	})
-
 }
 
 func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
