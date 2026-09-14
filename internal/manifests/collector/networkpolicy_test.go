@@ -81,6 +81,7 @@ func TestNetworkPolicy(t *testing.T) {
 		assert.NotNil(t, actual)
 
 		tcp := corev1.ProtocolTCP
+		udp := corev1.ProtocolUDP
 		expected := &networkingv1.NetworkPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        naming.CollectorNetworkPolicy(params.OtelCol.Name),
@@ -110,6 +111,14 @@ func TestNetworkPolicy(t *testing.T) {
 							{
 								Protocol: &tcp,
 								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 1111},
+							},
+							{
+								Protocol: &tcp,
+								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 54526},
+							},
+							{
+								Protocol: &udp,
+								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 54526},
 							},
 						},
 					},
