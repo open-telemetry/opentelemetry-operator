@@ -18,7 +18,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -78,10 +77,6 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["allocation_strategy"] = taSpec.AllocationStrategy
 	} else {
 		taConfig["allocation_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
-	}
-
-	if featuregate.EnableTargetAllocatorFallbackStrategy.IsEnabled() {
-		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
 	if strategyConfig := allocationStrategyConfigToMap(taSpec.AllocationStrategyConfig); len(strategyConfig) > 0 {
