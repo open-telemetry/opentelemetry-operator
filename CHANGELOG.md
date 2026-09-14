@@ -2,6 +2,62 @@
 
 <!-- next version -->
 
+## 0.159.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Add `none` as an explicit filter strategy and preserve explicitly configured empty strategies. (#5444)
+  The Go type of `TargetAllocatorSpec.FilterStrategy` changed to a pointer so typed clients can
+  distinguish an unset strategy from an explicitly configured value. The legacy empty value remains
+  accepted as an alias for disabling filtering, but new configurations should use `none`.
+  The Target Allocator now rejects any other value of `filter_strategy` on startup, and normalizes
+  the empty value to `none` when loading its configuration.
+  
+
+### 💡 Enhancements 💡
+
+- `collector`: Add `resizePolicy` to the OpenTelemetryCollector CR to control how the primary container responds to in-place resource resizes. (#5501)
+- `opampbridge`: Add explicit proxy configuration for OpAMP Bridge server connections. (#5351)
+- `target allocator`: Add an `allocation_strategy_config` section to the target allocator configuration, allowing the per-node fallback strategy to be set via `allocation_strategy_config.per_node.fallback_strategy.name`. (#5183)
+  The top-level `allocation_fallback_strategy` option is now deprecated in favor of the new
+  strategy-specific configuration. When both are set, the strategy-specific option takes precedence.
+  
+- `target allocator`: Add API fields to configure the TargetAllocator's OTLP self-telemetry export. (#5047)
+  Adds `spec.targetAllocator.telemetry.metrics.readers` on the OpenTelemetryCollector CR and
+  `spec.telemetry.metrics.readers` on the TargetAllocator CR. The schema mirrors the OTel
+  declarative configuration spec. The operator renders these
+  fields into the TargetAllocator ConfigMap consumed by the binary-side OTLP self-telemetry
+  support.
+  When the `operand.networkpolicy` feature gate is enabled, the TargetAllocator's generated
+  NetworkPolicy now leaves egress unrestricted if self-telemetry export is configured, since
+  its destination can be an arbitrary (often external) endpoint that can't be scoped with a
+  NetworkPolicy IPBlock/selector.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Report a `Ready=False` status condition and a Warning event on the OpenTelemetryCollector when the referenced TargetAllocator cannot be fetched or the collector manifests cannot be built, instead of only logging the error in the operator. (#4296)
+- `collector`: Detect changes to the immutable StatefulSet `podManagementPolicy` field so the collector StatefulSet is recreated instead of failing reconciliation with a forbidden update error. (#4203)
+- `operator`: Resolve the operator's own Deployment through pod owner references instead of a hardcoded name, so the operator NetworkPolicy no longer crashes the operator or selects no pods when installed with custom names (e.g. via the Helm chart). (#5493)
+- `operator`: Add API server discovery fallback to env vars and guard CSV controller on non-OLM clusters. (#5493)
+  When EndpointSlice discovery fails, the operator now falls back to KUBERNETES_SERVICE_HOST
+  and KUBERNETES_SERVICE_PORT environment variables for API server discovery. The CSV webhook
+  controller is skipped on clusters without OLM (operators.coreos.com CRDs not present).
+  
+- `opamp`: Rebuild the OpAMP Bridge's applied-keys tracking from cluster state on startup, so a remote config that drops a collector after a bridge restart correctly deletes it. (#5445)
+
+### Components
+
+* [OpenTelemetry Collector - v0.159.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.159.0)
+* [OpenTelemetry Contrib - v0.159.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.159.0)
+* [Java auto-instrumentation - v2.31.1-1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.31.1)
+* [.NET auto-instrumentation - v1.16.0-1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0)
+* [Node.JS - v0.78.0-2](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.65b0-3](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.65b0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4-1](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-1](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.158.0
 
 ### 💡 Enhancements 💡
