@@ -5,7 +5,7 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add an `allocationStrategyConfig` field to the target allocator sections of the OpenTelemetryCollector and TargetAllocator CRDs, and pass it through to the generated target allocator ConfigMap.
+note: Add an `allocationStrategyConfig` field to the target allocator sections of the OpenTelemetryCollector and TargetAllocator CRDs.
 
 # One or more tracking issues related to the change
 issues: [5183]
