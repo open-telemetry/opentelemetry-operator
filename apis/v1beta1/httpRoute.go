@@ -18,5 +18,6 @@ type HttpRouteConfig struct {
 	// Hostnames specifies the hostnames for the HTTP route.
 	// Multiple hostnames can be specified to match requests with any of the given hostnames.
 	// If empty, the route matches requests with any hostname.
+	// +listType=atomic
 	Hostnames []string `json:"hostnames,omitempty" yaml:"hostnames,omitempty"`
 }

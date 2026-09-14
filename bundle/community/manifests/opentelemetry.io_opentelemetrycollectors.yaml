@@ -811,6 +811,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               affinity:
                 properties:
                   nodeAffinity:
@@ -1396,6 +1397,7 @@ spec:
                       - type
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   minReplicas:
                     format: int32
                     type: integer
@@ -1420,6 +1422,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               deploymentUpdateStrategy:
                 properties:
                   rollingUpdate:
@@ -1521,6 +1524,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               envFrom:
                 items:
                   properties:
@@ -1546,6 +1550,7 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               hostNetwork:
                 type: boolean
               image:
@@ -1589,6 +1594,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   type:
                     enum:
                     - ingress
@@ -2338,6 +2344,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               lifecycle:
                 properties:
                   postStart:
@@ -3296,6 +3303,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   filterStrategy:
                     default: relabel-config
                     type: string
@@ -3558,6 +3566,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   topologySpreadConstraints:
                     items:
                       properties:
@@ -3612,6 +3621,7 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               terminationGracePeriodSeconds:
                 format: int64
@@ -3632,6 +3642,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               topologySpreadConstraints:
                 items:
                   properties:
@@ -3686,6 +3697,7 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               trafficDistribution:
                 type: string
               updateStrategy:
@@ -5630,6 +5642,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               affinity:
                 properties:
                   nodeAffinity:
@@ -6216,6 +6229,7 @@ spec:
                       - type
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   minReplicas:
                     format: int32
                     minimum: 1
@@ -6258,6 +6272,7 @@ spec:
                         items:
                           type: string
                         type: array
+                        x-kubernetes-list-type: atomic
                       pipelines:
                         additionalProperties:
                           properties:
@@ -6265,14 +6280,17 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             processors:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             receivers:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                           required:
                           - exporters
                           - receivers
@@ -6307,6 +6325,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               daemonSetUpdateStrategy:
                 properties:
                   rollingUpdate:
@@ -6428,6 +6447,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               envFrom:
                 items:
                   properties:
@@ -6453,6 +6473,7 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               hostAliases:
                 items:
                   properties:
@@ -6486,6 +6507,7 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                 required:
                 - enabled
                 - gateway
@@ -6531,6 +6553,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   type:
                     enum:
                     - ingress
@@ -7280,10 +7303,12 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               ipFamilies:
                 items:
                   type: string
                 type: array
+                x-kubernetes-list-type: atomic
               ipFamilyPolicy:
                 default: SingleStack
                 type: string
@@ -8379,6 +8404,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   filterStrategy:
                     default: relabel-config
                     enum:
@@ -8591,12 +8617,14 @@ spec:
                         items:
                           type: string
                         type: array
+                        x-kubernetes-list-type: atomic
                       denyFSAccessThroughSMs:
                         type: boolean
                       denyNamespaces:
                         items:
                           type: string
                         type: array
+                        x-kubernetes-list-type: atomic
                       enabled:
                         type: boolean
                       evaluationInterval:
@@ -8776,10 +8804,12 @@ spec:
                         items:
                           type: string
                         type: array
+                        x-kubernetes-list-type: atomic
                       secretNamespaces:
                         items:
                           type: string
                         type: array
+                        x-kubernetes-list-type: atomic
                       serviceMonitorNamespaceSelector:
                         default: {}
                         properties:
@@ -8971,6 +9001,7 @@ spec:
                                                 - value
                                                 type: object
                                               type: array
+                                              x-kubernetes-list-type: atomic
                                             temporalityPreference:
                                               enum:
                                               - cumulative
@@ -9001,6 +9032,7 @@ spec:
                                                 - value
                                                 type: object
                                               type: array
+                                              x-kubernetes-list-type: atomic
                                             temporalityPreference:
                                               enum:
                                               - cumulative
@@ -9020,6 +9052,7 @@ spec:
                                   type: object
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                         type: object
                     type: object
                   tolerations:
@@ -9038,6 +9071,7 @@ spec:
                           type: string
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   topologySpreadConstraints:
                     items:
                       properties:
@@ -9092,6 +9126,7 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               terminationGracePeriodSeconds:
                 format: int64
@@ -9112,6 +9147,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               topologySpreadConstraints:
                 items:
                   properties:
@@ -9166,6 +9202,7 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               trafficDistribution:
                 type: string
               upgradeStrategy:
@@ -10334,6 +10371,9 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
               image:
                 type: string
               observedGeneration:

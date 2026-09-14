@@ -129,6 +129,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   configPath:
                     maxLength: 256
                     pattern: ^[A-Za-z0-9._/-]*$
@@ -216,6 +217,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:
@@ -462,6 +464,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:
@@ -699,6 +702,7 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               exporter:
                 properties:
                   endpoint:
@@ -802,6 +806,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:
@@ -1187,6 +1192,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   extensions:
                     items:
                       properties:
@@ -1199,6 +1205,7 @@ spec:
                       - image
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resources:
@@ -1438,6 +1445,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   configFile:
                     maxLength: 256
                     pattern: ^[A-Za-z0-9._/-]*$
@@ -1525,6 +1533,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:
@@ -1764,6 +1773,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:
@@ -1931,6 +1941,7 @@ spec:
                   - none
                   type: string
                 type: array
+                x-kubernetes-list-type: atomic
               python:
                 properties:
                   env:
@@ -2016,6 +2027,7 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   image:
                     type: string
                   resourceRequirements:

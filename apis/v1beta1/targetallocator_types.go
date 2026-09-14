@@ -14,13 +14,16 @@ type TargetAllocatorPrometheusCR struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.
 	// +optional
+	// +listType=atomic
 	AllowNamespaces []string `json:"allowNamespaces,omitempty"`
 	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
 	// +optional
+	// +listType=atomic
 	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
 	// SecretNamespaces Namespaces to scope the watching of secrets for the Target Allocator.
 	// If not configured, defaults to the target allocator's own namespace.
 	// +optional
+	// +listType=atomic
 	SecretNamespaces []string `json:"secretNamespaces,omitempty"`
 	// DenyFSAccessThroughSMs causes the Target Allocator to drop ServiceMonitor and
 	// PodMonitor endpoints that reference arbitrary files on the file system. When
@@ -48,6 +51,7 @@ type TargetAllocatorPrometheusCR struct {
 	// ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
 	// protocols supported by Prometheus in order of preference (from most to least preferred).
 	// +optional
+	// +listType=atomic
 	ScrapeProtocols []string `json:"scrapeProtocols,omitempty"`
 	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
 	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.

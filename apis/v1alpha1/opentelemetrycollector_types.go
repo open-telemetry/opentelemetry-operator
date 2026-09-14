@@ -61,6 +61,7 @@ type Ingress struct {
 
 	// TLS configuration.
 	// +optional
+	// +listType=atomic
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
 
 	// IngressClassName is the name of an IngressClass cluster resource. Ingress
@@ -184,10 +185,12 @@ type OpenTelemetryCollectorSpec struct {
 	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
 	// consumed in the config file for the Collector.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
 	// These can then in certain cases be consumed in the config file for the Collector.
 	// +optional
+	// +listType=atomic
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// VolumeClaimTemplates will provide stable storage using PersistentVolumes. Only available when the mode=statefulset.
 	// +optional
@@ -196,6 +199,7 @@ type OpenTelemetryCollectorSpec struct {
 	// Toleration to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying collector deployment(s).
 	// +optional
@@ -236,6 +240,7 @@ type OpenTelemetryCollectorSpec struct {
 	// an initContainer will lead to a restart of the Pod. More info:
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
+	// +listType=atomic
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
 
 	// ServiceName is the name of the Service to be used.
@@ -262,6 +267,7 @@ type OpenTelemetryCollectorSpec struct {
 	// doing so, you wil accept the risk of it breaking things.
 	//
 	// +optional
+	// +listType=atomic
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
@@ -277,11 +283,13 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// This is only relevant to statefulset, and deployment mode
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
+	// +listType=atomic
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
@@ -361,14 +369,17 @@ type OpenTelemetryTargetAllocator struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	// +listType=atomic
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Toleration embedded kubernetes pod configuration option,
 	// controls how pods can be scheduled with matching taints
 	// +optional
+	// +listType=atomic
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
 	// consumed in the config file for the TargetAllocator.
 	// +optional
+	// +listType=atomic
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -519,6 +530,7 @@ type AutoscalerSpec struct {
 	// currently the only supported custom metrics is type=Pod.
 	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
 	// +optional
+	// +listType=atomic
 	Metrics []MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
