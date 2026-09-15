@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/container-names: myapp
+    instrumentation.opentelemetry.io/inject-php: "true"
+  labels:
+    app: my-php-multi
+spec:
+  (containers[?name == 'myapp']):
+  - name: myapp
+    env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_LOG_LEVEL
+      value: debug
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_METRICS_EXPORTER
+      value: none
+    - name: OTEL_LOGS_EXPORTER
+      value: none
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://deployment-collector:4318
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: PHP_INI_SCAN_DIR
+      value: ":/otel-auto-instrumentation-php"
+    - name: OTEL_PHP_AUTOLOAD_ENABLED
+      value: "true"
+    - name: OTEL_SERVICE_NAME
+      value: my-php-multi
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: tracecontext,baggage
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value:
+        ( contains(@, 'k8s.container.name=myapp') ): true
+        ( contains(@, 'k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)') ): true
+        ( contains(@, 'k8s.replicaset.name=my-php-multi-') ): true
+        ( contains(@, 'k8s.deployment.name=my-php-multi') ): true
+        ( contains(@, concat('k8s.namespace.name=', $namespace)) ): true
+        ( contains(@, 'k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME)') ): true
+        ( contains(@, join('', ['service.instance.id=', $namespace, '.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).myapp'])  ) ): true
+        ( contains(@, 'service.version=main') ): true
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+    - mountPath: /otel-auto-instrumentation-php
+      name: opentelemetry-auto-instrumentation-php
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: myrabbit
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-clone
+    ready: true
+  - name: opentelemetry-auto-instrumentation-php
+    ready: true
+  phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
