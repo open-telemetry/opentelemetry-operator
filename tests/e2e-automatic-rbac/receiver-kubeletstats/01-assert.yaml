@@ -35,7 +35,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: simplest-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
   namespace: chainsaw-kubeletstats
 spec:
   containers:
