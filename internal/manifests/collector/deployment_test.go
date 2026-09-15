@@ -852,6 +852,49 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }
 
+func TestDeploymentEnableServiceLinks(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.EnableServiceLinks)
+
+	// Test enableServiceLinks=false
+	enableServiceLinks := false
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-without-servicelinks",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				EnableServiceLinks: &enableServiceLinks,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.EnableServiceLinks)
+	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
+}
+
 func TestDeploymentDNSConfig(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{

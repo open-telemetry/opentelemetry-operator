@@ -1238,6 +1238,9 @@ spec:
                 type: string
               dnsPolicy:
                 type: string
+              enableServiceLinks:
+                default: true
+                type: boolean
               env:
                 items:
                   properties:
