@@ -351,7 +351,7 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 		return err
 	}
 	c.TargetAllocatorAvailability = taAvl
-	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
+	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", taAvl)
 
 	coAvl, err := autoDetect.CollectorAvailability()
 	if err != nil {
