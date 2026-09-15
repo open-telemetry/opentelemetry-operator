@@ -12,7 +12,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfg "go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/contrib/otelconf"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +19,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -102,6 +100,51 @@ filter_strategy: relabel-config
 				assert.Contains(t, actual.Data[targetAllocatorFilename], testCase.expected)
 			})
 		}
+	})
+	t.Run("should return target allocator config map with allocation strategy config", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: per-node
+allocation_strategy_config:
+  per_node:
+    fallback_strategy:
+      name: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+		}
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.AllocationStrategy = v1beta1.TargetAllocatorAllocationStrategyPerNode
+		targetAllocator.Spec.AllocationStrategyConfig = v1beta1.TargetAllocatorAllocationStrategyConfig{
+			PerNode: v1beta1.TargetAllocatorPerNodeStrategyConfig{
+				FallbackStrategy: &v1beta1.TargetAllocatorFallbackStrategyConfig{
+					Name: v1beta1.TargetAllocatorFallbackAllocationStrategyConsistentHashing,
+				},
+			},
+		}
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
 	t.Run("should return target allocator config map without collector", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -470,62 +513,6 @@ prometheus_cr:
 
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
-collector_selector:
-  matchlabels:
-    app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: default.my-instance
-    app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/part-of: opentelemetry
-  matchexpressions: []
-config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
-      - 0.0.0.0:9999
-filter_strategy: relabel-config
-https:
-  ca_file_path: /tls/ca.crt
-  enabled: true
-  listen_addr: :8443
-  tls_cert_file_path: /tls/tls.crt
-  tls_key_file_path: /tls/tls.key
-`,
-		}
-
-		actual, err := ConfigMap(testParams)
-		assert.NoError(t, err)
-
-		assert.Equal(t, "my-instance-targetallocator", actual.Name)
-		assert.Equal(t, expectedLabels, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-	})
-
-	t.Run("should return expected target allocator config map allocation fallback strategy", func(t *testing.T) {
-		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
-
-		cfg := config.Config{
-			CertManagerAvailability: certmanager.Available,
-		}
-
-		flgs := featuregate.Flags(colfg.GlobalRegistry())
-		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
-		require.NoError(t, err)
-		targetAllocator := targetAllocatorInstance()
-
-		testParams := Params{
-			Collector:       collectorInstance(),
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-		}
-		testParams.TargetAllocator.Spec.Mtls = &v1beta1.TargetAllocatorMTLS{Enabled: true}
-
-		expectedData := map[string]string{
-			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
-allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
@@ -1176,8 +1163,7 @@ func TestGetCollectorNotReadyGracePeriod(t *testing.T) {
 
 	t.Run("should return expected target allocator config map with collector_not_ready_grace_period", func(t *testing.T) {
 		expectedData := map[string]string{
-			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
-allocation_strategy: consistent-hashing
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_not_ready_grace_period: 30s
 collector_selector:
   matchlabels:
@@ -1207,12 +1193,8 @@ filter_strategy: relabel-config
 }
 
 func TestDesiredConfigMapAllowInsecureAuthSecrets(t *testing.T) {
-	flgs := featuregate.Flags(colfg.GlobalRegistry())
-	_ = flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
-
 	expectedData := map[string]string{
-		targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
-allocation_strategy: consistent-hashing
+		targetAllocatorFilename: `allocation_strategy: consistent-hashing
 allow_insecure_auth_secrets: true
 collector_selector:
   matchlabels:
@@ -1247,14 +1229,8 @@ filter_strategy: relabel-config
 
 func TestDesiredConfigMapWithDenyFSAccessThroughSMs(t *testing.T) {
 	t.Run("should return expected target allocator config map with denyFSAccessThroughSMs", func(t *testing.T) {
-		require.NoError(t, colfg.GlobalRegistry().Set("operator.targetallocator.fallbackstrategy", true))
-		t.Cleanup(func() {
-			require.NoError(t, colfg.GlobalRegistry().Set("operator.targetallocator.fallbackstrategy", false))
-		})
-
 		expectedData := map[string]string{
-			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
-allocation_strategy: consistent-hashing
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector

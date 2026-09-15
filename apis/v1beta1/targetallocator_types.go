@@ -116,6 +116,12 @@ type (
 	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
 	// +kubebuilder:validation:Enum="";none;relabel-config
 	TargetAllocatorFilterStrategy string
+	// TargetAllocatorFallbackAllocationStrategy represents a strategy which can be used as the fallback for
+	// another allocation strategy. It is the set of allocation strategies minus per-node: the Target Allocator
+	// rejects per-node as a fallback, because a per-node fallback would fail on exactly the targets the primary
+	// strategy failed to assign.
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing
+	TargetAllocatorFallbackAllocationStrategy string
 )
 
 const (
@@ -133,4 +139,38 @@ const (
 
 	// TargetAllocatorFilterStrategyNone disables filtering of targets before they are assigned to collectors.
 	TargetAllocatorFilterStrategyNone TargetAllocatorFilterStrategy = "none"
+
+	// TargetAllocatorFallbackAllocationStrategyLeastWeighted uses the least-weighted strategy as the fallback.
+	TargetAllocatorFallbackAllocationStrategyLeastWeighted TargetAllocatorFallbackAllocationStrategy = "least-weighted"
+
+	// TargetAllocatorFallbackAllocationStrategyConsistentHashing uses the consistent-hashing strategy as the fallback.
+	TargetAllocatorFallbackAllocationStrategyConsistentHashing TargetAllocatorFallbackAllocationStrategy = "consistent-hashing"
 )
+
+// TargetAllocatorAllocationStrategyConfig holds per-strategy configuration for the allocation strategies.
+// Each allocation strategy has its own section because strategies accept different configuration options.
+type TargetAllocatorAllocationStrategyConfig struct {
+	// PerNode holds the configuration options for the per-node allocation strategy.
+	// +optional
+	PerNode TargetAllocatorPerNodeStrategyConfig `json:"perNode,omitempty"`
+}
+
+// TargetAllocatorPerNodeStrategyConfig holds the configuration options for the per-node allocation strategy.
+type TargetAllocatorPerNodeStrategyConfig struct {
+	// FallbackStrategy configures the allocation strategy used for targets the per-node strategy can't assign
+	// on their own, for example targets which don't reside on a Node. If unset, such targets are left
+	// unassigned.
+	// +optional
+	FallbackStrategy *TargetAllocatorFallbackStrategyConfig `json:"fallbackStrategy,omitempty"`
+}
+
+// TargetAllocatorFallbackStrategyConfig configures an allocation strategy used as a fallback: the strategy
+// name plus the options for that strategy. It mirrors TargetAllocatorAllocationStrategyConfig, except that
+// strategies used as fallbacks can't have fallbacks of their own, which keeps fallback chains bounded to a
+// single level.
+type TargetAllocatorFallbackStrategyConfig struct {
+	// Name is the name of the allocation strategy to use as the fallback. The per-node strategy can't be
+	// used as a fallback, as it would fail on exactly the targets the primary strategy failed to assign.
+	// +kubebuilder:validation:Required
+	Name TargetAllocatorFallbackAllocationStrategy `json:"name"`
+}
