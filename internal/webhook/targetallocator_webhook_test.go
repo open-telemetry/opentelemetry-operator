@@ -23,6 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
@@ -190,6 +191,8 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	three := int32(3)
 
+	allCRDs := prometheus.AvailableCRDs{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"}
+
 	tests := []struct {
 		name                 string
 		targetallocator      v1alpha1.TargetAllocator
@@ -197,6 +200,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		expectedWarnings     []string
 		shouldFailSar        bool
 		certManagerAvailable bool
+		availableCRDs        prometheus.AvailableCRDs
 	}{
 		{
 			name:            "valid empty spec",
@@ -230,6 +234,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		{
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
+			availableCRDs: allCRDs,
 			targetallocator: v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-ta",
@@ -242,8 +247,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/probes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/scrapeconfigs: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes/metrics: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - services: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - endpoints: [get,list,watch]",
@@ -263,8 +270,43 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 		{
 			name:          "prom CR no admissions warning",
 			shouldFailSar: false, // force SAR okay
+			availableCRDs: allCRDs,
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{},
+			},
+		},
+		{
+			name:          "prom CR admissions warning without probes and scrapeconfigs",
+			shouldFailSar: true,
+			availableCRDs: prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
+			targetallocator: v1alpha1.TargetAllocator{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-ta",
+					Namespace: "test-ns",
+				},
+				Spec: v1alpha1.TargetAllocatorSpec{
+					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+						Enabled: true,
+					},
+				},
+			},
+			expectedWarnings: []string{
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes/metrics: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - services: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - endpoints: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - namespaces: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - networking.k8s.io/ingresses: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - pods: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - configmaps: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
@@ -480,9 +522,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				cmAvailability = certmanager.Available
 			}
 			cfg := config.Config{
-				CollectorImage:          "targetallocator:v0.0.0",
-				TargetAllocatorImage:    "ta:v0.0.0",
-				CertManagerAvailability: cmAvailability,
+				CollectorImage:           "targetallocator:v0.0.0",
+				TargetAllocatorImage:     "ta:v0.0.0",
+				CertManagerAvailability:  cmAvailability,
+				PrometheusCRAvailability: test.availableCRDs,
 			}
 			cvw := &TargetAllocatorWebhook{
 				logger:   logr.Discard(),

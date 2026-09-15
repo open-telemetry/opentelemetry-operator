@@ -642,7 +642,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				CollectorImage:                "default-collector",
 				TargetAllocatorImage:          "default-ta-allocator",
 				OpenShiftRoutesAvailability:   openshift.RoutesAvailable,
-				PrometheusCRAvailability:      prometheus.Available,
+				PrometheusCRAvailability:      prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
 				EnableInstrumentationCRDs:     true,
@@ -820,7 +820,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		TargetAllocatorImage:        "default-ta-allocator",
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-		PrometheusCRAvailability:    prometheus.Available,
+		PrometheusCRAvailability:    prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 		EnableInstrumentationCRDs:   true,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)

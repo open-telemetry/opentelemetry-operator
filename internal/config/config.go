@@ -94,8 +94,8 @@ type Config struct {
 	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
 	// GatewayAPIsAvailability represents the availability of the Gateway APIs.
 	GatewayAPIsAvailability gatewayapi.ApiAvailability `yaml:"gateway-apis-availability"`
-	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
-	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability"`
+	// PrometheusCRAvailability holds the list of monitoring.coreos.com CRD resource names available in the cluster.
+	PrometheusCRAvailability prometheus.AvailableCRDs `yaml:"prometheus-cr-availability"`
 	// CertManagerAvailability represents the availability of the Cert-Manager.
 	CertManagerAvailability certmanager.Availability `yaml:"cert-manager-availability"`
 	// TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
@@ -198,7 +198,7 @@ func New() Config {
 		TargetAllocatorConfigMapEntry:       defaultTargetAllocatorConfigMapEntry,
 		OperatorOpAMPBridgeConfigMapEntry:   defaultOperatorOpAMPBridgeConfigMapEntry,
 		OpenShiftRoutesAvailability:         openshift.RoutesNotAvailable,
-		PrometheusCRAvailability:            prometheus.NotAvailable,
+		PrometheusCRAvailability:            nil,
 		CertManagerAvailability:             certmanager.NotAvailable,
 		TargetAllocatorAvailability:         targetallocator.NotAvailable,
 		CollectorAvailability:               collector.NotAvailable,
