@@ -13,4 +13,8 @@ issues: [5527]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  The operator's own ServiceAccount must itself hold `get`/`list`/`watch` on `batch/jobs` and
+  `batch/cronjobs` for this to take effect, since Kubernetes RBAC only lets a ServiceAccount
+  grant permissions it already has. This PR also extends the operator's own ClusterRole
+  accordingly (`config/rbac/role.yaml`).
