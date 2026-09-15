@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+spec:
+  template:
+    metadata:
+      (contains(keys(annotations), 'first-annotation')): false
+      annotations:
+        second-annotation: "true"

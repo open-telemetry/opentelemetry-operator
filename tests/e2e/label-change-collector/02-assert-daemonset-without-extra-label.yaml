@@ -12,7 +12,6 @@ metadata:
 spec:
   template:
     metadata:
-      (contains(keys(labels),'user-label')): true
-      (contains(keys(labels),'new-label')): true
-      labels:
-        manual-label: "true"
+      (contains(keys(labels),'user-label')): false
+      (contains(keys(labels),'new-label')): false
+      (contains(keys(labels),'manual-label')): false

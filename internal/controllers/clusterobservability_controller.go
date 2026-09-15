@@ -184,7 +184,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		err = reconcileDesiredObjects(ctx, r.Client, log, &params.ClusterObservability, params.Scheme, regularObjects, ownedObjects)
+		err = reconcileDesiredObjects(ctx, r.Client, log, &params.ClusterObservability, params.Scheme, params.Config, regularObjects, ownedObjects)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

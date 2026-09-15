@@ -97,6 +97,12 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("ANNOTATIONS_FILTER"); ok {
 		cfg.AnnotationsFilter = strings.Split(v, ",")
 	}
+	if v, ok := os.LookupEnv("PRESERVED_LABELS"); ok {
+		cfg.PreservedLabels = strings.Split(v, ",")
+	}
+	if v, ok := os.LookupEnv("PRESERVED_ANNOTATIONS"); ok {
+		cfg.PreservedAnnotations = strings.Split(v, ",")
+	}
 	if v, ok := os.LookupEnv("ZAP_TIME_KEY"); ok {
 		cfg.Zap.TimeKey = v
 	}
