@@ -7,18 +7,28 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
+
+// ownerLookupBackoff mirrors the retry used by the auto-instrumentation injector
+// (see internal/instrumentation/sdk.go) to ride out the eventually-consistent
+// informer cache backing the sidecar webhook's client shortly after a
+// ReplicaSet/Deployment is created.
+var ownerLookupBackoff = wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 2 * time.Second}
 
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Collector instances available, cannot determine which one to select")
@@ -156,26 +166,39 @@ func (p *sidecarPodMutator) podReferences(ctx context.Context, ownerReferences [
 
 func (p *sidecarPodMutator) getReplicaSetReference(ctx context.Context, ownerReferences []metav1.OwnerReference, ns corev1.Namespace) *appsv1.ReplicaSet {
 	replicaSetName := findOwnerReferenceKind(ownerReferences, "ReplicaSet")
-	if replicaSetName != "" {
-		replicaSet := &appsv1.ReplicaSet{}
-		err := p.client.Get(ctx, types.NamespacedName{Name: replicaSetName, Namespace: ns.Name}, replicaSet)
-		if err == nil {
-			return replicaSet
-		}
+	if replicaSetName == "" {
+		return nil
 	}
-	return nil
+	nsn := types.NamespacedName{Name: replicaSetName, Namespace: ns.Name}
+	replicaSet := &appsv1.ReplicaSet{}
+	// The webhook is served off the cache-backed client, which can briefly lag behind
+	// a just-created ReplicaSet. Retry on NotFound so the sidecar isn't injected with
+	// incomplete OTEL_RESOURCE_ATTRIBUTES for the first pod of a new ReplicaSet.
+	err := retry.OnError(ownerLookupBackoff, apierrors.IsNotFound, func() error {
+		return p.client.Get(ctx, nsn, replicaSet)
+	})
+	if err != nil {
+		p.logger.Error(err, "failed to get replicaset for sidecar owner attributes", "replicaset", nsn.Name, "namespace", nsn.Namespace)
+		return nil
+	}
+	return replicaSet
 }
 
 func (p *sidecarPodMutator) getDeploymentReference(ctx context.Context, replicaSet *appsv1.ReplicaSet) *appsv1.Deployment {
 	deploymentName := findOwnerReferenceKind(replicaSet.OwnerReferences, "Deployment")
-	if deploymentName != "" {
-		deployment := &appsv1.Deployment{}
-		err := p.client.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: replicaSet.Namespace}, deployment)
-		if err == nil {
-			return deployment
-		}
+	if deploymentName == "" {
+		return nil
 	}
-	return nil
+	nsn := types.NamespacedName{Name: deploymentName, Namespace: replicaSet.Namespace}
+	deployment := &appsv1.Deployment{}
+	err := retry.OnError(ownerLookupBackoff, apierrors.IsNotFound, func() error {
+		return p.client.Get(ctx, nsn, deployment)
+	})
+	if err != nil {
+		p.logger.Error(err, "failed to get deployment for sidecar owner attributes", "deployment", nsn.Name, "namespace", nsn.Namespace)
+		return nil
+	}
+	return deployment
 }
 
 func findOwnerReferenceKind(references []metav1.OwnerReference, kind string) string {
