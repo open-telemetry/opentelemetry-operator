@@ -34,6 +34,17 @@ type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, d
 // It's expected that type Config is the configuration used by a parser.
 type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
 
+// NamespacedRBACRuleGenerator generates RBAC rules scoped to specific namespaces.
+// The returned map keys are namespace names and values are the rules for that namespace.
+type NamespacedRBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (map[string][]rbacv1.PolicyRule, error)
+
+// NamespacedRBACRuleProvider is an optional interface that parsers can implement
+// to provide namespace-scoped RBAC rules (Role/RoleBinding) in addition to
+// cluster-scoped rules (ClusterRole/ClusterRoleBinding).
+type NamespacedRBACRuleProvider interface {
+	GetNamespacedRBACRules(logger logr.Logger, config any) (map[string][]rbacv1.PolicyRule, error)
+}
+
 // ProbeGenerator is a function that generates a valid probe for a container given Config
 // It's expected that type Config is the configuration used by a parser.
 type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (*corev1.Probe, error)
