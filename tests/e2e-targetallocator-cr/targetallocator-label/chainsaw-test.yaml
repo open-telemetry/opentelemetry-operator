@@ -4,6 +4,7 @@ kind: Test
 metadata:
   name: targetallocator-label
 spec:
+  namespace: chainsaw-targetallocator-label
   steps:
   - name: step-00
     try:
