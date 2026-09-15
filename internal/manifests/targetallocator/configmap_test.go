@@ -1299,3 +1299,103 @@ prometheus_cr:
 		assert.Equal(t, expectedData, actual.Data)
 	})
 }
+
+func TestDesiredConfigMapWithRetryMissingCRDs(t *testing.T) {
+	t.Run("should include retry_missing_crds when enabled", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+prometheus_cr:
+  enabled: true
+  pod_monitor_namespace_selector: null
+  pod_monitor_selector: null
+  probe_namespace_selector: null
+  probe_selector: null
+  retry_missing_crds: true
+  scrape_config_namespace_selector: null
+  scrape_config_selector: null
+  service_monitor_namespace_selector: null
+  service_monitor_selector: null
+`,
+		}
+
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
+		targetAllocator.Spec.PrometheusCR.RetryMissingCRDs = true
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+
+	t.Run("should include wait_for_crds when set", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+prometheus_cr:
+  enabled: true
+  pod_monitor_namespace_selector: null
+  pod_monitor_selector: null
+  probe_namespace_selector: null
+  probe_selector: null
+  retry_missing_crds: true
+  scrape_config_namespace_selector: null
+  scrape_config_selector: null
+  service_monitor_namespace_selector: null
+  service_monitor_selector: null
+  wait_for_crds:
+  - servicemonitors
+  - podmonitors
+`,
+		}
+
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
+		targetAllocator.Spec.PrometheusCR.RetryMissingCRDs = true
+		targetAllocator.Spec.PrometheusCR.WaitForCRDs = []string{"servicemonitors", "podmonitors"}
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+}

@@ -36135,6 +36135,15 @@ label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>retryMissingCRDs</b></td>
+        <td>boolean</td>
+        <td>
+          RetryMissingCRDs enables periodic re-check for Prometheus CRDs absent at TA startup.
+When true, the TA retries every 5 minutes until absent CRDs appear, then starts their
+informers without requiring a pod restart. Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scrapeClasses</b></td>
         <td>[]object</td>
         <td>
@@ -36212,6 +36221,14 @@ label selector matches no objects.<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>waitForCRDs</b></td>
+        <td>[]string</td>
+        <td>
+          WaitForCRDs scopes which absent CRDs are retried when RetryMissingCRDs is true.
+Empty means all absent CRDs. Valid values: servicemonitors, podmonitors, probes, scrapeconfigs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
