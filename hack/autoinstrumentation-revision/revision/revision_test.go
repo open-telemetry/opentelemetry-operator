@@ -4,6 +4,7 @@
 package revision
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"slices"
@@ -72,10 +73,10 @@ func (fakeGit) MergeBase(string) (string, error) { return "BASE", nil }
 
 func (f fakeGit) Show(_, path string) string { return f.base[path] }
 
-func (f fakeGit) DiffNames(_, dir, exclude string) ([]string, error) {
+func (f fakeGit) DiffNames(_, dir string, exclude ...string) ([]string, error) {
 	var out []string
 	for _, c := range f.changed {
-		if strings.HasPrefix(c, dir+"/") && c != exclude {
+		if strings.HasPrefix(c, dir+"/") && !slices.Contains(exclude, c) {
 			out = append(out, c)
 		}
 	}
@@ -273,6 +274,128 @@ func TestApply(t *testing.T) {
 				t.Errorf("revision.txt = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+const changelogSeed = "# Changelog\n\nHeader.\n\n## 2.30.0-1\n\n- Existing entry.\n"
+
+func TestApplyChangelog(t *testing.T) {
+	tests := []struct {
+		name        string
+		work        map[string]string
+		base        map[string]string
+		changed     []string
+		wantTag     string // "" means no entry expected
+		wantSnippet string
+	}{
+		{
+			name:    "unchanged writes nothing",
+			work:    map[string]string{"version.txt": "2.30.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed},
+			base:    map[string]string{"autoinstrumentation/java/version.txt": "2.30.0", "autoinstrumentation/java/revision.txt": "1"},
+			wantTag: "",
+		},
+		{
+			name:        "sdk bump adds entry with release link",
+			work:        map[string]string{"version.txt": "2.31.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed},
+			base:        map[string]string{"autoinstrumentation/java/version.txt": "2.30.0", "autoinstrumentation/java/revision.txt": "5"},
+			wantTag:     "2.31.0-1",
+			wantSnippet: "Update Java auto-instrumentation from 2.30.0 to 2.31.0. See [release notes](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.31.0). (#42)",
+		},
+		{
+			name:        "content bump adds rebuild entry",
+			work:        map[string]string{"version.txt": "2.30.0", "revision.txt": "2", "CHANGELOG.md": changelogSeed},
+			base:        map[string]string{"autoinstrumentation/java/version.txt": "2.30.0", "autoinstrumentation/java/revision.txt": "1"},
+			changed:     []string{"autoinstrumentation/java/Dockerfile"},
+			wantTag:     "2.30.0-2",
+			wantSnippet: "Rebuild Java auto-instrumentation image (base image or dependency update). (#42)",
+		},
+		{
+			name:    "changelog-only edit adds nothing",
+			work:    map[string]string{"version.txt": "2.30.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed},
+			base:    map[string]string{"autoinstrumentation/java/version.txt": "2.30.0", "autoinstrumentation/java/revision.txt": "1"},
+			changed: []string{"autoinstrumentation/java/CHANGELOG.md"},
+			wantTag: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeLang(t, root, "java", tt.work)
+			repo := Repo{Root: root, Git: fakeGit{base: tt.base, changed: tt.changed}}
+
+			entries, err := repo.ApplyChangelog("BASE", "42")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			content, _ := os.ReadFile(filepath.Join(root, autoinstrumentationDir, "java", "CHANGELOG.md"))
+			if tt.wantTag == "" {
+				if len(entries) != 0 {
+					t.Fatalf("expected no entries, got %+v", entries)
+				}
+				if string(content) != changelogSeed {
+					t.Errorf("changelog changed unexpectedly:\n%s", content)
+				}
+				return
+			}
+			if len(entries) != 1 || entries[0].Tag != tt.wantTag {
+				t.Fatalf("expected entry for %s, got %+v", tt.wantTag, entries)
+			}
+			if !strings.Contains(string(content), "## "+tt.wantTag) {
+				t.Errorf("missing heading %q:\n%s", tt.wantTag, content)
+			}
+			if !strings.Contains(string(content), tt.wantSnippet) {
+				t.Errorf("missing snippet %q:\n%s", tt.wantSnippet, content)
+			}
+		})
+	}
+}
+
+func TestApplyChangelogIsIdempotent(t *testing.T) {
+	root := t.TempDir()
+	writeLang(t, root, "java", map[string]string{"version.txt": "2.31.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed})
+	repo := Repo{Root: root, Git: fakeGit{base: map[string]string{
+		"autoinstrumentation/java/version.txt":  "2.30.0",
+		"autoinstrumentation/java/revision.txt": "1",
+	}}}
+
+	if _, err := repo.ApplyChangelog("BASE", ""); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(filepath.Join(root, autoinstrumentationDir, "java", "CHANGELOG.md"))
+	if _, err := repo.ApplyChangelog("BASE", ""); err != nil {
+		t.Fatal(err)
+	}
+	second, _ := os.ReadFile(filepath.Join(root, autoinstrumentationDir, "java", "CHANGELOG.md"))
+	if !bytes.Equal(first, second) {
+		t.Errorf("second apply changed the file:\n%s", second)
+	}
+}
+
+func TestCheckChangelog(t *testing.T) {
+	root := t.TempDir()
+	writeLang(t, root, "java", map[string]string{"version.txt": "2.31.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed})
+	repo := Repo{Root: root, Git: fakeGit{base: map[string]string{
+		"autoinstrumentation/java/version.txt":  "2.30.0",
+		"autoinstrumentation/java/revision.txt": "5",
+	}}}
+
+	problems, err := repo.CheckChangelog("BASE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(problems) != 1 || problems[0].File != filepath.Join(autoinstrumentationDir, "java", "CHANGELOG.md") {
+		t.Fatalf("expected one changelog problem, got %+v", problems)
+	}
+
+	if _, aerr := repo.ApplyChangelog("BASE", ""); aerr != nil {
+		t.Fatal(aerr)
+	}
+	problems, err = repo.CheckChangelog("BASE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(problems) != 0 {
+		t.Errorf("expected no problems after apply, got %+v", problems)
 	}
 }
 

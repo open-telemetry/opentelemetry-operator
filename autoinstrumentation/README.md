@@ -62,6 +62,27 @@ The upstream SDK version for each language is read from:
 | python       | first line of `python/requirements.txt` (`opentelemetry-distro==<version>`)         |
 | nodejs       | `nodejs/package.json` → `dependencies["@opentelemetry/auto-instrumentations-node"]` |
 
+## Changelogs
+
+Every language directory contains a `CHANGELOG.md` documenting its published
+image, with one entry per `<sdk-version>-<revision>` tag. Go has no changelog
+(the operator references the upstream image), and Nginx shares the apache-httpd
+image so its changes are recorded in `apache-httpd/CHANGELOG.md`.
+
+Entries are written by the same
+[`hack/autoinstrumentation-revision`](../hack/autoinstrumentation-revision) tool
+that manages the revision suffix: `apply` (via `make bump-autoinstrumentation-revision`)
+adds an entry for each changed tag and `check` (via `make check-autoinstrumentation-revision`)
+fails a pull request whose changed tag has no entry. SDK bumps link to the
+upstream release for languages with predictable release tags (java, dotnet,
+python). Generation is idempotent, and editing a `CHANGELOG.md` never triggers a
+revision bump.
+
+On Renovate SDK and base-image bumps the
+[bump-autoinstrumentation-revision workflow](../.github/workflows/bump-autoinstrumentation-revision.yaml)
+adds the entries automatically alongside the revision bump, referencing the
+Renovate pull request number.
+
 ## Instrumentation CR examples
 
 Every `Instrumentation` CR example in the repo (READMEs, `config/samples`, and the

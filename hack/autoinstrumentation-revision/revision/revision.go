@@ -121,6 +121,10 @@ func revisionFile(lang string) string {
 	return filepath.Join(autoinstrumentationDir, lang, "revision.txt")
 }
 
+func changelogFile(lang string) string {
+	return filepath.Join(autoinstrumentationDir, lang, "CHANGELOG.md")
+}
+
 func (r Repo) readRevision(lang string) (string, error) {
 	content, err := os.ReadFile(filepath.Join(r.Root, revisionFile(lang)))
 	if err != nil {
@@ -215,7 +219,7 @@ func (r Repo) gather(baseSHA, lang string) (languageState, error) {
 		return ls, err
 	}
 	ls.baseRev = stripSpace(r.Git.Show(baseSHA, ls.revFile))
-	if ls.contentChanged, err = r.Git.DiffNames(baseSHA, filepath.Join(autoinstrumentationDir, lang), ls.revFile); err != nil {
+	if ls.contentChanged, err = r.Git.DiffNames(baseSHA, filepath.Join(autoinstrumentationDir, lang), ls.revFile, changelogFile(lang)); err != nil {
 		return ls, err
 	}
 	return ls, nil
