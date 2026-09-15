@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: smoke-targetallocator
 spec:
+  namespace: chainsaw-smoke-targetallocator
   steps:
   - name: Setup Target Allocator RBAC
     use:

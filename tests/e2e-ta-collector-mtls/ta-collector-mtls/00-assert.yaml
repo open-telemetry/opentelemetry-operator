@@ -46,7 +46,7 @@ data:
             config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: https://prometheus-cr-targetallocator:443
+                endpoint: https://prometheus-cr-targetallocator.chainsaw-targetallocator-collector-mtls.svc:443
                 interval: 30s
                 tls:
                     ca_file: /tls/ca.crt

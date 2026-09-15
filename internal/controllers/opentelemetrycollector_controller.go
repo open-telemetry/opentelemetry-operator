@@ -300,7 +300,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	params, err := r.GetParams(ctx, instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
-		return ctrl.Result{}, err
+		return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 	}
 
 	// We have a deletion, short circuit and let the deletion happen
@@ -335,7 +335,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
-		return ctrl.Result{}, buildErr
+		return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, buildErr)
 	}
 
 	ownedObjects, err := r.findOtelOwnedObjects(ctx, params)
