@@ -2,13 +2,13 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: collector
+component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Detect changes to the immutable StatefulSet `podManagementPolicy` field so the collector StatefulSet is recreated instead of failing reconciliation with a forbidden update error.
+note: Stop assigning targets to collector pods that are being deleted. A terminating pod keeps reporting Ready until the kubelet confirms the deletion, which never happens while its node is unreachable, so its targets were never reassigned.
 
 # One or more tracking issues related to the change
-issues: [4203]
+issues: [5576]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

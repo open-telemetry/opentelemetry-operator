@@ -488,6 +488,57 @@ func Test_gracePeriodWithNonReadyPodCondition(t *testing.T) {
 	}
 }
 
+// A collector Pod that is being deleted keeps PodReady=True until the kubelet
+// confirms the deletion, which never happens while its node is unreachable.
+// Such a Pod must not receive targets, whatever the grace period is (#5576).
+func Test_terminatingPodIsNotACollector(t *testing.T) {
+	namespace := "test-ns"
+	terminating := pod("test-pod-terminating")
+	terminating.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+	terminating.DeletionGracePeriodSeconds = new(int64)
+
+	for _, gracePeriod := range []time.Duration{0, 30 * time.Second} {
+		t.Run(gracePeriod.String(), func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				podWatcher := getTestPodWatcher(gracePeriod)
+				var actual map[string]*allocation.Collector
+				mapMutex := sync.Mutex{}
+				for _, p := range []*v1.Pod{pod("test-pod-ready"), terminating} {
+					_, err := podWatcher.k8sClient.CoreV1().Pods(namespace).Create(t.Context(), p, metav1.CreateOptions{})
+					assert.NoError(t, err)
+				}
+
+				go func() {
+					err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
+						mapMutex.Lock()
+						defer mapMutex.Unlock()
+						actual = colMap
+					})
+					require.NoError(t, err)
+				}()
+
+				synctest.Wait()
+				time.Sleep(podWatcher.minUpdateInterval)
+				synctest.Wait()
+
+				mapMutex.Lock()
+				assert.Equal(t, map[string]*allocation.Collector{
+					"test-pod-ready": {
+						Name:          "test-pod-ready",
+						NodeName:      "test-node",
+						TargetsPerJob: map[string]int{},
+					},
+				}, actual)
+				assert.Equal(t, int64(1), podWatcher.collectorsDiscovered.(*reportingGauge).value.Load())
+				mapMutex.Unlock()
+
+				close(podWatcher.close)
+				synctest.Wait()
+			})
+		})
+	}
+}
+
 // this tests runWatch in the case of watcher channel closing.
 func Test_closeChannel(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
