@@ -13,7 +13,7 @@ data:
             config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://ta-targetallocator:80
+                endpoint: http://ta-targetallocator.chainsaw-targetallocator-label.svc:80
                 interval: 30s
     service:
         pipelines:
