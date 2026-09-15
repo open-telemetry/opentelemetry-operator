@@ -556,3 +556,25 @@ func TestInstrumentationConvertMinimal(t *testing.T) {
 
 	assert.Equal(t, *original, *roundTripped)
 }
+
+func TestInstrumentationConvertInitContainerCommand(t *testing.T) {
+	original := &v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Java: v1alpha1.Java{
+				InitContainer: v1alpha1.InitContainer{
+					Command: []string{"/bin/sh", "-c"},
+					Args:    []string{"copy-vendor-instrumentation"},
+				},
+			},
+		},
+	}
+
+	beta := &v1beta1.Instrumentation{}
+	require.NoError(t, InstrumentationConvertTo(original, beta))
+	require.Equal(t, original.Spec.Java.InitContainer.Command, beta.Spec.Java.InitContainer.Command)
+	require.Equal(t, original.Spec.Java.InitContainer.Args, beta.Spec.Java.InitContainer.Args)
+
+	roundTripped := &v1alpha1.Instrumentation{}
+	require.NoError(t, InstrumentationConvertFrom(roundTripped, beta))
+	require.Equal(t, original.Spec.Java.InitContainer, roundTripped.Spec.Java.InitContainer)
+}

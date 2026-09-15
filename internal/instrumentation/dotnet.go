@@ -78,11 +78,17 @@ func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstConta
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, dotnetInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		command, args := initContainerCommand(
+			[]string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+			dotNetSpec.InitContainer.Command,
+			dotNetSpec.InitContainer.Args,
+		)
 
 		initContainer := corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+			Command:   command,
+			Args:      args,
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,
