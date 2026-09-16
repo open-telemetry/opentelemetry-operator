@@ -156,7 +156,7 @@ func TestClient_Apply(t *testing.T) {
 			} else {
 				colConfig = []byte(tt.args.config)
 			}
-			configmap := &protobufs.AgentConfigFile{
+			configmap := &protobufs.AgentConfigObject{
 				Body:        colConfig,
 				ContentType: "yaml",
 			}
@@ -198,7 +198,7 @@ func TestClient_ApplyUpdate(t *testing.T) {
 	// Create managed collector
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
-	configmap := &protobufs.AgentConfigFile{
+	configmap := &protobufs.AgentConfigObject{
 		Body:        colConfig,
 		ContentType: "yaml",
 	}
@@ -230,7 +230,7 @@ func TestClient_ApplyUpdate(t *testing.T) {
 	// Update successfully with a valid configuration
 	newColConfig, err := loadConfig("testdata/updated-collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
-	newConfigMap := &protobufs.AgentConfigFile{
+	newConfigMap := &protobufs.AgentConfigObject{
 		Body:        newColConfig,
 		ContentType: "yaml",
 	}
@@ -265,7 +265,7 @@ func TestClient_Delete(t *testing.T) {
 	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
-	configmap := &protobufs.AgentConfigFile{
+	configmap := &protobufs.AgentConfigObject{
 		Body:        colConfig,
 		ContentType: "yaml",
 	}

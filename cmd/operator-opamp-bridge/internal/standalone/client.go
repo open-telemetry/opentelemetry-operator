@@ -300,7 +300,7 @@ func (c *Client) getConfigMapFile(namespace string, entry config.StandaloneConfi
 
 // applyConfigMapFile is called when an opamp server pushes config for an agent. It validates the config, updates the local
 // k8s configmap and triggers a rolling restart of the relevant workload.
-func (c *Client) applyConfigMapFile(namespace, workloadType, workloadName string, entry config.StandaloneConfigEntry, configFile *protobufs.AgentConfigFile) error {
+func (c *Client) applyConfigMapFile(namespace, workloadType, workloadName string, entry config.StandaloneConfigEntry, configFile *protobufs.AgentConfigObject) error {
 	if len(configFile.Body) == 0 {
 		return errors.New("invalid config to apply: config is empty")
 	}
@@ -395,7 +395,7 @@ var _ operator.ConfigApplier = &scopedApplier{}
 
 // Apply writes the named remote config entry for this standalone agent.
 // name must match one entry from the agent's standalone config map.
-func (s *scopedApplier) Apply(name string, configFile *protobufs.AgentConfigFile) error {
+func (s *scopedApplier) Apply(name string, configFile *protobufs.AgentConfigObject) error {
 	entry, ok := s.agent.Config[name]
 	if !ok {
 		return fmt.Errorf("standalone agent %q does not manage config %q", s.agent.WorkloadRef.Name, name)

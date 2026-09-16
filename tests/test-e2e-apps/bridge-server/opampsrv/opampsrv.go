@@ -274,12 +274,12 @@ func parseRemoteConfigRequest(request *http.Request) (*protobufs.AgentConfigMap,
 		return nil, errors.New("config must contain at least one entry")
 	}
 
-	configMap := make(map[string]*protobufs.AgentConfigFile, len(req.Config))
+	configMap := make(map[string]*protobufs.AgentConfigObject, len(req.Config))
 	for key, body := range req.Config {
 		if key == "" {
 			return nil, errors.New("config keys must be non-empty")
 		}
-		configMap[key] = &protobufs.AgentConfigFile{
+		configMap[key] = &protobufs.AgentConfigObject{
 			Body:        []byte(body),
 			ContentType: req.ContentType,
 		}

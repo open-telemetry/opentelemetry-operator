@@ -78,7 +78,7 @@ func (c *orderCheckingKubernetesClient) Start(context.Context) error {
 
 type healthyApplier struct{}
 
-func (healthyApplier) Apply(string, *protobufs.AgentConfigFile) error {
+func (healthyApplier) Apply(string, *protobufs.AgentConfigObject) error {
 	return nil
 }
 
@@ -166,5 +166,9 @@ func (*recordingOpAMPClient) SetAvailableComponents(*protobufs.AvailableComponen
 }
 
 func (*recordingOpAMPClient) SetCapabilities(*protobufs.AgentCapabilities) error {
+	return nil
+}
+
+func (*recordingOpAMPClient) SetConnectionSettingsStatus(*protobufs.ConnectionSettingsStatus) error {
 	return nil
 }

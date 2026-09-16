@@ -84,7 +84,7 @@ func TestAgent_GetConfiguration(t *testing.T) {
 
 	config := &protobufs.EffectiveConfig{
 		ConfigMap: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{
+			ConfigMap: map[string]*protobufs.AgentConfigObject{
 				"config.yaml": {Body: []byte("receivers:\n  otlp:\n")},
 			},
 		},

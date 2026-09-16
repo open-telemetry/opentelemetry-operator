@@ -349,7 +349,7 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 		agent.logger.Error(err, "failed to list instances")
 		return nil, err
 	}
-	instanceMap := map[string]*protobufs.AgentConfigFile{}
+	instanceMap := map[string]*protobufs.AgentConfigObject{}
 	for _, instance := range instances {
 		if instance.GetDeletionTimestamp() != nil {
 			continue
@@ -364,7 +364,7 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 			if contentType == "" {
 				contentType = "yaml"
 			}
-			instanceMap[key] = &protobufs.AgentConfigFile{
+			instanceMap[key] = &protobufs.AgentConfigObject{
 				Body:        file.Body,
 				ContentType: contentType,
 			}
@@ -419,7 +419,7 @@ func (agent *Agent) rebuildAppliedKeys() error {
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
 //
-//	map[resource key] -> AgentConfigFile body
+//	map[resource key] -> AgentConfigObject body
 //
 // For every key in the received remote configuration, the agent attempts to apply it via the configured
 // applier. If an entry fails to apply, the agent continues to the next entry. The agent stores the
