@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/events"
+	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -634,7 +635,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testContext := context.Background()
+			testContext := t.Context()
 			nsn := types.NamespacedName{Name: tt.args.params.Name, Namespace: tt.args.params.Namespace}
 			testCtx := t.Context()
 
@@ -653,35 +654,20 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			firstCheck := tt.want[0]
 			// Check for this before create, otherwise it's blown away.
 			deletionTimestamp := tt.args.params.GetDeletionTimestamp()
-			createErr := k8sClient.Create(testContext, &tt.args.params)
+			createErr := reconciler.Create(testContext, &tt.args.params)
 			if !firstCheck.validateErr(t, createErr) {
 				return
 			}
-			// wait until the reconciler sees the object in its cache
-			if createErr == nil {
-				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-					actual := &v1beta1.OpenTelemetryCollector{}
-					err := reconciler.Get(testContext, nsn, actual)
-					assert.NoError(collect, err)
-				}, time.Second*30, time.Millisecond*100)
-			}
 			if deletionTimestamp != nil {
-				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
+				err := reconciler.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
-				// wait until the reconciler sees the deletion
-				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-					actual := &v1beta1.OpenTelemetryCollector{}
-					err := reconciler.Get(testContext, nsn, actual)
-					assert.NoError(collect, err)
-					assert.NotNil(collect, actual.GetDeletionTimestamp())
-				}, time.Second*30, time.Millisecond*100)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
 			}
 			got, reconcileErr := reconciler.Reconcile(testContext, req)
 			if !firstCheck.wantErr(t, reconcileErr) {
-				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params))
+				require.NoError(t, reconciler.Delete(testContext, &tt.args.params))
 				return
 			}
 			assert.Equal(t, firstCheck.result, got)
@@ -700,18 +686,11 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 
 				updateParam.SetResourceVersion(existing.ResourceVersion)
 				updateParam.SetUID(existing.UID)
-				err = k8sClient.Update(testContext, &updateParam)
+				err = reconciler.Update(testContext, &updateParam)
 				assert.NoError(t, err)
 				if err != nil {
 					continue
 				}
-				// wait until the reconciler sees the object in its cache
-				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-					actual := &v1beta1.OpenTelemetryCollector{}
-					err = reconciler.Get(testContext, nsn, actual)
-					assert.NoError(collect, err)
-					assert.Equal(collect, updateParam.Spec, actual.Spec)
-				}, time.Second*30, time.Millisecond*100)
 				req := k8sreconcile.Request{
 					NamespacedName: nsn,
 				}
@@ -813,8 +792,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		},
 	}
 
-	testCtx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
+	testCtx := t.Context()
 	cfg := config.Config{
 		CollectorImage:              "default-collector",
 		TargetAllocatorImage:        "default-ta-allocator",
@@ -835,10 +813,10 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			namespace, err := createRandomNamespace(k8sClient)
+			namespace, err := createRandomNamespace(t.Context(), k8sClient)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				delErr := k8sClient.Delete(context.Background(), namespace)
+				delErr := k8sClient.Delete(context.WithoutCancel(t.Context()), namespace)
 				assert.NoError(t, delErr)
 			})
 			collectorName := sanitizeResourceName(tc.name)
@@ -846,11 +824,11 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			collector.Name = collectorName
 			collector.Namespace = namespace.Name
 			nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
-			clientCtx := context.Background()
-			err = k8sClient.Create(clientCtx, collector)
+			clientCtx := t.Context()
+			err = reconciler.Create(clientCtx, collector)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				deleteErr := k8sClient.Delete(clientCtx, collector)
+				deleteErr := reconciler.Delete(context.WithoutCancel(clientCtx), collector)
 				require.NoError(t, deleteErr)
 			})
 			err = k8sClient.Get(clientCtx, nsn, collector)
@@ -859,45 +837,26 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 				NamespacedName: nsn,
 			}
 
-			// Wait for the reconciler's cache to see the collector
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				actual := &v1beta1.OpenTelemetryCollector{}
-				getErr := reconciler.Get(clientCtx, nsn, actual)
-				assert.NoError(collect, getErr)
-			}, time.Second*10, time.Millisecond*100)
-
 			_, reconcileErr := reconciler.Reconcile(clientCtx, req)
 			require.NoError(t, reconcileErr)
 
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-				list, listErr := getAllOwnedResources(clientCtx, reconciler, collector, opts...)
-				assert.NoError(collect, listErr)
-				assert.NotEmpty(collect, list)
-				assert.Len(collect, list, expectedStartingResourceCount)
-			}, time.Second*30, time.Millisecond*100)
+			list, listErr := getAllOwnedResources(clientCtx, reconciler, collector, opts...)
+			require.NoError(t, listErr)
+			require.Len(t, list, expectedStartingResourceCount)
 
 			err = k8sClient.Get(clientCtx, nsn, collector)
 			require.NoError(t, err)
 			tc.mutateCollector(collector)
-			err = k8sClient.Update(clientCtx, collector)
+			err = reconciler.Update(clientCtx, collector)
 			require.NoError(t, err)
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				actual := &v1beta1.OpenTelemetryCollector{}
-				err = reconciler.Get(clientCtx, nsn, actual)
-				assert.NoError(collect, err)
-				assert.Equal(collect, collector.Spec, actual.Spec)
-			}, time.Second*30, time.Millisecond*100)
 
 			_, reconcileErr = reconciler.Reconcile(clientCtx, req)
 			require.NoError(t, reconcileErr)
 
 			expectedResourceCount := expectedStartingResourceCount - tc.expectedResourcesDeletedCount
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-				list, listErr := getAllOwnedResources(clientCtx, reconciler, collector, opts...)
-				assert.NoError(collect, listErr)
-				assert.NotEmpty(collect, list)
-				assert.Len(collect, list, expectedResourceCount)
-			}, time.Second*30, time.Millisecond*100)
+			list, listErr = getAllOwnedResources(clientCtx, reconciler, collector, opts...)
+			require.NoError(t, listErr)
+			require.Len(t, list, expectedResourceCount)
 		})
 	}
 }
@@ -938,8 +897,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		},
 	}
 
-	testCtx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
+	testCtx := t.Context()
 	cfg := config.Config{
 		CollectorImage:              "default-collector",
 		TargetAllocatorImage:        "default-ta-allocator",
@@ -959,11 +917,16 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		}),
 	}
 
-	clientCtx := context.Background()
-	err := k8sClient.Create(clientCtx, collector)
+	clientCtx := t.Context()
+	configMapCount := func() int {
+		configMaps := &v1.ConfigMapList{}
+		require.NoError(t, k8sClient.List(clientCtx, configMaps, opts...))
+		return len(configMaps.Items)
+	}
+	err := reconciler.Create(clientCtx, collector)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		deleteErr := k8sClient.Delete(clientCtx, collector)
+		deleteErr := reconciler.Delete(context.WithoutCancel(clientCtx), collector)
 		require.NoError(t, deleteErr)
 	})
 	err = k8sClient.Get(clientCtx, nsn, collector)
@@ -972,15 +935,9 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		NamespacedName: nsn,
 	}
 	_, reconcileErr := reconciler.Reconcile(clientCtx, req)
-	assert.NoError(t, reconcileErr)
+	require.NoError(t, reconcileErr)
 
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
-		assert.NoError(collect, listErr)
-		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 1)
-	}, time.Second*30, time.Millisecond*100)
+	require.Equal(t, 1, configMapCount())
 
 	// modify the ConfigMap, it should be kept
 	// wait a second first, as K8s creation timestamps only have second precision
@@ -988,25 +945,13 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
 	collector.Spec.Config.Exporters.Object["debug"] = map[string]any{}
-	err = k8sClient.Update(clientCtx, collector)
+	err = reconciler.Update(clientCtx, collector)
 	require.NoError(t, err)
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		actual := &v1beta1.OpenTelemetryCollector{}
-		err = reconciler.Get(clientCtx, nsn, actual)
-		assert.NoError(collect, err)
-		assert.Equal(collect, collector.Spec, actual.Spec)
-	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
-	assert.NoError(t, reconcileErr)
+	require.NoError(t, reconcileErr)
 
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
-		assert.NoError(collect, listErr)
-		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 2)
-	}, time.Second*30, time.Millisecond*100)
+	require.Equal(t, 2, configMapCount())
 
 	// modify the ConfigMap again, the oldest one is still kept, but is dropped after next reconciliation
 	// wait a second first, as K8s creation timestamps only have second precision
@@ -1014,36 +959,18 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
 	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]any{}
-	err = k8sClient.Update(clientCtx, collector)
+	err = reconciler.Update(clientCtx, collector)
 	require.NoError(t, err)
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		actual := &v1beta1.OpenTelemetryCollector{}
-		err = reconciler.Get(clientCtx, nsn, actual)
-		assert.NoError(collect, err)
-		assert.Equal(collect, collector.Spec, actual.Spec)
-	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
-	assert.NoError(t, reconcileErr)
+	require.NoError(t, reconcileErr)
 
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
-		assert.NoError(collect, listErr)
-		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
-	}, time.Second*30, time.Millisecond*100)
+	require.Equal(t, 3, configMapCount())
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
-	assert.NoError(t, reconcileErr)
+	require.NoError(t, reconcileErr)
 
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
-		assert.NoError(collect, listErr)
-		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 2)
-	}, time.Second*5, time.Second)
+	require.Equal(t, 2, configMapCount())
 }
 
 func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
@@ -1132,7 +1059,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testContext := context.Background()
+			testContext := t.Context()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
 			cfg := config.Config{
 				CollectorImage:                    "default-collector",
@@ -1219,7 +1146,7 @@ func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err := reconciler.Reconcile(context.Background(), req)
+	_, err := reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	assert.NoError(t, err)
@@ -1278,9 +1205,7 @@ service:
 			Name: otelcol.Namespace,
 		},
 	}
-	clientErr := k8sClient.Create(context.Background(), ns)
-	require.NoError(t, clientErr)
-	clientErr = k8sClient.Create(context.Background(), otelcol)
+	clientErr := k8sClient.Create(t.Context(), ns)
 	require.NoError(t, clientErr)
 
 	testCtx := t.Context()
@@ -1295,45 +1220,41 @@ service:
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
+	clientErr = reconciler.Create(t.Context(), otelcol)
+	require.NoError(t, clientErr)
+
 	nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	reconcile, reconcileErr := reconciler.Reconcile(context.Background(), req)
+	reconcile, reconcileErr := reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, reconcileErr)
 	require.Zero(t, reconcile.RequeueAfter)
 
 	colClusterRole := &rbacv1.ClusterRole{}
-	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
+	clientErr = k8sClient.Get(t.Context(), types.NamespacedName{
 		Name: naming.ClusterRole(otelcol.Name, otelcol.Namespace),
 	}, colClusterRole)
 	require.NoError(t, clientErr)
 	colClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
+	clientErr = k8sClient.Get(t.Context(), types.NamespacedName{
 		Name: naming.ClusterRoleBinding(otelcol.Name, otelcol.Namespace),
 	}, colClusterRoleBinding)
 	require.NoError(t, clientErr)
 
 	// delete collector and check if the cluster role was deleted
-	clientErr = k8sClient.Delete(context.Background(), otelcol)
+	clientErr = reconciler.Delete(t.Context(), otelcol)
 	require.NoError(t, clientErr)
-	// wait until the reconciler sees the object as deleted in its cache
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		actual := &v1beta1.OpenTelemetryCollector{}
-		err := reconciler.Get(context.Background(), nsn, actual)
-		assert.NoError(collect, err)
-		assert.NotNil(collect, actual.GetDeletionTimestamp())
-	}, time.Second*30, time.Millisecond*100)
 
-	reconcile, reconcileErr = reconciler.Reconcile(context.Background(), req)
+	reconcile, reconcileErr = reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, reconcileErr)
 	require.Zero(t, reconcile.RequeueAfter)
 
-	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
+	clientErr = k8sClient.Get(t.Context(), types.NamespacedName{
 		Name: naming.ClusterRole(otelcol.Name, otelcol.Namespace),
 	}, colClusterRole)
 	require.Error(t, clientErr)
-	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
+	clientErr = k8sClient.Get(t.Context(), types.NamespacedName{
 		Name: naming.ClusterRoleBinding(otelcol.Name, otelcol.Namespace),
 	}, colClusterRoleBinding)
 	require.Error(t, clientErr)
@@ -1480,40 +1401,17 @@ func TestUpgrade(t *testing.T) {
 			nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
 
 			// Create otelcol CR
-			err := k8sClient.Create(testCtx, otelcol)
+			err := reconciler.Create(testCtx, otelcol)
 			require.NoError(t, err)
 
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
-				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
-				assert.NoError(collect, getErr)
-				freshOtelcol.Status = tt.input.Status
-				updateErr := k8sClient.Status().Update(testCtx, freshOtelcol)
-				assert.NoError(collect, updateErr)
-			}, time.Second*10, time.Millisecond*10)
-
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
-				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
-				assert.NoError(collect, getErr)
-				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
-			}, time.Second*10, time.Millisecond*10)
-
-			// Wait for the reconciler's cache to see the correct status
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
-				getErr := reconciler.Get(testCtx, nsn, freshOtelcol)
-				assert.NoError(collect, getErr)
-				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
-			}, time.Second*10, time.Millisecond*10)
+			otelcol.Status = tt.input.Status
+			require.NoError(t, reconciler.Status().Update(testCtx, otelcol))
 
 			// First reconcile
 			var reconcile k8sreconcile.Result
 			req := k8sreconcile.Request{NamespacedName: nsn}
-			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				reconcile, err = reconciler.Reconcile(testCtx, req)
-				require.NoError(collect, err)
-			}, time.Second*10, time.Millisecond*10)
+			reconcile, err = reconciler.Reconcile(testCtx, req)
+			require.NoError(t, err)
 			require.Equal(t, tt.expectRequeue, reconcile.RequeueAfter.Nanoseconds() > 0)
 
 			// Second reconcile (if upgrade was run)
@@ -1543,20 +1441,17 @@ func namespacedObjectName(name, namespace string) types.NamespacedName {
 
 func assertCollectorReadyStatus(t *testing.T, nsn types.NamespacedName) {
 	t.Helper()
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		actual := &v1beta1.OpenTelemetryCollector{}
-		err := k8sClient.Get(context.Background(), nsn, actual)
-		assert.NoError(collect, err)
-		if actual.GetDeletionTimestamp() != nil {
-			return
-		}
-		assert.Equal(collect, actual.Generation, actual.Status.ObservedGeneration)
-		readyCondition := meta.FindStatusCondition(actual.Status.Conditions, "Ready")
-		if assert.NotNil(collect, readyCondition) {
-			assert.Equal(collect, metav1.ConditionTrue, readyCondition.Status)
-			assert.Equal(collect, actual.Generation, readyCondition.ObservedGeneration)
-		}
-	}, time.Second*10, time.Millisecond*100)
+	actual := &v1beta1.OpenTelemetryCollector{}
+	require.NoError(t, k8sClient.Get(t.Context(), nsn, actual))
+	if actual.GetDeletionTimestamp() != nil {
+		return
+	}
+	assert.Equal(t, actual.Generation, actual.Status.ObservedGeneration)
+	readyCondition := meta.FindStatusCondition(actual.Status.Conditions, "Ready")
+	if assert.NotNil(t, readyCondition) {
+		assert.Equal(t, metav1.ConditionTrue, readyCondition.Status)
+		assert.Equal(t, actual.Generation, readyCondition.ObservedGeneration)
+	}
 }
 
 func TestTLSDefaultingAtReconcileTime(t *testing.T) {
@@ -1605,8 +1500,7 @@ func TestTLSDefaultingAtReconcileTime(t *testing.T) {
 		},
 	}
 
-	testCtx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
+	testCtx := t.Context()
 
 	// Create a config with OperandTLSProfile set (TLS 1.2 and specific cipher)
 	cfg := config.Config{
@@ -1620,11 +1514,11 @@ func TestTLSDefaultingAtReconcileTime(t *testing.T) {
 	)
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
-	clientCtx := context.Background()
-	err := k8sClient.Create(clientCtx, collector)
+	clientCtx := t.Context()
+	err := reconciler.Create(clientCtx, collector)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		deleteErr := k8sClient.Delete(clientCtx, collector)
+		deleteErr := reconciler.Delete(context.WithoutCancel(clientCtx), collector)
 		assert.NoError(t, deleteErr)
 	})
 
@@ -1646,18 +1540,10 @@ func TestTLSDefaultingAtReconcileTime(t *testing.T) {
 		}),
 	}
 
-	var configMap *v1.ConfigMap
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
-		assert.NoError(collect, listErr)
-		if len(configMaps.Items) > 0 {
-			configMap = &configMaps.Items[0]
-		}
-		assert.NotNil(collect, configMap, "ConfigMap should be created")
-	}, time.Second*30, time.Millisecond*100)
-
-	require.NotNil(t, configMap, "ConfigMap should be created")
+	configMaps := &v1.ConfigMapList{}
+	require.NoError(t, k8sClient.List(clientCtx, configMaps, opts...))
+	require.NotEmpty(t, configMaps.Items, "ConfigMap should be created")
+	configMap := &configMaps.Items[0]
 
 	// Parse the collector config from the ConfigMap
 	collectorYAML, ok := configMap.Data["collector.yaml"]
@@ -1749,6 +1635,9 @@ func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg conf
 	// we need to set up caches for our reconciler
 	runtimeCluster, err := runtimecluster.New(restCfg, func(options *runtimecluster.Options) {
 		options.Scheme = testScheme
+		options.Client.Cache = &client.CacheOptions{
+			EnableReadYourWritesConsistency: ptr.To(true),
+		}
 	})
 	require.NoError(t, err)
 	go func() {
@@ -1784,7 +1673,7 @@ func sanitizeResourceName(name string) string {
 	return sanitized
 }
 
-func createRandomNamespace(k8sClient client.Client) (*v1.Namespace, error) {
+func createRandomNamespace(ctx context.Context, k8sClient client.Client) (*v1.Namespace, error) {
 	name := uuid.NewString()
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1792,7 +1681,7 @@ func createRandomNamespace(k8sClient client.Client) (*v1.Namespace, error) {
 		},
 	}
 
-	err := k8sClient.Create(context.Background(), namespace)
+	err := k8sClient.Create(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
