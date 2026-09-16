@@ -4,7 +4,6 @@
 package controllers_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -49,14 +48,14 @@ func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{},
 	}
-	err := k8sClient.Create(context.Background(), created)
+	err := k8sClient.Create(t.Context(), created)
 	require.NoError(t, err)
 
 	// test
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(context.Background(), req)
+	_, err = reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	require.NoError(t, err)
@@ -75,31 +74,31 @@ func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 	// whether we have the right ones is up to the specific tests for each type
 	{
 		list := &corev1.ConfigMapList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &corev1.ServiceAccountList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &corev1.ServiceList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &appsv1.DeploymentList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 
 	// cleanup
-	require.NoError(t, k8sClient.Delete(context.Background(), created))
+	require.NoError(t, k8sClient.Delete(t.Context(), created))
 }
 
 func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
@@ -118,7 +117,7 @@ func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err := reconciler.Reconcile(context.Background(), req)
+	_, err := reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, err)
 
 	// the base query for the underlying objects
@@ -133,7 +132,7 @@ func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
 
 	// verify that no objects have been created
 	var objList appsv1.DeploymentList
-	err = k8sClient.List(context.Background(), &objList, opts...)
+	err = k8sClient.List(t.Context(), &objList, opts...)
 	assert.NoError(t, err)
 	assert.Empty(t, objList.Items)
 }
@@ -162,14 +161,14 @@ func TestUnmanaged_TargetAllocator(t *testing.T) {
 			},
 		},
 	}
-	err := k8sClient.Create(context.Background(), unmanaged)
+	err := k8sClient.Create(t.Context(), unmanaged)
 	require.NoError(t, err)
 
 	// test
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(context.Background(), req)
+	_, err = reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	require.NoError(t, err)
@@ -186,12 +185,12 @@ func TestUnmanaged_TargetAllocator(t *testing.T) {
 
 	// verify that no objects have been created
 	var objList appsv1.DeploymentList
-	err = k8sClient.List(context.Background(), &objList, opts...)
+	err = k8sClient.List(t.Context(), &objList, opts...)
 	assert.NoError(t, err)
 	assert.Empty(t, objList.Items)
 
 	// cleanup
-	require.NoError(t, k8sClient.Delete(context.Background(), unmanaged))
+	require.NoError(t, k8sClient.Delete(t.Context(), unmanaged))
 }
 
 func TestBuildError_TargetAllocator(t *testing.T) {
@@ -219,14 +218,14 @@ func TestBuildError_TargetAllocator(t *testing.T) {
 			AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyLeastWeighted,
 		},
 	}
-	err := k8sClient.Create(context.Background(), unmanaged)
+	err := k8sClient.Create(t.Context(), unmanaged)
 	require.NoError(t, err)
 
 	// test
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(context.Background(), req)
+	_, err = reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	require.Error(t, err)
@@ -243,10 +242,10 @@ func TestBuildError_TargetAllocator(t *testing.T) {
 
 	// verify that no objects have been created
 	var objList appsv1.DeploymentList
-	err = k8sClient.List(context.Background(), &objList, opts...)
+	err = k8sClient.List(t.Context(), &objList, opts...)
 	assert.NoError(t, err)
 	assert.Empty(t, objList.Items)
 
 	// cleanup
-	require.NoError(t, k8sClient.Delete(context.Background(), unmanaged))
+	require.NoError(t, k8sClient.Delete(t.Context(), unmanaged))
 }
