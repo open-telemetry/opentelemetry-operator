@@ -20,6 +20,7 @@ spec:
         pod-annotation2: value2
     spec:
       shareProcessNamespace: true
+      enableServiceLinks: false
       nodeSelector:
         kubernetes.io/os: linux
       (affinity != null): true

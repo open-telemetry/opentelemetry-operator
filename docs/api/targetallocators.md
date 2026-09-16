@@ -154,6 +154,15 @@ The default is 30s, which means that if a collector becomes not Ready, the targe
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>enableServiceLinks</b></td>
+        <td>boolean</td>
+        <td>
+          EnableServiceLinks sets enableServiceLinks on the generated pods. Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
