@@ -1636,7 +1636,7 @@ func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg conf
 	runtimeCluster, err := runtimecluster.New(restCfg, func(options *runtimecluster.Options) {
 		options.Scheme = testScheme
 		options.Client.Cache = &client.CacheOptions{
-			EnableReadYourWritesConsistency: ptr.To(true),
+			EnableReadYourWritesConsistency: new(true),
 		}
 	})
 	require.NoError(t, err)
