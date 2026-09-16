@@ -409,7 +409,7 @@ func scalarConfig(value any) *v1beta1.Config {
 // (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; Config.Yaml reports an error
 // for them instead of producing a document the collector would misread.
 func renderableAsKey(s string) bool {
-	return s != "<<" && !(strings.HasPrefix(s, "\t") && strings.Contains(s, "\n"))
+	return s != "<<" && (!strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n"))
 }
 
 // assertCollectorReads checks that the collector reads want at every position scalarConfig put the value.
