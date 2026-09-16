@@ -1920,7 +1920,7 @@ func TestConfigYamlRejectsTabLedMultilineKey(t *testing.T) {
 
 type badMarshalJSON struct{}
 
-func (b badMarshalJSON) MarshalJSON() ([]byte, error) {
+func (badMarshalJSON) MarshalJSON() ([]byte, error) {
 	return nil, assert.AnError
 }
 
