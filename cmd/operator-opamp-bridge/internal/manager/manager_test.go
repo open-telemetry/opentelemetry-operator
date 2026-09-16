@@ -45,8 +45,8 @@ func TestManager_StartStartsRuntimesBeforeKubernetesClient(t *testing.T) {
 
 func TestManager_NewRequiresPermissionReviewClientWithRequiredPermissions(t *testing.T) {
 	manager, err := New(
-		WithRequiredPermissions(func() ([]Permission, error) {
-			return []Permission{{Verb: "get", Resource: "pods"}}, nil
+		WithRequiredPermissions(func() ([]config.Permission, error) {
+			return []config.Permission{{Verb: "get", Resource: "pods"}}, nil
 		}),
 	)
 

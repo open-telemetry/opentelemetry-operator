@@ -4,7 +4,6 @@
 package controllers
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -254,7 +253,7 @@ func TestRemoveFinalizer(t *testing.T) {
 				},
 			}
 
-			deletionTS, err := removeFinalizer(context.Background(), reconciler, params, instance)
+			deletionTS, err := removeFinalizer(t.Context(), reconciler, params, instance)
 
 			if tc.expectError {
 				require.Error(t, err)

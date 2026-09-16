@@ -206,6 +206,10 @@ type OpenTelemetryCommonFields struct {
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
+	// EnableServiceLinks sets enableServiceLinks on the generated pods. Defaults to true.
+	// +optional
+	// +kubebuilder:default:=true
+	EnableServiceLinks *bool `json:"enableServiceLinks,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.
