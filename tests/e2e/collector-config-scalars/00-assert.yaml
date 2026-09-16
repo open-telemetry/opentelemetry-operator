@@ -16,14 +16,6 @@ data:
         send_batch_max_size: 1000000
         send_batch_size: 8192
         timeout: 10s
-      metricstransform:
-        transforms:
-          - action: update
-            include: some.metric
-            operations:
-              - action: add_label
-                new_label: cluster
-                new_value: "0e12"
       probabilistic_sampler:
         sampling_percentage: 15.5
       resource:
@@ -45,6 +37,11 @@ data:
           - action: insert
             key: tab-led-multi-line
             value: "\tindented\nline two"
+      transform:
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["cluster"], "0e12")
     service:
       telemetry:
         metrics:
@@ -60,7 +57,7 @@ data:
             - debug
           processors:
             - batch
-            - metricstransform
+            - transform
             - resource
           receivers:
             - otlp

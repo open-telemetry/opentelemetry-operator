@@ -4,7 +4,6 @@ metadata:
   name: config-scalars
 spec:
   mode: deployment
-  image: (join('', ['ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:', $collectorVersion]))
   config:
     receivers:
       otlp:
@@ -21,14 +20,11 @@ spec:
         sampling_percentage: 15.5
       # The scenario from issue #4314: an unquoted 0e12 is a float, and the collector
       # rejects it for this string field.
-      metricstransform:
-        transforms:
-          - include: some.metric
-            action: update
-            operations:
-              - action: add_label
-                new_label: cluster
-                new_value: "0e12"
+      transform:
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["cluster"], "0e12")
       resource:
         attributes:
           - key: looks-like-bool
@@ -52,7 +48,7 @@ spec:
       pipelines:
         metrics:
           receivers: [otlp]
-          processors: [batch, metricstransform, resource]
+          processors: [batch, transform, resource]
           exporters: [debug]
         traces:
           receivers: [otlp]
