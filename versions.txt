@@ -26,7 +26,7 @@ autoinstrumentation-python=0.64b0
 
 # Represents the current release of Ruby instrumentation.
 # Should match autoinstrumentation/ruby/version.txt
-autoinstrumentation-ruby=0.73.1
+autoinstrumentation-ruby=0.1.0
 
 # Represents the current release of DotNet instrumentation.
 autoinstrumentation-dotnet=1.16.0

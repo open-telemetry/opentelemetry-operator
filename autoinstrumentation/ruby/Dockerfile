@@ -11,22 +11,16 @@
 #   used and must be availabe in the image.
 FROM ruby:3.3-slim AS build
 
-ARG PACKAGES="\
-    build-essential \
-    "
-
 # Install packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends ${PACKAGES} && \
+    apt-get install -y --no-install-recommends build-essential && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ruby/instrumentation
 
 COPY . .
-
-ARG BUNDLE_RUBYGEMS__PKG__GITHUB__COM
 
 RUN bundle install --path ./
 
