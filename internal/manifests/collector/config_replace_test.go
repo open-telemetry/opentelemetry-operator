@@ -188,3 +188,84 @@ func TestReplaceConfigPreservesScalarTypes(t *testing.T) {
 	assert.Len(t, scrapeConfigs, 1)
 	assert.NotContains(t, otelcol.Spec.Config.Receivers.Object["prometheus"].(map[string]any), "target_allocator")
 }
+
+func TestReplaceConfigRejectsMissingReceivers(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "receivers")
+}
+
+func TestReplaceConfigRejectsMissingPrometheus(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheus")
+}
+
+func TestReplaceConfigRejectsInvalidPrometheusType(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"prometheus": "string"}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheus")
+}
+
+func TestReplaceConfigRejectsInvalidPrometheusConfig(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{
+					"prometheus": map[string]any{"config": "string"},
+				}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheusConfig")
+}

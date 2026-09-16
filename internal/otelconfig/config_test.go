@@ -1882,3 +1882,213 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
+
+func TestConfigYamlRejectsMergeKey(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+		Processors: &v1beta1.AnyConfig{Object: map[string]any{
+			"<<": "merge",
+		}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"<<"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	_, err := cfg.Yaml()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "decode rendered YAML")
+}
+
+func TestConfigYamlRejectsTabLedMultilineKey(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+		Processors: &v1beta1.AnyConfig{Object: map[string]any{
+			"\tline1\nline2": "value",
+		}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"\tline1\nline2"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	_, err := cfg.Yaml()
+	require.Error(t, err)
+}
+
+type badMarshalJSON struct{}
+
+func (b badMarshalJSON) MarshalJSON() ([]byte, error) {
+	return nil, assert.AnError
+}
+
+func TestConfigYamlRejectsBadMarshalJSON(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{"bad": badMarshalJSON{}}}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	_, err := cfg.Yaml()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal config to JSON")
+}
+
+func TestVerifyYAMLEquivalenceRejectsBadYAML(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	err := cfg.VerifyYAMLEquivalence([]byte("not: [valid"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "decode rendered YAML")
+}
+
+func TestVerifyYAMLEquivalenceRejectsBoolMismatch(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"prometheus": map[string]any{"honor": true}}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+  prometheus:
+    honor: "true"
+exporters:
+  debug: null
+service:
+  pipelines:
+    metrics:
+      exporters:
+        - debug
+      receivers:
+        - prometheus
+`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the config holds bool true, the YAML decodes to string true")
+}
+
+func TestVerifyYAMLEquivalenceRejectsStringMismatch(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"prometheus": map[string]any{"job": "test"}}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+  prometheus:
+    job: 123
+exporters:
+  debug: null
+service:
+  pipelines:
+    metrics:
+      exporters:
+        - debug
+      receivers:
+        - prometheus
+`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the config holds string test, the YAML decodes to int 123")
+}
+
+func TestVerifyYAMLEquivalenceRejectsFloatMismatch(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"prometheus": map[string]any{"port": float64(9090)}}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+  prometheus:
+    port: "9090"
+exporters:
+  debug: null
+service:
+  pipelines:
+    metrics:
+      exporters:
+        - debug
+      receivers:
+        - prometheus
+`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the config holds float64 9090, the YAML decodes to string 9090")
+}
+
+func TestVerifyYAMLEquivalenceAcceptsUint64(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{"big": float64(1 << 63)}}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	doc := []byte(`receivers:
+  otlp:
+    big: 9223372036854775808
+exporters:
+  debug: null
+service:
+  pipelines:
+    metrics:
+      exporters:
+        - debug
+      receivers:
+        - otlp
+`)
+	err := cfg.VerifyYAMLEquivalence(doc)
+	require.NoError(t, err)
+}
+
+func TestConfigYamlWithNilAnyConfig(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: nil},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Exporters: []string{"debug"}},
+			},
+		},
+	}
+	doc, err := cfg.Yaml()
+	require.NoError(t, err)
+	assert.Contains(t, doc, "receivers: {}")
+}
+
+func TestConfigYamlWithNonBasicType(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{
+			"otlp": map[string]any{"nested": map[string]int{"port": 4317}},
+		}},
+		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+			},
+		},
+	}
+	_, err := cfg.Yaml()
+	require.NoError(t, err)
+}

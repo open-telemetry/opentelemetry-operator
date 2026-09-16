@@ -86,3 +86,41 @@ func TestConfigToStructRejectsNonStringKeys(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "map key 1 is a int, not a string")
 }
+
+func TestConfigFromStructRejectsUnmarshalableValue(t *testing.T) {
+	cfg := &v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": make(chan int)}},
+	}
+	_, err := adapters.ConfigFromStruct(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal collector config")
+}
+
+func TestConfigToStructRejectsNestedNonStringKeys(t *testing.T) {
+	_, err := adapters.ConfigToStruct(map[any]any{
+		"receivers": map[any]any{
+			"otlp": map[any]any{
+				"nested": map[any]any{1: nil},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "map key 1 is a int, not a string")
+}
+
+func TestConfigToStructRejectsNonStringKeysInSlice(t *testing.T) {
+	_, err := adapters.ConfigToStruct(map[any]any{
+		"receivers": map[any]any{
+			"otlp": []any{map[any]any{1: nil}},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "map key 1 is a int, not a string")
+}
+
+func TestConfigToStructWithMapStringAny(t *testing.T) {
+	_, err := adapters.ConfigToStruct(map[any]any{
+		"receivers": map[string]any{"otlp": nil},
+	})
+	require.NoError(t, err)
+}
