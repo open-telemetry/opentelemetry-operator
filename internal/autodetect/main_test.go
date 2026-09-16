@@ -162,6 +162,90 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 	}
 }
 
+// The operator only ever creates and watches HTTPRoute from
+// gateway.networking.k8s.io/v1, so the group being served is not enough:
+// a partial bundle (only GatewayClass, or only v1beta1) must report the API
+// as not available, or the controller fails to start (#5571).
+func TestDetectPlatformBasedOnAvailableAPIGroupsGatewayAPI(t *testing.T) {
+	gatewayGroup := func(versions ...string) *metav1.APIGroupList {
+		var gv []metav1.GroupVersionForDiscovery
+		for _, v := range versions {
+			gv = append(gv, metav1.GroupVersionForDiscovery{GroupVersion: "gateway.networking.k8s.io/" + v})
+		}
+		return &metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "gateway.networking.k8s.io", Versions: gv}}}
+	}
+	for _, tt := range []struct {
+		name         string
+		apiGroupList *metav1.APIGroupList
+		// resources served per group-version path, e.g. "/apis/gateway.networking.k8s.io/v1"
+		resources map[string]*metav1.APIResourceList
+		expected  gatewayapi.ApiAvailability
+	}{
+		{
+			name:         "no gateway api group",
+			apiGroupList: &metav1.APIGroupList{},
+			resources:    map[string]*metav1.APIResourceList{},
+			expected:     gatewayapi.ApiNotAvailable,
+		},
+		{
+			name:         "group served but only GatewayClass installed",
+			apiGroupList: gatewayGroup("v1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/gateway.networking.k8s.io/v1": {APIResources: []metav1.APIResource{{Kind: "GatewayClass"}}},
+			},
+			expected: gatewayapi.ApiNotAvailable,
+		},
+		{
+			name:         "HTTPRoute served only in v1beta1",
+			apiGroupList: gatewayGroup("v1beta1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/gateway.networking.k8s.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "HTTPRoute"}}},
+			},
+			expected: gatewayapi.ApiNotAvailable,
+		},
+		{
+			name:         "HTTPRoute served in v1",
+			apiGroupList: gatewayGroup("v1beta1", "v1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/gateway.networking.k8s.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "GatewayClass"}}},
+				"/apis/gateway.networking.k8s.io/v1":      {APIResources: []metav1.APIResource{{Kind: "GatewayClass"}, {Kind: "Gateway"}, {Kind: "HTTPRoute"}}},
+			},
+			expected: gatewayapi.ApiAvailable,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				var output []byte
+				var err error
+				if req.URL.Path == "/apis" {
+					output, err = json.Marshal(tt.apiGroupList)
+				} else if resources, ok := tt.resources[req.URL.Path]; ok {
+					output, err = json.Marshal(resources)
+				} else {
+					output, err = json.Marshal(&metav1.APIResourceList{})
+				}
+				require.NoError(t, err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(output)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+			require.NoError(t, err)
+
+			// test
+			avl, err := autoDetect.GatewayAPIsAvailability()
+
+			// verify
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, avl)
+		})
+	}
+}
+
 type fakeClientGenerator func() kubernetes.Interface
 
 const (

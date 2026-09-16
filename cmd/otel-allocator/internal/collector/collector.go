@@ -122,6 +122,14 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 			continue
 		}
 
+		// A pod being deleted is no longer a collector, even while it still
+		// reports Ready: the kubelet may never confirm the deletion (for
+		// example when its node is unreachable), and the readiness-based
+		// grace period below would then keep it eligible for targets forever.
+		if pod.DeletionTimestamp != nil {
+			continue
+		}
+
 		// pod healthiness check will always be disabled if CollectorNotReadyGracePeriod is set to 0 * time.Second
 		if k.isPodUnhealthy(pod, k.collectorNotReadyGracePeriod) {
 			continue
