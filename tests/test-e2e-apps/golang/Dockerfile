@@ -1,5 +1,5 @@
 # Stage 1: Build the Go application
-FROM docker.io/library/golang:1.27.0-alpine@sha256:4c9fe60190a2a3350ddc51de80d0224b8a6698d12bdfc999fee45ea9d6c46dbc AS builder
+FROM docker.io/library/golang:1.27.1-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS builder
 
 # Set the working directory inside the container for the build stage.
 WORKDIR /app
@@ -13,7 +13,11 @@ COPY main.go .
 # - GOOS=linux: Explicitly sets the target operating system to Linux, which is standard for containers.
 # -o /app/rolldice: Specifies the output path and name for the compiled executable inside this builder stage.
 # main.go: The source file to compile.
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/rolldice main.go
+# Do not strip the binary (no -ldflags="-w -s"): the Go auto-instrumentation agent
+# needs the ELF symbol table to locate functions in Go >= 1.26 binaries and falls
+# back to DWARF for struct offsets when the Go version is newer than its cached
+# offsets. Stripping either makes the instrumentation-go e2e test fail.
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/rolldice main.go
 
 # Stage 2: Create the final minimal production image
 FROM scratch

@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: targetallocator-kubernetessd
 spec:
+  namespace: chainsaw-targetallocator-kubernetessd
   steps:
   - name: Setup Target Allocator RBAC
     use:

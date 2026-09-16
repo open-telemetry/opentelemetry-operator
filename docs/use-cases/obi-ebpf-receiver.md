@@ -83,8 +83,7 @@ spec:
 
 ## Unprivileged setup
 
-Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. For more information see [Deploy OBI unprivileged]
-(https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-unprivileged).
+Instead of granting full privileges, you can run OBI with only the Linux capabilities it needs. For more information see [Deploy OBI unprivileged](https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes/#deploy-obi-unprivileged).
 
 ```yaml
 apiVersion: opentelemetry.io/v1beta1
