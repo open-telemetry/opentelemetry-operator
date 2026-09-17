@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: targetallocator-collector-mtls
 spec:
+  namespace: chainsaw-targetallocator-collector-mtls
   steps:
     - name: Setup Target Allocator RBAC
       use:

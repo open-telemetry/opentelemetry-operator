@@ -280,6 +280,11 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 	return currentVersion.AtLeast(minimumVersion), nil
 }
 
+// GatewayAPIsAvailability checks if the Gateway API resources the operator
+// uses are available. The group being served is not enough: a cluster may
+// carry a partial bundle (for example only GatewayClass), and the operator
+// creates and watches HTTPRoute from gateway.networking.k8s.io/v1, so that
+// exact kind and version must be served.
 func (a *autoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
@@ -287,8 +292,22 @@ func (a *autoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, erro
 	}
 
 	for _, group := range apiList.Groups {
-		if group.Name == "gateway.networking.k8s.io" {
-			return gatewayapi.ApiAvailable, nil
+		if group.Name != "gateway.networking.k8s.io" {
+			continue
+		}
+		for _, version := range group.Versions {
+			if version.GroupVersion != "gateway.networking.k8s.io/v1" {
+				continue
+			}
+			resources, err := a.dcl.ServerResourcesForGroupVersion(version.GroupVersion)
+			if err != nil {
+				return gatewayapi.ApiNotAvailable, err
+			}
+			for _, resource := range resources.APIResources {
+				if resource.Kind == "HTTPRoute" {
+					return gatewayapi.ApiAvailable, nil
+				}
+			}
 		}
 	}
 
@@ -332,7 +351,7 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 		return err
 	}
 	c.TargetAllocatorAvailability = taAvl
-	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
+	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", taAvl)
 
 	coAvl, err := autoDetect.CollectorAvailability()
 	if err != nil {

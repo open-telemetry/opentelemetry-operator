@@ -6345,6 +6345,9 @@ spec:
                 type: object
               dnsPolicy:
                 type: string
+              enableServiceLinks:
+                default: true
+                type: boolean
               env:
                 items:
                   properties:
