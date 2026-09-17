@@ -7,134 +7,131 @@ User-facing documentation lives under [docs/](docs/README.md).
 
 ## What a good change looks like
 
-* **Stay scoped.** Change what the linked issue asks for and nothing else. No
-  unrelated refactoring, dependency bumps, or style cleanups in the same PR.
-* **Match the surrounding code.** Mirror the naming, comment density, and test
-  style of the files you touch. If the file's tests are table-driven, extend
-  the table; if they're per-case functions, add a function.
-* **Use plain, unadorned language in any prose you write here** — comments,
-  godoc, PR descriptions, changelog notes. No metaphor, and no technical terms
-  beyond those the repository already uses; broadly used software engineering
-  terminology is fine.
-* **A comment states a constraint the code cannot show**, in one or two short
-  sentences, citing its source where one exists, usually as an issue link,
-  e.g. `// See open-telemetry/opentelemetry-operator#5075.` Describe only the
-  current state: no change narration ("previously X, now Y", "this
-  change...") — history belongs in the commit message. Top-level comments are
-  godoc: start with the identifier name, end with a period (enforced by
-  lint).
-* **Fill the PR template honestly.** The Testing section lists what you
-  actually ran; if you could not run something (e.g. e2e), say so.
-* **Surface uncertainty instead of guessing.** If you are unsure whether a
-  change is backwards-compatible, needs a feature gate, or is large enough to
-  need an RFC ([docs/rfcs/README.md](docs/rfcs/README.md)), say so explicitly
-  in the PR description. Stating a doubt is always acceptable; hiding one is
-  not.
+- **Stay scoped.** Change what the linked issue asks for and nothing else. No
+unrelated refactoring, dependency bumps, or style cleanups in the same PR.
+- **Match the surrounding code.** Mirror the naming, comment density, and test
+style of the files you touch. If the file's tests are table-driven, extend
+the table; if they're per-case functions, add a function.
+- **Use plain, unadorned language in any prose you write here** — comments,
+godoc, PR descriptions, changelog notes. No metaphor, and no technical terms
+beyond those the repository already uses; broadly used software engineering
+terminology is fine.
+- **A comment states a constraint the code cannot show**, in one or two short
+sentences, citing its source where one exists, usually as an issue link,
+e.g. `// See open-telemetry/opentelemetry-operator#5075.` Describe only the
+current state: no change narration ("previously X, now Y", "this
+change...") — history belongs in the commit message. Top-level comments are
+godoc: start with the identifier name, end with a period (enforced by
+lint).
+- **Fill the PR template honestly.** The Testing section lists what you
+actually ran; if you could not run something (e.g. e2e), say so.
+- **Surface uncertainty instead of guessing.** If you are unsure whether a
+change is backwards-compatible, needs a feature gate, or is large enough to
+need an RFC ([docs/rfcs/README.md](docs/rfcs/README.md)), say so explicitly
+in the PR description. Stating a doubt is always acceptable; hiding one is
+not.
 
 ## Architecture principles
 
-* **Reconciliation and resource shape are separate layers.** Controllers in
-  `internal/controllers/` reconcile; the *shape* of every generated Kubernetes
-  resource is produced by builder functions in `internal/manifests/` and unit
-  tested by comparing expected objects. New or changed output belongs in a
-  builder plus its test, not inlined in reconciliation logic.
-* Resource names always come from helpers in `internal/naming/`.
-* `apis/` contains CRD types and markers only. CRD version conversion
-  deliberately lives in `internal/webhook/*_conversion.go`, **not** under
-  `apis/` — do not follow the default kubebuilder layout here.
-* **The stable API is conservative.** Changes to `apis/v1beta1` must be
-  additive and optional, with sensible defaults. Risky or
-  backwards-incompatible behavior changes go behind a feature gate
-  registered in `pkg/featuregate/featuregate.go` (see
-  [Adding a feature gate](CONTRIBUTING.md#adding-a-feature-gate)). These
-  registry gates are distinct from the per-language
-  `--enable-<language>-instrumentation` CLI flags in `internal/config/`.
-* **CRD fields that pass through to reconciled resources mirror the upstream
-  type.** A field whose value is copied directly into a generated Kubernetes
-  resource uses the identical type from the upstream API, so it passes through
-  without conversion (see the `ServiceSpec`-mirroring fields in
-  `apis/v1beta1/common.go`). One exception: when upstream uses a bare value
-  type but the CRD must distinguish "unset" from the zero value, wrap it in a
-  pointer and resolve the default in the manifest builder.
-* Features need a discussion issue first; cross-cutting designs go through the
-  RFC process in `docs/rfcs/` before implementation.
+- **Reconciliation and resource shape are separate layers.** Controllers in
+`internal/controllers/` reconcile; the *shape* of every generated Kubernetes
+resource is produced by builder functions in `internal/manifests/` and unit
+tested by comparing expected objects. New or changed output belongs in a
+builder plus its test, not inlined in reconciliation logic.
+- Resource names always come from helpers in `internal/naming/`.
+- `apis/` contains CRD types and markers only. CRD version conversion
+deliberately lives in `internal/webhook/*_conversion.go`, **not** under
+`apis/` — do not follow the default kubebuilder layout here.
+- **The stable API is conservative.** Changes to `apis/v1beta1` must be
+additive and optional, with sensible defaults. Risky or
+backwards-incompatible behavior changes go behind a feature gate
+registered in `pkg/featuregate/featuregate.go` (see
+[Adding a feature gate](CONTRIBUTING.md#adding-a-feature-gate)). These
+registry gates are distinct from the per-language
+`--enable-<language>-instrumentation` CLI flags in `internal/config/`.
+- **CRD fields that pass through to reconciled resources mirror the upstream
+type.** A field whose value is copied directly into a generated Kubernetes
+resource uses the identical type from the upstream API, so it passes through
+without conversion (see the `ServiceSpec`-mirroring fields in
+`apis/v1beta1/common.go`). One exception: when upstream uses a bare value
+type but the CRD must distinguish "unset" from the zero value, wrap it in a
+pointer and resolve the default in the manifest builder.
+- Features need a discussion issue first; cross-cutting designs go through the
+RFC process in `docs/rfcs/` before implementation.
 
 ## Testing policy
 
-* Every bug fix carries a unit test that fails without the fix. Features need
-  unit and/or e2e tests.
-* Unit tests use testify. Suites that need a real API server use envtest via
-  `internal/testenv` (binaries download automatically on first run).
-* For e2e coverage, **chainsaw is the default** for asserting on the shape of
-  generated resources. Write Go e2e tests (`internal/testing/e2e`,
-  `//go:build e2e`) only for semantic checks — e.g. metric values and series —
-  that are awkward to express in chainsaw.
-* Chainsaw test names must be unique across the whole repository
-  (`make check-chainsaw-test-names`); copy-pasting a test directory without
-  renaming is a common CI failure.
-* Golden files are regenerated with `scripts/update-golden-files.sh`; target
-  allocator conformance goldens with `make ta-conformance-regen`.
+- Every bug fix carries a unit test that fails without the fix. Features need
+unit and/or e2e tests.
+- Unit tests use testify. Suites that need a real API server use envtest via
+`internal/testenv` (binaries download automatically on first run).
+- For e2e coverage, **chainsaw is the default** for asserting on the shape of
+generated resources. Write Go e2e tests (`internal/testing/e2e`,
+`//go:build e2e`) only for semantic checks — e.g. metric values and series —
+that are awkward to express in chainsaw.
+- Chainsaw test names must be unique across the whole repository
+(`make check-chainsaw-test-names`); copy-pasting a test directory without
+renaming is a common CI failure.
+- Golden files are regenerated with `scripts/update-golden-files.sh`; target
+allocator conformance goldens with `make ta-conformance-regen`.
 
 ## Hard rules CI enforces
 
-* **Never hand-edit generated files**: `zz_generated.*.go`, `bundle/`,
-  `docs/api/`, and `CHANGELOG.md`. The first three are regenerated by
-  `make update`; the changelog is assembled from `.chloggen/` entries.
-* Any change under `apis/` — including marker-only changes — requires running
-  `make update` and committing the resulting diff, or the
-  `ensure-update-is-noop` CI job fails.
-* Every new `.go` file starts with exactly:
-
+- **Never hand-edit generated files**: `zz_generated.*.go`, `bundle/`,
+`docs/api/`, and `CHANGELOG.md`. The first three are regenerated by
+`make update`; the changelog is assembled from `.chloggen/` entries.
+- Any change under `apis/` — including marker-only changes — requires running
+`make update` and committing the resulting diff, or the
+`ensure-update-is-noop` CI job fails.
+- Every new `.go` file starts with exactly:
   ```go
   // Copyright The OpenTelemetry Authors
   // SPDX-License-Identifier: Apache-2.0
   ```
-
-* User-facing changes need a `.chloggen/` entry (`make chlog-new`, then
-  `make chlog-validate`). The deciding question: would a user reading the
-  changelog find this useful? Required for changes to operator or operand
-  behavior, CRD schemas, defaults, flags, and feature gates; omitted for
-  test-only, CI, docs,
-  and internal refactoring changes (skip with `[chore]` in the PR title or the
-  `Skip Changelog` label). When uncertain, add the entry — see
-  [When to add a changelog entry](CONTRIBUTING.md#adding-a-changelog-entry).
-* Lint is much stricter than gofmt: gofumpt with extra rules, gci import
-  grouping (stdlib / default / operator module), godot, mandatory import
-  aliases (`apierrors`, `metav1`), and bans on `github.com/pkg/errors`,
-  `go.uber.org/atomic`, and `go.uber.org/multierr`. Bare `//nolint` is
-  rejected — name the linter and give the reason. `make fmt` fixes most of
-  this automatically; run it early and often. Lint also covers the
-  `e2e`-tagged test files.
-* The repository has four Go modules (`.`, `apis/`,
-  `cmd/otel-allocator/integrationtest/`, `tests/test-e2e-apps/bridge-server/`).
-  `go` commands from the root do not descend into the others; `make test` and
-  `make tidy` handle all of them.
-* If you touch `.github/workflows/`, actions must be SHA-pinned. Shell scripts
-  under `hack/` and `.ci/` must pass shellcheck.
+- User-facing changes need a `.chloggen/` entry (`make chlog-new`, then
+`make chlog-validate`). The deciding question: would a user reading the
+changelog find this useful? Required for changes to operator or operand
+behavior, CRD schemas, defaults, flags, and feature gates; omitted for
+test-only, CI, docs,
+and internal refactoring changes (skip with `[chore]` in the PR title or the
+`Skip Changelog` label). When uncertain, add the entry — see
+[When to add a changelog entry](CONTRIBUTING.md#adding-a-changelog-entry).
+- Lint is much stricter than gofmt: gofumpt with extra rules, gci import
+grouping (stdlib / default / operator module), godot, mandatory import
+aliases (`apierrors`, `metav1`), and bans on `github.com/pkg/errors`,
+`go.uber.org/atomic`, and `go.uber.org/multierr`. Bare `//nolint` is
+rejected — name the linter and give the reason. `make fmt` fixes most of
+this automatically; run it early and often. Lint also covers the
+`e2e`-tagged test files.
+- The repository has four Go modules (`.`, `apis/`,
+`cmd/otel-allocator/integrationtest/`, `tests/test-e2e-apps/bridge-server/`).
+`go` commands from the root do not descend into the others; `make test` and
+`make tidy` handle all of them.
+- If you touch `.github/workflows/`, actions must be SHA-pinned. Shell scripts
+under `hack/` and `.ci/` must pass shellcheck.
 
 ## Fast validation loop
 
 Cheapest first — do not run the expensive gates on every iteration:
 
 1. `make fmt && make lint` — seconds to a few minutes; catches all formatting
-   and header issues.
+ and header issues.
 2. `go test ./internal/manifests/...` (or whichever package you changed);
-   `make test GOTEST_EXTRA_OPTS="-run TestName"` to narrow further. A full
-   `make test` runs everything with `-race` and takes several minutes.
-3. If the change is user-facing (see the changelog rules above): `make
-   chlog-new`, fill in the entry, then `make chlog-validate`.
+ `make test GOTEST_EXTRA_OPTS="-run TestName"` to narrow further. A full
+ `make test` runs everything with `-race` and takes several minutes.
+3. If the change is user-facing (see the changelog rules above): `make  chlog-new`, fill in the entry, then `make chlog-validate`.
 4. **Before committing, run `make update`, review and stage the changes, then
-   run `make precommit`.** The generated-file freshness check compares the
-   working tree with the index, so regenerated files must be staged first.
-   Review and stage any further changes made by precommit before committing.
-   This is the complete gate: it covers
-   formatting, lint, tests, generated-file freshness, and fails with
-   instructions if a changelog entry is missing (`CHLOG=skip make precommit`
-   when the change genuinely needs none). `make generate` alone is **not** a
-   substitute for `make update` — it regenerates deepcopy code but not the
-   CRDs, bundle, and API docs that CI checks. Most of the cost is one-time
-   tool and dependency downloads; with warm caches the whole gate takes a
-   couple of minutes.
+ run `make precommit`.** The generated-file freshness check compares the
+ working tree with the index, so regenerated files must be staged first.
+ Review and stage any further changes made by precommit before committing.
+ This is the complete gate: it covers
+ formatting, lint, tests, generated-file freshness, and fails with
+ instructions if a changelog entry is missing (`CHLOG=skip make precommit`
+ when the change genuinely needs none). `make generate` alone is **not** a
+ substitute for `make update` — it regenerates deepcopy code but not the
+ CRDs, bundle, and API docs that CI checks. Most of the cost is one-time
+ tool and dependency downloads; with warm caches the whole gate takes a
+ couple of minutes.
 
 E2e tests need a kind cluster: `make prepare-e2e` (must be re-run after any
 operator code change), then `make e2e` or a suite-specific target.
@@ -147,3 +144,21 @@ check for edited Go files. Claude Code loads them via the checked-in
 `.claude/settings.json`; if your harness supports hooks, adapting them is
 encouraged but optional — `make precommit` and CI enforce the same rules
 regardless.
+
+## Commit formatting
+
+We appreciate it if users disclose the use of AI tools when the significant part of a commit is
+taken from a tool without changes. When making a commit this should be disclosed through an
+Assisted-by: commit message trailer.
+
+Examples:
+
+```
+Assisted-by: ChatGPT 5.2
+Assisted-by: Claude Opus 4.5
+```
+
+Do NOT use a `Co-authored-by:` trailer to disclose AI assistance. Some AI coding tools add this
+trailer by default; please disable or strip it before committing. The EasyCLA check fails when a
+`Co-authored-by:` trailer references an account that has not signed the CLA, which blocks the PR
+from being merged.
