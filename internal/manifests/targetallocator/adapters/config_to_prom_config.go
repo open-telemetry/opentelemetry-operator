@@ -139,13 +139,9 @@ func PromReceiverConfig(config map[any]any) (map[any]any, error) {
 }
 
 // UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
-// both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
-func UnescapeDollarSignsInPromConfig(cfg string) (map[any]any, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
+// both "relabel_configs" and "metric_relabel_configs" of the given Prometheus receiver config,
+// modifying it in place.
+func UnescapeDollarSignsInPromConfig(prometheus map[any]any) (map[any]any, error) {
 	scrapeConfigs, err := GetScrapeConfigsFromPromConfig(prometheus)
 	if err != nil {
 		return nil, err

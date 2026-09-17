@@ -93,7 +93,9 @@ func renderableAnyConfig(c AnyConfig) AnyConfig {
 func renderableValue(v any) any {
 	switch val := v.(type) {
 	case float64:
-		if val == math.Trunc(val) && val >= math.MinInt64 && val < math.MaxInt64 && float64(int64(val)) == val {
+		// As a float64 comparand, MaxInt64 rounds up to 2^63, so this admits every integral value in
+		// [MinInt64, 2^63) - exactly the ones that convert to int64 and back without loss.
+		if val == math.Trunc(val) && val >= math.MinInt64 && val < math.MaxInt64 {
 			return int64(val)
 		}
 		return val
