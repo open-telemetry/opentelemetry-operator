@@ -64,10 +64,11 @@ The upstream SDK version for each language is read from:
 
 ## Changelogs
 
-Every language directory contains a `CHANGELOG.md` documenting its published
-image, with one entry per `<sdk-version>-<revision>` tag. Go has no changelog
-(the operator references the upstream image), and Nginx shares the apache-httpd
-image so its changes are recorded in `apache-httpd/CHANGELOG.md`.
+Most language directories contain a `CHANGELOG.md` documenting their published
+image, with one entry per `<sdk-version>-<revision>` tag. Go and PHP have no
+changelog (their images are maintained upstream / by the PHP SIG), and Nginx
+shares the apache-httpd image so its changes are recorded in
+`apache-httpd/CHANGELOG.md`.
 
 Entries are written by the same
 [`hack/autoinstrumentation-revision`](../hack/autoinstrumentation-revision) tool

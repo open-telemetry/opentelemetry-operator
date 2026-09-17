@@ -9,7 +9,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 )
+
+// changelogExcluded lists languages built here whose changelog is maintained
+// outside this repository (php by the PHP SIG, like go's upstream image).
+var changelogExcluded = map[string]bool{"php": true}
 
 func languageName(lang string) string {
 	switch lang {
@@ -51,16 +56,15 @@ func upstreamReleaseURL(lang, sdkVersion string) string {
 // nothing to log. The release URL is set only for SDK bumps. The tag uses the
 // desired revision, so it is correct whether or not Apply has run.
 func (s languageState) changelogChange() (tag, note, releaseURL string, ok bool) {
-	if s.headSDK == "" {
+	// An empty base SDK means there is nothing to diff against (a brand-new
+	// language folder), whose first entry is written by hand like the seeds.
+	if s.baseSDK == "" || s.headSDK == "" {
 		return "", "", "", false
 	}
 	desired, _ := s.desiredRevision()
 	tag = s.headSDK + "-" + strconv.Itoa(desired)
 	name := languageName(s.lang)
 	switch {
-	case s.baseSDK == "":
-		note = fmt.Sprintf("Add %s auto-instrumentation %s.", name, s.headSDK)
-		releaseURL = upstreamReleaseURL(s.lang, s.headSDK)
 	case s.headSDK != s.baseSDK:
 		note = fmt.Sprintf("Update %s auto-instrumentation from %s to %s.", name, s.baseSDK, s.headSDK)
 		releaseURL = upstreamReleaseURL(s.lang, s.headSDK)
@@ -72,15 +76,16 @@ func (s languageState) changelogChange() (tag, note, releaseURL string, ok bool)
 	return tag, note, releaseURL, true
 }
 
-func renderChangelogEntry(tag, note, prRef, releaseURL string) string {
-	line := "- " + note
-	if releaseURL != "" {
-		line += " See [release notes](" + releaseURL + ")."
-	}
-	if prRef != "" {
-		line += " (#" + prRef + ")"
-	}
-	return fmt.Sprintf("## %s\n\n%s\n", tag, line)
+var changelogEntryTemplate = template.Must(template.New("entry").Parse(
+	"## {{.Tag}}\n\n- {{.Note}}{{if .ReleaseURL}} See [release notes]({{.ReleaseURL}}).{{end}}{{if .PRRef}} (#{{.PRRef}}){{end}}\n",
+))
+
+func renderChangelogEntry(tag, note, prRef, releaseURL string) (string, error) {
+	var b strings.Builder
+	err := changelogEntryTemplate.Execute(&b, struct {
+		Tag, Note, ReleaseURL, PRRef string
+	}{Tag: tag, Note: note, ReleaseURL: releaseURL, PRRef: prRef})
+	return b.String(), err
 }
 
 func hasChangelogTag(content, tag string) bool {
@@ -123,6 +128,9 @@ func (r Repo) ApplyChangelog(baseSHA, prRef string) ([]ChangelogEntry, error) {
 
 	var entries []ChangelogEntry
 	for _, lang := range langs {
+		if changelogExcluded[lang] {
+			continue
+		}
 		ls, err := r.gather(baseSHA, lang)
 		if err != nil {
 			return nil, err
@@ -134,7 +142,7 @@ func (r Repo) ApplyChangelog(baseSHA, prRef string) ([]ChangelogEntry, error) {
 		if !ok {
 			continue
 		}
-		rel := changelogFile(lang)
+		rel := changelogFilePath(lang)
 		content, err := root.ReadFile(rel)
 		if err != nil {
 			return nil, fmt.Errorf("read %s: %w", rel, err)
@@ -142,7 +150,10 @@ func (r Repo) ApplyChangelog(baseSHA, prRef string) ([]ChangelogEntry, error) {
 		if hasChangelogTag(string(content), tag) {
 			continue
 		}
-		entry := renderChangelogEntry(tag, note, prRef, releaseURL)
+		entry, err := renderChangelogEntry(tag, note, prRef, releaseURL)
+		if err != nil {
+			return nil, err
+		}
 		if err := root.WriteFile(rel, []byte(prependChangelogEntry(string(content), entry)), 0o600); err != nil {
 			return nil, err
 		}
@@ -166,6 +177,9 @@ func (r Repo) CheckChangelog(baseSHA string) ([]Problem, error) {
 
 	var problems []Problem
 	for _, lang := range langs {
+		if changelogExcluded[lang] {
+			continue
+		}
 		ls, err := r.gather(baseSHA, lang)
 		if err != nil {
 			return nil, err
@@ -177,7 +191,7 @@ func (r Repo) CheckChangelog(baseSHA string) ([]Problem, error) {
 		if !ok {
 			continue
 		}
-		rel := changelogFile(lang)
+		rel := changelogFilePath(lang)
 		content, err := root.ReadFile(rel)
 		if err != nil {
 			if os.IsNotExist(err) {
