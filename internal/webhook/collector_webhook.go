@@ -180,6 +180,13 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 
+	// Reject a config the operator cannot render faithfully here, where the user gets the error at admission,
+	// rather than at reconcile time. The rendering paths verify this property again for the documents they
+	// actually write, so this check is early feedback, not the guarantee.
+	if _, err := otelconfig.RenderYAML(&r.Spec.Config); err != nil {
+		return warnings, fmt.Errorf("spec.config cannot be rendered into a collector configuration: %w", err)
+	}
+
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != v1beta1.ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)

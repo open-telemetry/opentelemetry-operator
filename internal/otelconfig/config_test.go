@@ -406,7 +406,7 @@ func scalarConfig(value any) *v1beta1.Config {
 // renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for "<<", which its
 // decoder treats as a merge key even when quoted (https://github.com/go-yaml/yaml/issues/245), nor for a
 // multi-line key whose first line starts with a tab, which it writes as a literal block its own parser rejects
-// (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; Config.Yaml reports an error
+// (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; RenderYAML reports an error
 // for them instead of producing a document the collector would misread.
 func renderableAsKey(s string) bool {
 	return s != "<<" && (!strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n"))
@@ -427,25 +427,25 @@ func assertCollectorReads(t *testing.T, doc string, value, want any) {
 	}
 }
 
-// TestConfigYamlPreservesScalarTypes is the contract behind Config.Yaml: whatever a value's type is in the CR,
+// TestRenderYAMLPreservesScalarTypes is the contract behind RenderYAML: whatever a value's type is in the CR,
 // the collector reads the same type and value from the generated ConfigMap. It covers the strings a YAML decoder
 // would resolve to numbers, booleans, null, timestamps or special floats if they were written unquoted, including
 // the exponent-without-dot case from https://github.com/open-telemetry/opentelemetry-operator/issues/4314, and
 // the number spellings and empty collections that differ between the CR's JSON and YAML.
-func TestConfigYamlPreservesScalarTypes(t *testing.T) {
+func TestRenderYAMLPreservesScalarTypes(t *testing.T) {
 	for _, tc := range scalarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg := scalarConfig(tc.value)
-			doc, err := cfg.Yaml()
+			doc, err := RenderYAML(cfg)
 			require.NoError(t, err)
 			assertCollectorReads(t, doc, tc.value, tc.want)
 		})
 	}
 }
 
-// FuzzConfigYamlPreservesStrings extends TestConfigYamlPreservesScalarTypes to arbitrary strings: none of them
+// FuzzRenderYAMLPreservesStrings extends TestRenderYAMLPreservesScalarTypes to arbitrary strings: none of them
 // may be rendered in a way the collector reads back as anything but the same string.
-func FuzzConfigYamlPreservesStrings(f *testing.F) {
+func FuzzRenderYAMLPreservesStrings(f *testing.F) {
 	for _, tc := range scalarCases {
 		if s, ok := tc.value.(string); ok {
 			f.Add(s)
@@ -456,13 +456,13 @@ func FuzzConfigYamlPreservesStrings(f *testing.F) {
 			t.Skip("the CR cannot hold invalid UTF-8")
 		}
 		cfg := scalarConfig(s)
-		doc, err := cfg.Yaml()
+		doc, err := RenderYAML(cfg)
 		require.NoError(t, err)
 		assertCollectorReads(t, doc, s, s)
 	})
 }
 
-func TestConfigYamlRendersAmbiguousStringsQuoted(t *testing.T) {
+func TestRenderYAMLQuotesAmbiguousStrings(t *testing.T) {
 	// The exact scenario from https://github.com/open-telemetry/opentelemetry-operator/issues/4314.
 	cfg := &v1beta1.Config{
 		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
@@ -476,12 +476,12 @@ func TestConfigYamlRendersAmbiguousStringsQuoted(t *testing.T) {
 			},
 		},
 	}
-	doc, err := cfg.Yaml()
+	doc, err := RenderYAML(cfg)
 	require.NoError(t, err)
 	assert.Contains(t, doc, `new_value: "0e12"`)
 }
 
-// TestVerifyYAMLEquivalence checks the safety net in Config.Yaml: a rendering that the collector would read
+// TestVerifyYAMLEquivalence checks the safety net in RenderYAML: a rendering that the collector would read
 // differently from the CR is rejected, while representational differences the collector cannot observe are not.
 func TestVerifyYAMLEquivalence(t *testing.T) {
 	cfg := &v1beta1.Config{
@@ -528,11 +528,11 @@ service:
 	}
 
 	t.Run("accepts equivalent renderings", func(t *testing.T) {
-		assert.NoError(t, cfg.VerifyYAMLEquivalence([]byte(good)))
-		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant(`"0e12"`, `'0e12'`)))
-		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("9090", "9.09e3")), "numbers are compared by value")
-		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("labels: {}", "labels: null")), "a nil map may be spelled null")
-		assert.NoError(t, cfg.VerifyYAMLEquivalence(variant("processors: {}", "processors:")), "an empty map may be spelled null")
+		assert.NoError(t, verifyYAMLEquivalence(cfg, []byte(good)))
+		assert.NoError(t, verifyYAMLEquivalence(cfg, variant(`"0e12"`, `'0e12'`)))
+		assert.NoError(t, verifyYAMLEquivalence(cfg, variant("9090", "9.09e3")), "numbers are compared by value")
+		assert.NoError(t, verifyYAMLEquivalence(cfg, variant("labels: {}", "labels: null")), "a nil map may be spelled null")
+		assert.NoError(t, verifyYAMLEquivalence(cfg, variant("processors: {}", "processors:")), "an empty map may be spelled null")
 	})
 
 	for name, tc := range map[string]struct {
@@ -574,7 +574,7 @@ service:
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := cfg.VerifyYAMLEquivalence(tc.doc)
+			err := verifyYAMLEquivalence(cfg, tc.doc)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.want)
 		})
@@ -1883,7 +1883,7 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
-func TestConfigYamlRejectsMergeKey(t *testing.T) {
+func TestRenderYAMLRejectsMergeKey(t *testing.T) {
 	cfg := &v1beta1.Config{
 		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
 		Processors: &v1beta1.AnyConfig{Object: map[string]any{
@@ -1896,12 +1896,12 @@ func TestConfigYamlRejectsMergeKey(t *testing.T) {
 			},
 		},
 	}
-	_, err := cfg.Yaml()
+	_, err := RenderYAML(cfg)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "decode rendered YAML")
 }
 
-func TestConfigYamlRejectsTabLedMultilineKey(t *testing.T) {
+func TestRenderYAMLRejectsTabLedMultilineKey(t *testing.T) {
 	cfg := &v1beta1.Config{
 		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
 		Processors: &v1beta1.AnyConfig{Object: map[string]any{
@@ -1914,7 +1914,7 @@ func TestConfigYamlRejectsTabLedMultilineKey(t *testing.T) {
 			},
 		},
 	}
-	_, err := cfg.Yaml()
+	_, err := RenderYAML(cfg)
 	require.Error(t, err)
 }
 
@@ -1924,7 +1924,7 @@ func (badMarshalJSON) MarshalJSON() ([]byte, error) {
 	return nil, assert.AnError
 }
 
-func TestConfigYamlRejectsBadMarshalJSON(t *testing.T) {
+func TestRenderYAMLRejectsBadMarshalJSON(t *testing.T) {
 	cfg := &v1beta1.Config{
 		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{"bad": badMarshalJSON{}}}},
 		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
@@ -1934,7 +1934,7 @@ func TestConfigYamlRejectsBadMarshalJSON(t *testing.T) {
 			},
 		},
 	}
-	_, err := cfg.Yaml()
+	_, err := RenderYAML(cfg)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "marshal config to JSON")
 }
@@ -1949,7 +1949,7 @@ func TestVerifyYAMLEquivalenceRejectsBadYAML(t *testing.T) {
 			},
 		},
 	}
-	err := cfg.VerifyYAMLEquivalence([]byte("not: [valid"))
+	err := verifyYAMLEquivalence(cfg, []byte("not: [valid"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "decode rendered YAML")
 }
@@ -1964,7 +1964,7 @@ func TestVerifyYAMLEquivalenceRejectsBoolMismatch(t *testing.T) {
 			},
 		},
 	}
-	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+	err := verifyYAMLEquivalence(cfg, []byte(`receivers:
   prometheus:
     honor: "true"
 exporters:
@@ -1991,7 +1991,7 @@ func TestVerifyYAMLEquivalenceRejectsStringMismatch(t *testing.T) {
 			},
 		},
 	}
-	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+	err := verifyYAMLEquivalence(cfg, []byte(`receivers:
   prometheus:
     job: 123
 exporters:
@@ -2018,7 +2018,7 @@ func TestVerifyYAMLEquivalenceRejectsFloatMismatch(t *testing.T) {
 			},
 		},
 	}
-	err := cfg.VerifyYAMLEquivalence([]byte(`receivers:
+	err := verifyYAMLEquivalence(cfg, []byte(`receivers:
   prometheus:
     port: "9090"
 exporters:
@@ -2058,7 +2058,7 @@ service:
       receivers:
         - otlp
 `)
-	err := cfg.VerifyYAMLEquivalence(doc)
+	err := verifyYAMLEquivalence(cfg, doc)
 	require.NoError(t, err)
 }
 

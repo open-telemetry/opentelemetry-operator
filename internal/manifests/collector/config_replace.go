@@ -9,12 +9,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 // ReplaceConfig renders the collector configuration written to the collector's ConfigMap. When a target
 // allocator is in use, the Prometheus receiver is rewritten to fetch its scrape targets from it.
 //
-// The rendering is always a single Config.Yaml call on the values the CR holds. The target allocator rewrite
+// The rendering is always a single otelconfig.RenderYAML call on the values the CR holds. The target allocator rewrite
 // happens on a generic map derived from those values through their JSON representation (adapters.ConfigFromStruct
 // and adapters.ConfigToStruct), never by parsing a YAML rendering of them, so no intermediate step can change a
 // value's type on its way to the ConfigMap.
@@ -23,7 +24,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	taEnabled := targetAllocator != nil
 	// Check if TargetAllocator is present, if not, return the original config
 	if !taEnabled {
-		return collectorSpec.Config.Yaml()
+		return otelconfig.RenderYAML(&collectorSpec.Config)
 	}
 
 	config, err := adapters.ConfigFromStruct(&collectorSpec.Config)
@@ -59,5 +60,5 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	if err != nil {
 		return "", err
 	}
-	return updatedConfig.Yaml()
+	return otelconfig.RenderYAML(updatedConfig)
 }
