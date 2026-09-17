@@ -8,6 +8,6 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
-## 0.78.0-1
+## 0.78.0-3
 
 - Initial changelog entry for the OpenTelemetry Node.js auto-instrumentation image.
