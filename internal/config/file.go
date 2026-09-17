@@ -7,6 +7,9 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v2"
+	k8syaml "sigs.k8s.io/yaml"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 // ApplyConfigFile applies the yaml file contents to the configuration.
@@ -15,6 +18,26 @@ func ApplyConfigFile(file string, c *Config) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(contents, c)
-	return err
+	if err := yaml.Unmarshal(contents, c); err != nil {
+		return err
+	}
+	// Operator Config fields use kebab-case yaml tags and load with
+	// gopkg.in/yaml.v2. The instrumentations block embeds Instrumentation /
+	// corev1 API types that only have json tags (CRD camelCase). yaml.v2
+	// ignores those tags, so re-parse instrumentations with sigs.k8s.io/yaml.
+	return overlayInstrumentationFromJSONTags(contents, c)
+}
+
+func overlayInstrumentationFromJSONTags(contents []byte, c *Config) error {
+	var partial struct {
+		Instrumentation *v1alpha1.Instrumentation `json:"instrumentations"`
+	}
+	if err := k8syaml.Unmarshal(contents, &partial); err != nil {
+		return err
+	}
+	if partial.Instrumentation == nil {
+		return nil
+	}
+	c.Instrumentation = *partial.Instrumentation
+	return nil
 }
