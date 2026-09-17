@@ -37,7 +37,7 @@ type remoteConfigRequest struct {
 
 type commandRequest struct {
 	// CommandType is the command to send to the agent. Use "restart" for
-	// CommandType_Restart; any other string sends an unrecognised command type.
+	// CommandType_Restart; any other string sends an unrecognized command type.
 	CommandType string `json:"command_type"`
 }
 
@@ -64,7 +64,7 @@ func (srv *Server) Start() {
 	settings := server.StartSettings{
 		Settings: server.Settings{
 			Callbacks: types.Callbacks{
-				OnConnecting: func(request *http.Request) types.ConnectionResponse {
+				OnConnecting: func(_ *http.Request) types.ConnectionResponse {
 					return types.ConnectionResponse{
 						Accept: true,
 						ConnectionCallbacks: types.ConnectionCallbacks{
@@ -102,10 +102,9 @@ func (srv *Server) Start() {
 	}
 }
 
-func (srv *Server) Stop() {
+func (srv *Server) Stop() error {
 	ctx := context.Background()
-	srv.httpServer.Shutdown(ctx)
-	srv.opampSrv.Stop(ctx)
+	return errors.Join(srv.httpServer.Shutdown(ctx), srv.opampSrv.Stop(ctx))
 }
 
 func (srv *Server) onDisconnect(conn types.Connection) {
@@ -117,7 +116,8 @@ func (srv *Server) onMessage(ctx context.Context, conn types.Connection, msg *pr
 	response := &protobufs.ServerToAgent{}
 
 	var instanceId data.InstanceId
-	if len(msg.InstanceUid) == 26 {
+	switch len(msg.InstanceUid) {
+	case 26:
 		// This is an old-style ULID.
 		u, err := ulid.Parse(string(msg.InstanceUid))
 		if err != nil {
@@ -125,15 +125,15 @@ func (srv *Server) onMessage(ctx context.Context, conn types.Connection, msg *pr
 			return response
 		}
 		instanceId = data.InstanceId(u.Bytes())
-	} else if len(msg.InstanceUid) == 16 {
+	case 16:
 		// This is a 16 byte, new style UID.
-		if parsedId, err := uuid.FromBytes(msg.InstanceUid); err != nil {
+		parsedId, err := uuid.FromBytes(msg.InstanceUid)
+		if err != nil {
 			srv.logger.Errorf(ctx, "Cannot parse UUID %s: %v", msg.InstanceUid, err)
 			return response
-		} else {
-			instanceId = data.InstanceId(parsedId)
 		}
-	} else {
+		instanceId = data.InstanceId(parsedId)
+	default:
 		srv.logger.Errorf(ctx, "Invalid length of msg.InstanceUid")
 		return response
 	}
@@ -159,7 +159,7 @@ func (srv *Server) getAgents(writer http.ResponseWriter, request *http.Request) 
 		writer.WriteHeader(503)
 		return
 	}
-	writer.Write(marshaled)
+	_, _ = writer.Write(marshaled)
 }
 
 func (srv *Server) getAgentById(writer http.ResponseWriter, request *http.Request) {
@@ -182,7 +182,7 @@ func (srv *Server) getAgentById(writer http.ResponseWriter, request *http.Reques
 		writer.WriteHeader(503)
 		return
 	}
-	writer.Write(marshaled)
+	_, _ = writer.Write(marshaled)
 }
 
 func (srv *Server) pushConfigToAgent(writer http.ResponseWriter, request *http.Request) {
