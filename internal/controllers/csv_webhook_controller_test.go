@@ -4,7 +4,6 @@
 package controllers
 
 import (
-	"context"
 	"testing"
 
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -125,13 +124,13 @@ func TestCSVWebhookReconciler_Reconcile(t *testing.T) {
 				},
 			}
 
-			result, err := reconciler.Reconcile(context.Background(), req)
+			result, err := reconciler.Reconcile(t.Context(), req)
 			require.NoError(t, err)
 			assert.Equal(t, ctrl.Result{}, result)
 
 			// Verify the CSV was updated
 			updatedCSV := &operatorsv1alpha1.ClusterServiceVersion{}
-			err = client.Get(context.Background(), req.NamespacedName, updatedCSV)
+			err = client.Get(t.Context(), req.NamespacedName, updatedCSV)
 			require.NoError(t, err)
 
 			// Find pod-webhook deployment spec in CSV
@@ -170,7 +169,7 @@ func TestCSVWebhookReconciler_CSVNotFound(t *testing.T) {
 		},
 	}
 
-	result, err := reconciler.Reconcile(context.Background(), req)
+	result, err := reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, err)
 	assert.Equal(t, ctrl.Result{}, result)
 }
@@ -204,13 +203,13 @@ func TestCSVWebhookReconciler_IgnoreOtherNamespaces(t *testing.T) {
 		},
 	}
 
-	result, err := reconciler.Reconcile(context.Background(), req)
+	result, err := reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, err)
 	assert.Equal(t, ctrl.Result{}, result)
 
 	// Verify CSV was NOT modified (still has 1 replica)
 	updatedCSV := &operatorsv1alpha1.ClusterServiceVersion{}
-	err = client.Get(context.Background(), req.NamespacedName, updatedCSV)
+	err = client.Get(t.Context(), req.NamespacedName, updatedCSV)
 	require.NoError(t, err)
 
 	var podWebhookReplicas int32 = -1
@@ -254,13 +253,13 @@ func TestCSVWebhookReconciler_CSVWithoutPodWebhook(t *testing.T) {
 		},
 	}
 
-	result, err := reconciler.Reconcile(context.Background(), req)
+	result, err := reconciler.Reconcile(t.Context(), req)
 	require.NoError(t, err)
 	assert.Equal(t, ctrl.Result{}, result)
 
 	// Verify CSV was NOT modified
 	updatedCSV := &operatorsv1alpha1.ClusterServiceVersion{}
-	err = client.Get(context.Background(), req.NamespacedName, updatedCSV)
+	err = client.Get(t.Context(), req.NamespacedName, updatedCSV)
 	require.NoError(t, err)
 
 	// Should still have only 1 deployment with 1 replica

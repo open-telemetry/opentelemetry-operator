@@ -368,14 +368,14 @@ func (agent *Agent) calcRemoteConfig() bool {
 
 	cfg := protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{},
+			ConfigMap: map[string]*protobufs.AgentConfigObject{},
 		},
 	}
 
 	// Add the custom config for this particular Agent instance. Use empty
 	// string as the config file name.
 	for key, body := range agent.CustomInstanceConfig {
-		cfg.Config.ConfigMap[key] = &protobufs.AgentConfigFile{
+		cfg.Config.ConfigMap[key] = &protobufs.AgentConfigObject{
 			Body: []byte(body),
 		}
 	}
@@ -428,7 +428,7 @@ func isEqualConfigSet(c1, c2 *protobufs.AgentConfigMap) bool {
 	return true
 }
 
-func isEqualConfigFile(f1, f2 *protobufs.AgentConfigFile) bool {
+func isEqualConfigFile(f1, f2 *protobufs.AgentConfigObject) bool {
 	if f1 == f2 {
 		return true
 	}

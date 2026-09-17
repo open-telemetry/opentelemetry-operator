@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+FROM registry.access.redhat.com/ubi9-minimal:9.8@sha256:186a94b76e386782f576c9c49813b16dceb2ba63102af5a28405dcefec2806d0
 
 RUN INSTALL_PKGS=" \
   rsync \

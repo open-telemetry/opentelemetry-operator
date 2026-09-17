@@ -25,8 +25,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
 	github.com/oklog/ulid/v2 v2.1.2
-	github.com/open-telemetry/opamp-go v0.23.0
-	github.com/openshift/api v0.0.0-20260911190130-c1fd4253d254
+	github.com/open-telemetry/opamp-go v0.24.0
+	github.com/openshift/api v0.0.0-20260916132046-fba11a566839
 	github.com/operator-framework/api v0.45.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.93.1
@@ -38,7 +38,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
-	go.opentelemetry.io/collector/featuregate v1.65.0
+	go.opentelemetry.io/collector/featuregate v1.66.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0
 	go.opentelemetry.io/contrib/otelconf v0.26.0
 	go.opentelemetry.io/otel v1.46.0
@@ -250,6 +250,7 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/ebitengine/purego v0.10.2 // indirect
+	github.com/elastic/proxy-connect-dialer-go v0.1.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-openapi/runtime/server-middleware v0.32.3 // indirect
@@ -272,7 +273,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
-	github.com/michel-laterman/proxy-connect-dialer-go v0.1.0 // indirect
 	github.com/moby/moby/api v1.55.0 // indirect
 	github.com/moby/moby/client v0.5.0 // indirect
 	github.com/moby/spdystream v0.5.1 // indirect
