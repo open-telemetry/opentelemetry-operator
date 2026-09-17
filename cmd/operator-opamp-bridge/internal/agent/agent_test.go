@@ -261,6 +261,10 @@ func (*mockOpampClient) SetCapabilities(*protobufs.AgentCapabilities) error {
 	return nil
 }
 
+func (*mockOpampClient) SetConnectionSettingsStatus(*protobufs.ConnectionSettingsStatus) error {
+	return nil
+}
+
 func getFakeApplier(t *testing.T, conf *config.Config, lists ...runtimeClient.ObjectList) *operator.Client {
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
 		s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
@@ -281,7 +285,7 @@ type mockHealthApplier struct {
 	err    error
 }
 
-func (*mockHealthApplier) Apply(string, *protobufs.AgentConfigFile) error {
+func (*mockHealthApplier) Apply(string, *protobufs.AgentConfigObject) error {
 	return nil
 }
 
@@ -307,7 +311,7 @@ type recordingConfigApplier struct {
 	restartErr    error
 }
 
-func (r *recordingConfigApplier) Apply(name string, configFile *protobufs.AgentConfigFile) error {
+func (r *recordingConfigApplier) Apply(name string, configFile *protobufs.AgentConfigObject) error {
 	if r.applied == nil {
 		r.applied = map[string][]byte{}
 	}
@@ -350,7 +354,7 @@ func TestAgentApplyRemoteConfigRejectsEmptyRemoteName(t *testing.T) {
 
 	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{
+			ConfigMap: map[string]*protobufs.AgentConfigObject{
 				"": {
 					Body: body,
 				},
@@ -371,7 +375,7 @@ func TestAgentApplyRemoteConfigRejectsEmptyBody(t *testing.T) {
 
 	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{
+			ConfigMap: map[string]*protobufs.AgentConfigObject{
 				"collector": {},
 			},
 		},
@@ -887,7 +891,7 @@ func TestAgent_onMessage(t *testing.T) {
 				configs: map[uuid.UUID]*protobufs.EffectiveConfig{
 					mockInstanceId: {
 						ConfigMap: &protobufs.AgentConfigMap{
-							ConfigMap: map[string]*protobufs.AgentConfigFile{
+							ConfigMap: map[string]*protobufs.AgentConfigObject{
 								"": {
 									Body: []byte(`
 										receivers:
@@ -1364,7 +1368,7 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 		mockProxy.configs = map[uuid.UUID]*protobufs.EffectiveConfig{
 			mockInstanceId: {
 				ConfigMap: &protobufs.AgentConfigMap{
-					ConfigMap: map[string]*protobufs.AgentConfigFile{
+					ConfigMap: map[string]*protobufs.AgentConfigObject{
 						"": {
 							Body:        []byte("hello"),
 							ContentType: "text",
@@ -1504,7 +1508,7 @@ func TestAgent_Start_RebuildsAppliedKeysAcrossRestart(t *testing.T) {
 	// Simulate a remote config that no longer references the managed collector.
 	agent.onMessage(context.Background(), &types.MessageData{
 		RemoteConfig: &protobufs.AgentRemoteConfig{
-			Config:     &protobufs.AgentConfigMap{ConfigMap: map[string]*protobufs.AgentConfigFile{}},
+			Config:     &protobufs.AgentConfigMap{ConfigMap: map[string]*protobufs.AgentConfigObject{}},
 			ConfigHash: []byte("empty-config"),
 		},
 	})
@@ -1523,7 +1527,7 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 	if filemap == nil {
 		return toReturn, nil
 	}
-	configs := map[string]*protobufs.AgentConfigFile{}
+	configs := map[string]*protobufs.AgentConfigObject{}
 	hash := ""
 	fileNames := make([]string, len(filemap))
 	i := 0
@@ -1539,7 +1543,7 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 		if err != nil {
 			return toReturn, err
 		}
-		configs[key] = &protobufs.AgentConfigFile{
+		configs[key] = &protobufs.AgentConfigObject{
 			Body:        yamlFile,
 			ContentType: "yaml",
 		}
