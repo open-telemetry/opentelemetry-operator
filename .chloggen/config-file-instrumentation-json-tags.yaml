@@ -14,7 +14,7 @@ issues: [5618]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Operator Config fields still load with gopkg.in/yaml.v2 (yaml tags). The
+  Operator Config fields still load with gopkg.in/yaml.v3 (yaml tags). The
   `instrumentations` block is re-parsed with sigs.k8s.io/yaml so embedded API
   types keep their json tags (for example `apacheHttpd`, `imagePullPolicy`,
   `resourceAttributes`, `valueFrom`, `volumeLimitSize`, `configPath`).

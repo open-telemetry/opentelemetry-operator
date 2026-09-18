@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -96,14 +96,14 @@ func TestInstrumentationConfigFileHonorsJSONTags(t *testing.T) {
 	assert.True(t, *spec.Go.SecurityContext.RunAsNonRoot)
 }
 
-func TestInstrumentationYAMLV2DropsJSONTags(t *testing.T) {
+func TestInstrumentationYAMLDropsJSONTags(t *testing.T) {
 	f, err := os.ReadFile("testdata/config_instrumentation.yaml")
 	require.NoError(t, err)
 	broken := Config{}
 	require.NoError(t, yaml.Unmarshal(f, &broken))
 	spec := broken.Instrumentation.Spec
 
-	assert.Empty(t, spec.ApacheHttpd.Image, "yaml.v2 maps ApacheHttpd to apachehttpd, not apacheHttpd")
+	assert.Empty(t, spec.ApacheHttpd.Image, "yaml.v3 maps ApacheHttpd to apachehttpd, not apacheHttpd")
 	assert.Empty(t, spec.ImagePullPolicy)
 	assert.Nil(t, spec.InitContainerSecurityContext)
 	assert.Empty(t, spec.Resource.Attributes, "json tag is resourceAttributes, not attributes")
@@ -120,7 +120,7 @@ func TestInstrumentationYAMLV2DropsJSONTags(t *testing.T) {
 
 	require.Len(t, spec.Env, 1)
 	assert.Equal(t, "OTEL_NODE_IP", spec.Env[0].Name)
-	assert.Nil(t, spec.Env[0].ValueFrom, "yaml.v2 drops EnvVar valueFrom")
+	assert.Nil(t, spec.Env[0].ValueFrom, "yaml.v3 drops EnvVar valueFrom")
 	assert.Empty(t, spec.Env[0].Value)
 
 	require.Len(t, spec.Java.Env, 2)
