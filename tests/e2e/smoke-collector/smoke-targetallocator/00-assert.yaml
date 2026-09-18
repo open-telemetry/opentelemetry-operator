@@ -23,41 +23,41 @@ metadata:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: {}
     receivers:
-        jaeger:
-            protocols:
-                grpc:
-                    endpoint: 0.0.0.0:14250
-        prometheus:
-            config:
-                global:
-                    scrape_interval: 30s
-                    scrape_protocols:
-                        - PrometheusProto
-                        - OpenMetricsText1.0.0
-                        - OpenMetricsText0.0.1
-                        - PrometheusText0.0.4
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://stateful-targetallocator.chainsaw-smoke-targetallocator.svc:80
-                interval: 30s
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+      prometheus:
+        config:
+          global:
+            scrape_interval: 30s
+            scrape_protocols:
+              - PrometheusProto
+              - OpenMetricsText1.0.0
+              - OpenMetricsText0.0.1
+              - PrometheusText0.0.4
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://stateful-targetallocator.chainsaw-smoke-targetallocator.svc:80
+          interval: 30s
+    exporters:
+      debug: {}
     service:
-        pipelines:
-            traces:
-                exporters:
-                    - debug
-                receivers:
-                    - jaeger
-        telemetry:
-            metrics:
-                readers:
-                    - pull:
-                          exporter:
-                              prometheus:
-                                  host: 0.0.0.0
-                                  port: 8888
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+      pipelines:
+        traces:
+          exporters:
+            - debug
+          receivers:
+            - jaeger
 kind: ConfigMap
 metadata:
   (starts_with(name, 'stateful-collector-')): true

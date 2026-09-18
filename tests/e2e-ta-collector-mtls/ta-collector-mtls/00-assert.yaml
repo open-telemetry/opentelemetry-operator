@@ -38,36 +38,36 @@ metadata:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        prometheus:
-            endpoint: 0.0.0.0:9090
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: https://prometheus-cr-targetallocator.chainsaw-targetallocator-collector-mtls.svc:443
-                interval: 30s
-                tls:
-                    ca_file: /tls/ca.crt
-                    cert_file: /tls/tls.crt
-                    key_file: /tls/tls.key
-                    reload_interval: 5m
+      prometheus:
+        config: {}
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: https://prometheus-cr-targetallocator.chainsaw-targetallocator-collector-mtls.svc:443
+          interval: 30s
+          tls:
+            ca_file: /tls/ca.crt
+            cert_file: /tls/tls.crt
+            key_file: /tls/tls.key
+            reload_interval: 5m
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - prometheus
-                receivers:
-                    - prometheus
-        telemetry:
-            metrics:
-                readers:
-                    - pull:
-                          exporter:
-                              prometheus:
-                                  host: 0.0.0.0
-                                  port: 8888
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+      pipelines:
+        metrics:
+          exporters:
+            - prometheus
+          receivers:
+            - prometheus
 kind: ConfigMap
 metadata:
   (starts_with(name, 'prometheus-cr-collector-')): true
