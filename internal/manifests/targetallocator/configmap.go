@@ -13,6 +13,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	collectoradapters "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -302,12 +303,7 @@ func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1bet
 		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
 	}
 
-	configStr, err := collectorConfig.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(configStr)
+	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(collectorConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -333,17 +329,21 @@ func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig
 	}, nil
 }
 
-func getScrapeConfigsFromOtelConfig(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
-	// Collector supports environment variable substitution, but the TA does not.
-	// TA Scrape Configs should have a single "$", as it does not support env var substitution
-	promConfig, err := adapters.ConfigToPromConfig(otelcolConfig)
+func getScrapeConfigsFromOtelConfig(collectorConfig v1beta1.Config) ([]v1beta1.AnyConfig, error) {
+	cfg, err := collectoradapters.ConfigFromStruct(&collectorConfig)
+	if err != nil {
+		return nil, err
+	}
+	promConfig, err := adapters.PromReceiverConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 	if _, hasConfig := promConfig["config"]; !hasConfig {
 		return []v1beta1.AnyConfig{}, nil
 	}
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
+	// Collector supports environment variable substitution, but the TA does not.
+	// TA Scrape Configs should have a single "$", as it does not support env var substitution
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(promConfig)
 	if err != nil {
 		return nil, err
 	}
