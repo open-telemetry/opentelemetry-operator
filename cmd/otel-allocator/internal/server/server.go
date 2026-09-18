@@ -65,8 +65,8 @@ type Server struct {
 	allowInsecureAuthSecrets             bool
 	// metricsGatherer, when set, is used to serve the /metrics endpoint. Defaults to
 	// the global Prometheus default gatherer.
-	metricsGatherer     prometheus.Gatherer
-	httpMetricsHandler  http.Handler
+	metricsGatherer    prometheus.Gatherer
+	httpMetricsHandler http.Handler
 }
 
 type Option func(*Server)
