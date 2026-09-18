@@ -50,10 +50,10 @@ func TestInstrumentationConfigFileHonorsJSONTags(t *testing.T) {
 
 	assert.Equal(t, "foo:1", actual.AutoInstrumentationDotNetImage)
 
-	assert.Equal(t, "http://$(OTEL_NODE_IP):4317", spec.Exporter.Endpoint)
-	require.NotNil(t, spec.Exporter.TLS)
-	assert.Equal(t, "exporter-tls", spec.Exporter.TLS.SecretName)
-	assert.Equal(t, "exporter-ca", spec.Exporter.TLS.ConfigMapName)
+	assert.Equal(t, "http://$(OTEL_NODE_IP):4317", spec.Endpoint)
+	require.NotNil(t, spec.TLS)
+	assert.Equal(t, "exporter-tls", spec.TLS.SecretName)
+	assert.Equal(t, "exporter-ca", spec.TLS.ConfigMapName)
 
 	assert.Equal(t, "bar", spec.Resource.Attributes["foo"])
 	assert.True(t, spec.Resource.AddK8sUIDAttributes)
@@ -109,9 +109,9 @@ func TestInstrumentationYAMLV2DropsJSONTags(t *testing.T) {
 	assert.Empty(t, spec.Resource.Attributes, "json tag is resourceAttributes, not attributes")
 	assert.False(t, spec.Resource.AddK8sUIDAttributes)
 	assert.False(t, spec.Defaults.UseLabelsForResourceAttributes)
-	require.NotNil(t, spec.Exporter.TLS, "tls: key matches, but nested camelCase fields drop")
-	assert.Empty(t, spec.Exporter.TLS.SecretName)
-	assert.Empty(t, spec.Exporter.TLS.ConfigMapName)
+	require.NotNil(t, spec.TLS, "tls: key matches, but nested camelCase fields drop")
+	assert.Empty(t, spec.TLS.SecretName)
+	assert.Empty(t, spec.TLS.ConfigMapName)
 	assert.Empty(t, spec.ApacheHttpd.ConfigPath)
 	assert.Nil(t, spec.ApacheHttpd.VolumeSizeLimit)
 	assert.Empty(t, spec.Nginx.ConfigFile)
@@ -127,7 +127,7 @@ func TestInstrumentationYAMLV2DropsJSONTags(t *testing.T) {
 	assert.Nil(t, spec.Java.Env[1].ValueFrom)
 
 	assert.Equal(t, "myjavainstrumentation:latest", spec.Java.Image)
-	assert.Equal(t, "http://$(OTEL_NODE_IP):4317", spec.Exporter.Endpoint)
+	assert.Equal(t, "http://$(OTEL_NODE_IP):4317", spec.Endpoint)
 	assert.Equal(t, "mynginxinstrumentation:latest", spec.Nginx.Image)
 	assert.Equal(t, "mygoinstrumentation:latest", spec.Go.Image)
 }
