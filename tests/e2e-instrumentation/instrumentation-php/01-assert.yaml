@@ -33,8 +33,6 @@ spec:
       value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
     - name: PHP_INI_SCAN_DIR
       value: ":/otel-auto-instrumentation-php"
     - name: OTEL_PHP_AUTOLOAD_ENABLED
