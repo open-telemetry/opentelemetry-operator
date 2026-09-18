@@ -4,7 +4,6 @@
 package controllers
 
 import (
-	"context"
 	"testing"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -62,7 +61,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 
 	t.Run("not owned by a collector", func(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{}
-		collector, err := reconciler.getCollector(context.Background(), ta)
+		collector, err := reconciler.getCollector(t.Context(), ta)
 		require.NoError(t, err)
 		assert.Nil(t, collector)
 	})
@@ -77,7 +76,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 				},
 			},
 		}
-		collector, err := reconciler.getCollector(context.Background(), ta)
+		collector, err := reconciler.getCollector(t.Context(), ta)
 		require.NoError(t, err)
 		assert.Equal(t, testCollector, collector)
 	})
@@ -94,7 +93,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 				},
 			},
 		}
-		collector, err := reconciler.getCollector(context.Background(), ta)
+		collector, err := reconciler.getCollector(t.Context(), ta)
 		assert.Nil(t, collector)
 		assert.Errorf(t, err, "error getting owner for TargetAllocator default/test: opentelemetrycollectors.opentelemetry.io \"non_existent\" not found")
 	})
@@ -104,7 +103,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 				Name: "label-ta",
 			},
 		}
-		collector, err := reconciler.getCollector(context.Background(), ta)
+		collector, err := reconciler.getCollector(t.Context(), ta)
 		require.NoError(t, err)
 		assert.Equal(t, testCollector, collector)
 	})
@@ -124,7 +123,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 				Name: "label-ta",
 			},
 		}
-		collector, err := reconciler.getCollector(context.Background(), ta)
+		collector, err := reconciler.getCollector(t.Context(), ta)
 		assert.Nil(t, collector)
 		assert.Errorf(t, err, "found multiple OpenTelemetry collectors annotated with the same Target Allocator: %s/%s", ta.Namespace, ta.Name)
 	})
@@ -137,7 +136,7 @@ func TestGetTargetAllocatorForCollector(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-	requests := getTargetAllocatorForCollector(context.Background(), testCollector)
+	requests := getTargetAllocatorForCollector(t.Context(), testCollector)
 	expected := []reconcile.Request{{
 		NamespacedName: types.NamespacedName{
 			Name:      "test",
@@ -157,7 +156,7 @@ func TestGetTargetAllocatorRequestsFromLabel(t *testing.T) {
 			},
 		},
 	}
-	requests := getTargetAllocatorRequestsFromLabel(context.Background(), testCollector)
+	requests := getTargetAllocatorRequestsFromLabel(t.Context(), testCollector)
 	expected := []reconcile.Request{{
 		NamespacedName: types.NamespacedName{
 			Name:      "label-ta",

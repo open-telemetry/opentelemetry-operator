@@ -29,6 +29,7 @@ spec:
     pod-annotation1: value1
     pod-annotation2: value2
   shareProcessNamespace: true
+  enableServiceLinks: false
   podDnsConfig:
     nameservers:
       - 8.8.8.8

@@ -129,10 +129,6 @@ func (agent *Agent) UpdateStatus(
 
 	agent.processStatusUpdate(statusMsg, response)
 
-	if statusMsg.ConnectionSettingsRequest != nil {
-		// agent.processConnectionSettingsRequest(statusMsg.ConnectionSettingsRequest.Opamp, response)
-	}
-
 	statusUpdateWatchers := agent.statusUpdateWatchers
 	agent.statusUpdateWatchers = nil
 
@@ -227,7 +223,7 @@ func (agent *Agent) updateStatusField(newStatus *protobufs.AgentToServer) (agent
 
 func (agent *Agent) updateEffectiveConfig(
 	newStatus *protobufs.AgentToServer,
-	response *protobufs.ServerToAgent,
+	_ *protobufs.ServerToAgent,
 ) {
 	// Update effective config if provided.
 	if newStatus.EffectiveConfig != nil {
@@ -368,14 +364,14 @@ func (agent *Agent) calcRemoteConfig() bool {
 
 	cfg := protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{},
+			ConfigMap: map[string]*protobufs.AgentConfigObject{},
 		},
 	}
 
 	// Add the custom config for this particular Agent instance. Use empty
 	// string as the config file name.
 	for key, body := range agent.CustomInstanceConfig {
-		cfg.Config.ConfigMap[key] = &protobufs.AgentConfigFile{
+		cfg.Config.ConfigMap[key] = &protobufs.AgentConfigObject{
 			Body: []byte(body),
 		}
 	}
@@ -428,7 +424,7 @@ func isEqualConfigSet(c1, c2 *protobufs.AgentConfigMap) bool {
 	return true
 }
 
-func isEqualConfigFile(f1, f2 *protobufs.AgentConfigFile) bool {
+func isEqualConfigFile(f1, f2 *protobufs.AgentConfigObject) bool {
 	if f1 == f2 {
 		return true
 	}
@@ -438,7 +434,7 @@ func isEqualConfigFile(f1, f2 *protobufs.AgentConfigFile) bool {
 	return bytes.Equal(f1.Body, f2.Body) && f1.ContentType == f2.ContentType
 }
 
-func (agent *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
+func (*Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
 	// Here we can use Agent's description to send the appropriate connection
 	// settings to the Agent.
 	// In this simple example the connection settings do not depend on the
@@ -448,12 +444,12 @@ func (agent *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
 		Hash:       nil, // TODO: calc has from settings.
 		Opamp:      nil,
 		OwnMetrics: nil,
-		//&protobufs.TelemetryConnectionSettings{
-		//	// We just hard-code this to a port on a localhost on which we can
-		//	// run an Otel Collector for demo purposes. With real production
-		//	// servers this should likely point to an OTLP backend.
-		//	DestinationEndpoint: "http://localhost:4318/v1/metrics",
-		//},
+		// &protobufs.TelemetryConnectionSettings{
+		// 	// We just hard-code this to a port on a localhost on which we can
+		// 	// run an Otel Collector for demo purposes. With real production
+		// 	// servers this should likely point to an OTLP backend.
+		// 	DestinationEndpoint: "http://localhost:4318/v1/metrics",
+		// },
 		OwnTraces:        nil,
 		OwnLogs:          nil,
 		OtherConnections: nil,
@@ -461,7 +457,7 @@ func (agent *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
 }
 
 func (agent *Agent) SendToAgent(msg *protobufs.ServerToAgent) {
-	agent.conn.Send(context.Background(), msg)
+	_ = agent.conn.Send(context.Background(), msg)
 }
 
 func (agent *Agent) OfferConnectionSettings(offers *protobufs.ConnectionSettingsOffers) {
@@ -470,21 +466,4 @@ func (agent *Agent) OfferConnectionSettings(offers *protobufs.ConnectionSettings
 			ConnectionSettings: offers,
 		},
 	)
-}
-
-func (agent *Agent) addErrorResponse(errMsg string, response *protobufs.ServerToAgent) {
-	logger.Println(errMsg)
-	if response.ErrorResponse == nil {
-		response.ErrorResponse = &protobufs.ServerErrorResponse{
-			Type:         protobufs.ServerErrorResponseType_ServerErrorResponseType_BadRequest,
-			ErrorMessage: errMsg,
-			Details:      nil,
-		}
-	} else if response.ErrorResponse.Type == protobufs.ServerErrorResponseType_ServerErrorResponseType_BadRequest {
-		// Append this error message to the existing error message.
-		response.ErrorResponse.ErrorMessage += errMsg
-	} else {
-		// Can't report it since it is a different error type.
-		// TODO: consider adding support for reporting multiple errors of different type in the response.
-	}
 }

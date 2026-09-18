@@ -36,7 +36,7 @@ type ConfigApplier interface {
 	// Apply receives an OpAMP remote config entry name and applies the corresponding configuration.
 	// Implementations define the accepted key format, but keys should match entries returned by
 	// CollectorInstance.GetConfigMap.
-	Apply(key string, configmap *protobufs.AgentConfigFile) error
+	Apply(key string, configmap *protobufs.AgentConfigObject) error
 
 	// Delete attempts to delete the resource identified by an OpAMP remote config entry name.
 	// Implementations define the accepted key format, but keys should match entries returned by
@@ -74,7 +74,7 @@ func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed 
 	}
 }
 
-func (c Client) Apply(key string, configmap *protobufs.AgentConfigFile) error {
+func (c Client) Apply(key string, configmap *protobufs.AgentConfigObject) error {
 	resource, err := kubeResourceFromKey(key)
 	if err != nil {
 		return err

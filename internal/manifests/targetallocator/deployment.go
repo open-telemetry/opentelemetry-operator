@@ -52,6 +52,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 					HostUsers:                     params.TargetAllocator.Spec.HostUsers,
 					HostAliases:                   params.TargetAllocator.Spec.HostAliases,
 					ShareProcessNamespace:         &params.TargetAllocator.Spec.ShareProcessNamespace,
+					EnableServiceLinks:            params.TargetAllocator.Spec.EnableServiceLinks,
 					Tolerations:                   params.TargetAllocator.Spec.Tolerations,
 					NodeSelector:                  params.TargetAllocator.Spec.NodeSelector,
 					SecurityContext:               params.TargetAllocator.Spec.PodSecurityContext,

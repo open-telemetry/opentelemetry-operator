@@ -423,11 +423,18 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
-# Run tests, including the in-process target allocator integration tests (they need
-# no cluster or network, so they run unconditionally here).
+# Run tests in every Go module in the repository, including the in-process target
+# allocator integration tests (they need no cluster or network, so they run
+# unconditionally here).
 .PHONY: test
 test: gotestsum
 	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		if [ "$$dir" != "." ] && [ "$$dir" != "./cmd/otel-allocator/integrationtest" ]; then \
+			echo "Running tests in $$dir"; \
+			(cd $$dir && $(GOTESTSUM) -- ${GOTEST_OPTS} ./...); \
+		fi \
+	done
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
@@ -449,21 +456,29 @@ ta-integration-test: gotestsum
 precommit: fmt vet lint test ensure-update-is-noop
 
 ##@ Lint and Format
-# Run formatters
+# Run formatters in every Go module in the repository
 .PHONY: fmt
 fmt: golangci-lint
-	go fmt ./...
-	$(GOLANGCI_LINT) run --fix
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running fmt in $$dir"; \
+		(cd $$dir && go fmt ./... && $(GOLANGCI_LINT) run --fix); \
+	done
 
-# Run go vet against code
+# Run go vet in every Go module in the repository
 .PHONY: vet
 vet:
-	go vet ./...
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running vet in $$dir"; \
+		(cd $$dir && go vet ./...); \
+	done
 
-# Run go lint against code
+# Run go lint in every Go module in the repository
 .PHONY: lint
 lint: golangci-lint
-	$(GOLANGCI_LINT) run
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running lint in $$dir"; \
+		(cd $$dir && $(GOLANGCI_LINT) run); \
+	done
 
 # Run go mod tidy in every Go module in the repository
 .PHONY: tidy
@@ -888,7 +903,7 @@ GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.21.0
+CONTROLLER_TOOLS_VERSION ?= v0.22.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 GOLANGCI_LINT_VERSION ?= v2.13.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
