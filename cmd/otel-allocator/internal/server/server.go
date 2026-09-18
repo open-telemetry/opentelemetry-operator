@@ -65,7 +65,8 @@ type Server struct {
 	allowInsecureAuthSecrets             bool
 	// metricsGatherer, when set, is used to serve the /metrics endpoint. Defaults to
 	// the global Prometheus default gatherer.
-	metricsGatherer prometheus.Gatherer
+	metricsGatherer     prometheus.Gatherer
+	httpMetricsHandler  http.Handler
 }
 
 type Option func(*Server)
@@ -96,13 +97,8 @@ func WithInsecureAuthSecrets() Option {
 	}
 }
 
-// metricsHandler returns the HTTP handler serving /metrics. It uses the configured
-// gatherer if one was provided, otherwise the global Prometheus default.
 func (s *Server) metricsHandler() http.Handler {
-	if s.metricsGatherer != nil {
-		return promhttp.HandlerFor(s.metricsGatherer, promhttp.HandlerOpts{})
-	}
-	return promhttp.Handler()
+	return s.httpMetricsHandler
 }
 
 func (s *Server) setRouter(router *gin.Engine) {
@@ -122,8 +118,8 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobsHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
-	// The handler is resolved per request so that the gatherer configured via
-	// WithMetricsGatherer (applied after the router is built) is honored.
+	// Use a closure so that both the HTTP and HTTPS routers (the latter built
+	// inside WithTLSConfig) share the same handler initialized in NewServer.
 	router.GET("/metrics", func(c *gin.Context) {
 		s.metricsHandler().ServeHTTP(c.Writer, c.Request)
 	})
@@ -152,6 +148,25 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 
 	for _, opt := range options {
 		opt(s)
+	}
+
+	// Build the /metrics handler once after all options (including WithMetricsGatherer)
+	// are applied. InstrumentMetricHandler wraps the handler to register
+	// promhttp_metric_handler_requests_total and promhttp_metric_handler_requests_in_flight;
+	// bare HandlerFor omits that instrumentation.
+	if s.metricsGatherer != nil {
+		reg, ok := s.metricsGatherer.(prometheus.Registerer)
+		if !ok {
+			// Gatherer is a multi-gatherer (e.g. prometheus.Gatherers) that includes
+			// DefaultGatherer, so registering into DefaultRegisterer is sufficient.
+			reg = prometheus.DefaultRegisterer
+		}
+		s.httpMetricsHandler = promhttp.InstrumentMetricHandler(
+			reg,
+			promhttp.HandlerFor(s.metricsGatherer, promhttp.HandlerOpts{}),
+		)
+	} else {
+		s.httpMetricsHandler = promhttp.Handler()
 	}
 
 	if s.allowInsecureAuthSecrets {
