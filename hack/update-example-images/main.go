@@ -62,6 +62,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// php sdk version is pinned to the upstream image and has no operator-owned revision, so skip it.
+	keys = slices.DeleteFunc(keys, func(k string) bool { return k == "php" })
+
 	headerRe := headerRegex(keys)
 
 	refs, err := resolveRefs(root, keys)
