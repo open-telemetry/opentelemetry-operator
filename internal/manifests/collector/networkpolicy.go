@@ -28,11 +28,6 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 
 	ports := getContainerPorts(params.Log, params.OtelCol)
 
-	var ingressPorts []intstr.IntOrString
-	for _, port := range ports {
-		ingressPorts = append(ingressPorts, intstr.FromInt32(port.ContainerPort))
-	}
-
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -51,11 +46,15 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 		},
 	}
 
-	tcp := corev1.ProtocolTCP
-	for i := range ingressPorts {
+	for _, port := range ports {
+		protocol := port.Protocol
+		if protocol == "" {
+			protocol = corev1.ProtocolTCP
+		}
+		ingressPort := intstr.FromInt32(port.ContainerPort)
 		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
-			Protocol: &tcp,
-			Port:     &ingressPorts[i],
+			Protocol: &protocol,
+			Port:     &ingressPort,
 		})
 	}
 

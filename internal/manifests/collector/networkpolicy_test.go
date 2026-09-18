@@ -23,6 +23,7 @@ import (
 
 func TestNetworkPolicy(t *testing.T) {
 	trueValue := true
+	udp := corev1.ProtocolUDP
 	t.Run("should return network policy with metrics port even when no receivers configured", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
@@ -119,5 +120,53 @@ func TestNetworkPolicy(t *testing.T) {
 		}
 
 		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("preserves protocols for user-defined ports", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    testLogger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-collector",
+					Namespace: "default",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Ports: []v1beta1.PortsSpec{
+							{
+								ServicePort: corev1.ServicePort{
+									Name:     "tcp-log",
+									Port:     54526,
+									Protocol: corev1.ProtocolTCP,
+								},
+							},
+							{
+								ServicePort: corev1.ServicePort{
+									Name:     "udp-log",
+									Port:     54526,
+									Protocol: udp,
+								},
+							},
+						},
+					},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: &trueValue,
+					},
+				},
+			},
+		}
+
+		actual, err := NetworkPolicy(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.Len(t, actual.Spec.Ingress, 1)
+		assert.Len(t, actual.Spec.Ingress[0].Ports, 3)
+
+		protocolsByPort := make(map[int32][]corev1.Protocol)
+		for _, port := range actual.Spec.Ingress[0].Ports {
+			protocolsByPort[port.Port.IntVal] = append(protocolsByPort[port.Port.IntVal], *port.Protocol)
+		}
+		assert.ElementsMatch(t, []corev1.Protocol{corev1.ProtocolTCP, udp}, protocolsByPort[54526])
 	})
 }
