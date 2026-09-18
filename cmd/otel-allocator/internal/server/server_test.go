@@ -1385,7 +1385,10 @@ func TestServer_MetricsHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	s.server.Handler.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "ta_test_metric_total")
+	body := w.Body.String()
+	assert.Contains(t, body, "ta_test_metric_total")
+	assert.Contains(t, body, "promhttp_metric_handler_requests_total")
+	assert.Contains(t, body, "promhttp_metric_handler_requests_in_flight")
 
 	// Without the option, /metrics falls back to the default gatherer (covers the nil branch).
 	sd, err := NewServer(logger, nil, "")
