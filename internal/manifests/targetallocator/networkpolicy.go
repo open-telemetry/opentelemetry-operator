@@ -4,12 +4,15 @@
 package targetallocator
 
 import (
+	"errors"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -41,29 +44,11 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	policyTypes := []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}
 	var egress []networkingv1.NetworkPolicyEgressRule
 	if !hasSelfTelemetryExporter(params.TargetAllocator) {
-		apiServerPort := intstr.FromInt32(params.Config.Internal.KubeAPIServerPort)
-		var apiSeverIPs []networkingv1.NetworkPolicyPeer
-		// Add IPBlock rules for API server IPs
-		for _, ip := range params.Config.Internal.KubeAPIServerIPs {
-			cidr := ip + "/32"
-			apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
-				IPBlock: &networkingv1.IPBlock{
-					CIDR: cidr,
-				},
-			})
+		if len(params.APIServerEndpoints) == 0 {
+			return nil, errors.New("cannot restrict the target allocator's egress: the Kubernetes API server endpoints are unknown")
 		}
 		policyTypes = append(policyTypes, networkingv1.PolicyTypeEgress)
-		egress = []networkingv1.NetworkPolicyEgressRule{
-			{
-				Ports: []networkingv1.NetworkPolicyPort{
-					{
-						Protocol: &tcp,
-						Port:     &apiServerPort,
-					},
-				},
-				To: apiSeverIPs,
-			},
-		}
+		egress = apiServerEgressRules(params.APIServerEndpoints)
 	}
 
 	np := &networkingv1.NetworkPolicy{
@@ -98,6 +83,26 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	}
 
 	return np, nil
+}
+
+// apiServerEgressRules returns egress rules allowing traffic to the API server, one per distinct port.
+// The endpoints are expected to be sorted by port, as returned by apiserverendpoints.Resolve.
+func apiServerEgressRules(endpoints []apiserverendpoints.Endpoint) []networkingv1.NetworkPolicyEgressRule {
+	tcp := corev1.ProtocolTCP
+	var rules []networkingv1.NetworkPolicyEgressRule
+	for i, endpoint := range endpoints {
+		if i == 0 || endpoint.Port != endpoints[i-1].Port {
+			port := intstr.FromInt32(endpoint.Port)
+			rules = append(rules, networkingv1.NetworkPolicyEgressRule{
+				Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &port}},
+			})
+		}
+		rule := &rules[len(rules)-1]
+		rule.To = append(rule.To, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{CIDR: endpoint.CIDR()},
+		})
+	}
+	return rules
 }
 
 func hasSelfTelemetryExporter(ta v1alpha1.TargetAllocator) bool {
