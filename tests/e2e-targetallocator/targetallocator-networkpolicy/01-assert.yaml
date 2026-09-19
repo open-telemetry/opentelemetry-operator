@@ -1,0 +1,7 @@
+# The NetworkPolicy follows the new API server endpoint.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-targetallocator-networkpolicy
+spec:
+  (contains(egress[].to[].ipBlock.cidr, '203.0.113.10/32')): true
