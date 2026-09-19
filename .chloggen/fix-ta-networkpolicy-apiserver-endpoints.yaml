@@ -1,0 +1,21 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Keep the Kubernetes API server addresses in the target allocator NetworkPolicy up to date.
+
+# One or more tracking issues related to the change
+issues: [5551]
+
+# (Optional) One or more lines of additional information to render under the main note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The operator now watches the EndpointSlices of the `default/kubernetes` Service and updates the target allocator
+  NetworkPolicy when they change, instead of using the addresses discovered once at operator startup.
+  Addresses which disappear from the EndpointSlices remain allowed for 5 minutes, to tolerate transient changes.
+  The NetworkPolicy also allows egress to the `kubernetes` Service ClusterIP, and uses correct CIDRs for IPv6 addresses.
+  The operator now requires the `watch` permission on `endpointslices` in the `discovery.k8s.io` API group.

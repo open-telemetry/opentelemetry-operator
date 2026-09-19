@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -65,4 +66,7 @@ type Params struct {
 	Collector       *v1beta1.OpenTelemetryCollector
 	TargetAllocator v1alpha1.TargetAllocator
 	Config          config.Config
+	// APIServerEndpoints are the endpoints of the Kubernetes API server, used to restrict the egress of the
+	// target allocator in its NetworkPolicy. They're only resolved if the NetworkPolicy is enabled.
+	APIServerEndpoints []apiserverendpoints.Endpoint
 }
