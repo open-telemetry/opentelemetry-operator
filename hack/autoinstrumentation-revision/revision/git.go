@@ -18,8 +18,8 @@ type Git interface {
 	// does not exist there.
 	Show(sha, path string) string
 	// DiffNames lists the files changed under dir between sha and the working
-	// tree, excluding excludePath.
-	DiffNames(sha, dir, excludePath string) ([]string, error)
+	// tree, excluding excludePaths.
+	DiffNames(sha, dir string, excludePaths ...string) ([]string, error)
 }
 
 // execGit is the default Git implementation, shelling out to the git binary
@@ -55,9 +55,13 @@ func (g execGit) Show(sha, path string) string {
 }
 
 // DiffNames lists the files changed under dir between sha and the working tree
-// via `git diff`, excluding excludePath.
-func (g execGit) DiffNames(sha, dir, excludePath string) ([]string, error) {
-	out, err := g.run("diff", "--name-only", sha, "--", dir, ":(exclude)"+excludePath)
+// via `git diff`, excluding excludePaths.
+func (g execGit) DiffNames(sha, dir string, excludePaths ...string) ([]string, error) {
+	args := []string{"diff", "--name-only", sha, "--", dir}
+	for _, p := range excludePaths {
+		args = append(args, ":(exclude)"+p)
+	}
+	out, err := g.run(args...)
 	if err != nil {
 		return nil, err
 	}
