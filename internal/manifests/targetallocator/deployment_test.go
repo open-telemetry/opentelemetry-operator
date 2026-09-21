@@ -605,7 +605,6 @@ func TestDeploymentEnableServiceLinks(t *testing.T) {
 }
 
 func TestDeploymentImagePullSecrets(t *testing.T) {
-	// Test default
 	targetAllocator := targetAllocatorInstance()
 	otelcol := collectorInstance()
 	params := Params{
@@ -619,7 +618,6 @@ func TestDeploymentImagePullSecrets(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
 
-	// Test imagePullSecrets
 	imagePullSecrets := []v1.LocalObjectReference{{Name: "my-registry-secret"}}
 	params.TargetAllocator.Spec.ImagePullSecrets = imagePullSecrets
 

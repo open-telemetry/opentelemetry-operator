@@ -767,7 +767,6 @@ func TestDaemonsetEnableServiceLinks(t *testing.T) {
 }
 
 func TestDaemonsetImagePullSecrets(t *testing.T) {
-	// Test default
 	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
@@ -784,7 +783,6 @@ func TestDaemonsetImagePullSecrets(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
 
-	// Test imagePullSecrets
 	imagePullSecrets := []v1.LocalObjectReference{{Name: "my-registry-secret"}}
 	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
