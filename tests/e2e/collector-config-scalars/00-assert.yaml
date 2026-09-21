@@ -12,6 +12,11 @@ data:
     exporters:
       debug: {}
     processors:
+      attributes:
+        actions:
+          - action: insert
+            key: cluster
+            value: "0e12"
       batch:
         send_batch_max_size: 1000000
         send_batch_size: 8192
@@ -37,11 +42,6 @@ data:
           - action: insert
             key: tab-led-multi-line
             value: "\tindented\nline two"
-      transform:
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["cluster"], "0e12")
     service:
       telemetry:
         metrics:
@@ -57,7 +57,7 @@ data:
             - debug
           processors:
             - batch
-            - transform
+            - attributes
             - resource
           receivers:
             - otlp
