@@ -1,0 +1,13 @@
+change_type: bug_fix
+
+component: target allocator
+
+note: Restore `promhttp_metric_handler_requests_total` and `promhttp_metric_handler_requests_in_flight` on the `/metrics` endpoint when a custom gatherer is configured.
+
+issues: [5622]
+
+subtext: |
+  `#5294` switched the `/metrics` handler to `promhttp.HandlerFor` when a custom gatherer
+  is set, but omitted the `InstrumentMetricHandler` wrapper that registers these two metrics.
+  The handler is now built once in `NewServer` (after options are applied) using
+  `InstrumentMetricHandler`, restoring the missing metrics for both code paths.

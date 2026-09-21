@@ -243,12 +243,20 @@ receivers:
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			config, err := ta.UnescapeDollarSignsInPromConfig(testCase.input)
+			promCfg, err := ta.ConfigToPromConfig(testCase.input)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			config, err := ta.UnescapeDollarSignsInPromConfig(promCfg)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(testCase.expected)
+			expectedPromCfg, err := ta.ConfigToPromConfig(testCase.expected)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expectedPromCfg)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}

@@ -3,7 +3,7 @@ module github.com/open-telemetry/opentelemetry-operator/apis
 go 1.26.0
 
 require (
-	github.com/goccy/go-yaml v1.19.2
+	go.yaml.in/yaml/v3 v3.0.5
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
 )
