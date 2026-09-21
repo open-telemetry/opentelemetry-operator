@@ -602,8 +602,8 @@ go.mongodb.org/mongo-driver/v2 v2.5.0 h1:yXUhImUjjAInNcpTcAlPHiT7bIXhshCTL3jVBkF
 go.mongodb.org/mongo-driver/v2 v2.5.0/go.mod h1:yOI9kBsufol30iFsl1slpdq1I0eHPzybRWdyYUs8K/0=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
-go.opentelemetry.io/collector/featuregate v1.66.0 h1:zy7JvvPanCVexGnZnMWR/htZ1BKWPEo1/vZKMuhZSQ0=
-go.opentelemetry.io/collector/featuregate v1.66.0/go.mod h1:dRYifiJa2vQ6LWpPwHny4mL82mnGWsWEVeVWw+DhYJw=
+go.opentelemetry.io/collector/featuregate v1.67.0 h1:x6aIJtcU7hp37lLutdbUyi2x7CAcHsK/QXMLEpd8w1I=
+go.opentelemetry.io/collector/featuregate v1.67.0/go.mod h1:dRYifiJa2vQ6LWpPwHny4mL82mnGWsWEVeVWw+DhYJw=
 go.opentelemetry.io/contrib/bridges/prometheus v0.71.0 h1:9qgxsFLskbDMXl8WMqThoF6w8yGJgCumn9qRc67OmnI=
 go.opentelemetry.io/contrib/bridges/prometheus v0.71.0/go.mod h1:2rCjF4F2siiTeLCzJsaGZ3CK0XIoimCSKXEBPdv+Je0=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0 h1:3g7B90UzBltIDKq1/5mrTGxTnOFDV0ICOhLoxiZ8jlg=
