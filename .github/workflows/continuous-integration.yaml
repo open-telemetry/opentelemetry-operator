@@ -50,13 +50,13 @@ jobs:
     # steps are best-effort, mirroring the e2e workflow's upload job. The two
     # profiles use distinct flags so coverage is attributable per source.
     - name: Upload unit-test coverage to Codecov
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       continue-on-error: true
       with:
         files: ./coverage.out
         flags: unittests
     - name: Upload integration-test coverage to Codecov
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       continue-on-error: true
       with:
         files: ./coverage-integration.out
