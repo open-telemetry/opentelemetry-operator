@@ -15,6 +15,8 @@ metadata:
 #     a tab, which is double-quoted (https://github.com/yaml/go-yaml/issues/383).
 # The unit tests in internal/otelconfig cover the full table of cases; this test shows that the
 # assumptions they make about the API server's JSON hold on a real cluster.
+# The collector configuration uses only components in the default collector image, which does not
+# include the transform processor.
 spec:
   steps:
     - name: install
