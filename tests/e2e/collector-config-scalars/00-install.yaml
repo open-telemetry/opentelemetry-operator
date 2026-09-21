@@ -18,17 +18,14 @@ spec:
         timeout: 10s
       probabilistic_sampler:
         sampling_percentage: 15.5
-      # The scenario from issue #4314: an unquoted 0e12 is a float, and the collector
-      # rejects it for this string field.
-      transform:
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["cluster"], "0e12")
       resource:
         attributes:
           - key: looks-like-bool
             value: "true"
+            action: insert
+          # The scenario from issue #4314: an unquoted 0e12 is read as a float.
+          - key: looks-like-number
+            value: "0e12"
             action: insert
           - key: looks-like-float
             value: ".inf"
@@ -48,7 +45,7 @@ spec:
       pipelines:
         metrics:
           receivers: [otlp]
-          processors: [batch, transform, resource]
+          processors: [batch, resource]
           exporters: [debug]
         traces:
           receivers: [otlp]
