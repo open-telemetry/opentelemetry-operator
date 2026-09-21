@@ -766,6 +766,48 @@ func TestDaemonsetEnableServiceLinks(t *testing.T) {
 	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
 }
 
+func TestDaemonsetImagePullSecrets(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
+
+	// Test imagePullSecrets
+	imagePullSecrets := []v1.LocalObjectReference{{Name: "my-registry-secret"}}
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-pull-secrets",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ImagePullSecrets: imagePullSecrets,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, imagePullSecrets, d2.Spec.Template.Spec.ImagePullSecrets)
+}
+
 func TestDaemonSetDNSConfig(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{

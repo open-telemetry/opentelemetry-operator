@@ -89,6 +89,9 @@ func TestTargetAllocator(t *testing.T) {
 			input: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: objectMetadata,
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						ImagePullSecrets: []v1.LocalObjectReference{{Name: "my-registry-secret"}},
+					},
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Replicas:     &replicas,
 						NodeSelector: map[string]string{"key": "value"},
@@ -203,8 +206,9 @@ func TestTargetAllocator(t *testing.T) {
 								v1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
-						ServiceAccount: "serviceAccountName",
-						Image:          "custom_image",
+						ServiceAccount:   "serviceAccountName",
+						Image:            "custom_image",
+						ImagePullSecrets: []v1.LocalObjectReference{{Name: "my-registry-secret"}},
 						Affinity: &v1.Affinity{
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{

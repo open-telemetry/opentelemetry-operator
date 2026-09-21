@@ -28,6 +28,8 @@ spec:
   # common pod-spec fields
   shareProcessNamespace: true
   enableServiceLinks: false
+  imagePullSecrets:
+    - name: my-registry-secret
   nodeSelector:
     kubernetes.io/os: linux
   affinity:
