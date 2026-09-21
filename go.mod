@@ -38,7 +38,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
-	go.opentelemetry.io/collector/featuregate v1.66.0
+	go.opentelemetry.io/collector/featuregate v1.67.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
 	go.opentelemetry.io/contrib/otelconf v0.26.0
 	go.opentelemetry.io/otel v1.46.0
