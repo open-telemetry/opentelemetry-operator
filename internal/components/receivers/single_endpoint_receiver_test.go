@@ -86,6 +86,8 @@ func TestDownstreamParsers(t *testing.T) {
 		{"statsd", "statsd", "__statsd", 8125, false},
 		{"influxdb", "influxdb", "__influxdb", 8086, false},
 		{"splunk_hec", "splunk_hec", "__splunk_hec", 8088, false},
+		{"webhookevent", "webhookevent", "__webhook_event", 8088, false},
+		{"webhook_event", "webhook_event", "__webhook_event", 8088, false},
 		{"awsxray", "awsxray", "__awsxray", 2000, false},
 		{"tcplog", "tcplog", "__tcp_log", 0, true},
 		{"tcp_log", "tcp_log", "__tcp_log", 0, true},
