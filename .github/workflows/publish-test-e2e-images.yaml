@@ -73,7 +73,7 @@ jobs:
       packages: write
       attestations: write
       id-token: write
-    uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
+    uses: $/.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: php
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
