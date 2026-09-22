@@ -11,7 +11,7 @@ jobs:
     if: ${{ github.repository == 'open-telemetry/opentelemetry-operator' }}
     permissions: # required by the reusable workflow
       contents: write
-    uses: ./.github/workflows/reusable-operator-hub-release.yaml
+    uses: $/.github/workflows/reusable-operator-hub-release.yaml
     with:
       org: redhat-openshift-ecosystem
       repo: community-operators-prod
@@ -23,7 +23,7 @@ jobs:
     if: ${{ github.repository == 'open-telemetry/opentelemetry-operator' }}
     permissions: # required by the reusable workflow
       contents: write
-    uses: ./.github/workflows/reusable-operator-hub-release.yaml
+    uses: $/.github/workflows/reusable-operator-hub-release.yaml
     with:
       org: k8s-operatorhub
       repo: community-operators
