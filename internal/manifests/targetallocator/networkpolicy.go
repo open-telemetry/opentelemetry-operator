@@ -86,16 +86,7 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	}
 
 	ports := getContainerPorts(params.TargetAllocator, params)
-	var ingressPorts []intstr.IntOrString
-	for _, port := range ports {
-		ingressPorts = append(ingressPorts, intstr.FromInt32(port.ContainerPort))
-	}
-	for i := range ingressPorts {
-		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
-			Protocol: &tcp,
-			Port:     &ingressPorts[i],
-		})
-	}
+	np.Spec.Ingress[0].Ports = manifestutils.NetworkPolicyPorts(ports)
 
 	return np, nil
 }
