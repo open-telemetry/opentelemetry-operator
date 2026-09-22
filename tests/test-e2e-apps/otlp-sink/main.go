@@ -182,10 +182,10 @@ func (s *sinkStack) startReceiver(ctx context.Context, grpcEndpoint, httpEndpoin
 
 	// The three Create* calls return the same shared receiver instance; it only
 	// needs to be started once.
-	if _, err := f.CreateTraces(ctx, set, cfg, tracesConsumer); err != nil {
+	if _, err = f.CreateTraces(ctx, set, cfg, tracesConsumer); err != nil {
 		return fmt.Errorf("create traces receiver: %w", err)
 	}
-	if _, err := f.CreateMetrics(ctx, set, cfg, metricsConsumer); err != nil {
+	if _, err = f.CreateMetrics(ctx, set, cfg, metricsConsumer); err != nil {
 		return fmt.Errorf("create metrics receiver: %w", err)
 	}
 	rcvr, err := f.CreateLogs(ctx, set, cfg, logsConsumer)

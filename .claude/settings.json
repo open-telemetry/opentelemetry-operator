@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -j '(.tool_input.file_path // empty) + \"\\u0000\"' | xargs -0 -r \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/check-generated-file.sh || exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -j '(.tool_input.file_path // empty) + \"\\u0000\"' | xargs -0 -r \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/check-go-file.sh || exit 2"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -157,7 +157,11 @@ To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and 
 
 Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Keep in mind that you need to call `make prepare-e2e` again after you make changes to operator code or manifests.
 
-The tests are located under `tests/e2e` and are written to be used with `chainsaw`. Refer to their documentation to understand how tests are written.
+Most e2e tests are located under `tests/e2e-*` directories and are written to be used with `chainsaw`. Refer to their documentation to understand how tests are written.
+
+Some suites (e.g. `tests/e2e-ta-standalone`, `tests/e2e-collector-metrics`) are instead written in Go on top of [`sigs.k8s.io/e2e-framework`](https://github.com/kubernetes-sigs/e2e-framework) and the helpers in `internal/testing/e2e/`. These files are guarded by the `e2e` build tag and run via their own targets, e.g. `make e2e-ta-standalone` and `make e2e-collector-metrics`.
+
+When adding e2e coverage, chainsaw is the default choice for asserting on the shape of the resources the operator generates. Write Go e2e tests when you need semantic checks — for example verifying that the right metric, with the right labels and value, made it end-to-end — which are awkward to express in chainsaw.
 
 To revert the changes made by the `make prepare-e2e` run `make reset`.
 
@@ -192,8 +196,9 @@ make undeploy
 * `cmd/operator-opamp-bridge/` - OpAMP Bridge source code
 * `autoinstrumentation/` - Dockerfiles for instrumentation images
 * `config/` - Kubernetes deployment configurations and overlays
-* `tests/` - End-to-end test suites (Chainsaw framework)
+* `tests/` - End-to-end test suites (chainsaw, plus some Go suites)
 * `bundle/` - OLM bundle manifests (community and openshift variants)
+* `docs/` - User-facing documentation, design RFCs, and the generated API reference ([index](docs/README.md))
 
 For a general overview of the API types, check out the [official GoDoc](https://godoc.org/github.com/open-telemetry/opentelemetry-operator) or the [locally-hosted GoDoc](http://localhost:6060/pkg/github.com/open-telemetry/opentelemetry-operator/)
 
@@ -258,13 +263,23 @@ type MySpec struct {
 3. Set up kind cluster: `make prepare-e2e`
 4. Add e2e test to verify webhook behavior
 
+### Adding a feature gate
+
+Operator behavior changes that are risky or not backwards-compatible should be introduced behind a feature gate, so users can opt in (or temporarily opt out) via the `--feature-gates` flag. Gates are registered in [`pkg/featuregate/featuregate.go`](pkg/featuregate/featuregate.go) using the collector's `featuregate` package. Follow the existing convention:
+
+* a dotted lowercase ID, e.g. `operator.networkpolicy` or `operand.networkpolicy`
+* an explicit stage (`StageAlpha` → `StageBeta` → `StageStable` as the feature matures)
+* `WithRegisterDescription` and `WithRegisterFromVersion` (plus `WithRegisterToVersion` once the gate is stable and scheduled for removal)
+
+Note that these registry gates are a different mechanism from the per-language `enable-<language>-instrumentation` CLI flags documented in [docs/reference/feature-gates.md](docs/reference/feature-gates.md).
+
 ### Adding new auto-instrumentation language
 
 1. Add Dockerfile in `autoinstrumentation/{language}/`
 2. Add injection logic in `internal/instrumentation/{language}.go`
 3. Add spec field to `apis/v1alpha1/instrumentation_types.go`
 4. Update webhook to handle new annotation
-5. Add feature gate flag in `main.go`
+5. Add an `enable-<language>-instrumentation` CLI flag in `internal/config/` (see `config.go` and `cli.go`) and document it in [docs/reference/feature-gates.md](docs/reference/feature-gates.md)
 6. Add e2e test in `tests/e2e-instrumentation/`
 7. Update `versions.txt`
 8. Run `make update`
@@ -279,6 +294,8 @@ If you are contributing to sync the receivers from [otel-collector-contrib](http
 
 Before starting the development of a new feature, please create an issue and discuss it with the project maintainers. Features should come with documentation and enough tests (unit and/or end-to-end).
 
+For larger or cross-cutting designs, we use a lightweight RFC process: see [docs/rfcs/README.md](docs/rfcs/README.md) for how to propose one and the existing RFCs for examples.
+
 ### Bug fixes
 
 Every bug fix should be accompanied by a unit test, so that we can prevent regressions.
@@ -288,6 +305,24 @@ Every bug fix should be accompanied by a unit test, so that we can prevent regre
 They are mostly welcome!
 
 ### Adding a Changelog Entry
+
+The guiding question for whether a change needs a changelog entry: **if a user reads the changelog, is this useful information to them?**
+
+An entry is required for:
+
+* Changes to the behavior of the operator or of the workloads it manages (collector, target allocator, OpAMP bridge, auto-instrumentation)
+* Changes to CRD schemas or their defaults
+* Changes to operator configuration: CLI flags, feature gates, environment variables
+* New features and components
+
+It is reasonable to omit an entry for:
+
+* Test-only changes
+* Changes to CI/CD or build tooling
+* Internal refactoring with no user-visible effect
+* Documentation changes
+
+If there is uncertainty about whether an entry is needed, add one.
 
 The [CHANGELOG.md](./CHANGELOG.md) file in this repo is autogenerated from `.yaml` files in the `./.chloggen` directory.
 

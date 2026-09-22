@@ -1,0 +1,53 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: config-scalars
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors:
+      batch:
+        # An integer >= 1e6: a float64 would be printed as 1e+06.
+        send_batch_max_size: 1000000
+        # Spelled as a float in the CR; the collector must still see an integer.
+        send_batch_size: 8192.0
+        timeout: 10s
+      probabilistic_sampler:
+        sampling_percentage: 15.5
+      resource:
+        attributes:
+          - key: looks-like-bool
+            value: "true"
+            action: insert
+          # The scenario from issue #4314: an unquoted 0e12 is read as a float.
+          - key: looks-like-number
+            value: "0e12"
+            action: insert
+          - key: looks-like-float
+            value: ".inf"
+            action: insert
+          - key: looks-like-timestamp
+            value: "2001-12-14"
+            action: insert
+          - key: multi-line
+            value: "line one\nline two"
+            action: insert
+          - key: tab-led-multi-line
+            value: "\tindented\nline two"
+            action: insert
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [debug]
+        traces:
+          receivers: [otlp]
+          processors: [probabilistic_sampler]
+          exporters: [debug]
