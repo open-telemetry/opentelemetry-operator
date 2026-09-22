@@ -1,20 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-php-multi
+  name: my-php-manual
 spec:
   selector:
     matchLabels:
-      app: my-php-multi
+      app: my-php-manual
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-php-multi
+        app: my-php-manual
       annotations:
         instrumentation.opentelemetry.io/inject-php: "true"
-        instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
-        instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
+        instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
     spec:
       securityContext:
         runAsUser: 1000
@@ -38,9 +37,3 @@ spec:
           periodSeconds: 15
           timeoutSeconds: 2
           failureThreshold: 3
-      - name: myrabbit
-        image: mirror.gcr.io/library/rabbitmq:3
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["ALL"]

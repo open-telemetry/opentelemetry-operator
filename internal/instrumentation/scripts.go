@@ -25,3 +25,6 @@ var phpCloneScript string
 
 //go:embed scripts/php_agent.sh
 var phpAgentScript string
+
+//go:embed scripts/php_agent_manual.sh
+var phpAgentManualScript string

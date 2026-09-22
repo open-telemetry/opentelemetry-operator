@@ -1,20 +1,20 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: my-php-initcontainer
+  name: my-php-manual-initcontainer
   labels:
-    app: my-php-initcontainer
+    app: my-php-manual-initcontainer
   annotations:
     instrumentation.opentelemetry.io/inject-php: "true"
-    instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
-    instrumentation.opentelemetry.io/container-names: "php-init"
+    instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
+    instrumentation.opentelemetry.io/container-names: "php-manual-init"
 spec:
   securityContext:
     runAsUser: 1000
     runAsGroup: 3000
     fsGroup: 3000
   initContainers:
-    - name: php-init
+    - name: php-manual-init
       image: ghcr.io/jerrytfleung/opentelemetry-operator/e2e-test-app-php:main
       securityContext:
         allowPrivilegeEscalation: false

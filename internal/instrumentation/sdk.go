@@ -130,11 +130,11 @@ func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithCon
 	otelinst := *inst.Instrumentation
 	i.logger.V(1).Info("injecting PHP instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
+	autoDetect := strings.EqualFold(inst.AdditionalAnnotations[annotationPhpAutoDetect], "true")
 	containers := containersToInstrument(&inst, &pod)
 
 	if len(containers) > 0 {
-		// PHP instrumentation supports only single container instrumentation
-		// and it can't be an initContainer
+		// PHP instrumentation supports only single container instrumentation, and it can't be an initContainer
 		injected := false
 		for _, container := range containers {
 			if isInitContainer(container.Name, &pod) {
@@ -146,7 +146,15 @@ func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithCon
 					i.injectCommonEnvVar(otelinst, container)
 					i.injectDefaultPhpEnvVars(container)
 					pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-					pod = injectPhpSDKToPodByContainer(otelinst.Spec.Php, pod, containers[0].Name, container, otelinst.Spec)
+					if autoDetect {
+						pod = injectPhpSDKToPodByContainer(otelinst.Spec.Php, pod, containers[0].Name, container, otelinst.Spec)
+					} else {
+						// Specified platform, api version and thread safety from annotation
+						platform := inst.AdditionalAnnotations[annotationPhpPlatform]
+						apiVersion := inst.AdditionalAnnotations[annotationPhpApiVersion]
+						threadSafety := inst.AdditionalAnnotations[annotationPhpThreadSafety]
+						pod = injectPhpSDKToPodByContainerManual(otelinst.Spec.Php, pod, containers[0].Name, otelinst.Spec, platform, apiVersion, threadSafety)
+					}
 					injected = true
 				}
 				if injected {
@@ -155,7 +163,9 @@ func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithCon
 			}
 		}
 		if injected {
-			pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpInitContainerName)
+			if autoDetect {
+				pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpInitContainerName)
+			}
 			pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpCloneContainerName)
 		}
 	}

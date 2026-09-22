@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-php-multi
+  name: my-php-manual-multi
 spec:
   selector:
     matchLabels:
-      app: my-php-multi
+      app: my-php-manual-multi
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-php-multi
+        app: my-php-manual-multi
       annotations:
         instrumentation.opentelemetry.io/inject-php: "true"
-        instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
-        instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
+        instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
+        instrumentation.opentelemetry.io/container-names: "myapp"
     spec:
       securityContext:
         runAsUser: 1000
