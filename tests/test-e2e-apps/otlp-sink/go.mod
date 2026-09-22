@@ -11,7 +11,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.67.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.161.0
 	go.opentelemetry.io/collector/receiver/receivertest v0.161.0
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 )
 
 require (
