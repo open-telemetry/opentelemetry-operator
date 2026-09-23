@@ -25,7 +25,7 @@ spec:
     - name: searchStrings
       value: |
         Name: process.cpu.time
-        Description: Total CPU seconds broken down by different states.
+        Description: Total CPU seconds broken down by different CPU modes.
     - name: catchPodLabelSelector
       value: app=my-dotnet
     - name: catchContainer
