@@ -4,10 +4,8 @@
 package collector
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -28,11 +26,6 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 
 	ports := getContainerPorts(params.Log, params.OtelCol)
 
-	var ingressPorts []intstr.IntOrString
-	for _, port := range ports {
-		ingressPorts = append(ingressPorts, intstr.FromInt32(port.ContainerPort))
-	}
-
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -51,13 +44,7 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 		},
 	}
 
-	tcp := corev1.ProtocolTCP
-	for i := range ingressPorts {
-		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
-			Protocol: &tcp,
-			Port:     &ingressPorts[i],
-		})
-	}
+	np.Spec.Ingress[0].Ports = manifestutils.NetworkPolicyPorts(ports)
 
 	return np, nil
 }

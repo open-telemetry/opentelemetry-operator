@@ -24,6 +24,9 @@ data:
             key: looks-like-bool
             value: "true"
           - action: insert
+            key: looks-like-number
+            value: "0e12"
+          - action: insert
             key: looks-like-float
             value: ".inf"
           - action: insert
@@ -37,11 +40,6 @@ data:
           - action: insert
             key: tab-led-multi-line
             value: "\tindented\nline two"
-      transform:
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["cluster"], "0e12")
     service:
       telemetry:
         metrics:
@@ -57,7 +55,6 @@ data:
             - debug
           processors:
             - batch
-            - transform
             - resource
           receivers:
             - otlp
