@@ -127,8 +127,7 @@ var componentParsers = []components.Parser{
 		MustBuild(),
 	// webhook_event, formerly webhookevent
 	// (open-telemetry/opentelemetry-collector-contrib#47517).
-	components.NewSinglePortParserBuilder("webhook_event", 8088).
-		WithTargetPort(8088).
+	components.NewSinglePortParserBuilder("webhook_event", components.UnsetPort).
 		WithAlias("webhookevent").
 		MustBuild(),
 	components.NewSinglePortParserBuilder("zipkin", 9411).

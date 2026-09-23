@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Register the `webhook_event` receiver (alias `webhookevent`) with default port 8088 so the operator applies endpoint and TLS profile defaults.
+note: Register the `webhook_event` receiver (alias `webhookevent`) so the operator derives its Service port from `endpoint`, which the receiver requires, and rejects a configuration that omits it.
 
 # One or more tracking issues related to the change. The pull request number can be used when there is no issue.
 issues: [5631]
