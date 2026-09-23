@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -86,8 +87,8 @@ func TestDownstreamParsers(t *testing.T) {
 		{"statsd", "statsd", "__statsd", 8125, false},
 		{"influxdb", "influxdb", "__influxdb", 8086, false},
 		{"splunk_hec", "splunk_hec", "__splunk_hec", 8088, false},
-		{"webhookevent", "webhookevent", "__webhook_event", 8088, false},
-		{"webhook_event", "webhook_event", "__webhook_event", 8088, false},
+		{"webhookevent", "webhookevent", "__webhook_event", 0, false},
+		{"webhook_event", "webhook_event", "__webhook_event", 0, false},
 		{"awsxray", "awsxray", "__awsxray", 2000, false},
 		{"tcplog", "tcplog", "__tcp_log", 0, true},
 		{"tcp_log", "tcp_log", "__tcp_log", 0, true},
@@ -176,6 +177,24 @@ func TestDownstreamParsers(t *testing.T) {
 					assert.Equal(t, configMap["endpoint"], fmt.Sprintf("0.0.0.0:%d", tt.defaultPort))
 				}
 			})
+		})
+	}
+}
+
+// The webhook_event receiver has no default port, so the operator must not invent one. Leaving out endpoint
+// has to be an error, not a port that can clash with another receiver such as splunk_hec (8088).
+func TestWebhookEventHasNoDefaultPort(t *testing.T) {
+	for _, name := range []string{"webhook_event", "webhookevent"} {
+		t.Run(name, func(t *testing.T) {
+			parser := receivers.ReceiverFor(name)
+
+			ports, err := parser.Ports(logger, name, map[string]any{})
+			assert.ErrorIs(t, err, components.PortNotFoundErr)
+			assert.Empty(t, ports)
+
+			config, err := parser.GetDefaultConfig(logger, map[string]any{})
+			assert.NoError(t, err)
+			assert.Empty(t, config)
 		})
 	}
 }
