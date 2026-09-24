@@ -29,7 +29,7 @@ spec:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
   dotnet:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.16.0-1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.17.0-1
     env:
       # Required if endpoint is set to 4317.
       # Dotnet autoinstrumentation uses http/proto by default
