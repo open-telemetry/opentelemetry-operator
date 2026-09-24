@@ -1,0 +1,24 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: mtls-disable-self-signed-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: mtls-disable-ca-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ca-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ta-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ta-client-cert

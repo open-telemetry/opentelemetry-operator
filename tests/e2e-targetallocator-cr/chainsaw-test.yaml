@@ -19,6 +19,17 @@ spec:
             value: targetallocator-prometheuscr
           - name: clusterRoleBindingName
             value: (join('-', ['ta', $namespace]))
+  - name: Setup a user-provided service account
+    use:
+      template: ../step-templates/target-allocator-rbac.yaml
+      with:
+        bindings:
+          - name: serviceAccountName
+            value: cr-ta-user
+          - name: clusterRoleName
+            value: (join('-', ['targetallocator-user', $namespace]))
+          - name: clusterRoleBindingName
+            value: (join('-', ['ta-user', $namespace]))
   - name: step-00
     try:
     - apply:
@@ -31,6 +42,10 @@ spec:
         file: 01-install.yaml
     - assert:
         file: 01-assert.yaml
+    # the service account the operator created is no longer needed once the Target Allocator
+    # points at a user-provided one, so the operator deletes it
+    - error:
+        file: 01-error.yaml
     catch:
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-targetallocator
