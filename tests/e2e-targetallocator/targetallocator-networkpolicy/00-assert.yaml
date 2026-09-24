@@ -1,0 +1,11 @@
+# The NetworkPolicy allows egress to the API server through both its Service ClusterIP and its endpoints.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-targetallocator-networkpolicy
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  (contains(egress[].to[].ipBlock.cidr, join('', [$apiServerService.spec.clusterIP, '/32']))): true
+  (contains(egress[].to[].ipBlock.cidr, join('', [$apiServerEndpoints.endpoints[0].addresses[0], '/32']))): true

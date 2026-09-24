@@ -6,14 +6,17 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +32,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -71,6 +75,23 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 	}
 
 	return p, nil
+}
+
+// getAPIServerEndpoints returns the Kubernetes API server endpoints if the TargetAllocator's NetworkPolicy needs
+// them, and the time after which they need to be checked again.
+func (r *TargetAllocatorReconciler) getAPIServerEndpoints(ctx context.Context, instance *v1alpha1.TargetAllocator) ([]apiserverendpoints.Endpoint, time.Duration, error) {
+	if !networkPolicyEnabled(instance) {
+		return nil, 0, nil
+	}
+	tracker := r.config.Internal.APIServerEndpoints
+	if tracker == nil {
+		return nil, 0, errors.New("the Kubernetes API server endpoints aren't tracked, the TargetAllocator NetworkPolicy can't be created")
+	}
+	return tracker.Endpoints(ctx)
+}
+
+func networkPolicyEnabled(instance *v1alpha1.TargetAllocator) bool {
+	return instance.Spec.NetworkPolicy.Enabled != nil && *instance.Spec.NetworkPolicy.Enabled
 }
 
 // getCollector finds the OpenTelemetryCollector for the given TargetAllocator. We have the following possibilities:
@@ -144,6 +165,7 @@ func NewTargetAllocatorReconciler(
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list;watch
 
 // Reconcile the current state of a TargetAllocator resource with the desired state.
 func (r *TargetAllocatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -175,13 +197,23 @@ func (r *TargetAllocatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	var apiServerEndpointsExpireIn time.Duration
+	params.APIServerEndpoints, apiServerEndpointsExpireIn, err = r.getAPIServerEndpoints(ctx, &instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	desiredObjects, buildErr := BuildTargetAllocator(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
 
 	err = reconcileDesiredObjects(ctx, r.Client, log, &params.TargetAllocator, params.Scheme, desiredObjects, nil)
-	return taStatus.HandleReconcileStatus(ctx, log, params, err)
+	result, err := taStatus.HandleReconcileStatus(ctx, log, params, err)
+	if err == nil && apiServerEndpointsExpireIn > 0 {
+		// reconcile again to remove the API server endpoints which are no longer live from the NetworkPolicy
+		result.RequeueAfter = apiServerEndpointsExpireIn
+	}
+	return result, err
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
@@ -237,7 +269,34 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		builder.WithPredicates(selectorPredicate),
 	)
 
+	// watch the Kubernetes API server's EndpointSlices, as the target allocator's NetworkPolicy allows egress to them
+	if tracker := r.config.Internal.APIServerEndpoints; tracker != nil {
+		ctrlBuilder.Watches(
+			&discoveryv1.EndpointSlice{},
+			handler.EnqueueRequestsFromMapFunc(r.getTargetAllocatorsWithNetworkPolicy),
+			builder.WithPredicates(tracker.Predicate()),
+		)
+	}
+
 	return ctrlBuilder.Complete(r)
+}
+
+// getTargetAllocatorsWithNetworkPolicy returns requests for all the TargetAllocators with the NetworkPolicy enabled.
+func (r *TargetAllocatorReconciler) getTargetAllocatorsWithNetworkPolicy(ctx context.Context, _ client.Object) []reconcile.Request {
+	var targetAllocators v1alpha1.TargetAllocatorList
+	if err := r.List(ctx, &targetAllocators); err != nil {
+		r.log.Error(err, "failed to list TargetAllocators after a change to the Kubernetes API server endpoints")
+		return nil
+	}
+	var requests []reconcile.Request
+	for i := range targetAllocators.Items {
+		if networkPolicyEnabled(&targetAllocators.Items[i]) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: client.ObjectKeyFromObject(&targetAllocators.Items[i]),
+			})
+		}
+	}
+	return requests
 }
 
 func getTargetAllocatorForCollector(_ context.Context, collector client.Object) []reconcile.Request {

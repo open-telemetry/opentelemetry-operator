@@ -165,3 +165,33 @@ func TestGetTargetAllocatorRequestsFromLabel(t *testing.T) {
 	}}
 	assert.Equal(t, expected, requests)
 }
+
+func TestGetTargetAllocatorsWithNetworkPolicy(t *testing.T) {
+	withPolicy := func(name, namespace string, enabled *bool) *v1alpha1.TargetAllocator {
+		return &v1alpha1.TargetAllocator{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+			Spec: v1alpha1.TargetAllocatorSpec{
+				NetworkPolicy: v1beta1.NetworkPolicy{Enabled: enabled},
+			},
+		}
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(
+		withPolicy("enabled", "ns1", new(true)),
+		withPolicy("enabled", "ns2", new(true)),
+		withPolicy("disabled", "ns1", new(false)),
+		withPolicy("unset", "ns1", nil),
+	).Build()
+	reconciler := NewTargetAllocatorReconciler(
+		fakeClient,
+		testScheme,
+		events.NewFakeRecorder(10),
+		config.New(),
+		testLogger,
+	)
+
+	requests := reconciler.getTargetAllocatorsWithNetworkPolicy(t.Context(), nil)
+	assert.ElementsMatch(t, []reconcile.Request{
+		{NamespacedName: types.NamespacedName{Name: "enabled", Namespace: "ns1"}},
+		{NamespacedName: types.NamespacedName{Name: "enabled", Namespace: "ns2"}},
+	}, requests)
+}

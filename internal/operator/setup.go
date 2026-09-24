@@ -29,6 +29,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -48,6 +49,15 @@ type SetupResult struct {
 	InitialTLSProfile configv1.TLSProfileSpec
 	Autodetector      autodetect.AutoDetect
 	TLSOpts           []func(*tls.Config)
+}
+
+// cacheByObject returns per-type cache settings for the manager. Informers are started lazily, so a type only
+// listed here is not watched until a component requests it.
+func cacheByObject() map[client.Object]cache.ByObject {
+	endpointSlice, endpointSliceCache := apiserverendpoints.CacheByObject()
+	return map[client.Object]cache.ByObject{
+		endpointSlice: endpointSliceCache,
+	}
 }
 
 // SetupManager performs the common manager setup shared between the operator and webhook commands.
@@ -98,6 +108,7 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
+			ByObject:          cacheByObject(),
 		},
 	}
 

@@ -28,6 +28,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
@@ -86,6 +87,7 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	logger := ctrl.Log
 	logger.Info("Feature gates", "feature-gates", featureGates.Lookup(featuregate.FeatureGatesFlag).Value.String())
 
+	result.Config.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(result.Manager.GetCache(), apiserverendpoints.DefaultTTL)
 	if err := discoverKubeAPIServer(context.Background(), result.Clientset, &result.Config); err != nil {
 		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
 	}
