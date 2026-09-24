@@ -9,16 +9,13 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 // targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
 var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 	{
-		APIGroups: []string{"monitoring.coreos.com"},
-		Resources: []string{"servicemonitors", "podmonitors"},
-		Verbs:     []string{"*"},
-	}, {
 		APIGroups: []string{""},
 		Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
 		Verbs:     []string{"get", "list", "watch"},
@@ -46,14 +43,25 @@ var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 func checkTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
+	availableCRDs prometheus.AvailableCRDs,
 	namespace string,
 	serviceAccountName string,
 ) (warnings []string, err error) {
+	rules := targetAllocatorCRPolicyRules
+
+	if availableCRDs.Available() {
+		rules = append(rules, &rbacv1.PolicyRule{
+			APIGroups: []string{"monitoring.coreos.com"},
+			Resources: []string(availableCRDs),
+			Verbs:     []string{"get", "list", "watch"},
+		})
+	}
+
 	subjectAccessReviews, err := reviewer.CheckPolicyRules(
 		ctx,
 		serviceAccountName,
 		namespace,
-		targetAllocatorCRPolicyRules...,
+		rules...,
 	)
 	if err != nil {
 		return []string{}, fmt.Errorf("unable to check rbac rules %w", err)

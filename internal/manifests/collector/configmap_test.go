@@ -146,7 +146,7 @@ service:
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
@@ -211,7 +211,7 @@ service:
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
@@ -259,7 +259,7 @@ service:
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 			CertManagerAvailability:     certmanager.Available,
 		})
 		require.NoError(t, err)
