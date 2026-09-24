@@ -7,14 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,6 +32,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability"
 	coStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/clusterobservability"
 )
+
+const clusterObservabilityOwnerKind = "ClusterObservability"
 
 // ClusterObservabilityReconciler reconciles a ClusterObservability object.
 type ClusterObservabilityReconciler struct {
@@ -331,42 +331,20 @@ func (r *ClusterObservabilityReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		return err
 	}
 
-	ownedResources := r.GetOwnedResourceTypes()
-	builder := ctrl.NewControllerManagedBy(mgr).
+	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ClusterObservability{}).
 		Watches(
 			&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.findClusterObservabilityForNamespace),
 		)
+	ownAll(ctrlBuilder, r.GetOwnedResourceTypes())
 
-	for _, resource := range ownedResources {
-		builder.Owns(resource)
-	}
-
-	return builder.Complete(r)
+	return ctrlBuilder.Complete(r)
 }
 
 // SetupCaches sets up field indexing for efficient owned object queries.
 func (r *ClusterObservabilityReconciler) SetupCaches(mgr ctrl.Manager) error {
-	const clusterObservabilityResourceOwnerKey = ".metadata.owner"
-
-	ownedResources := r.GetOwnedResourceTypes()
-	for _, resource := range ownedResources {
-		if err := mgr.GetCache().IndexField(context.Background(), resource, clusterObservabilityResourceOwnerKey, func(rawObj client.Object) []string {
-			owner := metav1.GetControllerOf(rawObj)
-			if owner == nil {
-				return nil
-			}
-			// Make sure it's a ClusterObservability
-			if owner.APIVersion != v1alpha1.GroupVersion.String() || owner.Kind != "ClusterObservability" {
-				return nil
-			}
-			return []string{owner.Name}
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
+	return indexOwnedResources(context.Background(), mgr, clusterObservabilityOwnerKind, r.GetOwnedResourceTypes())
 }
 
 // findClusterObservabilityForNamespace finds ClusterObservability instances when namespaces change.
@@ -537,22 +515,12 @@ func (*ClusterObservabilityReconciler) GetOwnedResourceTypes() []client.Object {
 
 // findClusterObservabilityOwnedObjects finds OpenTelemetry CRs owned by ClusterObservability for cleanup.
 func (r *ClusterObservabilityReconciler) findClusterObservabilityOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
-	const clusterObservabilityResourceOwnerKey = ".metadata.owner"
-	ownedObjects := map[types.UID]client.Object{}
-
-	listOpts := []client.ListOption{
-		client.InNamespace(params.ClusterObservability.Namespace),
-		client.MatchingFields{clusterObservabilityResourceOwnerKey: params.ClusterObservability.Name},
-	}
-
-	ownedObjectTypes := r.GetOwnedResourceTypes()
-	for _, objectType := range ownedObjectTypes {
-		objs, err := getList(ctx, r.Client, objectType, listOpts...)
-		if err != nil {
-			return nil, err
-		}
-		maps.Copy(ownedObjects, objs)
-	}
-
-	return ownedObjects, nil
+	return findOwnedObjects(
+		ctx,
+		r.Client,
+		clusterObservabilityOwnerKind,
+		r.GetOwnedResourceTypes(),
+		params.ClusterObservability.Namespace,
+		params.ClusterObservability.Name,
+	)
 }
