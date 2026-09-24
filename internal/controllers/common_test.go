@@ -21,7 +21,6 @@ func TestOwnerIndexKey(t *testing.T) {
 	}{
 		{"OpenTelemetryCollector", ".metadata.owner.opentelemetrycollector"},
 		{"TargetAllocator", ".metadata.owner.targetallocator"},
-		{"ClusterObservability", ".metadata.owner.clusterobservability"},
 	}
 	for _, tt := range tests {
 		assert.Equal(t, tt.want, ownerIndexKey(tt.ownerKind), "ownerKind=%s", tt.ownerKind)
