@@ -369,7 +369,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 func (r *OpenTelemetryCollectorReconciler) SetupCaches(cluster cluster.Cluster) error {
 	ownedResources := r.GetOwnedResourceTypes()
 	for _, resource := range ownedResources {
-		if err := cluster.GetCache().IndexField(context.Background(), resource, resourceOwnerKey, func(rawObj client.Object) []string {
+		err := cluster.GetCache().IndexField(context.Background(), resource, resourceOwnerKey, func(rawObj client.Object) []string {
 			owner := metav1.GetControllerOf(rawObj)
 			if owner == nil {
 				return nil
@@ -380,7 +380,8 @@ func (r *OpenTelemetryCollectorReconciler) SetupCaches(cluster cluster.Cluster) 
 			}
 
 			return []string{owner.Name}
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 	}
