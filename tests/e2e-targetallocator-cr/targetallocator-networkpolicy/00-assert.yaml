@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-targetallocator-networkpolicy
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: np
+spec:
+  ingress:
+    - ports:
+        - port: 8080
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+    - Ingress
+    - Egress

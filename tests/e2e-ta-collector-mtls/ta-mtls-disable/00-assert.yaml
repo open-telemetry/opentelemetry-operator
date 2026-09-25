@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mtls-disable-targetallocator
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: mtls-disable-self-signed-issuer
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: mtls-disable
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: mtls-disable-ca-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ca-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ta-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mtls-disable-ta-client-cert
