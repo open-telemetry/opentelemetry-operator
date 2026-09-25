@@ -325,14 +325,13 @@ func isInitContainer(name string, pod *corev1.Pod) bool {
 }
 
 func findContainerByName(name string, pod *corev1.Pod) *corev1.Container {
-	if i := slices.IndexFunc(pod.Spec.Containers, func(c corev1.Container) bool {
+	hasName := func(c corev1.Container) bool {
 		return c.Name == name
-	}); i >= 0 {
+	}
+	if i := slices.IndexFunc(pod.Spec.Containers, hasName); i >= 0 {
 		return &pod.Spec.Containers[i]
 	}
-	if i := slices.IndexFunc(pod.Spec.InitContainers, func(c corev1.Container) bool {
-		return c.Name == name
-	}); i >= 0 {
+	if i := slices.IndexFunc(pod.Spec.InitContainers, hasName); i >= 0 {
 		return &pod.Spec.InitContainers[i]
 	}
 	return nil
