@@ -151,11 +151,13 @@ ClusterObservability has a simple spec with a single main field:
 
 ```go
 type ClusterObservabilitySpec struct {
-    Exporter OTLPHTTPExporter  // OTLP HTTP exporter configuration
+    Exporter v1beta1.AnyConfig // OTLP HTTP exporter configuration
 }
 ```
 
-All observability signals (logs, traces, metrics) are enabled by default. The `exporter` field uses the `otlphttp` exporter from OpenTelemetry Collector.
+All observability signals (logs, traces, and metrics) are enabled by default.
+The operator passes `exporter` to the Collector's `otlp_http` exporter unchanged,
+so any supported exporter setting can be used.
 
 ### Basic Example
 ```yaml
