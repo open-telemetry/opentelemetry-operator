@@ -467,7 +467,7 @@ chlog-check:
 fmt: golangci-lint
 	@set -e; for dir in $(GO_MODULE_DIRS); do \
 		echo "Running fmt in $$dir"; \
-		(cd $$dir && go fmt ./... && $(GOLANGCI_LINT) run --fix); \
+		(cd $$dir && $(GOLANGCI_LINT) run --fix); \
 	done
 
 # Run go vet in every Go module in the repository
@@ -936,10 +936,27 @@ install-tools: kustomize golangci-lint kind controller-gen crdoc operator-sdk ch
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
-# Download golangci-lint locally if necessary
+# Download golangci-lint locally if necessary. Use the release binary rather than go install:
+# gci formats with the go/printer of the Go version that built golangci-lint, and it must match
+# the Go version gofumpt is based on. See golangci/golangci-lint#6814.
+# A binary built by go install reports a "mod sum" in its version output and is replaced.
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	@{ \
+	set -e ;\
+	if [ "$$($(GOLANGCI_LINT) version --short 2>/dev/null)" = "$(GOLANGCI_LINT_VERSION:v%=%)" ] && \
+		! $(GOLANGCI_LINT) version 2>&1 | grep -q 'mod sum' ; then \
+		exit 0; \
+	fi ;\
+	TMP_DIR=$$(mktemp -d) ;\
+	NAME=golangci-lint-$(GOLANGCI_LINT_VERSION:v%=%)-`go env GOOS`-`go env GOARCH` ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/golangci-lint.tar.gz https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/$$NAME.tar.gz ;\
+	gzip -t $$TMP_DIR/golangci-lint.tar.gz || { echo "ERROR: downloaded golangci-lint archive is corrupt or incomplete" >&2; exit 1; } ;\
+	tar xzf $$TMP_DIR/golangci-lint.tar.gz -C $$TMP_DIR --strip-components=1 $$NAME/golangci-lint ;\
+	[ -d $(LOCALBIN) ] || mkdir -p $(LOCALBIN) ;\
+	mv $$TMP_DIR/golangci-lint $(GOLANGCI_LINT) ;\
+	rm -rf $$TMP_DIR ;\
+	}
 
 # Download kind locally if necessary
 .PHONY: kind
