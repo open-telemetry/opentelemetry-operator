@@ -19,3 +19,12 @@ var nginxCloneScript string
 
 //go:embed scripts/nginx_agent.sh
 var nginxAgentScript string
+
+//go:embed scripts/php_clone.sh
+var phpCloneScript string
+
+//go:embed scripts/php_agent.sh
+var phpAgentScript string
+
+//go:embed scripts/php_agent_manual.sh
+var phpAgentManualScript string

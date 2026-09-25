@@ -1,0 +1,7 @@
+{
+  "name": "test-e2e-apps/php",
+  "require": {
+    "slim/slim": "^4",
+    "slim/psr7": "^1"
+  }
+}
