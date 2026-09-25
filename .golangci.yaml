@@ -116,6 +116,8 @@ linters:
           disabled: true
         - name: line-length-limit
           disabled: true
+        - name: marshal-receiver
+          disabled: true # AnyConfig.MarshalJSON relies on a pointer receiver to handle nil.
         - name: max-public-structs
           disabled: true
         - name: nested-structs
@@ -191,7 +193,6 @@ linters:
 formatters:
   enable:
     - gci
-    - gofmt
     - gofumpt
   settings:
     gci:
@@ -199,8 +200,6 @@ formatters:
         - standard
         - default
         - prefix(github.com/open-telemetry/opentelemetry-operator)
-    gofmt:
-      simplify: true
     gofumpt:
       extra:
         group-params: true
