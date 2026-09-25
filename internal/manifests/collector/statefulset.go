@@ -16,7 +16,7 @@ import (
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+	labels := Labels(params.OtelCol, name, params.Config, params.Config.LabelsFilter)
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {

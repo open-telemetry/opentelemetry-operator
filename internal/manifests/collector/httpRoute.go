@@ -11,7 +11,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -61,7 +60,7 @@ func HTTPRoutes(params manifests.Params) ([]*gatewayv1.HTTPRoute, error) {
 		}
 
 		name := naming.HTTPRoute(params.OtelCol.Name, port.Name)
-		labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+		labels := Labels(params.OtelCol, name, params.Config, params.Config.LabelsFilter)
 
 		gatewayNamespace := httpRouteConfig.GatewayNamespace
 		if gatewayNamespace == "" {

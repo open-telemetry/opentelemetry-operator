@@ -52,7 +52,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: jaeger-inmemory-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
     operator.opentelemetry.io/collector-headless-service: Exists
     operator.opentelemetry.io/collector-service-type: headless
   name: jaeger-inmemory-collector-headless
@@ -98,7 +97,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: jaeger-inmemory-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
     operator.opentelemetry.io/collector-monitoring-service: Exists
     operator.opentelemetry.io/collector-service-type: monitoring
   name: jaeger-inmemory-collector-monitoring
@@ -125,7 +123,6 @@ metadata:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
     operator.opentelemetry.io/collector-service-type: extension
 spec:
   selector:
