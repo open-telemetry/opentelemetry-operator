@@ -59,11 +59,7 @@ func (in *MetricsConfig) DeepCopy() *MetricsConfig {
 type Telemetry struct {
 	Metrics MetricsConfig `json:"metrics,omitzero" yaml:"metrics,omitempty"`
 
-	// Resource specifies user-defined attributes to include with all emitted telemetry.
-	// Note that some attributes are added automatically (e.g. service.version) even
-	// if they are not specified here. In order to suppress such attributes the
-	// attribute must be specified in this map with null YAML value (nil string pointer).
-	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
+	Resource json.RawMessage `json:"resource,omitempty"`
 }
 
 // GetEnabledComponents constructs a list of enabled components by component type.
