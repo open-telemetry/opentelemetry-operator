@@ -1,0 +1,28 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: chainsaw-k8sattributes
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    processors:
+      k8sattributes:
+        extract:
+          metadata: []
+          labels:
+            - tag_name: cronjob_label
+              key: my-label
+              from: cronjob
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [k8sattributes]
+          exporters: [debug]
