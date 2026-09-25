@@ -5,6 +5,7 @@ package manifests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,8 +14,70 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
+
+func TestMutateOpenTelemetryCollectorPreservesAPIServerDefaults(t *testing.T) {
+	ipFamilyPolicy := corev1.IPFamilyPolicySingleStack
+	useCertManager := true
+	existing := &v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image:          "collector:old",
+				IpFamilyPolicy: &ipFamilyPolicy,
+			},
+			ConfigVersions: 3,
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				AllocationStrategy:            v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+				FilterStrategy:                v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
+				CollectorNotReadyGracePeriod:  &metav1.Duration{Duration: 30 * time.Second},
+				CollectorTargetReloadInterval: &metav1.Duration{Duration: 30 * time.Second},
+				Mtls:                          &v1beta1.TargetAllocatorMTLS{UseCertManager: &useCertManager},
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					ScrapeInterval:                  &metav1.Duration{Duration: 30 * time.Second},
+					EvaluationInterval:              &metav1.Duration{Duration: 30 * time.Second},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+				},
+			},
+		},
+	}
+	desired := &v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{Image: "collector:new"},
+			TargetAllocator:           v1beta1.TargetAllocatorEmbedded{Mtls: &v1beta1.TargetAllocatorMTLS{}},
+		},
+	}
+	defaulted := existing.DeepCopy()
+	desiredBefore := desired.DeepCopy()
+
+	require.NoError(t, MutateFuncFor(existing, desired)())
+
+	assert.Equal(t, "collector:new", existing.Spec.Image)
+	assert.Equal(t, defaulted.Spec.ConfigVersions, existing.Spec.ConfigVersions)
+	assert.Equal(t, defaulted.Spec.IpFamilyPolicy, existing.Spec.IpFamilyPolicy)
+	assert.Equal(t, defaulted.Spec.TargetAllocator, existing.Spec.TargetAllocator)
+	assert.Equal(t, desiredBefore, desired)
+}
+
+func TestMutateInstrumentationCopiesDesiredSpec(t *testing.T) {
+	existing := &v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{
+		Exporter: v1alpha1.Exporter{Endpoint: "http://old:4318"},
+	}}
+	desired := &v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{
+		Exporter: v1alpha1.Exporter{Endpoint: "http://new:4318"},
+	}}
+	desiredBefore := desired.DeepCopy()
+
+	require.NoError(t, MutateFuncFor(existing, desired)())
+
+	assert.Equal(t, desired.Spec, existing.Spec)
+	assert.Equal(t, desiredBefore, desired)
+}
 
 func TestMutateServiceAccount(t *testing.T) {
 	existing := corev1.ServiceAccount{

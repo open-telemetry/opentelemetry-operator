@@ -75,8 +75,6 @@ func buildOpenShiftSCC(params manifests.Params) []client.Object {
 			"defaultAddCapabilities":   []string{},
 			"requiredDropCapabilities": []string{"ALL"},
 			"seccompProfiles":          []string{"runtime/default"},
-			"allowedUnsafeSysctls":     []string{},
-			"forbiddenSysctls":         []string{},
 			"volumes": []string{
 				"configMap",
 				"downwardAPI",

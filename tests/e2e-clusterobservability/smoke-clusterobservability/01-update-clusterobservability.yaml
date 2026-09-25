@@ -1,0 +1,11 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+spec:
+  exporter:
+    endpoint: http://sink-collector:4318
+    timeout: 45s
+    sending_queue:
+      enabled: true
+      queue_size: 2048

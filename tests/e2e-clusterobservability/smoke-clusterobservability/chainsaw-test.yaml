@@ -34,6 +34,12 @@ spec:
     try:
     - assert:
         file: 01-assert-collectors.yaml
+  - name: Update ClusterObservability
+    try:
+    - apply:
+        file: 01-update-clusterobservability.yaml
+    - assert:
+        file: 01-assert-clusterobservability-update.yaml
   - name: Assert telemetry reaches the sink
     use:
       template: 02-assert-telemetry-flow.yaml

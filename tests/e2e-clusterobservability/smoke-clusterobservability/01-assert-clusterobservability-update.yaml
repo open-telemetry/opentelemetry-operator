@@ -1,0 +1,47 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-obs
+status:
+  observedGeneration: 2
+  phase: Ready
+  (conditions[?type == 'Configured']):
+  - status: "True"
+  (conditions[?type == 'Ready']):
+  - status: "True"
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-agent
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: http://sink-collector:4318
+        timeout: 45s
+        sending_queue:
+          enabled: true
+          queue_size: 2048
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-obs-cluster
+spec:
+  config:
+    exporters:
+      otlp_http:
+        endpoint: http://sink-collector:4318
+        timeout: 45s
+        sending_queue:
+          enabled: true
+          queue_size: 2048
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: cluster-obs
+spec:
+  exporter:
+    endpoint: http://$(OTEL_NODE_IP):4318
