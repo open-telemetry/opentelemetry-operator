@@ -17,6 +17,18 @@
     },
     {
       "customType": "regex",
+      "description": "Update Go toolchain version in go.mod files",
+      "datasourceTemplate": "golang-version",
+      "depNameTemplate": "go",
+      "fileMatch": [
+        "(^|/)go\\.mod$"
+      ],
+      "matchStrings": [
+        "\\ngo (?<currentValue>\\d+\\.\\d+\\.\\d+)\\n"
+      ]
+    },
+    {
+      "customType": "regex",
       "description" : "Update tool versions in the Makefile and Github Actions",
       "fileMatch": [
         "(^|/)Makefile$",
@@ -96,6 +108,16 @@
       "matchFileNames": [".github/workflows/*.yaml", ".github/workflows/*.yml"],
       "separateMinorPatch": true,
       "commitMessageTopic": "go version in CI"
+    },
+    {
+      "matchDatasources": ["golang-version"],
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/go.mod"],
+      "separateMinorPatch": true,
+      "matchUpdateTypes": ["patch"],
+      "groupName": "go toolchain in go.mod",
+      "commitMessageTopic": "Go toolchain version in go.mod",
+      "postUpdateOptions": ["gomodTidy"]
     },
     {
       "matchManagers": ["regex"],
