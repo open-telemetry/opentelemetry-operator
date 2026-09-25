@@ -5,7 +5,7 @@ change_type: deprecation
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Removed autoinstrumentation-php from the repository
+note: Remove autoinstrumentation-php image definition from the repository
 
 # One or more tracking issues related to the change
 issues: [932]
