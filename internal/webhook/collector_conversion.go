@@ -478,6 +478,11 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) v1alpha1.OpenTelemetryTarg
 }
 
 func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) string {
+	// Preserve empty string as a valid value; only return relabel-config
+	// when the strategy is actually the known value.
+	if strategy == "" {
+		return ""
+	}
 	if strategy == v1beta1.TargetAllocatorFilterStrategyRelabelConfig {
 		return string(strategy)
 	}
@@ -497,6 +502,11 @@ func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationSt
 }
 
 func tov1beta1TAFilterStrategy(strategy string) v1beta1.TargetAllocatorFilterStrategy {
+	// Preserve empty string as a valid value; only default to relabel-config
+	// when the strategy is actually the known value.
+	if strategy == "" {
+		return ""
+	}
 	if strategy == string(v1beta1.TargetAllocatorFilterStrategyRelabelConfig) {
 		return v1beta1.TargetAllocatorFilterStrategyRelabelConfig
 	}
