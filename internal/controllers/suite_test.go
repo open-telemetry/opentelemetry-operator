@@ -217,6 +217,10 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
+	if err = wh.SetupInstrumentationWebhook(mgr, config.New()); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
 	if err = wh.SetupOpAMPBridgeWebhook(mgr, config.New()); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
