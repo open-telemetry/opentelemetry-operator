@@ -50,7 +50,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
-const resourceOwnerKey = ".metadata.owner"
+const collectorOwnerKind = "OpenTelemetryCollector"
 
 var ownedClusterObjectTypes = []client.Object{
 	&rbacv1.ClusterRole{},
@@ -80,27 +80,15 @@ type Params struct {
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
-	ownedObjects := map[types.UID]client.Object{}
-	collectorConfigMaps := []*corev1.ConfigMap{}
-	ownedObjectTypes := r.GetOwnedResourceTypes()
-	listOpts := []client.ListOption{
-		client.InNamespace(params.OtelCol.Namespace),
-		client.MatchingFields{resourceOwnerKey: params.OtelCol.Name},
+	ownedObjects, err := findOwnedObjects(ctx, r, collectorOwnerKind, r.GetOwnedResourceTypes(), params.OtelCol.Namespace, params.OtelCol.Name)
+	if err != nil {
+		return nil, err
 	}
-	for _, objectType := range ownedObjectTypes {
-		objs, err := getList(ctx, r, objectType, listOpts...)
-		if err != nil {
-			return nil, err
-		}
-		maps.Copy(ownedObjects, objs)
-		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
-		switch objectType.(type) {
-		case *corev1.ConfigMap:
-			for _, object := range objs {
-				configMap := object.(*corev1.ConfigMap)
-				collectorConfigMaps = append(collectorConfigMaps, configMap)
-			}
-		default:
+	// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
+	collectorConfigMaps := []*corev1.ConfigMap{}
+	for _, object := range ownedObjects {
+		if configMap, ok := object.(*corev1.ConfigMap); ok {
+			collectorConfigMaps = append(collectorConfigMaps, configMap)
 		}
 	}
 	// at this point we don't know if the most recent ConfigMap will still be the most recent after reconciliation, or
@@ -354,38 +342,16 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		return err
 	}
 
-	ownedResources := r.GetOwnedResourceTypes()
-	builder := ctrl.NewControllerManagedBy(mgr).
+	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1beta1.OpenTelemetryCollector{})
+	ownAll(ctrlBuilder, r.GetOwnedResourceTypes())
 
-	for _, resource := range ownedResources {
-		builder.Owns(resource)
-	}
-
-	return builder.Complete(r)
+	return ctrlBuilder.Complete(r)
 }
 
 // SetupCaches sets up caching and indexing for our controller.
 func (r *OpenTelemetryCollectorReconciler) SetupCaches(cluster cluster.Cluster) error {
-	ownedResources := r.GetOwnedResourceTypes()
-	for _, resource := range ownedResources {
-		err := cluster.GetCache().IndexField(context.Background(), resource, resourceOwnerKey, func(rawObj client.Object) []string {
-			owner := metav1.GetControllerOf(rawObj)
-			if owner == nil {
-				return nil
-			}
-			// make sure it's an OpenTelemetryCollector
-			if owner.Kind != "OpenTelemetryCollector" {
-				return nil
-			}
-
-			return []string{owner.Name}
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return indexOwnedResources(context.Background(), cluster, collectorOwnerKind, r.GetOwnedResourceTypes())
 }
 
 // GetOwnedResourceTypes returns all the resource types the controller can own. Even though this method returns an array
