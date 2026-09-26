@@ -30,6 +30,8 @@ spec:
     pod-annotation2: value2
   shareProcessNamespace: true
   enableServiceLinks: false
+  imagePullSecrets:
+    - name: my-registry-secret
   podDnsConfig:
     nameservers:
       - 8.8.8.8

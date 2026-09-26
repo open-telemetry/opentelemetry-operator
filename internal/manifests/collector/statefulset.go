@@ -67,6 +67,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					HostUsers:                     params.OtelCol.Spec.HostUsers,
 					HostAliases:                   params.OtelCol.Spec.HostAliases,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 					EnableServiceLinks:            params.OtelCol.Spec.EnableServiceLinks,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
