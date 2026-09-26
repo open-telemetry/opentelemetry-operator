@@ -57,7 +57,6 @@ The upstream SDK version for each language is read from:
 |--------------|-------------------------------------------------------------------------------------|
 | java         | `java/version.txt`                                                                  |
 | dotnet       | `dotnet/version.txt`                                                                |
-| php          | `php/version.txt`                                                                   |
 | apache-httpd | `apache-httpd/version.txt`                                                          |
 | python       | first line of `python/requirements.txt` (`opentelemetry-distro==<version>`)         |
 | nodejs       | `nodejs/package.json` → `dependencies["@opentelemetry/auto-instrumentations-node"]` |
