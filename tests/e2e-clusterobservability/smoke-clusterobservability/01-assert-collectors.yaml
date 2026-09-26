@@ -31,6 +31,13 @@ metadata:
 (status.readyReplicas == spec.replicas): true
 (status.availableReplicas == spec.replicas): true
 ---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  labels:
+    kubernetes.io/service-name: cluster-obs-targetallocator-targetallocator
+(length(endpoints[?conditions.ready == `true`]) > `0`): true
+---
 apiVersion: opentelemetry.io/v1alpha1
 kind: ClusterObservability
 metadata:

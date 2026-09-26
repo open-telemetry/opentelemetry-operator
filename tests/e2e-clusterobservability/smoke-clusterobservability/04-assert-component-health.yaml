@@ -4,6 +4,8 @@ metadata:
   name: assert-component-health
 spec:
   try:
+  - assert:
+      file: 01-assert-collectors.yaml
   - script:
       timeout: 3m
       content: |
@@ -41,30 +43,11 @@ spec:
             fi
 
             # These dependencies can be transiently unavailable during startup.
-            # The telemetry flow assertions confirm kubelet recovery, while the
-            # Target Allocator rollout/API check confirms its recovery.
+            # The telemetry flow and resource assertions confirm recovery.
             ACCEPTABLE_ERRORS='call to /stats/summary endpoint failed|call to /pods endpoint failed'
             if [ "$role" = "cluster Collector" ]; then
               TARGET_ALLOCATOR_TRANSIENT_ERRORS='(Failed to retrieve job list|Unable to refresh target groups).*cluster-obs-targetallocator-targetallocator.*(connect: connection refused|i/o timeout)'
-              target_allocator_errors=$(printf '%s\n' "$logs" | \
-                grep -E "$TARGET_ALLOCATOR_TRANSIENT_ERRORS" || true)
-              if [ -n "$target_allocator_errors" ]; then
-                # A request started during the rollout can finish with an error
-                # after the replacement pod is ready. Only ignore it after the
-                # same API succeeds repeatedly at audit time.
-                for recovery_check in 1 2 3; do
-                  if ! kubectl get --raw \
-                    "/api/v1/namespaces/$NAMESPACE/services/cluster-obs-targetallocator-targetallocator:80/proxy/scrape_configs" \
-                    >/dev/null 2>&1; then
-                    echo "ERROR: Target Allocator API has not recovered:"
-                    echo "$target_allocator_errors"
-                    return 1
-                  fi
-                  echo "Target Allocator API recovery check $recovery_check/3 passed"
-                  sleep 1
-                done
-                ACCEPTABLE_ERRORS="$ACCEPTABLE_ERRORS|$TARGET_ALLOCATOR_TRANSIENT_ERRORS"
-              fi
+              ACCEPTABLE_ERRORS="$ACCEPTABLE_ERRORS|$TARGET_ALLOCATOR_TRANSIENT_ERRORS"
             fi
             errors=$(printf '%s\n' "$logs" | grep -Ei \
               '(^|[[:space:]])(error|dpanic|panic|fatal)([[:space:]:]|$)|"level"[[:space:]]*:[[:space:]]*"(error|dpanic|panic|fatal)"' | \
