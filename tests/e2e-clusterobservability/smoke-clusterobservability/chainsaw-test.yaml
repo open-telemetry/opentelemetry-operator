@@ -34,6 +34,62 @@ spec:
     try:
     - assert:
         file: 01-assert-collectors.yaml
+    - script:
+        timeout: 3m
+        content: |
+          set -eu
+
+          deployment=cluster-obs-targetallocator-targetallocator
+          stable_generation=
+          stable_checks=0
+
+          for attempt in $(seq 1 60); do
+            state=$(kubectl get deployment "$deployment" -n "$NAMESPACE" \
+              -o jsonpath='{.metadata.generation}{" "}{.status.observedGeneration}{" "}{.spec.replicas}{" "}{.status.replicas}{" "}{.status.updatedReplicas}{" "}{.status.availableReplicas}')
+            set -- $state
+
+            if [ "$#" -eq 6 ]; then
+              generation=$1
+              observed=$2
+              desired=$3
+              replicas=$4
+              updated=$5
+              available=$6
+
+              if [ "$generation" = "$observed" ] \
+                && [ "$desired" = "$replicas" ] \
+                && [ "$desired" = "$updated" ] \
+                && [ "$desired" = "$available" ] \
+                && kubectl get --raw \
+                  "/api/v1/namespaces/$NAMESPACE/services/$deployment:80/proxy/scrape_configs" \
+                  >/dev/null 2>&1; then
+                if [ "$generation" = "$stable_generation" ]; then
+                  stable_checks=$((stable_checks + 1))
+                else
+                  stable_generation=$generation
+                  stable_checks=1
+                fi
+
+                echo "attempt $attempt: Target Allocator generation $generation is converged and its API is available ($stable_checks/3)"
+                if [ "$stable_checks" -ge 3 ]; then
+                  exit 0
+                fi
+              else
+                stable_generation=
+                stable_checks=0
+              fi
+            else
+              stable_generation=
+              stable_checks=0
+            fi
+
+            sleep 2
+          done
+
+          echo "ERROR: Target Allocator rollout and API did not stabilize"
+          kubectl get deployment,replicaset,pod -n "$NAMESPACE" \
+            -l app.kubernetes.io/name="$deployment" -o wide
+          exit 1
   - name: Assert telemetry reaches the sink
     use:
       template: 02-assert-telemetry-flow.yaml
