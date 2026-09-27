@@ -12,10 +12,6 @@ import (
 	"text/template"
 )
 
-// changelogExcluded lists languages built here whose changelog is maintained
-// outside this repository (php by the PHP SIG, like go's upstream image).
-var changelogExcluded = map[string]bool{"php": true}
-
 func languageName(lang string) string {
 	switch lang {
 	case "dotnet":
@@ -24,8 +20,6 @@ func languageName(lang string) string {
 		return "Node.js"
 	case "apache-httpd":
 		return "Apache HTTPD / Nginx"
-	case "php":
-		return "PHP"
 	default:
 		return strings.ToUpper(lang[:1]) + lang[1:]
 	}
@@ -128,9 +122,6 @@ func (r Repo) ApplyChangelog(baseSHA, prRef string) ([]ChangelogEntry, error) {
 
 	var entries []ChangelogEntry
 	for _, lang := range langs {
-		if changelogExcluded[lang] {
-			continue
-		}
 		ls, err := r.gather(baseSHA, lang)
 		if err != nil {
 			return nil, err
@@ -177,9 +168,6 @@ func (r Repo) CheckChangelog(baseSHA string) ([]Problem, error) {
 
 	var problems []Problem
 	for _, lang := range langs {
-		if changelogExcluded[lang] {
-			continue
-		}
 		ls, err := r.gather(baseSHA, lang)
 		if err != nil {
 			return nil, err

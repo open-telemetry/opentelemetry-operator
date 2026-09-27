@@ -1,0 +1,19 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: deprecation
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Remove autoinstrumentation-php image definition from the repository
+
+# One or more tracking issues related to the change
+issues: [932]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The PHP autoinstrumentation image will be hosted by the packaging SIG.
+  The one released image (v0.1.0) of the image in the operator registry will
+  eventually be deleted. This image was never used for any functionality shipped by the operator.
