@@ -1,5 +1,0 @@
-change_type: bug_fix
-component: collector
-note: Preserve TCP and UDP protocols when generating NetworkPolicy ports.
-issues: [5611]
-subtext:
