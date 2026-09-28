@@ -1,0 +1,10 @@
+change_type: bug_fix
+component: target allocator
+note: Watch and prune all the resources the TargetAllocator controller creates.
+# TODO: fill in the issue number before pushing, chlog-validate fails while this is empty.
+issues: [5657]
+subtext: |
+  The controller now watches the resources it creates, so manual changes to them are reverted.
+  It also deletes the resources it no longer needs, for example the NetworkPolicy after
+  `spec.networkPolicy.enabled` is set to false, or the ServiceMonitor after
+  `spec.observability.metrics.enableMetrics` is set to false.

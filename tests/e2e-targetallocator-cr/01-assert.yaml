@@ -69,7 +69,7 @@ spec:
               name: ta-internal
             - mountPath: /usr/share/testvolume
               name: testvolume
-      serviceAccountName: cr-targetallocator
+      serviceAccountName: cr-ta-user
       volumes:
         - configMap:
             defaultMode: 420
@@ -137,13 +137,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/component: opentelemetry-targetallocator
-    app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/name: cr-targetallocator
-    app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
-  name: cr-targetallocator
+  name: cr-ta-user
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

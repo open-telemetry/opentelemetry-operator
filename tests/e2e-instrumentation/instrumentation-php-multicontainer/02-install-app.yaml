@@ -13,6 +13,7 @@ spec:
         app: my-php-multi
       annotations:
         instrumentation.opentelemetry.io/inject-php: "true"
+        instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:
       securityContext:

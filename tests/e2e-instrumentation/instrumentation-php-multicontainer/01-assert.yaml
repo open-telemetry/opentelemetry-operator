@@ -4,7 +4,7 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/container-names: myapp,myrabbit
     instrumentation.opentelemetry.io/inject-php: "true"
-    instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
+    instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
   labels:
     app: my-php-multi
 spec:
@@ -80,8 +80,6 @@ status:
     ready: true
     started: true
   initContainerStatuses:
-  - name: opentelemetry-auto-instrumentation-clone
-    ready: true
   - name: opentelemetry-auto-instrumentation-php
     ready: true
   phase: Running

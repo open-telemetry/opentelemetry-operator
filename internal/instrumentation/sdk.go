@@ -130,44 +130,23 @@ func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithCon
 	otelinst := *inst.Instrumentation
 	i.logger.V(1).Info("injecting PHP instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-	autoDetect := strings.EqualFold(inst.AdditionalAnnotations[annotationPhpAutoDetect], "true")
+	platform := inst.AdditionalAnnotations[annotationPhpPlatform]
+	apiVersion := inst.AdditionalAnnotations[annotationPhpApiVersion]
+	threadSafety := inst.AdditionalAnnotations[annotationPhpThreadSafety]
 	containers := containersToInstrument(&inst, &pod)
 
 	if len(containers) > 0 {
-		// PHP instrumentation supports only single container instrumentation, and it can't be an initContainer
-		injected := false
 		for _, container := range containers {
-			if isInitContainer(container.Name, &pod) {
-				i.logger.Info("Skipping PHP SDK injection", "reason", errors.New("is init container"), "container", container.Name)
+			if err := injectPhpSDKToContainer(otelinst.Spec.Php, container, platform, apiVersion, threadSafety); err != nil {
+				i.logger.Info("Skipping PHP SDK injection", "reason", err.Error(), "container", container.Name)
 			} else {
-				if err := injectPhpSDKToContainer(otelinst.Spec.Php, container); err != nil {
-					i.logger.Info("Skipping PHP SDK injection", "reason", err.Error(), "container", container.Name)
-				} else {
-					i.injectCommonEnvVar(otelinst, container)
-					i.injectDefaultPhpEnvVars(container)
-					pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-					if autoDetect {
-						pod = injectPhpSDKToPodByContainer(otelinst.Spec.Php, pod, containers[0].Name, container, otelinst.Spec)
-					} else {
-						// Specified platform, api version and thread safety from annotation
-						platform := inst.AdditionalAnnotations[annotationPhpPlatform]
-						apiVersion := inst.AdditionalAnnotations[annotationPhpApiVersion]
-						threadSafety := inst.AdditionalAnnotations[annotationPhpThreadSafety]
-						pod = injectPhpSDKToPodByContainerManual(otelinst.Spec.Php, pod, containers[0].Name, otelinst.Spec, platform, apiVersion, threadSafety)
-					}
-					injected = true
-				}
-				if injected {
-					break
-				}
+				i.injectCommonEnvVar(otelinst, container)
+				i.injectDefaultPhpEnvVars(container)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
 			}
 		}
-		if injected {
-			if autoDetect {
-				pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpInitContainerName)
-			}
-			pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpCloneContainerName)
-		}
+		pod = injectPhpSDKToPod(otelinst.Spec.Php, pod, containers[0].Name, otelinst.Spec, platform, apiVersion, threadSafety)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpInitContainerName)
 	}
 
 	return pod
@@ -375,14 +354,13 @@ func isInitContainer(name string, pod *corev1.Pod) bool {
 }
 
 func findContainerByName(name string, pod *corev1.Pod) *corev1.Container {
-	if i := slices.IndexFunc(pod.Spec.Containers, func(c corev1.Container) bool {
+	hasName := func(c corev1.Container) bool {
 		return c.Name == name
-	}); i >= 0 {
+	}
+	if i := slices.IndexFunc(pod.Spec.Containers, hasName); i >= 0 {
 		return &pod.Spec.Containers[i]
 	}
-	if i := slices.IndexFunc(pod.Spec.InitContainers, func(c corev1.Container) bool {
-		return c.Name == name
-	}); i >= 0 {
+	if i := slices.IndexFunc(pod.Spec.InitContainers, hasName); i >= 0 {
 		return &pod.Spec.InitContainers[i]
 	}
 	return nil

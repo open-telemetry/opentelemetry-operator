@@ -5,15 +5,25 @@ metadata:
     app: my-php-initcontainer
 spec:
   initContainers:
+  # The instrumentation init container must come FIRST (before the target init container)
+  - name: opentelemetry-auto-instrumentation-php
   - name: php-init
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+    - mountPath: /otel-auto-instrumentation-php
+      name: opentelemetry-auto-instrumentation-php
   containers:
   - name: myapp
 status:
   initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-php
+    ready: true
   - name: php-init
     ready: true
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
   phase: Running
 ---
 apiVersion: apps/v1

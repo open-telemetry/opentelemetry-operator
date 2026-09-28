@@ -1241,206 +1241,6 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
-			name: "php injection, default, true",
-			ns: corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "php-default",
-				},
-			},
-			inst: v1alpha1.Instrumentation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "example-inst",
-					Namespace: "php-default",
-				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Php: v1alpha1.Php{
-						Image: "otel/php:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-							{
-								Name:  "OTEL_TRACES_EXPORTER",
-								Value: "otlp",
-							},
-							{
-								Name:  "OTEL_METRICS_EXPORTER",
-								Value: "otlp",
-							},
-							{
-								Name:  "OTEL_LOGS_EXPORTER",
-								Value: "otlp",
-							},
-							{
-								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-								Value: "http://localhost:4318",
-							},
-						},
-					},
-					Exporter: v1alpha1.Exporter{
-						Endpoint: "http://collector:12345",
-					},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "OTEL_TRACES_SAMPLER",
-							Value: "parentbased_traceidratio",
-						},
-						{
-							Name:  "OTEL_TRACES_SAMPLER_ARG",
-							Value: "0.85",
-						},
-					},
-				},
-			},
-			pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectPhp:       "true",
-						annotationPhpApiVersion:   "20250925",
-						annotationPhpPlatform:     "musl",
-						annotationPhpThreadSafety: "false",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectPhp:       "true",
-						annotationPhpApiVersion:   "20250925",
-						annotationPhpPlatform:     "musl",
-						annotationPhpThreadSafety: "false",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: phpVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-					},
-					InitContainers: []corev1.Container{
-						{
-							Name:    phpVolumeName,
-							Image:   "otel/php:1",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpAgentManualScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, "musl", "20250925", "non-zts"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      phpVolumeName,
-									MountPath: phpInstrMountPath,
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_LOGS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://localhost:4318",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER",
-									Value: "parentbased_traceidratio",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER_ARG",
-									Value: "0.85",
-								},
-								{
-									Name:  phpIniScanDirEnvVarName,
-									Value: phpIniScanDirEnvVarValue,
-								},
-								{
-									Name:  otelPhpAutoloadEnabledrEnvVarName,
-									Value: otelPhpAutoloadEnabledrEnvVarValue,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "app",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=php-default,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=php-default.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=php-default",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      phpVolumeName,
-									MountPath: phpInstrMountPath,
-								},
-							},
-						},
-					},
-				},
-			},
-			config: config.Config{
-				EnableInstrumentationCRDs:    true,
-				EnablePhpAutoInstrumentation: truee,
-			},
-		},
-		{
 			name: "php injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1496,8 +1296,10 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationInjectPhp:       "true",
+						annotationPhpPlatform:     glibc,
+						annotationPhpApiVersion:   Php85ApiVersion,
+						annotationPhpThreadSafety: nonZts,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1511,8 +1313,10 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationInjectPhp:       "true",
+						annotationPhpPlatform:     glibc,
+						annotationPhpApiVersion:   Php85ApiVersion,
+						annotationPhpThreadSafety: nonZts,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1525,36 +1329,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
-						{
-							Name: phpCloneVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    phpCloneVolumeName,
-							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpCloneScript, "--", phpCloneMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      phpCloneVolumeName,
-								MountPath: phpCloneMountPath,
-							}},
-						},
 						{
 							Name:    phpVolumeName,
 							Image:   "otel/php:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpCloneMountPath, phpInstrMountPath},
+							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, glibc, Php85ApiVersion, nonZts},
 							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      phpCloneVolumeName,
-									MountPath: phpCloneMountPath,
-								},
 								{
 									Name:      phpVolumeName,
 									MountPath: phpInstrMountPath,
@@ -1715,7 +1497,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectPhp:           "true",
-						annotationPhpAutoDetect:       "true",
+						annotationPhpApiVersion:       Php85ApiVersion,
 						annotationInjectContainerName: "app1,app2",
 					},
 				},
@@ -1734,7 +1516,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectPhp:           "true",
-						annotationPhpAutoDetect:       "true",
+						annotationPhpApiVersion:       Php85ApiVersion,
 						annotationInjectContainerName: "app1,app2",
 					},
 				},
@@ -1748,36 +1530,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
-						{
-							Name: phpCloneVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    phpCloneVolumeName,
-							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpCloneScript, "--", phpCloneMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      phpCloneVolumeName,
-								MountPath: phpCloneMountPath,
-							}},
-						},
 						{
 							Name:    phpVolumeName,
 							Image:   "otel/php:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpCloneMountPath, phpInstrMountPath},
+							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, glibc, Php85ApiVersion, nonZts},
 							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      phpCloneVolumeName,
-									MountPath: phpCloneMountPath,
-								},
 								{
 									Name:      phpVolumeName,
 									MountPath: phpInstrMountPath,
@@ -1874,9 +1634,91 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name:         "app2",
-							Env:          nil,
-							VolumeMounts: nil,
+							Name: "app2",
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://localhost:4318",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  phpIniScanDirEnvVarName,
+									Value: phpIniScanDirEnvVarValue,
+								},
+								{
+									Name:  otelPhpAutoloadEnabledrEnvVarName,
+									Value: otelPhpAutoloadEnabledrEnvVarValue,
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app2",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app2,k8s.namespace.name=php-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=php-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=php-multiple-containers",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      phpVolumeName,
+									MountPath: phpInstrMountPath,
+								},
+							},
 						},
 					},
 				},
@@ -1922,7 +1764,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationPhpApiVersion: Php85ApiVersion,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1937,7 +1779,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationPhpApiVersion: Php85ApiVersion,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4359,7 +4201,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:                 "true",
 						annotationInjectNodeJS:               "true",
 						annotationInjectPhp:                  "true",
-						annotationPhpAutoDetect:              "true",
+						annotationPhpApiVersion:              Php85ApiVersion,
 						annotationInjectPython:               "true",
 						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
 						annotationInjectJavaContainersName:   "java1,java2",
@@ -4410,7 +4252,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:                 "true",
 						annotationInjectNodeJS:               "true",
 						annotationInjectPhp:                  "true",
-						annotationPhpAutoDetect:              "true",
+						annotationPhpApiVersion:              Php85ApiVersion,
 						annotationInjectPython:               "true",
 						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
 						annotationInjectJavaContainersName:   "java1,java2",
@@ -4439,14 +4281,6 @@ func TestMutatePod(t *testing.T) {
 						},
 						{
 							Name: phpVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-						{
-							Name: phpCloneVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -4490,25 +4324,11 @@ func TestMutatePod(t *testing.T) {
 							}},
 						},
 						{
-							Name:    phpCloneContainerName,
-							Image:   "",
-							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpCloneScript, "--", phpCloneMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      phpCloneVolumeName,
-								MountPath: phpCloneMountPath,
-							}},
-						},
-						{
 							Name:    phpInitContainerName,
 							Image:   "otel/php:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpCloneMountPath, phpInstrMountPath},
+							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, glibc, Php85ApiVersion, nonZts},
 							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      phpCloneVolumeName,
-									MountPath: phpCloneMountPath,
-								},
 								{
 									Name:      phpVolumeName,
 									MountPath: phpInstrMountPath,
@@ -5037,9 +4857,71 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name:         "php2",
-							Env:          nil,
-							VolumeMounts: nil,
+							Name: "php2",
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  phpIniScanDirEnvVarName,
+									Value: phpIniScanDirEnvVarValue,
+								},
+								{
+									Name:  otelPhpAutoloadEnabledrEnvVarName,
+									Value: otelPhpAutoloadEnabledrEnvVarValue,
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "php2",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://collector:12345",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=php2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).php2,service.namespace=multi-instrumentation-multi-containers",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      phpVolumeName,
+									MountPath: phpInstrMountPath,
+								},
+							},
 						},
 						{
 							Name: "python1",
@@ -5282,7 +5164,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:                 "true",
 						annotationInjectNodeJS:               "true",
 						annotationInjectPhp:                  "true",
-						annotationPhpAutoDetect:              "true",
+						annotationPhpApiVersion:              Php85ApiVersion,
 						annotationInjectPython:               "true",
 						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
 						annotationInjectJavaContainersName:   "java1,java2",
@@ -5340,7 +5222,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:                 "true",
 						annotationInjectNodeJS:               "true",
 						annotationInjectPhp:                  "true",
-						annotationPhpAutoDetect:              "true",
+						annotationPhpApiVersion:              Php85ApiVersion,
 						annotationInjectPython:               "true",
 						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
 						annotationInjectJavaContainersName:   "java1,java2",
@@ -5471,7 +5353,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:    "true",
 						annotationInjectNodeJS:  "true",
 						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationPhpApiVersion: Php85ApiVersion,
 						annotationInjectPython:  "true",
 					},
 				},
@@ -5523,7 +5405,7 @@ func TestMutatePod(t *testing.T) {
 						annotationInjectJava:    "true",
 						annotationInjectNodeJS:  "true",
 						annotationInjectPhp:     "true",
-						annotationPhpAutoDetect: "true",
+						annotationPhpApiVersion: Php85ApiVersion,
 						annotationInjectPython:  "true",
 					},
 				},
@@ -6117,7 +5999,6 @@ func TestPhpContainerAnnotationsDuplicateDetection(t *testing.T) {
 			name: "php with common container-names only",
 			annotations: map[string]string{
 				annotationInjectPhp:           "true",
-				annotationPhpAutoDetect:       "true",
 				annotationInjectContainerName: "initContainer",
 			},
 			expectedContainers: []string{"initContainer"},
@@ -6126,7 +6007,6 @@ func TestPhpContainerAnnotationsDuplicateDetection(t *testing.T) {
 			name: "php with both common container names",
 			annotations: map[string]string{
 				annotationInjectPhp:               "true",
-				annotationPhpAutoDetect:           "true",
 				annotationInjectContainerName:     "initContainer",
 				annotationInjectPhpContainersName: "initContainer",
 			},

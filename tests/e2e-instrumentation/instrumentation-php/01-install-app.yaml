@@ -13,7 +13,7 @@ spec:
         app: my-php
       annotations:
         instrumentation.opentelemetry.io/inject-php: "true"
-        instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
+        instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
     spec:
       securityContext:
         runAsUser: 1000

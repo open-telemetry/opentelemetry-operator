@@ -17,6 +17,7 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   php:
+    image: ghcr.io/opentelemetry-php/autoinstrumentation-php:1.4.1
     env:
       - name: OTEL_LOG_LEVEL
         value: "debug"

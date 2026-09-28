@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-php: "true"
-    instrumentation.opentelemetry.io/otel-php-auto-detect: "true"
+    instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
   labels:
     app: my-php
 spec:

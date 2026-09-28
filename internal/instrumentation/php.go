@@ -4,7 +4,8 @@
 package instrumentation
 
 import (
-	"strings"
+	"fmt"
+	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -13,7 +14,6 @@ import (
 
 const (
 	phpInstrMountPath = "/otel-auto-instrumentation-php"
-	phpCloneMountPath = "/otel-auto-instrumentation-php-clone"
 
 	// https://www.php.net/manual/en/configuration.file.php//configuration.file.scan
 	phpIniScanDirEnvVarName  = "PHP_INI_SCAN_DIR"
@@ -24,16 +24,42 @@ const (
 
 	linuxPhpAutoInstrumentationSrc = "/autoinstrumentation/."
 
-	phpInitContainerName  = initContainerName + "-php"
-	phpVolumeName         = volumeName + "-php"
-	phpCloneContainerName = initContainerName + "-clone"
-	phpCloneVolumeName    = volumeName + "-clone"
+	phpInitContainerName = initContainerName + "-php"
+	phpVolumeName        = volumeName + "-php"
+
+	glibc           = "glibc"
+	musl            = "musl"
+	Php81ApiVersion = "20210902"
+	Php82ApiVersion = "20220829"
+	Php83ApiVersion = "20230831"
+	Php84ApiVersion = "20240924"
+	Php85ApiVersion = "20250925"
+	zts             = "zts"
+	nonZts          = "non-zts"
 )
 
-func injectPhpSDKToContainer(phpSpec v1alpha1.Php, container *corev1.Container) error {
+var (
+	validPlatforms    = []string{glibc, musl}
+	validApiVersions  = []string{Php81ApiVersion, Php82ApiVersion, Php83ApiVersion, Php84ApiVersion, Php85ApiVersion}
+	validThreadSafety = []string{nonZts, zts}
+)
+
+func injectPhpSDKToContainer(phpSpec v1alpha1.Php, container *corev1.Container, platform, apiVersion, threadSafety string) error {
 	err := validateContainerEnv(container.Env, phpIniScanDirEnvVarName, otelPhpAutoloadEnabledrEnvVarName)
 	if err != nil {
 		return err
+	}
+
+	if platform != "" && !slices.Contains(validPlatforms, platform) {
+		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-platform annotation value '%s' is not supported", platform)
+	}
+
+	if !slices.Contains(validApiVersions, apiVersion) {
+		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-api-version annotation value '%s' is not supported", apiVersion)
+	}
+
+	if threadSafety != "" && !slices.Contains(validThreadSafety, threadSafety) {
+		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-thread-safety annotation value '%s' is not supported", threadSafety)
 	}
 
 	// inject Php instrumentation spec env vars.
@@ -48,62 +74,13 @@ func injectPhpSDKToContainer(phpSpec v1alpha1.Php, container *corev1.Container) 
 	return nil
 }
 
-func injectPhpSDKToPodByContainer(phpSpec v1alpha1.Php, pod corev1.Pod, firstContainerName string, container *corev1.Container, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
-	volume := instrVolume(phpSpec.VolumeClaimTemplate, phpVolumeName, phpSpec.VolumeSizeLimit)
-	cloneVolume := instrVolume(phpSpec.VolumeClaimTemplate, phpCloneVolumeName, phpSpec.VolumeSizeLimit)
-	// init container
-	if isInitContainerMissing(pod, phpInitContainerName) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
-		pod.Spec.Volumes = append(pod.Spec.Volumes, cloneVolume)
-
-		initContainer := corev1.Container{
-			Name:      phpInitContainerName,
-			Image:     phpSpec.Image,
-			Command:   []string{"/bin/sh", "-c"},
-			Args:      []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpCloneMountPath, phpInstrMountPath},
-			Resources: phpSpec.Resources,
-			VolumeMounts: []corev1.VolumeMount{{
-				Name:      cloneVolume.Name,
-				MountPath: phpCloneMountPath,
-			}, {
-				Name:      volume.Name,
-				MountPath: phpInstrMountPath,
-			}},
-			ImagePullPolicy: instSpec.ImagePullPolicy,
-		}
-
-		pod.Spec.InitContainers = insertInitContainer(&pod, initContainer, firstContainerName)
-	}
-
-	// PHP clone container; insert before init container
-	if isInitContainerMissing(pod, phpCloneContainerName) {
-		cloneContainer := corev1.Container{
-			Name:      phpCloneContainerName,
-			Image:     container.Image,
-			Command:   []string{"/bin/sh", "-c"},
-			Args:      []string{phpCloneScript, "--", phpCloneMountPath},
-			Resources: phpSpec.Resources,
-			VolumeMounts: []corev1.VolumeMount{{
-				Name:      cloneVolume.Name,
-				MountPath: phpCloneMountPath,
-			}},
-			ImagePullPolicy: instSpec.ImagePullPolicy,
-		}
-
-		pod.Spec.InitContainers = insertInitContainer(&pod, cloneContainer, phpInitContainerName)
-	}
-
-	return pod
-}
-
-func injectPhpSDKToPodByContainerManual(phpSpec v1alpha1.Php, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, platform, apiVersion, threadSafety string) corev1.Pod {
+func injectPhpSDKToPod(phpSpec v1alpha1.Php, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, platform, apiVersion, threadSafety string) corev1.Pod {
 	volume := instrVolume(phpSpec.VolumeClaimTemplate, phpVolumeName, phpSpec.VolumeSizeLimit)
 	if platform == "" {
-		platform = "glibc"
+		platform = glibc
 	}
-	ts := "non-zts"
-	if strings.EqualFold(threadSafety, "true") {
-		ts = "zts"
+	if threadSafety == "" {
+		threadSafety = nonZts
 	}
 	// init container
 	if isInitContainerMissing(pod, phpInitContainerName) {
@@ -113,7 +90,7 @@ func injectPhpSDKToPodByContainerManual(phpSpec v1alpha1.Php, pod corev1.Pod, fi
 			Name:      phpInitContainerName,
 			Image:     phpSpec.Image,
 			Command:   []string{"/bin/sh", "-c"},
-			Args:      []string{phpAgentManualScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, platform, apiVersion, ts},
+			Args:      []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, platform, apiVersion, threadSafety},
 			Resources: phpSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,
@@ -130,15 +107,14 @@ func injectPhpSDKToPodByContainerManual(phpSpec v1alpha1.Php, pod corev1.Pod, fi
 
 // injectPhpSDK injects PHP instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectPhpSDK(phpSpec v1alpha1.Php, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+func injectPhpSDK(phpSpec v1alpha1.Php, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec, platform, apiVersion, threadSafety string) error {
 	for _, container := range containers {
-		if isInitContainer(container.Name, pod) {
-			continue
-		}
-		if err := injectPhpSDKToContainer(phpSpec, container); err != nil {
+		if err := injectPhpSDKToContainer(phpSpec, container, platform, apiVersion, threadSafety); err != nil {
 			return err
 		}
-		*pod = injectPhpSDKToPodByContainer(phpSpec, *pod, containers[0].Name, container, instSpec)
+	}
+	if len(containers) > 0 {
+		*pod = injectPhpSDKToPod(phpSpec, *pod, containers[0].Name, instSpec, platform, apiVersion, threadSafety)
 	}
 	return nil
 }

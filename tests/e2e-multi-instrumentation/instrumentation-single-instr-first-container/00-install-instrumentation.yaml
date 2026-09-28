@@ -17,24 +17,24 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1-1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1-2
     env:
       - name: OTEL_SERVICE_NAME
         value: "javaapp"
   python:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0-7
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.66b0-2
     env:
       - name: OTEL_SERVICE_NAME
         value: "pythonapp"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://deployment-collector:4318
   nodejs:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.78.0-4
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.78.0-5
     env:
       - name: OTEL_SERVICE_NAME
         value: "nodejsapp"
   dotnet:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.16.0-1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.17.0-2
     env:
       - name: OTEL_SERVICE_NAME
         value: "dotnetapp"

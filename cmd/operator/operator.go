@@ -187,26 +187,28 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	}
 
 	if result.Config.TargetAllocatorAvailability == targetallocator.Available {
-		if err := controllers.NewTargetAllocatorReconciler(
+		err := controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
 			mgr.GetEventRecorder("targetallocator"),
 			result.Config,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
-		).SetupWithManager(mgr); err != nil {
+		).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
 			os.Exit(1)
 		}
 	}
 
 	if result.Config.OpAmpBridgeAvailability == opampbridge.Available {
-		if err := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+		err := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
 			Scheme:   mgr.GetScheme(),
 			Config:   result.Config,
 			Recorder: mgr.GetEventRecorder("opamp-bridge"),
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 			os.Exit(1)
 		}
@@ -214,13 +216,14 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 
 	if featuregate.EnableClusterObservability.IsEnabled() {
 		setupLog.Info("ClusterObservability feature is enabled")
-		if err := controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{
+		err := controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("ClusterObservability"),
 			Scheme:   mgr.GetScheme(),
 			Config:   result.Config,
 			Recorder: mgr.GetEventRecorder("cluster-observability"),
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ClusterObservability")
 			os.Exit(1)
 		}
@@ -245,11 +248,12 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 			setupLog.Info("Setting up pod-webhook replica controller",
 				"namespace", namespace,
 				"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
-			if err := (&controllers.CSVWebhookReconciler{
+			err = (&controllers.CSVWebhookReconciler{
 				Client:          mgr.GetClient(),
 				Namespace:       namespace,
 				DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
-			}).SetupWithManager(mgr); err != nil {
+			}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
 				os.Exit(1)
 			}
