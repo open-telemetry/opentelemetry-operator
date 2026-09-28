@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-networkpolicy
+spec:
+  namespace: chainsaw-targetallocator-networkpolicy
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        template: true
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/name=opentelemetry-operator
+  # the operator watches the NetworkPolicy it creates, so deleting it out of band brings it back
+  - name: step-01
+    try:
+    - delete:
+        ref:
+          apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          name: np-targetallocator-networkpolicy
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/name=opentelemetry-operator
+  # disabling the NetworkPolicy deletes the one the operator created
+  - name: step-02
+    try:
+    - apply:
+        template: true
+        file: 02-disable-networkpolicy.yaml
+    - error:
+        file: 02-error.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/name=opentelemetry-operator

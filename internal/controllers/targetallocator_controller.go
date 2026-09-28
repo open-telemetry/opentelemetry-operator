@@ -14,6 +14,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -36,6 +38,8 @@ import (
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
+
+const targetAllocatorOwnerKind = "TargetAllocator"
 
 // TargetAllocatorReconciler reconciles a TargetAllocator object.
 type TargetAllocatorReconciler struct {
@@ -141,6 +145,7 @@ func NewTargetAllocatorReconciler(
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/status,verbs=get;update;patch
@@ -180,29 +185,25 @@ func (r *TargetAllocatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, buildErr
 	}
 
-	err = reconcileDesiredObjects(ctx, r.Client, log, &params.TargetAllocator, params.Scheme, desiredObjects, nil)
+	ownedObjects, err := findOwnedObjects(ctx, r.Client, targetAllocatorOwnerKind, r.GetOwnedResourceTypes(), instance.Namespace, instance.Name)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = reconcileDesiredObjects(ctx, r.Client, log, &params.TargetAllocator, params.Scheme, desiredObjects, ownedObjects)
 	return taStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	err := r.SetupCaches(mgr)
+	if err != nil {
+		return err
+	}
+
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.TargetAllocator{}).
-		Owns(&corev1.ConfigMap{}).
-		Owns(&corev1.ServiceAccount{}).
-		Owns(&corev1.Service{}).
-		Owns(&appsv1.Deployment{}).
-		Owns(&policyV1.PodDisruptionBudget{})
-
-	if r.config.PrometheusCRAvailability == prometheus.Available {
-		ctrlBuilder.Owns(&monitoringv1.ServiceMonitor{})
-		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
-	}
-
-	if r.config.CertManagerAvailability == certmanager.Available {
-		ctrlBuilder.Owns(&cmv1.Certificate{})
-		ctrlBuilder.Owns(&cmv1.Issuer{})
-	}
+		For(&v1alpha1.TargetAllocator{})
+	ownAll(ctrlBuilder, r.GetOwnedResourceTypes())
 
 	// watch collectors which have embedded Target Allocator enabled
 	// we need to do this separately from collector reconciliation, as changes to Config will not lead to changes
@@ -238,6 +239,35 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	)
 
 	return ctrlBuilder.Complete(r)
+}
+
+// SetupCaches sets up caching and indexing for our controller.
+func (r *TargetAllocatorReconciler) SetupCaches(cluster cluster.Cluster) error {
+	return indexOwnedResources(context.Background(), cluster, targetAllocatorOwnerKind, r.GetOwnedResourceTypes())
+}
+
+// GetOwnedResourceTypes returns all the resource types the controller can own. Even though this method returns an array
+// of client.Object, these are (empty) example structs rather than actual resources.
+func (r *TargetAllocatorReconciler) GetOwnedResourceTypes() []client.Object {
+	ownedResources := []client.Object{
+		&corev1.ConfigMap{},
+		&corev1.ServiceAccount{},
+		&corev1.Service{},
+		&appsv1.Deployment{},
+		&policyV1.PodDisruptionBudget{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	if r.config.PrometheusCRAvailability == prometheus.Available {
+		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
+	}
+
+	if r.config.CertManagerAvailability == certmanager.Available {
+		ownedResources = append(ownedResources, &cmv1.Certificate{})
+		ownedResources = append(ownedResources, &cmv1.Issuer{})
+	}
+
+	return ownedResources
 }
 
 func getTargetAllocatorForCollector(_ context.Context, collector client.Object) []reconcile.Request {
