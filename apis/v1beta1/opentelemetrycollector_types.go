@@ -139,6 +139,13 @@ type OpenTelemetryCollectorSpec struct {
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
+	// EnableGolangFlags controls whether the operator automatically sets
+	// GOMEMLIMIT and GOMAXPROCS on the Collector container.
+	// Defaults to true.
+	//
+	// +optional
+	// +kubebuilder:default:=true
+	EnableGolangFlags *bool `json:"enableGolangFlags,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
 	// This is only applicable to Daemonset mode.

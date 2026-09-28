@@ -20690,6 +20690,17 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>enableGolangFlags</b></td>
+        <td>boolean</td>
+        <td>
+          EnableGolangFlags controls whether the operator automatically sets
+GOMEMLIMIT and GOMAXPROCS on the Collector container.
+Defaults to true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableServiceLinks</b></td>
         <td>boolean</td>
         <td>

@@ -1308,6 +1308,101 @@ service:
 				},
 			},
 		},
+		{
+			name: "enableGolangFlags explicitly true",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					EnableGolangFlags: new(true),
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "enableGolangFlags explicitly false",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					EnableGolangFlags: new(false),
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "enableGolangFlags false with user-defined golang vars",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					EnableGolangFlags: new(false),
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "GOMEMLIMIT",
+								Value: "800Mi",
+							},
+							{
+								Name:  "GOMAXPROCS",
+								Value: "2",
+							},
+						},
+					},
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name:  "GOMEMLIMIT",
+					Value: "800Mi",
+				},
+				{
+					Name:  "GOMAXPROCS",
+					Value: "2",
+				},
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
