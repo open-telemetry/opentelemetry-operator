@@ -925,6 +925,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		*out = make([]ConfigMapsSpec, len(*in))
 		copy(*out, *in)
 	}
+	if in.EnableGolangFlags != nil {
+		in, out := &in.EnableGolangFlags, &out.EnableGolangFlags
+		*out = new(bool)
+		**out = **in
+	}
 	in.DaemonSetUpdateStrategy.DeepCopyInto(&out.DaemonSetUpdateStrategy)
 	in.DeploymentUpdateStrategy.DeepCopyInto(&out.DeploymentUpdateStrategy)
 	if in.Command != nil {

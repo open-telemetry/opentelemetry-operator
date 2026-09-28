@@ -333,7 +333,8 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 		},
 	})
 
-	if featuregate.SetGolangFlags.IsEnabled() {
+	golangFlagsEnabled := otelcol.Spec.EnableGolangFlags == nil || *otelcol.Spec.EnableGolangFlags
+	if featuregate.SetGolangFlags.IsEnabled() && golangFlagsEnabled {
 		envVars = append(envVars,
 			corev1.EnvVar{
 				Name: "GOMEMLIMIT",

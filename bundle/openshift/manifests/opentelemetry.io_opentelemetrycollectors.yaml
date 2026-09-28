@@ -6344,6 +6344,9 @@ spec:
                 type: object
               dnsPolicy:
                 type: string
+              enableGolangFlags:
+                default: true
+                type: boolean
               enableServiceLinks:
                 default: true
                 type: boolean
