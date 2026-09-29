@@ -243,10 +243,11 @@ func (c *Config) GetDescription() *protobufs.AgentDescription {
 	}
 }
 
-func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig) *Config {
+func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig, clusterID string) *Config {
 	nonIdentifyingAttributes := map[string]string{}
 	maps.Copy(nonIdentifyingAttributes, base.AgentDescription.NonIdentifyingAttributes)
 	maps.Copy(nonIdentifyingAttributes, agent.Description.NonIdentifyingAttributes)
+	nonIdentifyingAttributes["k8s.cluster.uid"] = clusterID
 	nonIdentifyingAttributes["k8s.namespace.name"] = agent.Namespace
 	nonIdentifyingAttributes["k8s.workload.name"] = agent.WorkloadRef.Name
 	nonIdentifyingAttributes["k8s.workload.type"] = agent.WorkloadRef.Kind
@@ -265,7 +266,7 @@ func NewStandaloneAgentConfig(base *Config, agent StandaloneAgentConfig) *Config
 		HealthListenAddr:   base.HealthListenAddr,
 		ClusterConfig:      base.ClusterConfig,
 		RootLogger:         base.RootLogger,
-		instanceId:         uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/%s/%s/%s", agent.Namespace, agent.WorkloadRef.Kind, agent.WorkloadRef.Name, agent.Type)),
+		instanceId:         uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/%s/%s/%s/%s", clusterID, agent.Namespace, agent.WorkloadRef.Kind, agent.WorkloadRef.Name, agent.Type)),
 		ComponentsAllowed:  cloneStringSliceMap(base.ComponentsAllowed),
 		Endpoint:           base.Endpoint,
 		Proxy:              cloneProxyConfig(base.Proxy),

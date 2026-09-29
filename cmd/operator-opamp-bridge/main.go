@@ -5,11 +5,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	opampagent "github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
@@ -36,14 +38,19 @@ func main() {
 		l.Error(kubeErr, "Couldn't create kubernetes client")
 		os.Exit(1)
 	}
-
 	// signalCtx is cancelled on interrupt, which stops the informer goroutine.
 	signalCtx, cancelSignal := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancelSignal()
 
+	clusterID, clusterIDErr := getClusterID(signalCtx, kubeClient)
+	if clusterIDErr != nil {
+		l.Error(clusterIDErr, "Couldn't resolve cluster ID")
+		os.Exit(1)
+	}
+
 	options := commonManagerOptions(l, cfg, kubeClient)
 	if cfg.IsStandaloneMode() {
-		options = append(options, standaloneManagerOptions(l, cfg, kubeClient)...)
+		options = append(options, standaloneManagerOptions(l, cfg, kubeClient, clusterID)...)
 	} else {
 		options = append(options, operatorManagerOptions(l, cfg, kubeClient)...)
 	}
@@ -70,7 +77,18 @@ func commonManagerOptions(log logr.Logger, cfg *config.Config, c client.Client) 
 	}
 }
 
-func standaloneManagerOptions(log logr.Logger, cfg *config.Config, c client.Client) []bridgemanager.Option {
+func getClusterID(ctx context.Context, c client.Client) (string, error) {
+	namespace := &corev1.Namespace{}
+	if err := c.Get(ctx, client.ObjectKey{Name: "kube-system"}, namespace); err != nil {
+		return "", err
+	}
+	if namespace.UID == "" {
+		return "", errors.New("kube-system namespace has empty UID")
+	}
+	return string(namespace.UID), nil
+}
+
+func standaloneManagerOptions(log logr.Logger, cfg *config.Config, c client.Client, clusterID string) []bridgemanager.Option {
 	runtimes := make([]bridgemanager.Runtime, 0, len(cfg.Standalone.Agents))
 	standaloneClient := standalone.NewClient(log.WithName("client"), c, cfg.GetRestConfig(), func() {
 		for _, runtime := range runtimes {
@@ -80,7 +98,7 @@ func standaloneManagerOptions(log logr.Logger, cfg *config.Config, c client.Clie
 		}
 	}, cfg.Standalone.Agents...)
 	for _, configuredAgent := range cfg.Standalone.Agents {
-		agentCfg := config.NewStandaloneAgentConfig(cfg, configuredAgent)
+		agentCfg := config.NewStandaloneAgentConfig(cfg, configuredAgent, clusterID)
 		opampClient := agentCfg.CreateClient()
 		applier := standaloneClient.ScopedApplier(configuredAgent)
 		opampAgent := opampagent.NewAgent(log.WithName(configuredAgent.WorkloadRef.Name), applier, agentCfg, opampClient, proxy.NoopServer{})
