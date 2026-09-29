@@ -1,0 +1,4 @@
+change_type: bug_fix
+component: opamp
+note: Use k8s cluster ID to compute the agent instance ID. 
+issues: [5689]

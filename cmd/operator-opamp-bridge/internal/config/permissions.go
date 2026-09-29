@@ -23,6 +23,9 @@ func (p Permission) Description() string {
 	if p.Namespace == "" && p.Name == "" {
 		return resource
 	}
+	if p.Namespace == "" {
+		return fmt.Sprintf("%s %s", resource, p.Name)
+	}
 	if p.Name == "" {
 		return fmt.Sprintf("%s in namespace %s", resource, p.Namespace)
 	}
@@ -39,6 +42,7 @@ func (c *Config) OperatorPermissions() ([]Permission, error) {
 		{Verb: "create", APIGroup: "opentelemetry.io", Resource: "opentelemetrycollectors"},
 		{Verb: "update", APIGroup: "opentelemetry.io", Resource: "opentelemetrycollectors"},
 		{Verb: "delete", APIGroup: "opentelemetry.io", Resource: "opentelemetrycollectors"},
+		{Verb: "get", Resource: "namespaces", Name: "kube-system"},
 		{Verb: "get", Resource: "pods"},
 		{Verb: "list", Resource: "pods"},
 		{Verb: "get", APIGroup: "apps", Resource: "deployments"},
