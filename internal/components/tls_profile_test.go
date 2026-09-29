@@ -172,6 +172,17 @@ func TestApplyTLSProfileDefaults(t *testing.T) {
 			},
 		},
 		{
+			name: "Preserves explicitly empty Ciphers",
+			initialConfig: &TLSConfig{
+				Ciphers: []string{},
+			},
+			profile: defaultProfile,
+			expectedConfig: &TLSConfig{
+				MinVersion: "1.2",
+				Ciphers:    []string{},
+			},
+		},
+		{
 			name:          "Does not populate Ciphers if profile has no ciphers (TLS 1.3)",
 			initialConfig: &TLSConfig{},
 			profile:       tls13Profile,
