@@ -2092,3 +2092,105 @@ func TestConfigYamlWithNonBasicType(t *testing.T) {
 	_, err := cfg.Yaml()
 	require.NoError(t, err)
 }
+
+func TestConfig_GoRuntimeEnvManagedByExtension(t *testing.T) {
+	tests := []struct {
+		name         string
+		config       *v1beta1.Config
+		wantMemLimit bool
+		wantMaxProcs bool
+	}{
+		{
+			name:   "no extensions",
+			config: &v1beta1.Config{},
+		},
+		{
+			name: "cgroupruntime defined but not enabled in service",
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
+					Object: map[string]any{"cgroupruntime": nil},
+				},
+				Service: v1beta1.Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+		},
+		{
+			name: "cgroup_runtime enabled with defaults",
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
+					Object: map[string]any{"cgroup_runtime": nil},
+				},
+				Service: v1beta1.Service{
+					Extensions: []string{"cgroup_runtime"},
+				},
+			},
+			wantMemLimit: true,
+			wantMaxProcs: true,
+		},
+		{
+			name: "deprecated cgroupruntime type enabled with defaults",
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
+					Object: map[string]any{"cgroupruntime": nil},
+				},
+				Service: v1beta1.Service{
+					Extensions: []string{"cgroupruntime"},
+				},
+			},
+			wantMemLimit: true,
+			wantMaxProcs: true,
+		},
+		{
+			name: "cgroupruntime enabled in service without extensions section",
+			config: &v1beta1.Config{
+				Service: v1beta1.Service{
+					Extensions: []string{"cgroupruntime"},
+				},
+			},
+			wantMemLimit: true,
+			wantMaxProcs: true,
+		},
+		{
+			name: "named instance with gomaxprocs disabled",
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"cgroup_runtime/custom": map[string]any{
+							"gomaxprocs": map[string]any{"enabled": false},
+							"gomemlimit": map[string]any{"ratio": 0.5},
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Extensions: []string{"health_check", "cgroup_runtime/custom"},
+				},
+			},
+			wantMemLimit: true,
+			wantMaxProcs: false,
+		},
+		{
+			name: "invalid cgroupruntime config keeps the injection",
+			config: &v1beta1.Config{
+				Extensions: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"cgroupruntime": map[string]any{
+							"gomemlimit": map[string]any{"enabled": "yes"},
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Extensions: []string{"cgroupruntime"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			memLimit, maxProcs := GoRuntimeEnvManagedByExtension(tt.config, logr.Discard())
+			assert.Equal(t, tt.wantMemLimit, memLimit, "GOMEMLIMIT")
+			assert.Equal(t, tt.wantMaxProcs, maxProcs, "GOMAXPROCS")
+		})
+	}
+}

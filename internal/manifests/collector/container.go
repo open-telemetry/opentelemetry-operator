@@ -334,8 +334,9 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 	})
 
 	if featuregate.SetGolangFlags.IsEnabled() {
-		envVars = append(envVars,
-			corev1.EnvVar{
+		memLimitManaged, maxProcsManaged := otelconfig.GoRuntimeEnvManagedByExtension(&otelcol.Spec.Config, logger)
+		if !memLimitManaged {
+			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMEMLIMIT",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -343,8 +344,10 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 						ContainerName: naming.Container(),
 					},
 				},
-			},
-			corev1.EnvVar{
+			})
+		}
+		if !maxProcsManaged {
+			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMAXPROCS",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -352,8 +355,8 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 						ContainerName: naming.Container(),
 					},
 				},
-			},
-		)
+			})
+		}
 	}
 
 	if configEnvVars, err := otelconfig.GetEnvironmentVariables(&otelcol.Spec.Config, logger); err != nil {
