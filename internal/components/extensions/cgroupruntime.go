@@ -9,8 +9,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
-// cgroupRuntimeTypes lists the component types of the cgroup runtime extension.
-// The type was renamed from cgroupruntime to cgroup_runtime and both names are accepted.
+// cgroupRuntimeTypes holds the current type of the cgroup runtime extension and its
+// deprecated name, which the collector still accepts.
 // See open-telemetry/opentelemetry-collector-contrib#46773.
 var cgroupRuntimeTypes = map[string]struct{}{
 	"cgroup_runtime": {},
@@ -29,8 +29,6 @@ type cgroupRuntimeConfig struct {
 }
 
 // GoRuntimeEnvManagedBy reports whether the named extension sets GOMEMLIMIT and GOMAXPROCS itself.
-// The cgroup runtime extension skips a variable that is already set, so the operator must not inject it.
-// See open-telemetry/opentelemetry-operator#5651.
 func GoRuntimeEnvManagedBy(name string, config any) (memLimit, maxProcs bool, err error) {
 	if _, ok := cgroupRuntimeTypes[components.ComponentType(name)]; !ok {
 		return false, false, nil
