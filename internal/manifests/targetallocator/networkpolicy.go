@@ -92,6 +92,9 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 }
 
 func hasSelfTelemetryExporter(ta v1alpha1.TargetAllocator) bool {
+	if ta.Spec.Telemetry == nil {
+		return false
+	}
 	for _, reader := range ta.Spec.Telemetry.Metrics.Readers {
 		if reader.Periodic != nil {
 			return true
