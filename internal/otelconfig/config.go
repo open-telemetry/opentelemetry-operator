@@ -332,22 +332,23 @@ func GetLivenessProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, err
 	return nil, nil
 }
 
-// GoRuntimeEnvManagedByExtension reports whether an enabled extension sets GOMEMLIMIT or GOMAXPROCS itself.
-func GoRuntimeEnvManagedByExtension(c *v1beta1.Config, logger logr.Logger) (memLimit, maxProcs bool) {
+// GetSuppressedEnvVars returns the names of environment variables that enabled extensions do not allow the operator to set.
+func GetSuppressedEnvVars(c *v1beta1.Config, logger logr.Logger) (map[string]bool, error) {
+	suppressed := map[string]bool{}
 	for componentName := range GetEnabledComponents(c)[v1beta1.KindExtension] {
 		var extensionConfig any
 		if c.Extensions != nil {
 			extensionConfig = c.Extensions.Object[componentName]
 		}
-		m, p, err := extensions.GoRuntimeEnvManagedBy(componentName, extensionConfig)
+		names, err := extensions.ParserFor(componentName).GetSuppressedEnvVars(logger, extensionConfig)
 		if err != nil {
-			logger.Error(err, "could not parse the extension config", "extension", componentName)
-			continue
+			return nil, err
 		}
-		memLimit = memLimit || m
-		maxProcs = maxProcs || p
+		for _, name := range names {
+			suppressed[name] = true
+		}
 	}
-	return memLimit, maxProcs
+	return suppressed, nil
 }
 
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled

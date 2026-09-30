@@ -4,21 +4,9 @@
 package extensions
 
 import (
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/go-logr/logr"
 )
 
-// cgroupRuntimeTypes holds the current type of the cgroup runtime extension and its
-// deprecated name, which the collector still accepts.
-// See open-telemetry/opentelemetry-collector-contrib#46773.
-var cgroupRuntimeTypes = map[string]struct{}{
-	"cgroup_runtime": {},
-	"cgroupruntime":  {},
-}
-
-// cgroupRuntimeConfig holds the fields of the cgroup runtime extension config
-// that decide which Go runtime variables the extension sets at startup.
 type cgroupRuntimeConfig struct {
 	GoMaxProcs struct {
 		Enabled *bool `mapstructure:"enabled"`
@@ -28,17 +16,17 @@ type cgroupRuntimeConfig struct {
 	} `mapstructure:"gomemlimit"`
 }
 
-// GoRuntimeEnvManagedBy reports whether the named extension sets GOMEMLIMIT and GOMAXPROCS itself.
-func GoRuntimeEnvManagedBy(name string, config any) (memLimit, maxProcs bool, err error) {
-	if _, ok := cgroupRuntimeTypes[components.ComponentType(name)]; !ok {
-		return false, false, nil
-	}
-	var parsed cgroupRuntimeConfig
-	if err := mapstructure.Decode(config, &parsed); err != nil {
-		return false, false, err
-	}
+// cgroupRuntimeSuppressedEnvVars returns the Go runtime variables the extension sets itself.
+// The extension does nothing when a variable is already present in the environment.
+// See open-telemetry/opentelemetry-operator#5651.
+func cgroupRuntimeSuppressedEnvVars(_ logr.Logger, config cgroupRuntimeConfig) ([]string, error) {
+	var names []string
 	// Both settings default to true in the extension.
-	memLimit = parsed.GoMemLimit.Enabled == nil || *parsed.GoMemLimit.Enabled
-	maxProcs = parsed.GoMaxProcs.Enabled == nil || *parsed.GoMaxProcs.Enabled
-	return memLimit, maxProcs, nil
+	if config.GoMemLimit.Enabled == nil || *config.GoMemLimit.Enabled {
+		names = append(names, "GOMEMLIMIT")
+	}
+	if config.GoMaxProcs.Enabled == nil || *config.GoMaxProcs.Enabled {
+		names = append(names, "GOMAXPROCS")
+	}
+	return names, nil
 }

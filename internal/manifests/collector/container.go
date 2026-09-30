@@ -334,11 +334,11 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 	})
 
 	if featuregate.SetGolangFlags.IsEnabled() {
-		// The cgroup runtime extension does nothing when a variable is already present in
-		// the environment, so the variables it manages are left to it.
-		// See open-telemetry/opentelemetry-operator#5651.
-		memLimitManaged, maxProcsManaged := otelconfig.GoRuntimeEnvManagedByExtension(&otelcol.Spec.Config, logger)
-		if !memLimitManaged {
+		suppressed, err := otelconfig.GetSuppressedEnvVars(&otelcol.Spec.Config, logger)
+		if err != nil {
+			logger.Error(err, "could not get the suppressed environment variables from the config")
+		}
+		if !suppressed["GOMEMLIMIT"] {
 			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMEMLIMIT",
 				ValueFrom: &corev1.EnvVarSource{
@@ -349,7 +349,7 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 				},
 			})
 		}
-		if !maxProcsManaged {
+		if !suppressed["GOMAXPROCS"] {
 			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMAXPROCS",
 				ValueFrom: &corev1.EnvVarSource{

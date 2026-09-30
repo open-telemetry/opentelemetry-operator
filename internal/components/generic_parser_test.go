@@ -213,6 +213,61 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 	}
 }
 
+func TestGenericParser_GetSuppressedEnvVars(t *testing.T) {
+	suppressedGen := func(_ logr.Logger, config *components.SingleEndpointConfig) ([]string, error) {
+		if config.Endpoint == "" {
+			return nil, errors.New("endpoint must be specified")
+		}
+		return []string{"GOMEMLIMIT"}, nil
+	}
+
+	tests := []struct {
+		name    string
+		g       *components.GenericParser[*components.SingleEndpointConfig]
+		config  any
+		want    []string
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name:    "no generator",
+			g:       components.NewSinglePortParserBuilder("test", 0).MustBuild(),
+			config:  map[string]any{"endpoint": "localhost:8080"},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "generator returns names",
+			g:       components.NewSinglePortParserBuilder("test", 0).WithSuppressedEnvVarsGen(suppressedGen).MustBuild(),
+			config:  map[string]any{"endpoint": "localhost:8080"},
+			want:    []string{"GOMEMLIMIT"},
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "generator returns an error",
+			g:       components.NewSinglePortParserBuilder("test", 0).WithSuppressedEnvVarsGen(suppressedGen).MustBuild(),
+			config:  map[string]any{},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+		{
+			name:    "config cannot be decoded",
+			g:       components.NewSinglePortParserBuilder("test", 0).WithSuppressedEnvVarsGen(suppressedGen).MustBuild(),
+			config:  "invalid",
+			want:    nil,
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.GetSuppressedEnvVars(logr.Discard(), tt.config)
+			if !tt.wantErr(t, err) {
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGenericParser_GetProbe(t *testing.T) {
 	type args struct {
 		logger logr.Logger
