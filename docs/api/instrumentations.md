@@ -91,6 +91,14 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecbaseref">baseRef</a></b></td>
+        <td>object</td>
+        <td>
+          BaseRef references an Instrumentation whose settings are overridden by this resource.
+The referenced Instrumentation must not set BaseRef.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecdefaults">defaults</a></b></td>
         <td>object</td>
         <td>
@@ -1517,6 +1525,42 @@ validation.
         <td>string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.baseRef
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+BaseRef references an Instrumentation whose settings are overridden by this resource.
+The referenced Instrumentation must not set BaseRef.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the referenced Instrumentation.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of the referenced Instrumentation.
+If omitted, the namespace of this Instrumentation is used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -31,6 +32,24 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	}
 
 	tests := []testCase{
+		{
+			name: "referenced instrumentation keeps unset fields",
+			input: &v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					BaseRef: &v1alpha1.InstrumentationReference{Name: "common", Namespace: "observability"},
+					Java:    v1alpha1.Java{Image: "custom-java-img:2"},
+				},
+			},
+			config: config.New(),
+			verify: func(t *testing.T, inst *v1alpha1.Instrumentation) {
+				assert.Equal(t, v1alpha1.InstrumentationSpec{
+					BaseRef: &v1alpha1.InstrumentationReference{Name: "common", Namespace: "observability"},
+					Java:    v1alpha1.Java{Image: "custom-java-img:2"},
+				}, inst.Spec)
+				assert.Empty(t, inst.Labels)
+				assert.Nil(t, inst.Annotations)
+			},
+		},
 		{
 			name:  "default images",
 			input: &v1alpha1.Instrumentation{},
@@ -624,6 +643,107 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInstrumentationBaseRefValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		ref       v1alpha1.InstrumentationReference
+		wantError string
+	}{
+		{
+			name: "same namespace reference",
+			ref:  v1alpha1.InstrumentationReference{Name: "common"},
+		},
+		{
+			name: "cross namespace reference",
+			ref:  v1alpha1.InstrumentationReference{Name: "common", Namespace: "observability"},
+		},
+		{
+			name: "same name in another namespace",
+			ref:  v1alpha1.InstrumentationReference{Name: "application", Namespace: "observability"},
+		},
+		{
+			name:      "missing name",
+			ref:       v1alpha1.InstrumentationReference{},
+			wantError: "spec.baseRef.name is invalid",
+		},
+		{
+			name:      "invalid name",
+			ref:       v1alpha1.InstrumentationReference{Name: "Invalid_Name"},
+			wantError: "spec.baseRef.name is invalid",
+		},
+		{
+			name:      "invalid namespace",
+			ref:       v1alpha1.InstrumentationReference{Name: "common", Namespace: "Invalid_Name"},
+			wantError: "spec.baseRef.namespace is invalid",
+		},
+		{
+			name:      "implicit namespace self reference",
+			ref:       v1alpha1.InstrumentationReference{Name: "application"},
+			wantError: "spec.baseRef cannot reference the same Instrumentation",
+		},
+		{
+			name:      "explicit namespace self reference",
+			ref:       v1alpha1.InstrumentationReference{Name: "application", Namespace: "payments"},
+			wantError: "spec.baseRef cannot reference the same Instrumentation",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inst := &v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{Name: "application", Namespace: "payments"},
+				Spec:       v1alpha1.InstrumentationSpec{BaseRef: &test.ref},
+			}
+			webhook := InstrumentationWebhook{}
+			for _, validate := range []func(context.Context, *v1alpha1.Instrumentation) (admission.Warnings, error){
+				webhook.ValidateCreate,
+				func(ctx context.Context, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
+					return webhook.ValidateUpdate(ctx, nil, inst)
+				},
+			} {
+				warnings, err := validate(context.Background(), inst)
+				assert.Empty(t, warnings)
+				if test.wantError == "" {
+					assert.NoError(t, err)
+				} else {
+					assert.ErrorContains(t, err, test.wantError)
+				}
+			}
+
+			// Invalid base references must not prevent resource deletion.
+			warnings, err := webhook.ValidateDelete(context.Background(), inst)
+			assert.Empty(t, warnings)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestInstrumentationBaseRefWithInheritedExporterEndpoint(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef: &v1alpha1.InstrumentationReference{Name: "common"},
+			Exporter: v1alpha1.Exporter{
+				TLS: &v1alpha1.TLS{Cert: "tls.crt", Key: "tls.key"},
+			},
+		},
+	}
+	warnings, err := InstrumentationWebhook{}.ValidateCreate(context.Background(), inst)
+	assert.NoError(t, err)
+	assert.Empty(t, warnings)
+}
+
+func TestInstrumentationBaseRefRequiresSamplerTypeForArgument(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef: &v1alpha1.InstrumentationReference{Name: "common"},
+			Sampler: v1alpha1.Sampler{Argument: "0.5"},
+		},
+	}
+
+	_, err := InstrumentationWebhook{}.ValidateCreate(t.Context(), inst)
+	assert.ErrorContains(t, err, "spec.sampler.type is required")
 }
 
 func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {

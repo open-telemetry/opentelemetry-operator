@@ -11,6 +11,11 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// BaseRef references an Instrumentation whose settings are overridden by this resource.
+	// The referenced Instrumentation must not set BaseRef.
+	// +optional
+	BaseRef *InstrumentationReference `json:"baseRef,omitempty"`
+
 	// Exporter defines exporter configuration.
 	// +optional
 	Exporter `json:"exporter,omitempty"`
@@ -84,6 +89,18 @@ type InstrumentationSpec struct {
 	// configured via `spec.go.securityContext`.
 	// +optional
 	InitContainerSecurityContext *corev1.SecurityContext `json:"initContainerSecurityContext,omitempty"`
+}
+
+// InstrumentationReference identifies an Instrumentation in the same cluster.
+type InstrumentationReference struct {
+	// Name is the name of the referenced Instrumentation.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// Namespace is the namespace of the referenced Instrumentation.
+	// If omitted, the namespace of this Instrumentation is used.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
