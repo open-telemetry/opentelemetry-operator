@@ -149,7 +149,7 @@ func TestNetworkPolicyLeavesEgressOpenForSelfTelemetry(t *testing.T) {
 			NetworkPolicy: v1beta1.NetworkPolicy{
 				Enabled: &[]bool{true}[0],
 			},
-			Telemetry: v1beta1.TelemetryConfig{
+			Telemetry: &v1beta1.TelemetryConfig{
 				Metrics: v1beta1.MetricsConfig{
 					Readers: []v1beta1.MetricReader{
 						{
