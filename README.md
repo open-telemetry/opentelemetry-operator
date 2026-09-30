@@ -1,4 +1,4 @@
-[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/open-telemetry/opentelemetry-operator/badge)](https://securityscorecards.dev/viewer/?uri=github.com/open-telemetry/opentelemetry-operator)
+[![Continuous Integration][github-workflow-img]][github-workflow] [![GoDoc][godoc-img]][godoc] [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/open-telemetry/opentelemetry-operator/badge)](https://securityscorecards.dev/viewer/?uri=github.com/open-telemetry/opentelemetry-operator)
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -98,8 +98,6 @@ Thanks to all the people who already contributed!
 
 [github-workflow]: https://github.com/open-telemetry/opentelemetry-operator/actions
 [github-workflow-img]: https://github.com/open-telemetry/opentelemetry-operator/workflows/Continuous%20Integration/badge.svg
-[goreport-img]: https://goreportcard.com/badge/github.com/open-telemetry/opentelemetry-operator
-[goreport]: https://goreportcard.com/report/github.com/open-telemetry/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator?status.svg
 [godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
 [contributors]: https://github.com/open-telemetry/opentelemetry-operator/graphs/contributors
