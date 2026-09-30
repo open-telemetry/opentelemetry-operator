@@ -5,6 +5,8 @@ package extensions
 
 import (
 	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
 type cgroupRuntimeConfig struct {
@@ -14,6 +16,12 @@ type cgroupRuntimeConfig struct {
 	GoMemLimit struct {
 		Enabled *bool `mapstructure:"enabled"`
 	} `mapstructure:"gomemlimit"`
+}
+
+func newCgroupRuntimeParserBuilder() components.Builder[cgroupRuntimeConfig] {
+	return components.NewBuilder[cgroupRuntimeConfig]().
+		WithName("cgroup_runtime").
+		WithSuppressedEnvVarsGen(cgroupRuntimeSuppressedEnvVars)
 }
 
 // cgroupRuntimeSuppressedEnvVars returns the Go runtime variables the extension sets itself.
