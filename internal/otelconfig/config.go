@@ -332,7 +332,7 @@ func GetLivenessProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, err
 	return nil, nil
 }
 
-// GetSuppressedEnvVars returns the names of environment variables that enabled extensions do not allow the operator to set.
+// GetSuppressedEnvVars returns the names of environment variables that enabled extensions suppress.
 func GetSuppressedEnvVars(c *v1beta1.Config, logger logr.Logger) (map[string]bool, error) {
 	suppressed := map[string]bool{}
 	for componentName := range GetEnabledComponents(c)[v1beta1.KindExtension] {

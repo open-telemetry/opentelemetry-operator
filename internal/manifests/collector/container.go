@@ -334,12 +334,8 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 	})
 
 	if featuregate.SetGolangFlags.IsEnabled() {
-		suppressed, err := otelconfig.GetSuppressedEnvVars(&otelcol.Spec.Config, logger)
-		if err != nil {
-			logger.Error(err, "could not get the suppressed environment variables from the config")
-		}
-		if !suppressed["GOMEMLIMIT"] {
-			envVars = append(envVars, corev1.EnvVar{
+		envVars = append(envVars,
+			corev1.EnvVar{
 				Name: "GOMEMLIMIT",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -347,10 +343,8 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 						ContainerName: naming.Container(),
 					},
 				},
-			})
-		}
-		if !suppressed["GOMAXPROCS"] {
-			envVars = append(envVars, corev1.EnvVar{
+			},
+			corev1.EnvVar{
 				Name: "GOMAXPROCS",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -358,8 +352,8 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 						ContainerName: naming.Container(),
 					},
 				},
-			})
-		}
+			},
+		)
 	}
 
 	if configEnvVars, err := otelconfig.GetEnvironmentVariables(&otelcol.Spec.Config, logger); err != nil {
@@ -368,5 +362,13 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 		envVars = append(envVars, configEnvVars...)
 	}
 
-	return append(envVars, cfg.ProxyEnvVars...)
+	envVars = append(envVars, cfg.ProxyEnvVars...)
+
+	suppressed, err := otelconfig.GetSuppressedEnvVars(&otelcol.Spec.Config, logger)
+	if err != nil {
+		logger.Error(err, "could not get the suppressed environment variables from the config")
+	}
+	return slices.DeleteFunc(envVars, func(env corev1.EnvVar) bool {
+		return suppressed[env.Name]
+	})
 }
