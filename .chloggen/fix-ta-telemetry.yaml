@@ -2,7 +2,7 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: target allocator
+component: collector, target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: "Use pointer for TargetAllocator Telemetry field so omitempty works correctly with encoding/json"
