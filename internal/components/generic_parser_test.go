@@ -678,3 +678,101 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestGenericParser_ParserAliases(t *testing.T) {
+	tests := []struct {
+		name     string
+		builder  components.Builder[*components.SingleEndpointConfig]
+		expected []string
+	}{
+		{
+			name:     "no aliases configured returns nil",
+			builder:  components.NewSinglePortParserBuilder("test", 8080),
+			expected: nil,
+		},
+		{
+			name:     "single alias configured",
+			builder:  components.NewSinglePortParserBuilder("test", 8080).WithAlias("test_alias"),
+			expected: []string{"test_alias"},
+		},
+		{
+			name:     "multiple aliases configured via multiple calls",
+			builder:  components.NewSinglePortParserBuilder("test", 8080).WithAlias("alias1").WithAlias("alias2"),
+			expected: []string{"alias1", "alias2"},
+		},
+		{
+			name:     "multiple aliases configured in single variadic call",
+			builder:  components.NewSinglePortParserBuilder("test", 8080).WithAlias("alias1", "alias2"),
+			expected: []string{"alias1", "alias2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := tt.builder.Build()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, p.ParserAliases())
+		})
+	}
+}
+
+func TestGenericParser_GetEnvironmentVariables(t *testing.T) {
+	mockEnvGen := func(_ logr.Logger, cfg *components.SingleEndpointConfig) ([]corev1.EnvVar, error) {
+		if cfg.Endpoint == "error" {
+			return nil, errors.New("env gen error")
+		}
+		return []corev1.EnvVar{
+			{Name: "TEST_PORT", Value: "8080"},
+		}, nil
+	}
+
+	tests := []struct {
+		name        string
+		builder     components.Builder[*components.SingleEndpointConfig]
+		config      any
+		expectedEnv []corev1.EnvVar
+		expectErr   bool
+	}{
+		{
+			name:        "nil envVarGen returns nil env vars and nil error",
+			builder:     components.NewSinglePortParserBuilder("test", 8080),
+			config:      map[string]any{"endpoint": "0.0.0.0:8080"},
+			expectedEnv: nil,
+			expectErr:   false,
+		},
+		{
+			name:        "valid envVarGen returns generated environment variables",
+			builder:     components.NewSinglePortParserBuilder("test", 8080).WithEnvVarGen(mockEnvGen),
+			config:      map[string]any{"endpoint": "0.0.0.0:8080"},
+			expectedEnv: []corev1.EnvVar{{Name: "TEST_PORT", Value: "8080"}},
+			expectErr:   false,
+		},
+		{
+			name:        "envVarGen error propagates",
+			builder:     components.NewSinglePortParserBuilder("test", 8080).WithEnvVarGen(mockEnvGen),
+			config:      map[string]any{"endpoint": "error"},
+			expectedEnv: nil,
+			expectErr:   true,
+		},
+		{
+			name:        "decode failure with invalid config type returns error",
+			builder:     components.NewSinglePortParserBuilder("test", 8080).WithEnvVarGen(mockEnvGen),
+			config:      "invalid_config_type",
+			expectedEnv: nil,
+			expectErr:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := tt.builder.Build()
+			assert.NoError(t, err)
+			envVars, err := p.GetEnvironmentVariables(logr.Discard(), tt.config)
+			if tt.expectErr {
+				assert.Error(t, err)
+				assert.Nil(t, envVars)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedEnv, envVars)
+			}
+		})
+	}
+}
