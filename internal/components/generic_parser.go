@@ -17,16 +17,17 @@ var _ Parser = &GenericParser[SingleEndpointConfig]{}
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
-	name            string
-	aliases         []string
-	settings        *Settings[T]
-	portParser      PortParser[T]
-	rbacGen         RBACRuleGenerator[T]
-	envVarGen       EnvVarGenerator[T]
-	livenessGen     ProbeGenerator[T]
-	readinessGen    ProbeGenerator[T]
-	startupGen      ProbeGenerator[T]
-	defaultsApplier Defaulter[T]
+	name              string
+	aliases           []string
+	settings          *Settings[T]
+	portParser        PortParser[T]
+	rbacGen           RBACRuleGenerator[T]
+	namespacedRbacGen NamespacedRBACRuleGenerator[T]
+	envVarGen         EnvVarGenerator[T]
+	livenessGen       ProbeGenerator[T]
+	readinessGen      ProbeGenerator[T]
+	startupGen        ProbeGenerator[T]
+	defaultsApplier   Defaulter[T]
 }
 
 func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error) {
@@ -95,6 +96,17 @@ func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config any) ([]rbacv
 		return nil, err
 	}
 	return g.rbacGen(logger, parsed)
+}
+
+func (g *GenericParser[T]) GetNamespacedRBACRules(logger logr.Logger, config any) (map[string][]rbacv1.PolicyRule, error) {
+	if g.namespacedRbacGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.namespacedRbacGen(logger, parsed)
 }
 
 func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {

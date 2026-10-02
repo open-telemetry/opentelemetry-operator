@@ -30,7 +30,7 @@ func ProcessorFor(name string) components.Parser {
 var componentParsers = []components.Parser{
 	// k8s_attributes, formerly k8sattributes
 	// (open-telemetry/opentelemetry-collector-contrib#45901, see #4922).
-	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).WithAlias("k8sattributes").MustBuild(),
+	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).WithNamespacedRbacGen(GenerateK8SAttrNamespacedRbacRules).WithAlias("k8sattributes").MustBuild(),
 	// resource_detection, formerly resourcedetection
 	// (open-telemetry/opentelemetry-collector-contrib#48525).
 	components.NewBuilder[ResourceDetectionConfig]().WithName("resource_detection").WithRbacGen(GenerateResourceDetectionRbacRules).WithAlias("resourcedetection").MustBuild(),
