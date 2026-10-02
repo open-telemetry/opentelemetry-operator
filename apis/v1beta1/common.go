@@ -154,6 +154,10 @@ type OpenTelemetryCommonFields struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image.
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// ImagePullSecrets is a list of references to secrets in the same namespace to use for pulling the images of the generated pods.
+	// +optional
+	// +listType=atomic
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// VolumeMounts represents the mount points to use in the underlying deployment(s).
 	// +optional
 	// +listType=atomic

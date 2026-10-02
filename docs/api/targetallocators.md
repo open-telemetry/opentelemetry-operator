@@ -242,6 +242,13 @@ This is only valid for non-hostNetwork pods and is not supported on Windows.<br/
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is a list of references to secrets in the same namespace to use for pulling the images of the generated pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindex">initContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -5791,6 +5798,40 @@ pod's hosts file.
         <td>[]string</td>
         <td>
           Hostnames for the above IP address.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
