@@ -101,7 +101,7 @@ spec:
                 name: test-opamp-bridge
               status:
                 readyReplicas: 1
-    - name: Check effective config contains the managed collector
+    - name: Check effective config contains the reporting-only collector
       try:
         - script:
             content: |
@@ -183,10 +183,55 @@ spec:
                           receivers:
                             - jaeger
                             - otlp
+    # Scenario 1 needs a collector the bridge is allowed to restart
+    # The bridge seeds appliedKeys from the cluster on startup and deletes any collector
+    # the server doesn't know about, so this one has to be created by the server
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: Push a collector config the bridge manages
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              #!/bin/bash
+              set -eu
+
+              remote_config=$(cat <<EOF
+              {
+                "config": {
+                  "$NAMESPACE/managed": "apiVersion: opentelemetry.io/v1beta1\nkind: OpenTelemetryCollector\nmetadata:\n  name: managed\n  labels:\n    opentelemetry.io/opamp-managed: \"true\"\nspec:\n  config:\n    receivers:\n      otlp:\n        protocols:\n          grpc: {}\n    exporters:\n      debug: {}\n    service:\n      pipelines:\n        traces:\n          receivers: [otlp]\n          exporters: [debug]\n"
+                },
+                "content_type": "application/yaml"
+              }
+              EOF
+              )
+
+              printf '%s' "$remote_config" | kubectl run -n "$NAMESPACE" push-collector-config \
+                --image=mirror.gcr.io/alpine/curl:8.21.0 \
+                --restart=Never \
+                --rm -i \
+                --command -- curl -fsS \
+                -X POST \
+                "http://e2e-test-app-bridge-server:4321/agents/push-config-to-agent" \
+                -H "Content-Type: application/json" \
+                --data-binary @-
+        - assert:
+            resource:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: managed-collector
+              status:
+                readyReplicas: 1
+
     # ---------------------------------------------------------------------------
     # Scenario 1: Bridge accepts CommandType_Restart and the managed collector
     #             gets the kubectl.kubernetes.io/restartedAt annotation set,
-    #             proving TriggerRollout was called.
+    #             proving TriggerRollout was called. The reporting-only collector
+    #             is left alone, since the bridge may not modify it.
     # ---------------------------------------------------------------------------
     - catch:
         - podLogs:
@@ -214,7 +259,7 @@ spec:
               #!/bin/bash
               set -eu
               for _ in $(seq 1 30); do
-                val=$(kubectl get deployment simplest-collector -n "$NAMESPACE" \
+                val=$(kubectl get deployment managed-collector -n "$NAMESPACE" \
                   -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}' 2>/dev/null || true)
                 if [ -n "$val" ]; then
                   printf '%s' "$val"
@@ -230,6 +275,17 @@ spec:
         - assert:
             resource:
               (length($restartedAt) > `0`): true
+        # Check the reporting-only collector was left out of the same command.
+        - script:
+            content: |
+              #!/bin/bash
+              set -eu
+              val=$(kubectl get deployment simplest-collector -n "$NAMESPACE" \
+                -o jsonpath='{.spec.template.metadata.annotations.kubectl\.kubernetes\.io/restartedAt}' 2>/dev/null || true)
+              if [ -n "$val" ]; then
+                echo "reporting-only collector was restarted: $val" >&2
+                exit 1
+              fi
 
     # ---------------------------------------------------------------------------
     # Scenario 3: Bridge remains healthy and connected after processing the

@@ -222,6 +222,11 @@ func (c Client) Delete(key string) error {
 		}
 		return err
 	}
+	if validateErr := c.validateLabels(&result); validateErr != nil {
+		c.log.V(3).Info("Skipping delete for a collector this bridge may not modify",
+			"name", resource.name, "namespace", resource.namespace, "reason", validateErr.Error())
+		return nil
+	}
 	return c.k8sClient.Delete(ctx, &result)
 }
 
@@ -236,6 +241,11 @@ func (c Client) Restart(ctx context.Context) error {
 	var errs []error
 	for i := range collectors {
 		col := &collectors[i]
+		if validateErr := c.validateLabels(&col.Col); validateErr != nil {
+			c.log.Info("Skipping restart for a collector this bridge may not modify",
+				"name", col.GetName(), "namespace", col.GetNamespace(), "reason", validateErr.Error())
+			continue
+		}
 		mode := strings.ToLower(string(col.Col.Spec.Mode))
 		if mode == "sidecar" {
 			c.log.Info("Skipping restart for sidecar mode collector - no standalone workload",
