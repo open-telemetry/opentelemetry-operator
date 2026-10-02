@@ -87,5 +87,6 @@ The possible values for the annotation can be
 - [Multi-container pods with multiple instrumentations](multi-instrumentation.md)
 - [Using customized or vendor instrumentation images](custom-images.md)
 - [Configuring resource attributes](resource-attributes.md)
+- [Sharing Instrumentation configuration](shared-instrumentation.md)
 
 See also the [API reference](../api/instrumentations.md).

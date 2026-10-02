@@ -1,0 +1,21 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-common
+  namespace: ($commonNamespace)
+spec:
+  env:
+  - name: SHARED_PRIORITY
+    value: base
+  - name: POD_PRIORITY
+    value: base
+  - name: PARENT_ONLY
+    value: base
+  java:
+    env:
+    - name: OTEL_JAVAAGENT_DEBUG
+      value: "true"
+    extensions:
+    - image: busybox:1.36.1
+      dir: /tmp
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1-1

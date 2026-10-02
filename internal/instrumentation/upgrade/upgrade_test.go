@@ -124,6 +124,29 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "nginx:2", updated.Spec.Nginx.Image)
 }
 
+func TestUpgradeSkipsInstrumentationWithBaseRef(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				constants.AnnotationDefaultAutoInstrumentationJava: "java:1",
+			},
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef: &v1alpha1.InstrumentationReference{Name: "shared"},
+			Java:    v1alpha1.Java{Image: "java:1"},
+		},
+	}
+	up := NewInstrumentationUpgrade(nil, logr.Discard(), &events.FakeRecorder{}, config.Config{
+		AutoInstrumentationJavaImage:  "java:2",
+		EnableJavaAutoInstrumentation: true,
+	})
+
+	updated, blocked := up.upgrade(t.Context(), inst)
+
+	assert.Equal(t, &inst, updated)
+	assert.Nil(t, blocked)
+}
+
 func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 	// Set up unupgradable version for testing. The blocked version "2" sits in
 	// (current, target] when going from "1" to "2", so the upgrade should be blocked.

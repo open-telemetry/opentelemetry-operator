@@ -370,7 +370,11 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		if !pm.config.EnableInstrumentationCRDs {
 			return &pm.config.Instrumentation, nil
 		}
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		inst, err := pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		if err != nil {
+			return nil, err
+		}
+		return pm.resolveInstrumentation(ctx, inst)
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -386,7 +390,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		return nil, err
 	}
 
-	return otelInst, nil
+	return pm.resolveInstrumentation(ctx, otelInst)
 }
 
 func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
