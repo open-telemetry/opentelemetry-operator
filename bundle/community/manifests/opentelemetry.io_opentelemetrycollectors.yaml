@@ -8287,6 +8287,22 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  allocationStrategyConfig:
+                    properties:
+                      perNode:
+                        properties:
+                          fallbackStrategy:
+                            properties:
+                              name:
+                                enum:
+                                - least-weighted
+                                - consistent-hashing
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        type: object
+                    type: object
                   allowInsecureAuthSecrets:
                     type: boolean
                   collectorNotReadyGracePeriod:
