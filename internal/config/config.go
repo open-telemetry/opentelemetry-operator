@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
@@ -176,6 +177,9 @@ type Internal struct {
 	// the operator restarts (via SecurityProfileWatcher) and all collectors are reconciled
 	// with the new TLS settings.
 	OperandTLSProfile components.TLSProfile `yaml:"-"`
+	// APIServerEndpoints tracks the endpoints of the Kubernetes API server. It's set at operator startup, and is
+	// used to restrict egress to the API server in NetworkPolicies.
+	APIServerEndpoints *apiserverendpoints.Tracker `yaml:"-"`
 }
 
 // New constructs a new configuration.

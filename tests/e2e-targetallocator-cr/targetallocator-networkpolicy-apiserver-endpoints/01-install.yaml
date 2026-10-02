@@ -1,0 +1,18 @@
+# An extra EndpointSlice for the API server Service stands in for the API server moving to a new address, which
+# can't be done on a kind cluster. The API server's endpoint reconciler only manages the EndpointSlice named after the
+# Service, so it leaves this one alone. The address is from TEST-NET-3 (RFC 5737), so it's never a real API server.
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: kubernetes-targetallocator-networkpolicy-e2e
+  namespace: default
+  labels:
+    kubernetes.io/service-name: kubernetes
+addressType: IPv4
+endpoints:
+  - addresses:
+      - 203.0.113.10
+ports:
+  - name: https
+    port: 6443
+    protocol: TCP
