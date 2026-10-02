@@ -15,6 +15,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -22,8 +23,7 @@ func TestNetworkPolicy(t *testing.T) {
 	tcp := corev1.ProtocolTCP
 	apiServerPort := intstr.FromInt32(6443)
 	testConfig := config.Config{}
-	testConfig.Internal.KubeAPIServerPort = 6443
-	testConfig.Internal.KubeAPIServerIPs = []string{"10.0.0.1"}
+	testEndpoints := []apiserverendpoints.Endpoint{{IP: "10.0.0.1", Port: 6443}}
 
 	tests := []struct {
 		name     string
@@ -111,8 +111,9 @@ func TestNetworkPolicy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			params := Params{
-				TargetAllocator: test.ta,
-				Config:          test.cfg,
+				TargetAllocator:    test.ta,
+				Config:             test.cfg,
+				APIServerEndpoints: testEndpoints,
 			}
 			actual, err := NetworkPolicy(params)
 			require.NoError(t, err)
@@ -138,8 +139,6 @@ func TestNetworkPolicy(t *testing.T) {
 
 func TestNetworkPolicyLeavesEgressOpenForSelfTelemetry(t *testing.T) {
 	testConfig := config.Config{}
-	testConfig.Internal.KubeAPIServerPort = 6443
-	testConfig.Internal.KubeAPIServerIPs = []string{"10.0.0.1"}
 
 	ta := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -170,7 +169,11 @@ func TestNetworkPolicyLeavesEgressOpenForSelfTelemetry(t *testing.T) {
 		},
 	}
 
-	actual, err := NetworkPolicy(Params{TargetAllocator: ta, Config: testConfig})
+	actual, err := NetworkPolicy(Params{
+		TargetAllocator:    ta,
+		Config:             testConfig,
+		APIServerEndpoints: []apiserverendpoints.Endpoint{{IP: "10.0.0.1", Port: 6443}},
+	})
 	require.NoError(t, err)
 	require.NotNil(t, actual)
 
@@ -183,7 +186,6 @@ func TestNetworkPolicyLeavesEgressOpenForSelfTelemetry(t *testing.T) {
 
 func TestNetworkPolicyResourceAnnotations(t *testing.T) {
 	testConfig := config.Config{}
-	testConfig.Internal.KubeAPIServerPort = 6443
 
 	ta := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -204,12 +206,67 @@ func TestNetworkPolicyResourceAnnotations(t *testing.T) {
 	}
 
 	actual, err := NetworkPolicy(Params{
-		TargetAllocator: ta,
-		Config:          testConfig,
+		TargetAllocator:    ta,
+		Config:             testConfig,
+		APIServerEndpoints: []apiserverendpoints.Endpoint{{IP: "10.0.0.1", Port: 6443}},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, actual)
 
 	// CR metadata annotations propagate, pod annotations do not
 	assert.Equal(t, map[string]string{"meta-annotation-key": "meta-annotation-value"}, actual.Annotations)
+}
+
+func TestNetworkPolicyAPIServerEgress(t *testing.T) {
+	tcp := corev1.ProtocolTCP
+	ta := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ta",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			NetworkPolicy: v1beta1.NetworkPolicy{
+				Enabled: &[]bool{true}[0],
+			},
+		},
+	}
+
+	t.Run("one rule per port", func(t *testing.T) {
+		// the Service ClusterIP is typically exposed on a different port than the endpoints
+		endpoints := []apiserverendpoints.Endpoint{
+			{IP: "10.96.0.1", Port: 443},
+			{IP: "172.18.0.2", Port: 6443},
+			{IP: "172.18.0.3", Port: 6443},
+			{IP: "fd00::2", Port: 6443},
+		}
+		actual, err := NetworkPolicy(Params{TargetAllocator: ta, APIServerEndpoints: endpoints})
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+
+		port443 := intstr.FromInt32(443)
+		port6443 := intstr.FromInt32(6443)
+		expected := []networkingv1.NetworkPolicyEgressRule{
+			{
+				Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &port443}},
+				To: []networkingv1.NetworkPolicyPeer{
+					{IPBlock: &networkingv1.IPBlock{CIDR: "10.96.0.1/32"}},
+				},
+			},
+			{
+				Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &port6443}},
+				To: []networkingv1.NetworkPolicyPeer{
+					{IPBlock: &networkingv1.IPBlock{CIDR: "172.18.0.2/32"}},
+					{IPBlock: &networkingv1.IPBlock{CIDR: "172.18.0.3/32"}},
+					{IPBlock: &networkingv1.IPBlock{CIDR: "fd00::2/128"}},
+				},
+			},
+		}
+		assert.Equal(t, expected, actual.Spec.Egress)
+		assert.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, actual.Spec.PolicyTypes)
+	})
+
+	t.Run("unknown endpoints", func(t *testing.T) {
+		_, err := NetworkPolicy(Params{TargetAllocator: ta})
+		require.ErrorContains(t, err, "Kubernetes API server endpoints are unknown")
+	})
 }
