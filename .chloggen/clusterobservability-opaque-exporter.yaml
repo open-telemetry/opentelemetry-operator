@@ -1,0 +1,11 @@
+change_type: enhancement
+
+component: cluster-observability
+
+note: Accept the full OTLP HTTP exporter configuration in `ClusterObservability.spec.exporter`
+
+issues: [4475]
+
+subtext: |
+  Pass exporter configuration to generated Collectors unchanged instead of
+  translating individual fields.

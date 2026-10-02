@@ -24,6 +24,20 @@ spec:
         file: 00-install-prerequisites.yaml
     - assert:
         file: 00-assert-prerequisites.yaml
+    - script:
+        timeout: 2m
+        content: |
+          set -eu
+          for _ in $(seq 1 60); do
+            if kubectl get --raw \
+              "/api/v1/namespaces/$NAMESPACE/services/cluster-obs-targetallocator-targetallocator:80/proxy/scrape_configs" \
+              >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ERROR: Target Allocator API did not become ready"
+          exit 1
   - name: Install ClusterObservability
     try:
     - apply:
