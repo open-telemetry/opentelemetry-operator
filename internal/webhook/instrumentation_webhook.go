@@ -98,6 +98,21 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
+	if r.Spec.Php.Image == "" {
+		r.Spec.Php.Image = w.cfg.AutoInstrumentationPhpImage
+	}
+	if r.Spec.Php.Resources.Limits == nil {
+		r.Spec.Php.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		}
+	}
+	if r.Spec.Php.Resources.Requests == nil {
+		r.Spec.Php.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.Python.Image == "" {
 		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage
 	}
@@ -176,6 +191,7 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	}
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPhp] = w.cfg.AutoInstrumentationPhpImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage
@@ -242,6 +258,10 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	if err != nil {
 		return warnings, fmt.Errorf("spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined: %w", err)
 	}
+	err = validateInstrVolume(r.Spec.Php.VolumeClaimTemplate, r.Spec.Php.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.php.volumeClaimTemplate and spec.php.volumeSizeLimit cannot both be defined: %w", err)
+	}
 	err = validateInstrVolume(r.Spec.Python.VolumeClaimTemplate, r.Spec.Python.VolumeSizeLimit)
 	if err != nil {
 		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
@@ -255,6 +275,9 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	}
 	if r.Spec.NodeJS.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead")
+	}
+	if r.Spec.Php.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.php.volumeSizeLimit is deprecated and will be removed in a future release; use spec.php.volume.size instead")
 	}
 	if r.Spec.Python.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead")
@@ -352,6 +375,7 @@ func (w InstrumentationWebhook) checkUnupgradableVersions(r *v1alpha1.Instrument
 	languageImages := map[constants.InstrumentationLanguage]langImage{
 		constants.InstrumentationLanguageJava:        {r.Spec.Java.Image, w.cfg.AutoInstrumentationJavaImage},
 		constants.InstrumentationLanguageNodeJS:      {r.Spec.NodeJS.Image, w.cfg.AutoInstrumentationNodeJSImage},
+		constants.InstrumentationLanguagePhp:         {r.Spec.Php.Image, w.cfg.AutoInstrumentationPhpImage},
 		constants.InstrumentationLanguagePython:      {r.Spec.Python.Image, w.cfg.AutoInstrumentationPythonImage},
 		constants.InstrumentationLanguageDotNet:      {r.Spec.DotNet.Image, w.cfg.AutoInstrumentationDotNetImage},
 		constants.InstrumentationLanguageGo:          {r.Spec.Go.Image, w.cfg.AutoInstrumentationGoImage},
