@@ -932,7 +932,7 @@ func TestGetGlobalConfig(t *testing.T) {
 func TestTelemetryOTLP(t *testing.T) {
 	t.Run("should emit telemetry block with all OTLP fields", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+		targetAllocator.Spec.Telemetry = &v1beta1.TelemetryConfig{
 			Metrics: v1beta1.MetricsConfig{
 				Readers: []v1beta1.MetricReader{{
 					Periodic: &v1beta1.PeriodicMetricReader{
@@ -980,7 +980,7 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("should omit optional fields when not set", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+		targetAllocator.Spec.Telemetry = &v1beta1.TelemetryConfig{
 			Metrics: v1beta1.MetricsConfig{
 				Readers: []v1beta1.MetricReader{{
 					Periodic: &v1beta1.PeriodicMetricReader{
@@ -1032,7 +1032,7 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("grpc with all optional fields", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+		targetAllocator.Spec.Telemetry = &v1beta1.TelemetryConfig{
 			Metrics: v1beta1.MetricsConfig{
 				Readers: []v1beta1.MetricReader{{
 					Periodic: &v1beta1.PeriodicMetricReader{
@@ -1075,7 +1075,7 @@ func TestTelemetryOTLP(t *testing.T) {
 
 	t.Run("non-periodic reader is skipped", func(t *testing.T) {
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.Telemetry = v1beta1.TelemetryConfig{
+		targetAllocator.Spec.Telemetry = &v1beta1.TelemetryConfig{
 			Metrics: v1beta1.MetricsConfig{
 				// Periodic is nil — should produce no telemetry block.
 				Readers: []v1beta1.MetricReader{{Periodic: nil}},
