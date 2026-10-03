@@ -13,9 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 	admv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -425,6 +429,167 @@ func TestFailOnInvalidRequest(t *testing.T) {
 			assert.Equal(t, tt.allowed, res.Allowed)
 			assert.NotNil(t, res.Result)
 			assert.Equal(t, tt.expected, res.Result.Code)
+		})
+	}
+}
+
+func TestShouldInjectSidecarWhenWebhookLackNSPermssion(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		ns        corev1.Namespace
+		serviceNs corev1.Namespace
+		sa        corev1.ServiceAccount
+		pod       corev1.Pod
+		otelcols  []v1alpha1.OpenTelemetryCollector
+	}{
+		{
+			// check pod annotation to inject sidecar even if the webhook lacks permission to get the namespace
+			name: "test inject from different namespace with no permission to get the pod namespace",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "limited-ns",
+				},
+			},
+			serviceNs: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "otel-ns",
+				},
+			},
+			sa: corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "op",
+					// same as serviceNs
+					Namespace: "otel-ns",
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					// here we are using a different namespace, pods in the "limited-ns" namespace will be created with
+					// an annotation to inject a sidecar from the "otel-ns" collector
+					Namespace:   "limited-ns",
+					Annotations: map[string]string{sidecar.Annotation: "otel-ns/my-instance"},
+				},
+			},
+			otelcols: []v1alpha1.OpenTelemetryCollector{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-instance",
+					Namespace: "otel-ns",
+				},
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Mode: v1alpha1.ModeSidecar,
+				},
+			}},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			err := k8sClient.Create(context.Background(), &tt.ns)
+			require.NoError(t, err)
+			err = k8sClient.Create(context.Background(), &tt.serviceNs)
+			require.NoError(t, err)
+			err = k8sClient.Create(context.Background(), &tt.sa)
+			require.NoError(t, err)
+			defer func() {
+				_ = k8sClient.Delete(context.Background(), &tt.ns)
+				// cacade delete the service account, role, rolebinding and the namespace
+				_ = k8sClient.Delete(context.Background(), &tt.serviceNs)
+			}()
+			// allow tt.sa to query opentelemetrycollectors in namespace
+			role := &rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-role",
+					Namespace: tt.sa.Namespace,
+				},
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"opentelemetry.io"},
+						Resources: []string{"opentelemetrycollectors"},
+						Verbs:     []string{"get", "list"},
+					},
+				},
+			}
+			roleBinding := &rbacv1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-rolebinding",
+					Namespace:    tt.sa.Namespace,
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "Role",
+					Name:     role.Name,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      tt.sa.Name,
+						Namespace: tt.sa.Namespace,
+					},
+				},
+			}
+			require.NoError(t, k8sClient.Create(context.Background(), role))
+			require.NoError(t, k8sClient.Create(context.Background(), roleBinding))
+
+			for i := range tt.otelcols {
+				clientErr := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, clientErr)
+			}
+			encoded, err := json.Marshal(tt.pod)
+			require.NoError(t, err)
+			// setup service account
+			impersonatedCfg := rest.CopyConfig(cfg)
+			impersonatedCfg.Impersonate = rest.ImpersonationConfig{
+				UserName: "system:serviceaccount:" + tt.serviceNs.Name + ":" + tt.sa.Name,
+			}
+			limitedClient, _ := client.New(impersonatedCfg, client.Options{})
+			err = limitedClient.Get(context.Background(), client.ObjectKey{Name: tt.ns.Name}, &corev1.Namespace{})
+			// verify that the limited client cannot get the namespace
+			isDendied := apierrors.IsForbidden(err)
+			assert.True(t, isDendied)
+			// the actual request we see in the webhook
+			req := admission.Request{
+				AdmissionRequest: admv1.AdmissionRequest{
+					Namespace: tt.ns.Name,
+					Object: runtime.RawExtension{
+						Raw: encoded,
+					},
+				},
+			}
+
+			// the webhook handler
+			cfg := config.New()
+			decoder := admission.NewDecoder(scheme.Scheme)
+			// inject uses limitedClient
+			injector := NewWebhookHandler(cfg, logger, decoder, limitedClient, []PodMutator{sidecar.NewMutator(logger, cfg, limitedClient)})
+
+			// test
+			res := injector.Handle(context.Background(), req)
+
+			// verify
+			assert.True(t, res.Allowed)
+			assert.Nil(t, res.Result)
+			assert.Len(t, res.Patches, 2)
+
+			expectedMap := map[string]bool{
+				"/metadata/labels": false, // add a new label
+				"/spec/containers": false, // replace the containers, adding one new container
+			}
+			for _, patch := range res.Patches {
+				// quick and dirty solution
+				if patch.Path == "/spec/containers" {
+					assert.Equal(t, "replace", patch.Operation)
+				} else {
+					assert.Equal(t, "add", patch.Operation)
+				}
+
+				expectedMap[patch.Path] = true
+			}
+			for k := range expectedMap {
+				assert.True(t, expectedMap[k], "patch with path %s not found", k)
+			}
+
+			// cleanup
+			for i := range tt.otelcols {
+				require.NoError(t, k8sClient.Delete(context.Background(), &tt.otelcols[i]))
+			}
 		})
 	}
 }
