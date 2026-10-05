@@ -362,5 +362,13 @@ func getInferredContainerEnvVars(cfg config.Config, otelcol v1beta1.OpenTelemetr
 		envVars = append(envVars, configEnvVars...)
 	}
 
-	return append(envVars, cfg.ProxyEnvVars...)
+	envVars = append(envVars, cfg.ProxyEnvVars...)
+
+	suppressed, err := otelconfig.GetSuppressedEnvVars(&otelcol.Spec.Config, logger)
+	if err != nil {
+		logger.Error(err, "could not get the suppressed environment variables from the config")
+	}
+	return slices.DeleteFunc(envVars, func(env corev1.EnvVar) bool {
+		return suppressed[env.Name]
+	})
 }

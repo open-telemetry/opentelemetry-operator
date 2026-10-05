@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/name: seaweedfs
+  name: seaweedfs
+  namespace: openshift-logging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweedfs
+  namespace: openshift-logging
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: seaweedfs
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: seaweedfs
+    spec:
+      containers:
+        - name: seaweedfs
+          # Multi-arch (amd64, arm64, ppc64le, s390x) build of the upstream SeaweedFS
+          # release, published for the QE test fixtures.
+          image: quay.io/redhat-distributed-tracing-qe/seaweedfs:4.48@sha256:e78cbe6b4fef844dbd7dc9daa55bea593e1e20b08ff6934998e1ac6a7486e8e2
+          # Single process running the master, volume server, filer and S3 gateway.
+          # -bucket pre-creates the bucket used by LokiStack. -ip avoids depending on
+          # network interface auto-detection to find the volume server address.
+          args:
+            - mini
+            - -dir=/data
+            - -bucket=loki
+            - -ip=127.0.0.1
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: loki
+            - name: AWS_SECRET_ACCESS_KEY
+              value: supersecret
+          ports:
+            - containerPort: 8333
+              name: s3
+          # Ready once the volume server has registered with the master and the S3
+          # gateway answers an authenticated request for the pre-created bucket.
+          # The -bucket flag only logs a warning if it fails, so check it here.
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - >-
+                  curl -sf http://localhost:9333/dir/status | grep -q '"DataNodes"' &&
+                  curl -sf -o /dev/null --aws-sigv4 "aws:amz:us-east-1:s3"
+                  --user "$AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY"
+                  http://localhost:8333/loki/
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /data
+              name: storage
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: seaweedfs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs
+  namespace: openshift-logging
+spec:
+  ports:
+    - name: s3
+      port: 8333
+      protocol: TCP
+      targetPort: 8333
+  selector:
+    app.kubernetes.io/name: seaweedfs
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: logging-loki-s3
+  namespace: openshift-logging
+stringData:
+  endpoint: http://seaweedfs:8333
+  region: us-east-1
+  bucketnames: loki
+  access_key_id: loki
+  access_key_secret: supersecret
+type: Opaque
