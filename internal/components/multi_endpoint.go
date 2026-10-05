@@ -126,6 +126,10 @@ func (*MultiPortReceiver) GetEnvironmentVariables(logr.Logger, any) ([]corev1.En
 	return nil, nil
 }
 
+func (*MultiPortReceiver) GetSuppressedEnvVars(logr.Logger, any) ([]string, error) {
+	return nil, nil
+}
+
 type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
 
 func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {

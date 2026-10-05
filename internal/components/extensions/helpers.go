@@ -12,6 +12,10 @@ import (
 
 // registry holds a record of all known receiver parsers.
 var registry = map[string]components.Parser{
+	// The collector accepts the deprecated cgroupruntime type as well.
+	// See open-telemetry/opentelemetry-collector-contrib#46773.
+	"cgroup_runtime": newCgroupRuntimeParserBuilder().MustBuild(),
+	"cgroupruntime":  newCgroupRuntimeParserBuilder().MustBuild(),
 	"health_check": components.NewBuilder[healthcheckV1Config]().
 		WithName("health_check").
 		WithPort(defaultHealthcheckV1Port).
