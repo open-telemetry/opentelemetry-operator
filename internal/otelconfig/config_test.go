@@ -2231,6 +2231,25 @@ func TestGetTelemetryResourceFormats(t *testing.T) {
 			},
 			expectedResource: `{"attributes":[{"name":"service.name","value":"my-collector"},{"name":"deployment.environment.name","value":"production"}]}`,
 		},
+		{
+			// The operator doesn't interpret the resource block, so a mix of both
+			// formats is passed through verbatim for the collector to accept or reject.
+			name: "legacy and declarative resource combined",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "detailed"},
+						"resource": map[string]any{
+							"service.name": "my-collector",
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedResource: `{"service.name":"my-collector","attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -2297,6 +2316,23 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 				},
 			},
 			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+			expectedReaderCount: 1,
+		},
+		{
+			name: "combined legacy and declarative resource gets default Prometheus reader",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"service.name": "my-collector",
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedResource:    `{"service.name":"my-collector","attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
 			expectedReaderCount: 1,
 		},
 		{
