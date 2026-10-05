@@ -190,7 +190,7 @@ func periodicReaderOptions(cfg *config.PeriodicMetricReader, temporality sdkmetr
 	// PeriodicReader does not apply the TemporalitySelector to external Producer
 	// output. deltaProducer wraps the bridge and converts cumulative monotonic
 	// sums to delta when the selector chooses delta for counters.
-	var bridge sdkmetric.Producer = prometheusbridge.NewMetricProducer()
+	bridge := prometheusbridge.NewMetricProducer()
 	if temporality(sdkmetric.InstrumentKindCounter) == metricdata.DeltaTemporality {
 		bridge = newDeltaProducer(bridge)
 	}
