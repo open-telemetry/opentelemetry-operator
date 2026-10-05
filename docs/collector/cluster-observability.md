@@ -349,7 +349,7 @@ kubectl logs deployment/opentelemetry-operator-controller-manager -n opentelemet
 ```
 
 ### Manual RBAC Workaround
-If automatic RBAC creation (`--create-rbac-permissions=true`) isn't working, you may need to apply manual RBAC permissions. This is a known issue being investigated.
+If automatic RBAC creation isn't working, you may need to apply manual RBAC permissions. This is a known issue being investigated.
 
 ```bash
 # Apply manual ClusterRole and ClusterRoleBinding for collectors
