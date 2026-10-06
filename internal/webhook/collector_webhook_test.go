@@ -2059,9 +2059,11 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := config.Config{
-				CollectorImage:        "default-collector",
-				TargetAllocatorImage:  "default-ta-allocator",
-				CreateRBACPermissions: tt.createRBACPerms,
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+				Internal: config.Internal{
+					CreateRBACPermissions: tt.createRBACPerms,
+				},
 			}
 			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),

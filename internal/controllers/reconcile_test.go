@@ -1212,10 +1212,12 @@ service:
 	cfg := config.Config{
 		CollectorImage:                    "default-collector",
 		TargetAllocatorImage:              "default-ta-allocator",
-		CreateRBACPermissions:             autoRBAC.Available,
 		CollectorConfigMapEntry:           "collector.yaml",
 		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 		EnableInstrumentationCRDs:         true,
+		Internal: config.Internal{
+			CreateRBACPermissions: autoRBAC.Available,
+		},
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
