@@ -2,6 +2,8 @@
 # Init container script for PHP auto-instrumentation.
 # Runs in the opentelemetry-auto-instrumentation-php init container (the one with the
 # instrumentation image)
+# This script copies the right agent extensions and the opentelemetry.ini file from the
+# instrumentation source directory to the mounted directory based on the annotations provided by the user.
 set -e
 
 # Inputs:
