@@ -89,7 +89,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	ClusterRBACPermissionsFunc      func(ctx context.Context) (autoRBAC.Availability, error)
 	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
@@ -120,9 +120,9 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 	return prometheus.NotAvailable, nil
 }
 
-func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
-	if m.RBACPermissionsFunc != nil {
-		return m.RBACPermissionsFunc(ctx)
+func (m *mockAutoDetect) ClusterRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	if m.ClusterRBACPermissionsFunc != nil {
+		return m.ClusterRBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
 }

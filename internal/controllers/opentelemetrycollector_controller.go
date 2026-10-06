@@ -377,7 +377,7 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&v1alpha1.TargetAllocator{},
 	}
 
-	if r.config.Internal.CreateRBACPermissions == rbac.Available {
+	if r.config.Internal.CreateClusterRBACPermissions == rbac.Available {
 		ownedResources = append(ownedResources, &rbacv1.ClusterRole{})
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
@@ -401,7 +401,7 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 
 func rbacEnabled(cfg config.Config) bool {
-	return cfg.Internal.CreateRBACPermissions == rbac.Available || cfg.Internal.CreateNamespacedRBACPermissions == rbac.Available
+	return cfg.Internal.CreateClusterRBACPermissions == rbac.Available || cfg.Internal.CreateNamespacedRBACPermissions == rbac.Available
 }
 
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {

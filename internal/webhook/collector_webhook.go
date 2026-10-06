@@ -395,11 +395,11 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 // occur and the check passes regardless of the requesting user's permissions.
 //
 // The check is skipped when:
-//   - Internal.CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
+//   - Internal.CreateClusterRBACPermissions is not Available (the auto-RBAC feature is disabled), or
 //   - the collector config requires no extra RBAC rules, or
 //   - no admission.Request is present in the context (direct calls from tests / internal code).
 func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r *v1beta1.OpenTelemetryCollector) error {
-	if c.cfg.Internal.CreateRBACPermissions != autoRBAC.Available && c.cfg.Internal.CreateNamespacedRBACPermissions != autoRBAC.Available {
+	if c.cfg.Internal.CreateClusterRBACPermissions != autoRBAC.Available && c.cfg.Internal.CreateNamespacedRBACPermissions != autoRBAC.Available {
 		return nil
 	}
 
@@ -419,7 +419,7 @@ func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r
 	groups := req.UserInfo.Groups
 
 	// Check cluster-scoped rules.
-	if c.cfg.Internal.CreateRBACPermissions == autoRBAC.Available {
+	if c.cfg.Internal.CreateClusterRBACPermissions == autoRBAC.Available {
 		if err := c.checkClusterScopedRBAC(ctx, r, saName, username, groups); err != nil {
 			return err
 		}

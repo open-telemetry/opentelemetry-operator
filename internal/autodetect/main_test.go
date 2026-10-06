@@ -272,7 +272,7 @@ func reactorFactory(status v1.SubjectAccessReviewStatus) fakeClientGenerator {
 	}
 }
 
-func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
+func TestDetectClusterRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 	for _, tt := range []struct {
 		description          string
 		expectedAvailability autoRBAC.Availability
@@ -335,7 +335,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			require.NoError(t, err)
 
 			// test
-			rAuto, err := aD.RBACPermissions(context.Background())
+			rAuto, err := aD.ClusterRBACPermissions(context.Background())
 
 			// verify
 			assert.Equal(t, tt.expectedAvailability, rAuto)
@@ -448,7 +448,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 			return prometheus.Available, nil
 		},
-		RBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
+		ClusterRBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
 			return autoRBAC.Available, nil
 		},
 		NamespacedRBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
@@ -472,7 +472,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
 	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability)
-	require.Equal(t, autoRBAC.NotAvailable, cfg.Internal.CreateRBACPermissions)
+	require.Equal(t, autoRBAC.NotAvailable, cfg.Internal.CreateClusterRBACPermissions)
 	require.Equal(t, autoRBAC.NotAvailable, cfg.Internal.CreateNamespacedRBACPermissions)
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
@@ -486,7 +486,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
 	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
-	require.Equal(t, autoRBAC.Available, cfg.Internal.CreateRBACPermissions)
+	require.Equal(t, autoRBAC.Available, cfg.Internal.CreateClusterRBACPermissions)
 	require.Equal(t, autoRBAC.Available, cfg.Internal.CreateNamespacedRBACPermissions)
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
@@ -499,7 +499,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	ClusterRBACPermissionsFunc      func(ctx context.Context) (autoRBAC.Availability, error)
 	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
@@ -541,9 +541,9 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 	return prometheus.NotAvailable, nil
 }
 
-func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
-	if m.RBACPermissionsFunc != nil {
-		return m.RBACPermissionsFunc(ctx)
+func (m *mockAutoDetect) ClusterRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	if m.ClusterRBACPermissionsFunc != nil {
+		return m.ClusterRBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
 }
