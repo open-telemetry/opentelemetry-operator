@@ -416,6 +416,16 @@ resource resizes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>revisionHistoryLimit</b></td>
+        <td>integer</td>
+        <td>
+          RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scrapeConfigs</b></td>
         <td>[]object</td>
         <td>

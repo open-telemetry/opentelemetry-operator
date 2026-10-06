@@ -115,6 +115,10 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
+	// RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.
+	// +optional
+	// +kubebuilder:default:=10
+	RevisionHistoryLimit *int32 `json:"revisionHistoryLimit,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
 	//

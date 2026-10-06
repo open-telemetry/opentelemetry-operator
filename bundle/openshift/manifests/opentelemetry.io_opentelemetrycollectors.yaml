@@ -7722,6 +7722,10 @@ spec:
                       x-kubernetes-int-or-string: true
                     type: object
                 type: object
+              revisionHistoryLimit:
+                default: 10
+                format: int32
+                type: integer
               securityContext:
                 properties:
                   allowPrivilegeEscalation:
