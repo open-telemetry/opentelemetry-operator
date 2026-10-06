@@ -2232,9 +2232,11 @@ func TestGetTelemetryResourceFormats(t *testing.T) {
 			expectedResource: `{"attributes":[{"name":"service.name","value":"my-collector"},{"name":"deployment.environment.name","value":"production"}]}`,
 		},
 		{
-			// The operator doesn't interpret the resource block, so a mix of both
-			// formats is passed through verbatim for the collector to accept or reject.
-			name: "legacy and declarative resource combined",
+			// This mix is invalid as far as the collector is concerned — it fails at startup
+			// with "resource::attributes cannot be used together with legacy inline resource
+			// attributes". The operator doesn't interpret the resource block, so it's passed
+			// through verbatim and the collector reports the error.
+			name: "legacy and declarative resource combined (invalid, passed through verbatim)",
 			service: v1beta1.Service{
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
@@ -2285,10 +2287,12 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 	}}
 
 	tests := []struct {
-		name                string
-		service             v1beta1.Service
-		expectedResource    string // JSON; empty means nil
-		expectedReaderCount int
+		name string
+		// expectedTelemetry is the full service::telemetry block after defaulting, as JSON.
+		// Asserting on the whole object (not just the resource) also covers metrics::level
+		// and metrics::readers being preserved rather than clobbered by the defaults.
+		expectedTelemetry string
+		service           v1beta1.Service
 	}{
 		{
 			name: "legacy resource gets default Prometheus reader",
@@ -2299,8 +2303,7 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 					},
 				},
 			},
-			expectedResource:    `{"service.name":"my-collector"}`,
-			expectedReaderCount: 1,
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"service.name":"my-collector"}}`,
 		},
 		{
 			name: "declarative resource gets default Prometheus reader",
@@ -2315,11 +2318,14 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 					},
 				},
 			},
-			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
-			expectedReaderCount: 1,
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
 		},
 		{
-			name: "combined legacy and declarative resource gets default Prometheus reader",
+			// The collector itself rejects this mix at startup ("resource::attributes cannot be
+			// used together with legacy inline resource attributes"). The operator does not try
+			// to interpret or reconcile the two forms; it passes the block through verbatim so
+			// the collector can report the error.
+			name: "combined legacy and declarative resource is passed through verbatim",
 			service: v1beta1.Service{
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]any{
@@ -2332,8 +2338,7 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 					},
 				},
 			},
-			expectedResource:    `{"service.name":"my-collector","attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
-			expectedReaderCount: 1,
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}],"service.name":"my-collector"}}`,
 		},
 		{
 			name: "existing readers not replaced with default",
@@ -2351,8 +2356,7 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 					},
 				},
 			},
-			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
-			expectedReaderCount: 1,
+			expectedTelemetry: `{"metrics":{"readers":[{"periodic":{"exporter":{"otlp":{"endpoint":"otel-collector:4317","insecure":true,"protocol":"grpc"},"AdditionalProperties":null},"interval":60000}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
 		},
 		{
 			name: "existing readers and level not clobbered",
@@ -2371,8 +2375,7 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 					},
 				},
 			},
-			expectedResource:    `{"attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
-			expectedReaderCount: 1,
+			expectedTelemetry: `{"metrics":{"level":"detailed","readers":[{"periodic":{"exporter":{"otlp":{"endpoint":"otel-collector:4317","insecure":true,"protocol":"grpc"},"AdditionalProperties":null},"interval":60000}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
 		},
 	}
 
@@ -2385,12 +2388,9 @@ func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
 			tel := GetTelemetry(&cfg.Service, logr.Discard())
 			require.NotNil(t, tel)
 
-			if tt.expectedResource == "" {
-				assert.Nil(t, tel.Resource)
-			} else {
-				assert.JSONEq(t, tt.expectedResource, string(tel.Resource))
-			}
-			require.Len(t, tel.Metrics.Readers, tt.expectedReaderCount)
+			actual, err := json.Marshal(tel)
+			require.NoError(t, err)
+			assert.JSONEq(t, tt.expectedTelemetry, string(actual))
 		})
 	}
 }
