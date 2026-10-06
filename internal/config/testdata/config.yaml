@@ -10,7 +10,7 @@ enable-apache-httpd-instrumentation: true
 enable-dot-net-auto-instrumentation: true
 enable-go-auto-instrumentation: false
 enable-nginx-auto-instrumentation: false
-enable-php-auto-instrumentation: true
+enable-php-auto-instrumentation: false
 enable-python-auto-instrumentation: true
 enable-node-js-auto-instrumentation: true
 enable-java-auto-instrumentation: true
