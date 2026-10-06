@@ -115,10 +115,10 @@ func generateK8SAttrPolicyRules(config K8sAttributeConfig) []rbacv1.PolicyRule {
 	return prs
 }
 
-// GenerateK8SAttrRbacRules returns cluster-scoped RBAC rules for the
+// GenerateClusterK8SAttrRbacRules returns cluster-scoped RBAC rules for the
 // k8sattributes processor. When filter.namespace is set, the rules are
 // namespace-scoped instead and this returns nil.
-func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
+func GenerateClusterK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
 	if config.Filter.Namespace != "" {
 		return nil, nil
 	}

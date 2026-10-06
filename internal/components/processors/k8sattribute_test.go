@@ -14,7 +14,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 )
 
-func TestGenerateK8SAttrRbacRules(t *testing.T) {
+func TestGenerateClusterK8SAttrRbacRules(t *testing.T) {
 	type args struct {
 		config any
 	}
@@ -438,7 +438,7 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 	}
 }
 
-func TestGenerateK8SAttrRbacRulesWithFilterNamespace(t *testing.T) {
+func TestGenerateClusterK8SAttrRbacRulesWithFilterNamespace(t *testing.T) {
 	tests := []struct {
 		name             string
 		config           any
