@@ -21,6 +21,7 @@ type cgroupRuntimeConfig struct {
 func newCgroupRuntimeParserBuilder() components.Builder[cgroupRuntimeConfig] {
 	return components.NewBuilder[cgroupRuntimeConfig]().
 		WithName("cgroup_runtime").
+		WithAlias("cgroupruntime").
 		WithSuppressedEnvVarsGen(cgroupRuntimeSuppressedEnvVars)
 }
 
