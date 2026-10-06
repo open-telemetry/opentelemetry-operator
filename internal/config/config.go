@@ -196,7 +196,7 @@ func New() Config {
 		EnableMultiInstrumentation:          true,
 		EnableApacheHttpdInstrumentation:    true,
 		EnableDotNetAutoInstrumentation:     true,
-		EnablePhpAutoInstrumentation:        true,
+		EnablePhpAutoInstrumentation:        false,
 		EnableGoAutoInstrumentation:         false,
 		EnableNginxAutoInstrumentation:      false,
 		EnablePythonAutoInstrumentation:     true,
