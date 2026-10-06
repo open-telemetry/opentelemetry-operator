@@ -13,4 +13,8 @@ issues: [932]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Auto-instrumentation in PHP applications is disabled by default in operator. Users can enable it by setting the
+  `--enable-php-instrumentation` or `ENABLE_PHP_AUTO_INSTRUMENTATION` environment variable to `true` in operator
+  and setting up the annotations `instrumentation.opentelemetry.io/inject-php` and `instrumentation.opentelemetry.io/otel-php-api-version`.
+  For more information, please refer to the documentation.
