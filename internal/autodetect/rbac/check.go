@@ -14,9 +14,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
-// CheckRBACPermissions checks if the operator has the needed permissions to
+// CheckClusterRBACPermissions checks if the operator has the needed permissions to
 // create cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
-func CheckRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
+func CheckClusterRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
 	rules := []*rbacv1.PolicyRule{
 		{
 			APIGroups: []string{"rbac.authorization.k8s.io"},

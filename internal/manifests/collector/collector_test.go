@@ -34,7 +34,7 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 				ErrorAsWarning: true,
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.NotAvailable,
+						CreateClusterRBACPermissions: autoRbac.NotAvailable,
 					},
 				},
 				Reviewer: &mockReviewer{},
@@ -54,7 +54,7 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 				ErrorAsWarning: false,
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.NotAvailable,
+						CreateClusterRBACPermissions: autoRbac.NotAvailable,
 					},
 				},
 				Reviewer: &mockReviewer{},
@@ -74,7 +74,7 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 				ErrorAsWarning: true,
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.Available,
+						CreateClusterRBACPermissions: autoRbac.Available,
 					},
 				},
 				Reviewer: &mockReviewer{},
@@ -94,7 +94,7 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 				ErrorAsWarning: true,
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.NotAvailable,
+						CreateClusterRBACPermissions: autoRbac.NotAvailable,
 					},
 				},
 				Reviewer: nil,
@@ -114,7 +114,7 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 				ErrorAsWarning: true,
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.Available,
+						CreateClusterRBACPermissions: autoRbac.Available,
 					},
 				},
 				Reviewer: &mockReviewer{},
@@ -254,7 +254,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.Config{
 					Internal: config.Internal{
-						CreateRBACPermissions: autoRbac.Available,
+						CreateClusterRBACPermissions: autoRbac.Available,
 					},
 				},
 			},
