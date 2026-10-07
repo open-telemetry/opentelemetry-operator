@@ -20963,6 +20963,16 @@ resource resizes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>revisionHistoryLimit</b></td>
+        <td>integer</td>
+        <td>
+          RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontext-1">securityContext</a></b></td>
         <td>object</td>
         <td>
@@ -33085,6 +33095,16 @@ that can be run in a high availability mode are consistent-hashing and per-node.
         <td>object</td>
         <td>
           Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>revisionHistoryLimit</b></td>
+        <td>integer</td>
+        <td>
+          RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
         </td>
         <td>false</td>
       </tr><tr>
