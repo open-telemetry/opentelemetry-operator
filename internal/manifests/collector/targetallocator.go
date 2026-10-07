@@ -44,6 +44,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			},
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Replicas:                  taSpec.Replicas,
+				RevisionHistoryLimit:      taSpec.RevisionHistoryLimit,
 				NodeSelector:              taSpec.NodeSelector,
 				Resources:                 taSpec.Resources,
 				ServiceAccount:            taSpec.ServiceAccount,

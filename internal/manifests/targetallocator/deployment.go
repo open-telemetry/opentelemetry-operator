@@ -32,7 +32,8 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.TargetAllocator.Spec.Replicas,
+			Replicas:             params.TargetAllocator.Spec.Replicas,
+			RevisionHistoryLimit: params.TargetAllocator.Spec.RevisionHistoryLimit,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
