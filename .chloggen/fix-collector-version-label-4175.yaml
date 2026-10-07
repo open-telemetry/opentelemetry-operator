@@ -1,0 +1,11 @@
+change_type: bug_fix
+component: collector
+issues: [4175]
+
+note: "Fix `app.kubernetes.io/version` label fallback to resolve version from default collector image (`--collector-image`) when `.spec.image` is omitted."
+
+subtext: |
+  When `.spec.image` is omitted from an OpenTelemetryCollector custom resource,
+  the operator now normalizes `.spec.image` upfront during reconciliation to use
+  the configured default collector image, ensuring all manifest generators stamp
+  the correct image version label instead of defaulting to `latest`.
