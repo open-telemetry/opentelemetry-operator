@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: fix permission issue when running in namespaced deployment
+
+# One or more tracking issues related to the change
+issues: [5326]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |-
+  when operaror runs with a service account that has limited permissions (no cluster role binding and WatchNamespace args set),
+  the webhook may not be able to list namespaces (requires cluster role binding), leading to failures in processing requests. 
+  This enhancement workarounds that issue by ignore the permissions error and continue processing the request.
+  Side effect of this change is that the webhook will not be able to inspect namespaces' annotation that it does not have access to, but it will still be able to inspect pod annotations.
