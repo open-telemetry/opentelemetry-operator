@@ -12,11 +12,11 @@ import (
 
 type TLSConfig struct {
 	// Instructs the operator to get the TLS profile from the cluster.
-	UseClusterProfile bool
+	UseClusterProfile bool `flag:"tls-cluster-profile" env:"TLS_CLUSTER_PROFILE" usage:"Retrieves the TLS profile (min version and ciphers) from the cluster. Supported only on OpenShift clusters. The TLS profile is obtained from APIServer CR." group:"TLS"`
 	// Configures TLS in operands created by the operator.
-	ConfigureOperands bool
-	MinVersion        string
-	CipherSuites      []string
+	ConfigureOperands bool     `flag:"tls-configure-operands" env:"TLS_CONFIGURE_OPERANDS" usage:"Configures TLS version and cyphers in operands." group:"TLS"`
+	MinVersion        string   `flag:"tls-min-version" env:"TLS_MIN_VERSION" usage:"Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants." group:"TLS"`
+	CipherSuites      []string `flag:"tls-cipher-suites" env:"TLS_CIPHER_SUITES" usage:"Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used" group:"TLS"`
 }
 
 // ApplyTLSConfig get the option from command argument (tlsConfig), check the validity through k8s apiflag
