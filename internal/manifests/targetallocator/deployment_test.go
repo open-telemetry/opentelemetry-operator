@@ -683,3 +683,28 @@ func TestDeploymentDNSConfig(t *testing.T) {
 	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }
+
+func TestDeploymentRevisionHistoryLimit(t *testing.T) {
+	// Test default (nil)
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.RevisionHistoryLimit)
+
+	// Test explicit value
+	limit := int32(5)
+	params.TargetAllocator.Spec.RevisionHistoryLimit = &limit
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.RevisionHistoryLimit)
+	assert.Equal(t, limit, *d2.Spec.RevisionHistoryLimit)
+}

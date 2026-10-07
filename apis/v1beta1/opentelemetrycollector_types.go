@@ -164,6 +164,10 @@ type TargetAllocatorEmbedded struct {
 	// that can be run in a high availability mode are consistent-hashing and per-node.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.
+	// +optional
+	// +kubebuilder:default:=10
+	RevisionHistoryLimit *int32 `json:"revisionHistoryLimit,omitempty"`
 	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`

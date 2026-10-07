@@ -78,6 +78,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 				},
 			},
 			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
+			RevisionHistoryLimit:                 params.OtelCol.Spec.RevisionHistoryLimit,
 			PodManagementPolicy:                  podManagementPolicy,
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,
