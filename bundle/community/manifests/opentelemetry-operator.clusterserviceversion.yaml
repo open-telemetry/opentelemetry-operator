@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-10-06T23:15:15Z"
+    createdAt: "2026-10-07T01:19:33Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -586,6 +586,8 @@ spec:
                 - name: ENABLE_LEADER_ELECTION
                   value: "true"
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: ENABLE_PHP_AUTO_INSTRUMENTATION
                   value: "true"
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.160.0
                 livenessProbe:

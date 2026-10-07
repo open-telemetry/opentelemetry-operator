@@ -69,5 +69,7 @@ spec:
             value: "true"
           - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
             value: "true"
+          - name: ENABLE_PHP_AUTO_INSTRUMENTATION
+            value: "true"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

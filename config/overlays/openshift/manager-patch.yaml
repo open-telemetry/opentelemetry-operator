@@ -46,6 +46,11 @@
 - op: add
   path: "/spec/template/spec/containers/0/env/-"
   value:
+    name: ENABLE_PHP_AUTO_INSTRUMENTATION
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
     name: OPENSHIFT_CREATE_DASHBOARD
     value: "true"
 - op: add
