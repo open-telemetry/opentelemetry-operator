@@ -3,6 +3,9 @@ kind: Test
 metadata:
   name: operator-metrics
 spec:
+  # The first step changes the operator Deployment, which restarts the operator
+  # and makes its webhook unavailable to tests running in parallel.
+  concurrent: false
   steps:
     - name: Enable ServiceMonitor and assert operator metrics
       try:
