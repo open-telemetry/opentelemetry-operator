@@ -29,6 +29,7 @@ type Settings[ComponentConfigType any] struct {
 	startupGen      ProbeGenerator[ComponentConfigType]
 	defaultsApplier Defaulter[ComponentConfigType]
 	envVarGen       EnvVarGenerator[ComponentConfigType]
+	suppressedGen   SuppressedEnvVarsGenerator[ComponentConfigType]
 	aliases         []string
 }
 
@@ -148,6 +149,12 @@ func (b Builder[ComponentConfigType]) WithEnvVarGen(envVarGen EnvVarGenerator[Co
 	})
 }
 
+func (b Builder[ComponentConfigType]) WithSuppressedEnvVarsGen(suppressedGen SuppressedEnvVarsGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.suppressedGen = suppressedGen
+	})
+}
+
 func (b Builder[ComponentConfigType]) WithDefaultsApplier(defaultsApplier Defaulter[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.defaultsApplier = defaultsApplier
@@ -166,6 +173,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		portParser:      o.portParser,
 		rbacGen:         o.rbacGen,
 		envVarGen:       o.envVarGen,
+		suppressedGen:   o.suppressedGen,
 		livenessGen:     o.livenessGen,
 		readinessGen:    o.readinessGen,
 		startupGen:      o.startupGen,

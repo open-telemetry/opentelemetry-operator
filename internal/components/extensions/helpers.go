@@ -11,8 +11,13 @@ import (
 )
 
 // registry holds a record of all known receiver parsers.
-var registry = map[string]components.Parser{
-	"health_check": components.NewBuilder[healthcheckV1Config]().
+var registry = make(map[string]components.Parser)
+
+var componentParsers = []components.Parser{
+	// cgroup_runtime, formerly cgroupruntime
+	// (open-telemetry/opentelemetry-collector-contrib#46773).
+	newCgroupRuntimeParserBuilder().MustBuild(),
+	components.NewBuilder[healthcheckV1Config]().
 		WithName("health_check").
 		WithPort(defaultHealthcheckV1Port).
 		WithDefaultsApplier(healthCheckV1AddressDefaulter).
@@ -24,16 +29,25 @@ var registry = map[string]components.Parser{
 			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 		}).
 		MustBuild(),
-	"jaeger_query": NewJaegerQueryExtensionParserBuilder().
+	NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
-	"k8s_leader_elector": components.NewBuilder[any]().
+	components.NewBuilder[any]().
 		WithName("k8s_leader_elector").
 		WithRbacGen(generatek8sleaderelectorRbacRules).
 		MustBuild(),
-	"k8s_observer": components.NewBuilder[k8sobserverConfig]().
+	components.NewBuilder[k8sobserverConfig]().
 		WithName("k8s_observer").
 		WithRbacGen(generatek8sobserverRbacRules).
 		MustBuild(),
+}
+
+func init() {
+	for _, parser := range componentParsers {
+		registry[parser.ParserType()] = parser
+		for _, alias := range parser.ParserAliases() {
+			registry[alias] = parser
+		}
+	}
 }
 
 // ParserFor returns a parser builder for the given exporter name.

@@ -1064,3 +1064,49 @@ func TestDeploymentHostPIDCanBeSet(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, d2.Spec.Template.Spec.HostPID)
 }
+
+func TestDeploymentRevisionHistoryLimit(t *testing.T) {
+	// Test default (nil — let Kubernetes apply its own default)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.RevisionHistoryLimit)
+
+	// Test explicit value
+	limit := int32(5)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-revisionhistorylimit",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				RevisionHistoryLimit: &limit,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.RevisionHistoryLimit)
+	assert.Equal(t, limit, *d2.Spec.RevisionHistoryLimit)
+}

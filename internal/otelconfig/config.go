@@ -332,6 +332,25 @@ func GetLivenessProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, err
 	return nil, nil
 }
 
+// GetSuppressedEnvVars returns the names of environment variables that enabled extensions suppress.
+func GetSuppressedEnvVars(c *v1beta1.Config, logger logr.Logger) (map[string]bool, error) {
+	suppressed := map[string]bool{}
+	for componentName := range GetEnabledComponents(c)[v1beta1.KindExtension] {
+		var extensionConfig any
+		if c.Extensions != nil {
+			extensionConfig = c.Extensions.Object[componentName]
+		}
+		names, err := extensions.ParserFor(componentName).GetSuppressedEnvVars(logger, extensionConfig)
+		if err != nil {
+			return nil, err
+		}
+		for _, name := range names {
+			suppressed[name] = true
+		}
+	}
+	return suppressed, nil
+}
+
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
 func GetReadinessProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, error) {

@@ -5,7 +5,7 @@ This test demonstrates how to export OpenTelemetry logs to OpenShift's cluster l
 ## Test Overview
 
 This test creates:
-1. A MinIO instance for LokiStack object storage
+1. The `openshift-logging` namespace and a SeaweedFS instance for LokiStack object storage
 2. A LokiStack instance for log storage and querying
 3. An OpenTelemetry Collector that processes and exports logs to LokiStack
 4. Log generation to test the end-to-end flow
@@ -15,23 +15,29 @@ This test creates:
 
 - OpenShift cluster (4.12+)
 - OpenTelemetry Operator installed
-- Red Hat OpenShift Logging Operator installed
+- Loki Operator installed
+- Cluster Observability Operator installed (the logging UI plugin step looks up its namespace; the plugin itself is only for debugging)
+- `logcli` installed (used to query the logs)
 - `oc` CLI tool configured
 - Appropriate cluster permissions
 
+The Red Hat OpenShift Logging Operator is not required.
+
 ## Configuration Resources
 
-### MinIO Object Storage
+### SeaweedFS Object Storage
 
-Deploy MinIO for LokiStack storage backend:
+Deploy SeaweedFS for LokiStack storage backend. The image is a multi-arch (amd64, arm64, ppc64le, s390x) build of the upstream SeaweedFS release, pinned by digest:
 
-**Configuration:** [`install-minio.yaml`](./install-minio.yaml)
+**Configuration:** [`install-seaweedfs.yaml`](./install-seaweedfs.yaml)
 
-Creates MinIO infrastructure:
+Creates SeaweedFS infrastructure:
 - 2Gi PersistentVolumeClaim for storage
-- MinIO deployment with demo credentials (tempo/supersecret)
+- SeaweedFS deployment (`weed mini`) with demo credentials (loki/supersecret) and a pre-created `loki` bucket
 - Service for internal cluster access
 - Secret with S3-compatible access configuration
+
+The `openshift-logging` namespace is created by the test ([`namespace.yaml`](./namespace.yaml)) so that the Red Hat OpenShift Logging Operator is not needed.
 
 ### LokiStack Instance
 
@@ -41,7 +47,7 @@ Deploy LokiStack for log storage:
 
 Creates a LokiStack with:
 - 1x.demo size for testing environments
-- S3-compatible storage via MinIO
+- S3-compatible storage via SeaweedFS
 - v13 schema with openshift-logging tenant mode
 - Integration with cluster logging infrastructure
 
@@ -84,9 +90,10 @@ Configures the OpenShift console plugin for:
 
 ## Deployment Steps
 
-1. **Install MinIO for object storage:**
+1. **Create the namespace and install SeaweedFS for object storage:**
    ```bash
-   oc apply -f install-minio.yaml
+   oc apply -f namespace.yaml
+   oc apply -f install-seaweedfs.yaml
    ```
 
 2. **Deploy LokiStack instance:**
@@ -114,9 +121,9 @@ Configures the OpenShift console plugin for:
 The test creates and verifies these resources:
 
 ### Storage Infrastructure
-- **MinIO**: Object storage backend with `tempo` bucket
-- **PVC**: 2Gi persistent volume for MinIO storage
-- **Secret**: `logging-loki-s3` with MinIO access credentials
+- **SeaweedFS**: Object storage backend with `loki` bucket
+- **PVC**: 2Gi persistent volume for SeaweedFS storage
+- **Secret**: `logging-loki-s3` with SeaweedFS access credentials
 
 ### Logging Stack
 - **LokiStack**: `logging-loki` instance in demo mode
@@ -152,8 +159,8 @@ Verify the logging infrastructure:
 # Check LokiStack status
 oc get lokistack logging-loki -o yaml
 
-# Check MinIO deployment
-oc get deployment minio -o yaml
+# Check SeaweedFS deployment
+oc get deployment seaweedfs -o yaml
 
 # View LokiStack gateway service
 oc get svc logging-loki-gateway-http
@@ -161,9 +168,9 @@ oc get svc logging-loki-gateway-http
 # Check collector service account permissions
 oc auth can-i create application --as=system:serviceaccount:openshift-logging:otel-collector-deployment
 
-# Port forward to MinIO for bucket verification
-oc port-forward svc/minio 9000:9000 &
-curl -u tempo:supersecret http://localhost:9000/minio/health/live  # Using demo test credentials
+# Port forward to SeaweedFS and list the bucket (Loki writes chunks after they are flushed)
+oc port-forward svc/seaweedfs 8333:8333 &
+curl --aws-sigv4 "aws:amz:us-east-1:s3" --user loki:supersecret "http://localhost:8333/loki?list-type=2"  # Using demo test credentials
 
 # Check collector metrics
 oc port-forward svc/otel-collector 8888:8888 &
@@ -173,7 +180,7 @@ curl http://localhost:8888/metrics | grep otelcol_exporter
 ## Verification
 
 The test verifies:
-- ✅ MinIO is deployed and accessible as object storage
+- ✅ SeaweedFS is deployed and accessible as object storage
 - ✅ LokiStack instance is ready and configured
 - ✅ OpenTelemetry Collector has proper RBAC permissions
 - ✅ Collector is configured with LokiStack OTLP exporter
@@ -186,7 +193,7 @@ The test verifies:
 ## Key Features
 
 - **LokiStack Integration**: Native integration with OpenShift cluster logging
-- **Object Storage**: MinIO backend for log persistence
+- **Object Storage**: SeaweedFS backend for log persistence
 - **Authentication**: Bearer token authentication with service accounts
 - **Log Processing**: Kubernetes attributes and log transformation
 - **OTLP Protocol**: Uses OTLP HTTP for log export to LokiStack
@@ -196,7 +203,7 @@ The test verifies:
 ## Configuration Notes
 
 - LokiStack runs in `1x.demo` size for testing environments
-- MinIO uses ephemeral storage with demo credentials (tempo/supersecret) - **FOR TESTING ONLY**
+- SeaweedFS stores its data on a 2Gi PersistentVolumeClaim that is removed with the test and uses demo credentials (loki/supersecret) - **FOR TESTING ONLY**
 - Collector uses bearer token authentication for LokiStack access
 - Service CA certificate is used for TLS communication with LokiStack
 - Log processors add Kubernetes metadata and normalize severity levels

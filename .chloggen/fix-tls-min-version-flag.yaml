@@ -2,13 +2,13 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: opamp
+component: operator
 
-# A brief description of the change.  Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Only require workload patch permissions when the AcceptsRestartCommand capability is enabled, and reject restart commands when it is not.
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Fix the `--tls-min-version` CLI flag being ignored because it was matched against the wrong flag name.
 
 # One or more tracking issues related to the change
-issues: [5573]
+issues: [3565]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
