@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -95,6 +96,24 @@ type allocator struct {
 	timeToAssign          metric.Float64Histogram
 	targetsRemaining      metric.Int64Gauge
 	targetsUnassigned     metric.Int64Gauge
+
+	// targetsRemainingPerJob holds the counts last recorded for targetsRemaining when the
+	// targetallocator.targetsremainingattributes feature gate is enabled.
+	targetsRemainingPerJob map[jobNamespace]int64
+}
+
+// jobNamespace identifies the targetsRemaining series for a job and namespace.
+type jobNamespace struct {
+	job       string
+	namespace string
+}
+
+func (k jobNamespace) attributes() metric.MeasurementOption {
+	// Targets without a __meta_kubernetes_namespace label, such as static targets, have no namespace.
+	if k.namespace == "" {
+		return metric.WithAttributes(attribute.String("job.name", k.job))
+	}
+	return metric.WithAttributes(attribute.String("job.name", k.job), attribute.String("k8s.namespace.name", k.namespace))
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -106,12 +125,13 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("method", "SetTargets"), attribute.String("strategy", a.strategy.GetName())))
 	}()
 
-	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 
 	a.m.Lock()
 	defer a.m.Unlock()
+
+	a.recordTargetsRemaining(targets)
 
 	// Check for target changes
 	targetsDiff := diff.Maps(a.targetItems, targetMap)
@@ -120,6 +140,31 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		a.handleTargets(targetsDiff)
 	}
 	a.refreshExistingTargetLabels(targetMap)
+}
+
+// recordTargetsRemaining records the number of targets kept after filtering. With the
+// targetallocator.targetsremainingattributes feature gate enabled, it records one value per job and
+// namespace, and records zero for a job and namespace that no longer have targets so that their
+// last value is not reported indefinitely.
+// See open-telemetry/opentelemetry-operator#4637.
+func (a *allocator) recordTargetsRemaining(targets []*target.Item) {
+	if !featuregate.TargetsRemainingAttributes.IsEnabled() {
+		a.targetsRemaining.Record(context.Background(), int64(len(targets)))
+		return
+	}
+	counts := make(map[jobNamespace]int64)
+	for _, item := range targets {
+		counts[jobNamespace{job: item.JobName, namespace: item.Labels.Get("__meta_kubernetes_namespace")}]++
+	}
+	for key := range a.targetsRemainingPerJob {
+		if _, ok := counts[key]; !ok {
+			a.targetsRemaining.Record(context.Background(), 0, key.attributes())
+		}
+	}
+	for key, count := range counts {
+		a.targetsRemaining.Record(context.Background(), count, key.attributes())
+	}
+	a.targetsRemainingPerJob = counts
 }
 
 // refreshExistingTargetLabels replaces the stored Item of every target that is present
