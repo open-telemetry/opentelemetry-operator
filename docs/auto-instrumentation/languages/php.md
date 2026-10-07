@@ -1,6 +1,6 @@
 # PHP auto-instrumentation
 
-PHP auto-instrumentation also honors the following annotations.
+PHP auto-instrumentation honors the following annotations.
 
 | Annotation                                                | Valid Values                                               | Default   |
 |-----------------------------------------------------------|------------------------------------------------------------|-----------|
