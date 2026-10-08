@@ -20,6 +20,9 @@ autoinstrumentation-java=2.31.1
 # Should match value in autoinstrumentation/nodejs/package.json
 autoinstrumentation-nodejs=0.78.0
 
+# Represents the current release of PHP instrumentation.
+autoinstrumentation-php=1.4.1
+
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
 autoinstrumentation-python=0.66b0

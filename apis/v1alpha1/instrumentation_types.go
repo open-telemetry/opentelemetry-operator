@@ -242,12 +242,6 @@ type Php struct {
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
-	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 200Mi.
-	//
-	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
-
 	// Env defines PHP specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.

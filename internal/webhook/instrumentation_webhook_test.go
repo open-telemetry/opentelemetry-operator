@@ -543,23 +543,6 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			warnings: []string{"sampler type not set"},
 		},
 		{
-			name: "PHP with volume and volumeSizeLimit",
-			err:  "spec.php.volumeClaimTemplate and spec.php.volumeSizeLimit cannot both be defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Php: v1alpha1.Php{
-						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
-							Spec: corev1.PersistentVolumeClaimSpec{
-								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-							},
-						},
-						VolumeSizeLimit: &defaultVolumeSize,
-					},
-				},
-			},
-			warnings: []string{"sampler type not set"},
-		},
-		{
 			name: "Python with volume and volumeSizeLimit",
 			err:  "spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined",
 			inst: v1alpha1.Instrumentation{
@@ -691,11 +674,6 @@ func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 			name: "nodejs volumeSizeLimit deprecated",
 			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{NodeJS: v1alpha1.NodeJS{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead",
-		},
-		{
-			name: "php volumeSizeLimit deprecated",
-			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Php: v1alpha1.Php{VolumeSizeLimit: &defaultSize}}},
-			want: "spec.php.volumeSizeLimit is deprecated and will be removed in a future release; use spec.php.volume.size instead",
 		},
 		{
 			name: "python volumeSizeLimit deprecated",

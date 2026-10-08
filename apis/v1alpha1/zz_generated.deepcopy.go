@@ -1404,11 +1404,6 @@ func (in *OpenTelemetryTargetAllocatorPrometheusCR) DeepCopy() *OpenTelemetryTar
 func (in *Php) DeepCopyInto(out *Php) {
 	*out = *in
 	in.VolumeClaimTemplate.DeepCopyInto(&out.VolumeClaimTemplate)
-	if in.VolumeSizeLimit != nil {
-		in, out := &in.VolumeSizeLimit, &out.VolumeSizeLimit
-		x := (*in).DeepCopy()
-		*out = &x
-	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
