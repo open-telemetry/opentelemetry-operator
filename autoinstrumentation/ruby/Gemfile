@@ -1,3 +1,0 @@
-source "https://rubygems.org"
-
-gem "opentelemetry-auto-instrumentation", "0.1.0"
