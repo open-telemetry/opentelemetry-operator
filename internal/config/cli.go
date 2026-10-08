@@ -7,8 +7,6 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
-
-	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 )
 
 var args = os.Args[1:]
@@ -25,7 +23,6 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("enable-leader-election", cfg.EnableLeaderElection,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	f.Bool("create-rbac-permissions", cfg.CreateRBACPermissions == autoRBAC.Available, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	f.Bool("openshift-create-dashboard", cfg.OpenshiftCreateDashboard, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
 	f.Bool("enable-multi-instrumentation", cfg.EnableMultiInstrumentation, "Controls whether the operator supports multi instrumentation")
 	f.Bool("enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
@@ -156,8 +153,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.TLS.UseClusterProfile, _ = f.GetBool("tls-cluster-profile")
 			case "tls-configure-operands":
 				cfg.TLS.ConfigureOperands, _ = f.GetBool("tls-configure-operands")
-			case "min-tls-version":
-				cfg.TLS.MinVersion, _ = f.GetString("min-tls-version")
+			case "tls-min-version":
+				cfg.TLS.MinVersion, _ = f.GetString("tls-min-version")
 			case "tls-cipher-suites":
 				cfg.TLS.CipherSuites, _ = f.GetStringSlice("tls-cipher-suites")
 			case "zap-message-key":
@@ -172,13 +169,6 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
 			case "watch-namespace":
 				cfg.WatchNamespace, _ = f.GetString("watch-namespace")
-			case "create-rbac-permissions":
-				val, _ := f.GetBool("create-rbac-permissions")
-				if val {
-					cfg.CreateRBACPermissions = autoRBAC.Available
-				} else {
-					cfg.CreateRBACPermissions = autoRBAC.NotAvailable
-				}
 			case "openshift-webhook-replicas":
 				cfg.OpenShiftWebhookReplicas, _ = f.GetInt32("openshift-webhook-replicas")
 			}

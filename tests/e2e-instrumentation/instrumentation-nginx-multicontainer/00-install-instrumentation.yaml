@@ -20,7 +20,7 @@ spec:
     - jaeger
     - b3
   nginx:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-2
     attrs:
     - name: NginxModuleOtelMaxQueueSize
       value: "4096"

@@ -23,6 +23,7 @@ type GenericParser[T any] struct {
 	portParser      PortParser[T]
 	rbacGen         RBACRuleGenerator[T]
 	envVarGen       EnvVarGenerator[T]
+	suppressedGen   SuppressedEnvVarsGenerator[T]
 	livenessGen     ProbeGenerator[T]
 	readinessGen    ProbeGenerator[T]
 	startupGen      ProbeGenerator[T]
@@ -106,6 +107,17 @@ func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config an
 		return nil, err
 	}
 	return g.envVarGen(logger, parsed)
+}
+
+func (g *GenericParser[T]) GetSuppressedEnvVars(logger logr.Logger, config any) ([]string, error) {
+	if g.suppressedGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.suppressedGen(logger, parsed)
 }
 
 func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config any) ([]corev1.ServicePort, error) {

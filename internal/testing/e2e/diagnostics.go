@@ -191,7 +191,7 @@ func podStatus(p corev1.Pod) string {
 		}
 	}
 	b.WriteByte('\n')
-	for _, cst := range append(append([]corev1.ContainerStatus{}, p.Status.InitContainerStatuses...), p.Status.ContainerStatuses...) {
+	for _, cst := range slices.Concat(p.Status.InitContainerStatuses, p.Status.ContainerStatuses) {
 		fmt.Fprintf(&b, "  container %s: ready=%t restarts=%d image=%s state=%s\n",
 			cst.Name, cst.Ready, cst.RestartCount, cst.Image, containerState(cst.State))
 	}

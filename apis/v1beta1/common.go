@@ -115,6 +115,10 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
+	// RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.
+	// +optional
+	// +kubebuilder:default:=10
+	RevisionHistoryLimit *int32 `json:"revisionHistoryLimit,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
 	//
@@ -206,6 +210,10 @@ type OpenTelemetryCommonFields struct {
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
+	// EnableServiceLinks sets enableServiceLinks on the generated pods. Defaults to true.
+	// +optional
+	// +kubebuilder:default:=true
+	EnableServiceLinks *bool `json:"enableServiceLinks,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.

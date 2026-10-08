@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestStatefulSetNewDefault(t *testing.T) {
@@ -233,12 +234,12 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedAnnotations := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
-		"operator.opentelemetry.io/prometheus-annotations-added": "true",
+		"annotation-key":                            "annotation-value",
+		"opentelemetry-operator-config/sha256":      "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
+		"prometheus.io/path":                        "/metrics",
+		"prometheus.io/port":                        "8888",
+		"prometheus.io/scrape":                      "true",
+		manifestutils.PrometheusAnnotationsAddedKey: "true",
 	}
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)
@@ -853,6 +854,49 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }
 
+func TestStatefulSetEnableServiceLinks(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.EnableServiceLinks)
+
+	// Test enableServiceLinks=false
+	enableServiceLinks := false
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-without-servicelinks",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				EnableServiceLinks: &enableServiceLinks,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.EnableServiceLinks)
+	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
+}
+
 func TestStatefulSetDNSConfig(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
@@ -1082,4 +1126,53 @@ func TestStatefulSetPodManagementPolicy(t *testing.T) {
 			assert.Equal(t, test.expectedPodManagementPolicy, ss.Spec.PodManagementPolicy)
 		})
 	}
+}
+
+func TestStatefulSetRevisionHistoryLimit(t *testing.T) {
+	// Test default (nil)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+		},
+	}
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, ss1.Spec.RevisionHistoryLimit)
+
+	// Test explicit value
+	limit := int32(3)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				RevisionHistoryLimit: &limit,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, ss2.Spec.RevisionHistoryLimit)
+	assert.Equal(t, limit, *ss2.Spec.RevisionHistoryLimit)
 }

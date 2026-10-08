@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
@@ -290,12 +291,12 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedAnnotations := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
-		"operator.opentelemetry.io/prometheus-annotations-added": "true",
+		"annotation-key":                            "annotation-value",
+		"opentelemetry-operator-config/sha256":      "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
+		"prometheus.io/path":                        "/metrics",
+		"prometheus.io/port":                        "8888",
+		"prometheus.io/scrape":                      "true",
+		manifestutils.PrometheusAnnotationsAddedKey: "true",
 	}
 
 	// verify
@@ -721,6 +722,49 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	d2, err := DaemonSet(params2)
 	require.NoError(t, err)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
+
+func TestDaemonsetEnableServiceLinks(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.EnableServiceLinks)
+
+	// Test enableServiceLinks=false
+	enableServiceLinks := false
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-without-servicelinks",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				EnableServiceLinks: &enableServiceLinks,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.EnableServiceLinks)
+	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
 }
 
 func TestDaemonSetDNSConfig(t *testing.T) {

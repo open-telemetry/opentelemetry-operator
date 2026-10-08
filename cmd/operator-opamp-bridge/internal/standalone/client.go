@@ -209,8 +209,8 @@ func (c *Client) CheckPermissions(ctx context.Context, agents []config.Standalon
 
 // ListRequiredPermissions builds the Kubernetes permissions needed for standalone watches and configured agents.
 // remoteConfigEnabled adds update permissions for managed ConfigMaps and workloads because applying config triggers rollouts.
-func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfigEnabled bool) ([]bridgemanager.Permission, error) {
-	perms := []bridgemanager.Permission{}
+func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfigEnabled bool) ([]config.Permission, error) {
+	perms := []config.Permission{}
 	namespaces := namespacesForAgents(agents)
 	for _, rule := range []struct {
 		apiGroup string
@@ -223,7 +223,7 @@ func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfig
 	} {
 		for _, namespace := range namespaces {
 			for _, verb := range []string{"list", "watch"} {
-				perms = append(perms, bridgemanager.Permission{Verb: verb, APIGroup: rule.apiGroup, Resource: rule.resource, Namespace: namespace})
+				perms = append(perms, config.Permission{Verb: verb, APIGroup: rule.apiGroup, Resource: rule.resource, Namespace: namespace})
 			}
 		}
 	}
@@ -233,17 +233,17 @@ func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfig
 		if err != nil {
 			return nil, err
 		}
-		perms = append(perms, bridgemanager.Permission{Verb: "get", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
+		perms = append(perms, config.Permission{Verb: "get", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
 		if remoteConfigEnabled {
-			perms = append(perms, bridgemanager.Permission{Verb: "patch", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
+			perms = append(perms, config.Permission{Verb: "patch", APIGroup: "apps", Resource: workloadResource, Namespace: agent.Namespace, Name: agent.WorkloadRef.Name})
 		}
 		for _, entry := range agent.Config {
 			if entry.Kind != config.StandaloneConfigEntryKindConfigMap {
 				continue
 			}
-			perms = append(perms, bridgemanager.Permission{Verb: "get", Resource: "configmaps", Namespace: agent.Namespace, Name: entry.Name})
+			perms = append(perms, config.Permission{Verb: "get", Resource: "configmaps", Namespace: agent.Namespace, Name: entry.Name})
 			if remoteConfigEnabled {
-				perms = append(perms, bridgemanager.Permission{Verb: "update", Resource: "configmaps", Namespace: agent.Namespace, Name: entry.Name})
+				perms = append(perms, config.Permission{Verb: "update", Resource: "configmaps", Namespace: agent.Namespace, Name: entry.Name})
 			}
 		}
 	}
@@ -300,7 +300,7 @@ func (c *Client) getConfigMapFile(namespace string, entry config.StandaloneConfi
 
 // applyConfigMapFile is called when an opamp server pushes config for an agent. It validates the config, updates the local
 // k8s configmap and triggers a rolling restart of the relevant workload.
-func (c *Client) applyConfigMapFile(namespace, workloadType, workloadName string, entry config.StandaloneConfigEntry, configFile *protobufs.AgentConfigFile) error {
+func (c *Client) applyConfigMapFile(namespace, workloadType, workloadName string, entry config.StandaloneConfigEntry, configFile *protobufs.AgentConfigObject) error {
 	if len(configFile.Body) == 0 {
 		return errors.New("invalid config to apply: config is empty")
 	}
@@ -395,7 +395,7 @@ var _ operator.ConfigApplier = &scopedApplier{}
 
 // Apply writes the named remote config entry for this standalone agent.
 // name must match one entry from the agent's standalone config map.
-func (s *scopedApplier) Apply(name string, configFile *protobufs.AgentConfigFile) error {
+func (s *scopedApplier) Apply(name string, configFile *protobufs.AgentConfigObject) error {
 	entry, ok := s.agent.Config[name]
 	if !ok {
 		return fmt.Errorf("standalone agent %q does not manage config %q", s.agent.WorkloadRef.Name, name)

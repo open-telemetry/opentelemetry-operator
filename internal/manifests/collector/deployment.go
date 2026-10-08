@@ -35,7 +35,8 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: manifestutils.GetDesiredReplicas(params.OtelCol),
+			Replicas:             manifestutils.GetDesiredReplicas(params.OtelCol),
+			RevisionHistoryLimit: params.OtelCol.Spec.RevisionHistoryLimit,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
@@ -57,6 +58,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					HostUsers:                     params.OtelCol.Spec.HostUsers,
 					HostAliases:                   params.OtelCol.Spec.HostAliases,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					EnableServiceLinks:            params.OtelCol.Spec.EnableServiceLinks,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
 					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,

@@ -8,6 +8,10 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:98764
+  tcp_log:
+    listen_address: 0.0.0.0:54526
+  udp_log:
+    listen_address: 0.0.0.0:54526
 exporters:
   debug: {}
   prometheus:
@@ -29,3 +33,6 @@ service:
     metrics:
       receivers: [otlp]
       exporters: [prometheus]
+    logs:
+      receivers: [tcp_log, udp_log]
+      exporters: [debug]

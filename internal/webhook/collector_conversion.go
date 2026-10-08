@@ -13,6 +13,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 )
 
 func OtelColConvertTo(otc *v1alpha1.OpenTelemetryCollector, dstRaw any) error {
@@ -299,7 +300,7 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []v1alpha1.PortsSpec {
 
 func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	c := in.DeepCopy()
-	configYaml, err := c.Spec.Config.Yaml()
+	configYaml, err := otelconfig.RenderYAML(&c.Spec.Config)
 	if err != nil {
 		return nil, err
 	}

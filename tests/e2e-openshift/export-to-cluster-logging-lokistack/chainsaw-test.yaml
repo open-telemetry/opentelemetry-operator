@@ -4,8 +4,12 @@ metadata:
   name: export-to-cluster-logging-lokistack
 spec:
   namespace: chainsaw-incllogs
-  description: Tests shipping of logs to OpenShift in-cluster Logging LokiStack instance using OpenTelemetry collector. The tests requires the Loki, OpenTelemetry and Cluster Observability Operator to be installed along with logcli
+  description: Tests shipping of logs to OpenShift in-cluster Logging LokiStack instance using OpenTelemetry collector. The tests requires the Loki, OpenTelemetry and Cluster Observability Operator to be installed along with logcli. The Red Hat OpenShift Logging Operator is not required
   steps:
+  - name: Create the openshift-logging namespace
+    try:
+    - apply:
+        file: namespace.yaml
   - name: Create the OTEL collector instance
     try:
     - script:
@@ -26,12 +30,25 @@ spec:
         file: otel-collector.yaml
     - assert:
         file: otel-collector-assert.yaml
-  - name: Install Minio instance
+  - name: Install SeaweedFS instance
     try:
     - apply:
-        file: install-minio.yaml
+        file: install-seaweedfs.yaml
     - assert:
-        file: install-minio-assert.yaml
+        file: install-seaweedfs-assert.yaml
+    # The global catch only looks at the test namespace; the storage lives in openshift-logging.
+    catch:
+    - events:
+        namespace: openshift-logging
+    - describe:
+        apiVersion: v1
+        kind: Pod
+        namespace: openshift-logging
+        selector: app.kubernetes.io/name=seaweedfs
+        showEvents: true
+    - podLogs:
+        namespace: openshift-logging
+        selector: app.kubernetes.io/name=seaweedfs
   - name: Create the LokiStack instance
     try:
     - command:

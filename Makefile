@@ -76,7 +76,7 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # registry versions, letting tests run against local changes before they are merged
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
-TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink python ruby
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink php python ruby
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -140,7 +140,7 @@ endif
 
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.36
+KUBE_VERSION ?= 1.37
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 CHAINSAW_SELECTOR := $(shell [ "$(shell printf '%s\n' "$(KUBE_VERSION)" "1.29" | sort -V | head -n1)" = "1.29" ] && echo "--selector sidecar=native" || echo "--selector sidecar=legacy")
@@ -433,11 +433,18 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." paths="./apis/..." output:crd:artifacts:config=${MANIFEST_DIR}
 
-# Run tests, including the in-process target allocator integration tests (they need
-# no cluster or network, so they run unconditionally here).
+# Run tests in every Go module in the repository, including the in-process target
+# allocator integration tests (they need no cluster or network, so they run
+# unconditionally here).
 .PHONY: test
 test: gotestsum
 	ENVTEST_K8S_VERSION=$(KUBE_VERSION) $(GOTESTSUM) -- ${GOTEST_OPTS} ${GOTEST_COVER_OPTS} ./...
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		if [ "$$dir" != "." ] && [ "$$dir" != "./cmd/otel-allocator/integrationtest" ]; then \
+			echo "Running tests in $$dir"; \
+			(cd $$dir && $(GOTESTSUM) -- ${GOTEST_OPTS} ./...); \
+		fi \
+	done
 	$(MAKE) ta-integration-test
 
 # Regenerate the conformance goldens from raw Prometheus (promtool).
@@ -456,24 +463,38 @@ ta-integration-test: gotestsum
 
 # Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
-precommit: fmt vet lint test ensure-update-is-noop
+precommit: fmt vet lint test ensure-update-is-noop chlog-check
+
+# Check that the branch adds a changelog entry when it changes code.
+# Skip with: CHLOG=skip make precommit
+.PHONY: chlog-check
+chlog-check:
+	@./hack/check-changelog-entry.sh
 
 ##@ Lint and Format
-# Run formatters
+# Run formatters in every Go module in the repository
 .PHONY: fmt
 fmt: golangci-lint
-	go fmt ./...
-	$(GOLANGCI_LINT) run --fix
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running fmt in $$dir"; \
+		(cd $$dir && $(GOLANGCI_LINT) run --fix); \
+	done
 
-# Run go vet against code
+# Run go vet in every Go module in the repository
 .PHONY: vet
 vet:
-	go vet ./...
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running vet in $$dir"; \
+		(cd $$dir && go vet ./...); \
+	done
 
-# Run go lint against code
+# Run go lint in every Go module in the repository
 .PHONY: lint
 lint: golangci-lint
-	$(GOLANGCI_LINT) run
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "Running lint in $$dir"; \
+		(cd $$dir && $(GOLANGCI_LINT) run); \
+	done
 
 # Run go mod tidy in every Go module in the repository
 .PHONY: tidy
@@ -903,11 +924,11 @@ GOTESTSUM ?= $(LOCALBIN)/gotestsum
 GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.8.1
+KUSTOMIZE_VERSION ?= v5.8.2
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.21.0
+CONTROLLER_TOOLS_VERSION ?= v0.22.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.2
+GOLANGCI_LINT_VERSION ?= v2.14.0
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.33.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -932,10 +953,27 @@ install-tools: kustomize golangci-lint kind controller-gen crdoc operator-sdk ch
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
-# Download golangci-lint locally if necessary
+# Download golangci-lint locally if necessary. Use the release binary rather than go install:
+# gci formats with the go/printer of the Go version that built golangci-lint, and it must match
+# the Go version gofumpt is based on. See golangci/golangci-lint#6814.
+# A binary built by go install reports a "mod sum" in its version output and is replaced.
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	@{ \
+	set -e ;\
+	if [ "$$($(GOLANGCI_LINT) version --short 2>/dev/null)" = "$(GOLANGCI_LINT_VERSION:v%=%)" ] && \
+		! $(GOLANGCI_LINT) version 2>&1 | grep -q 'mod sum' ; then \
+		exit 0; \
+	fi ;\
+	TMP_DIR=$$(mktemp -d) ;\
+	NAME=golangci-lint-$(GOLANGCI_LINT_VERSION:v%=%)-`go env GOOS`-`go env GOARCH` ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/golangci-lint.tar.gz https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/$$NAME.tar.gz ;\
+	gzip -t $$TMP_DIR/golangci-lint.tar.gz || { echo "ERROR: downloaded golangci-lint archive is corrupt or incomplete" >&2; exit 1; } ;\
+	tar xzf $$TMP_DIR/golangci-lint.tar.gz -C $$TMP_DIR --strip-components=1 $$NAME/golangci-lint ;\
+	[ -d $(LOCALBIN) ] || mkdir -p $(LOCALBIN) ;\
+	mv $$TMP_DIR/golangci-lint $(GOLANGCI_LINT) ;\
+	rm -rf $$TMP_DIR ;\
+	}
 
 # Download kind locally if necessary
 .PHONY: kind

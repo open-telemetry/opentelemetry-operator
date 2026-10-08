@@ -1,6 +1,6 @@
 # The Dockerfile's resulting image is purpose-built for executing OpenTelemetry Operator e2e tests within the OpenShift release (https://github.com/openshift/release) using Prow CI.
 
-FROM docker.io/library/golang:1.27@sha256:f44f6e88636cfb311f9ebace870ded69d943f227bb3cb27d32ffd84ea18c43ea
+FROM docker.io/library/golang:1.27@sha256:e0174e51e81218523251d85d248a90d24c3d5e81543b4f07a5d66229397db190
 
 # Copy the repository files
 COPY . /tmp/opentelemetry-operator

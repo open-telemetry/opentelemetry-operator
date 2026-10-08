@@ -349,7 +349,7 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 		agent.logger.Error(err, "failed to list instances")
 		return nil, err
 	}
-	instanceMap := map[string]*protobufs.AgentConfigFile{}
+	instanceMap := map[string]*protobufs.AgentConfigObject{}
 	for _, instance := range instances {
 		if instance.GetDeletionTimestamp() != nil {
 			continue
@@ -364,7 +364,7 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 			if contentType == "" {
 				contentType = "yaml"
 			}
-			instanceMap[key] = &protobufs.AgentConfigFile{
+			instanceMap[key] = &protobufs.AgentConfigObject{
 				Body:        file.Body,
 				ContentType: contentType,
 			}
@@ -419,7 +419,7 @@ func (agent *Agent) rebuildAppliedKeys() error {
 
 // applyRemoteConfig receives a remote configuration from a remote server of the following form:
 //
-//	map[resource key] -> AgentConfigFile body
+//	map[resource key] -> AgentConfigObject body
 //
 // For every key in the received remote configuration, the agent attempts to apply it via the configured
 // applier. If an entry fails to apply, the agent continues to the next entry. The agent stores the
@@ -487,6 +487,11 @@ func (agent *Agent) Shutdown() {
 func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
 	switch command.GetType() {
 	case protobufs.CommandType_CommandType_Restart:
+		if !agent.config.RestartCommandEnabled() {
+			err := errors.New("restart command rejected: AcceptsRestartCommand capability is not enabled")
+			agent.logger.Error(err, "Received restart command without capability")
+			return err
+		}
 		agent.logger.Info("Received restart command, triggering collector restart")
 		if err := agent.applier.Restart(ctx); err != nil {
 			agent.logger.Error(err, "Failed to restart collector on command")

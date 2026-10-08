@@ -4,7 +4,6 @@
 package controllers
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -121,7 +120,7 @@ func TestDefaultFSGroupOnOpenShift(t *testing.T) {
 				}
 			}
 
-			ctx := context.Background()
+			ctx := t.Context()
 			params, err := r.GetParams(ctx, instance)
 			require.NoError(t, err)
 

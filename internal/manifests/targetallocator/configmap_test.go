@@ -668,9 +668,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			configStr, err := testCase.input.Yaml()
-			require.NoError(t, err)
-			actual, err := getScrapeConfigsFromOtelConfig(configStr)
+			actual, err := getScrapeConfigsFromOtelConfig(testCase.input)
 			assert.Equal(t, testCase.wantErr, err)
 			assert.Equal(t, testCase.want, actual)
 		})

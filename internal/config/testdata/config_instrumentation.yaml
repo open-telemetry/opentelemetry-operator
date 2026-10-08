@@ -3,12 +3,44 @@ auto-instrumentation-go-image: foobar:1
 auto-instrumentation-apache-httpd-image: bar:1
 instrumentations:
   spec:
+    exporter:
+      endpoint: http://$(OTEL_NODE_IP):4317
+      tls:
+        secretName: exporter-tls
+        configMapName: exporter-ca
     resource:
       resourceAttributes:
         foo: bar
+      addK8sUIDAttributes: true
+    defaults:
+      useLabelsForResourceAttributes: true
+    imagePullPolicy: IfNotPresent
+    initContainerSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+    env:
+      - name: OTEL_NODE_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     java:
       image: myjavainstrumentation:latest
+      volumeLimitSize: 100Mi
       env:
         - name: foo
           value: myenvvalue
-
+        - name: JAVA_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+    apacheHttpd:
+      image: myapacheinstrumentation:latest
+      configPath: /usr/local/apache2/conf
+      volumeLimitSize: 50Mi
+    nginx:
+      image: mynginxinstrumentation:latest
+      configFile: /etc/nginx/nginx.conf
+    go:
+      image: mygoinstrumentation:latest
+      securityContext:
+        runAsNonRoot: true

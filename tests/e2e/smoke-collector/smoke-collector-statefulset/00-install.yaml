@@ -27,6 +27,7 @@ spec:
             storage: 1Gi
   # common pod-spec fields
   shareProcessNamespace: true
+  enableServiceLinks: false
   nodeSelector:
     kubernetes.io/os: linux
   affinity:

@@ -4,7 +4,6 @@
 package controllers
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -144,7 +143,9 @@ func TestMaybeAddFinalizer(t *testing.T) {
 
 			params := manifests.Params{
 				Config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 
@@ -244,17 +245,21 @@ func TestRemoveFinalizer(t *testing.T) {
 				log:    logr.Discard(),
 				scheme: reconcilerTestScheme,
 				config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 
 			params := manifests.Params{
 				Config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 
-			deletionTS, err := removeFinalizer(context.Background(), reconciler, params, instance)
+			deletionTS, err := removeFinalizer(t.Context(), reconciler, params, instance)
 
 			if tc.expectError {
 				require.Error(t, err)

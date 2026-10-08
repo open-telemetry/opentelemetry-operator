@@ -15,6 +15,7 @@ spec:
         pod-annotation2: value2
     spec:
       shareProcessNamespace: true
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 600
       nodeSelector:
         kubernetes.io/os: linux

@@ -45,8 +45,8 @@ func TestManager_StartStartsRuntimesBeforeKubernetesClient(t *testing.T) {
 
 func TestManager_NewRequiresPermissionReviewClientWithRequiredPermissions(t *testing.T) {
 	manager, err := New(
-		WithRequiredPermissions(func() ([]Permission, error) {
-			return []Permission{{Verb: "get", Resource: "pods"}}, nil
+		WithRequiredPermissions(func() ([]config.Permission, error) {
+			return []config.Permission{{Verb: "get", Resource: "pods"}}, nil
 		}),
 	)
 
@@ -78,7 +78,7 @@ func (c *orderCheckingKubernetesClient) Start(context.Context) error {
 
 type healthyApplier struct{}
 
-func (healthyApplier) Apply(string, *protobufs.AgentConfigFile) error {
+func (healthyApplier) Apply(string, *protobufs.AgentConfigObject) error {
 	return nil
 }
 
@@ -166,5 +166,9 @@ func (*recordingOpAMPClient) SetAvailableComponents(*protobufs.AvailableComponen
 }
 
 func (*recordingOpAMPClient) SetCapabilities(*protobufs.AgentCapabilities) error {
+	return nil
+}
+
+func (*recordingOpAMPClient) SetConnectionSettingsStatus(*protobufs.ConnectionSettingsStatus) error {
 	return nil
 }

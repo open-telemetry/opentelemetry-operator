@@ -336,7 +336,7 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	if err != nil {
 		logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
 	}
-	c.CreateRBACPermissions = rAuto
+	c.Internal.CreateRBACPermissions = rAuto
 	logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
 
 	cmAvl, err := autoDetect.CertManagerAvailability(context.Background())

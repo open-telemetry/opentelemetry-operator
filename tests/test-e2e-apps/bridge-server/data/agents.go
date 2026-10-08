@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"github.com/open-telemetry/opamp-go/protobufshelpers"
 	"github.com/open-telemetry/opamp-go/server/types"
 )
 
@@ -59,30 +58,6 @@ func (a *Agents) SendCommandToAgent(agentId InstanceId, commandType protobufs.Co
 			Command: &protobufs.ServerToAgentCommand{Type: commandType},
 		})
 	}
-}
-
-func isEqualAgentDescr(d1, d2 *protobufs.AgentDescription) bool {
-	if d1 == d2 {
-		return true
-	}
-	if d1 == nil || d2 == nil {
-		return false
-	}
-	return isEqualAttrs(d1.IdentifyingAttributes, d2.IdentifyingAttributes) &&
-		isEqualAttrs(d1.NonIdentifyingAttributes, d2.NonIdentifyingAttributes)
-}
-
-func isEqualAttrs(attrs1, attrs2 []*protobufs.KeyValue) bool {
-	if len(attrs1) != len(attrs2) {
-		return false
-	}
-	for i, a1 := range attrs1 {
-		a2 := attrs2[i]
-		if !protobufshelpers.IsEqualKeyValue(a1, a2) {
-			return false
-		}
-	}
-	return true
 }
 
 func (a *Agents) FindAgent(agentId InstanceId) *Agent {

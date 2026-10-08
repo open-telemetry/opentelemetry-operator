@@ -27,5 +27,7 @@ func main() {
 	<-interrupt
 
 	logger.Println("OpAMP Server shutting down...")
-	opampSrv.Stop()
+	if err := opampSrv.Stop(); err != nil {
+		logger.Printf("OpAMP Server shutdown error: %v\n", err)
+	}
 }

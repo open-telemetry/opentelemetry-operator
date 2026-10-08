@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Command autoinstrumentation-revision manages the operator-owned revision
-// suffix on autoinstrumentation image tags (<sdk-version>-<revision>). See
-// autoinstrumentation/README.md for the tagging scheme.
+// suffix on autoinstrumentation image tags (<sdk-version>-<revision>) and the
+// per-language image CHANGELOG.md files. See autoinstrumentation/README.md.
 //
 // Usage:
 //
@@ -15,6 +15,8 @@
 //
 // check and apply diff against BASE_SHA, or the merge-base with the target
 // branch (origin/main, then main, or TARGET_BRANCH) when BASE_SHA is unset.
+// apply reads AUTOINSTRUMENTATION_PR for the pull request number referenced in
+// new changelog entries.
 package main
 
 import (
@@ -88,6 +90,11 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
+		changelogProblems, err := repo.CheckChangelog(baseSHA)
+		if err != nil {
+			return err
+		}
+		problems = append(problems, changelogProblems...)
 		// GitHub Actions renders "::error file=...::" lines as inline annotations.
 		for _, p := range problems {
 			fmt.Printf("::error file=%s::%s\n", p.File, p.Message)
@@ -96,10 +103,10 @@ func run(args []string) error {
 			}
 		}
 		if len(problems) > 0 {
-			fmt.Printf("Found %d autoinstrumentation revision problem(s). See https://github.com/open-telemetry/opentelemetry-operator/blob/main/autoinstrumentation/README.md#image-tagging\n", len(problems))
+			fmt.Printf("Found %d autoinstrumentation problem(s). See https://github.com/open-telemetry/opentelemetry-operator/blob/main/autoinstrumentation/README.md#image-tagging\n", len(problems))
 			os.Exit(1)
 		}
-		fmt.Println("All autoinstrumentation revisions are valid.")
+		fmt.Println("All autoinstrumentation revisions and changelogs are valid.")
 		return nil
 
 	case "apply":
@@ -114,8 +121,15 @@ func run(args []string) error {
 		for _, c := range changes {
 			fmt.Printf("bumped %s revision: %d -> %d\n", c.Language, c.From, c.To)
 		}
-		if len(changes) == 0 {
-			fmt.Println("No revision changes needed.")
+		entries, err := repo.ApplyChangelog(baseSHA, os.Getenv("AUTOINSTRUMENTATION_PR"))
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			fmt.Printf("added %s changelog entry for %s\n", e.Language, e.Tag)
+		}
+		if len(changes) == 0 && len(entries) == 0 {
+			fmt.Println("No revision or changelog changes needed.")
 		}
 		return nil
 

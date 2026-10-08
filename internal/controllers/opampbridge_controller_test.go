@@ -84,14 +84,14 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 			},
 		},
 	}
-	err := k8sClient.Create(context.Background(), created)
+	err := k8sClient.Create(t.Context(), created)
 	require.NoError(t, err)
 
 	// test
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(context.Background(), req)
+	_, err = reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	require.NoError(t, err)
@@ -110,30 +110,30 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	// whether we have the right ones is up to the specific tests for each type
 	{
 		list := &corev1.ConfigMapList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &corev1.ServiceAccountList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &corev1.ServiceList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	{
 		list := &appsv1.DeploymentList{}
-		err = k8sClient.List(context.Background(), list, opts...)
+		err = k8sClient.List(t.Context(), list, opts...)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, list.Items)
 	}
 	// cleanup
-	require.NoError(t, k8sClient.Delete(context.Background(), created))
+	require.NoError(t, k8sClient.Delete(t.Context(), created))
 }
 
 func TestSkipWhenInstanceDoesNotExist_OpAMPBridge(t *testing.T) {
@@ -151,7 +151,7 @@ func TestSkipWhenInstanceDoesNotExist_OpAMPBridge(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err := reconciler.Reconcile(context.Background(), req)
+	_, err := reconciler.Reconcile(t.Context(), req)
 
 	// verify
 	assert.NoError(t, err)

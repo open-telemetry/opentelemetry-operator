@@ -1,0 +1,29 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cgroup-runtime
+spec:
+  mode: deployment
+  # The extension ships in the contrib and k8s distributions only.
+  image: (join('', ['ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:', $collectorVersion]))
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  config:
+    extensions:
+      cgroup_runtime:
+        gomemlimit:
+          ratio: 0.5
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    exporters:
+      debug: {}
+    service:
+      extensions: [cgroup_runtime]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

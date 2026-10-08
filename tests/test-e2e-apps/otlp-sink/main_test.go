@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -39,7 +40,7 @@ func testStack(t *testing.T) (s *sinkStack, grpcAddr, httpAddr string) {
 // acceptable in tests.
 func freeAddr(t *testing.T) string {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	defer l.Close()
 	return l.Addr().String()
@@ -73,9 +74,9 @@ func post(t *testing.T, url string, body []byte, headers map[string]string) *htt
 // querySpanNames runs the query handler and returns the span names it served.
 // It takes require.TestingT so it can be called both directly and from inside
 // a require.EventuallyWithT condition.
-func querySpanNames(t require.TestingT, s *sinkStack) []string {
+func querySpanNames(ctx context.Context, t require.TestingT, s *sinkStack) []string {
 	rec := httptest.NewRecorder()
-	s.queryMux().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/received/traces", nil))
+	s.queryMux().ServeHTTP(rec, httptest.NewRequestWithContext(ctx, http.MethodGet, "/received/traces", http.NoBody))
 	require.Equalf(t, http.StatusOK, rec.Code, "query body: %s", rec.Body)
 	var envelope struct {
 		Requests []json.RawMessage `json:"requests"`
@@ -105,8 +106,9 @@ func querySpanNames(t require.TestingT, s *sinkStack) []string {
 // uniformly to be safe).
 func waitForSpan(t *testing.T, s *sinkStack, name string) {
 	t.Helper()
+	ctx := t.Context()
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		assert.Contains(c, querySpanNames(c, s), name)
+		assert.Contains(c, querySpanNames(ctx, c, s), name)
 	}, 10*time.Second, 50*time.Millisecond, "span %q not received", name)
 }
 
@@ -172,6 +174,6 @@ func TestGRPCIngestGzip(t *testing.T) {
 func TestHealthz(t *testing.T) {
 	s := newSinkStack()
 	rec := httptest.NewRecorder()
-	s.queryMux().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	s.queryMux().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/healthz", http.NoBody))
 	require.Equal(t, http.StatusOK, rec.Code)
 }

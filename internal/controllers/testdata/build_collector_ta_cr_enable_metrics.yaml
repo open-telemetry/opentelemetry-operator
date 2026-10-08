@@ -103,22 +103,22 @@ spec:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: null
     receivers:
-        prometheus:
-            config: {}
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://test-targetallocator.test.svc:80
-                interval: 30s
+      prometheus:
+        config: {}
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://test-targetallocator.test.svc:80
+          interval: 30s
+    exporters:
+      debug: null
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - debug
-                receivers:
-                    - prometheus
+      pipelines:
+        metrics:
+          exporters:
+            - debug
+          receivers:
+            - prometheus
 kind: ConfigMap
 metadata:
   labels:

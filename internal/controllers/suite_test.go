@@ -502,7 +502,7 @@ func opampBridgeParams() manifests.Params {
 
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
-	err := k8sClient.Get(context.Background(), namespacedName, object)
+	err := k8sClient.Get(t.Context(), namespacedName, object)
 	if apierrors.IsNotFound(err) {
 		return false, nil
 	}

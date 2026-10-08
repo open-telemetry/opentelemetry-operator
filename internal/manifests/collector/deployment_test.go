@@ -153,12 +153,12 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedPodAnnotationValues := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
-		"operator.opentelemetry.io/prometheus-annotations-added": "true",
+		"annotation-key":                            "annotation-value",
+		"opentelemetry-operator-config/sha256":      "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
+		"prometheus.io/path":                        "/metrics",
+		"prometheus.io/port":                        "8888",
+		"prometheus.io/scrape":                      "true",
+		manifestutils.PrometheusAnnotationsAddedKey: "true",
 	}
 
 	// verify
@@ -852,6 +852,49 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }
 
+func TestDeploymentEnableServiceLinks(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.EnableServiceLinks)
+
+	// Test enableServiceLinks=false
+	enableServiceLinks := false
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-without-servicelinks",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				EnableServiceLinks: &enableServiceLinks,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.EnableServiceLinks)
+	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
+}
+
 func TestDeploymentDNSConfig(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
@@ -1020,4 +1063,50 @@ func TestDeploymentHostPIDCanBeSet(t *testing.T) {
 	d2, err := Deployment(params2)
 	require.NoError(t, err)
 	assert.True(t, d2.Spec.Template.Spec.HostPID)
+}
+
+func TestDeploymentRevisionHistoryLimit(t *testing.T) {
+	// Test default (nil — let Kubernetes apply its own default)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.RevisionHistoryLimit)
+
+	// Test explicit value
+	limit := int32(5)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-revisionhistorylimit",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				RevisionHistoryLimit: &limit,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.RevisionHistoryLimit)
+	assert.Equal(t, limit, *d2.Spec.RevisionHistoryLimit)
 }

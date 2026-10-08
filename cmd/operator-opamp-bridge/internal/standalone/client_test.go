@@ -358,7 +358,7 @@ func TestPermissionsCheckerRejectsDeniedPermission(t *testing.T) {
 		return false
 	})
 
-	err := bridgemanager.CheckPermissions(context.Background(), k8sClient, []bridgemanager.Permission{{
+	err := bridgemanager.CheckPermissions(context.Background(), k8sClient, []config.Permission{{
 		Verb:      "update",
 		APIGroup:  "apps",
 		Resource:  "deployments",
@@ -388,7 +388,7 @@ service:
       receivers: [otlp]
       exporters: [debug]
 `
-	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigFile{Body: []byte(updatedConfig)})
+	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigObject{Body: []byte(updatedConfig)})
 	require.NoError(t, err)
 
 	updated := &v1.ConfigMap{}
@@ -417,7 +417,7 @@ service:
       receivers: [otlp]
       exporters: [debug]
 `
-	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigFile{Body: []byte(invalidConfig)})
+	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigObject{Body: []byte(invalidConfig)})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "collector config failed operator validation")
@@ -437,7 +437,7 @@ service:
       receivers: [otlp]
       exporters: [debug]
 `
-	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigFile{Body: []byte(invalidConfig)})
+	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigObject{Body: []byte(invalidConfig)})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid collector config")
@@ -447,7 +447,7 @@ service:
 func TestScopedApplierApplyRejectsUnknownRemoteName(t *testing.T) {
 	c := newTestClient(getFakeK8sClient(t, testConfigMap()))
 
-	err := c.ScopedApplier(testAgentConfig()).Apply("unknown", &protobufs.AgentConfigFile{Body: []byte(validCollectorConfig)})
+	err := c.ScopedApplier(testAgentConfig()).Apply("unknown", &protobufs.AgentConfigObject{Body: []byte(validCollectorConfig)})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "does not manage config")
 }
@@ -455,7 +455,7 @@ func TestScopedApplierApplyRejectsUnknownRemoteName(t *testing.T) {
 func TestScopedApplierApplyDoesNotCreateConfigMap(t *testing.T) {
 	c := newTestClient(getFakeK8sClient(t))
 
-	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigFile{Body: []byte(validCollectorConfig)})
+	err := c.ScopedApplier(testAgentConfig()).Apply("collector", &protobufs.AgentConfigObject{Body: []byte(validCollectorConfig)})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "does not support creating ConfigMap")
 }

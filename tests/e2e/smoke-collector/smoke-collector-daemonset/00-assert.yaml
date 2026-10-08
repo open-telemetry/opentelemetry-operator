@@ -19,6 +19,7 @@ spec:
     spec:
       hostNetwork: true
       hostPID: true
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 600
       nodeSelector:
         kubernetes.io/os: linux

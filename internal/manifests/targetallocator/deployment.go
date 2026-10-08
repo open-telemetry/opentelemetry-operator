@@ -32,7 +32,8 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.TargetAllocator.Spec.Replicas,
+			Replicas:             params.TargetAllocator.Spec.Replicas,
+			RevisionHistoryLimit: params.TargetAllocator.Spec.RevisionHistoryLimit,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
@@ -52,6 +53,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 					HostUsers:                     params.TargetAllocator.Spec.HostUsers,
 					HostAliases:                   params.TargetAllocator.Spec.HostAliases,
 					ShareProcessNamespace:         &params.TargetAllocator.Spec.ShareProcessNamespace,
+					EnableServiceLinks:            params.TargetAllocator.Spec.EnableServiceLinks,
 					Tolerations:                   params.TargetAllocator.Spec.Tolerations,
 					NodeSelector:                  params.TargetAllocator.Spec.NodeSelector,
 					SecurityContext:               params.TargetAllocator.Spec.PodSecurityContext,

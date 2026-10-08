@@ -1,5 +1,8 @@
 # Controlling Instrumentation Capabilities
 
+> [!NOTE]
+> This page documents the CLI flags that control which languages the Instrumentation resource may instrument. The operator also has feature gates in the collector `featuregate` sense — registered in [`pkg/featuregate`](../../pkg/featuregate/featuregate.go) and toggled via the `--feature-gates` flag — which are a separate mechanism not covered here.
+
 The operator allows specifying, via the flags, which languages the Instrumentation resource may instrument.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 Language support can be disabled by passing the flag with a value of `false`.
@@ -16,6 +19,6 @@ Language support can be disabled by passing the flag with a value of `false`.
 
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
-These features can be enabled using the `enable-multi-instrumentation` flag. By default flag is `false`.
+These features are enabled by default. Set the `enable-multi-instrumentation` flag to `false` to disable them.
 
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](../auto-instrumentation/multi-instrumentation.md).

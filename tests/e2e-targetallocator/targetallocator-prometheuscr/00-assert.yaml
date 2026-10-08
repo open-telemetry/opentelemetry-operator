@@ -23,30 +23,30 @@ metadata:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        prometheus:
-            endpoint: 0.0.0.0:9090
     receivers:
-        prometheus:
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://prometheus-cr-targetallocator.chainsaw-targetallocator-prometheuscr.svc:80
-                interval: 30s
+      prometheus:
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://prometheus-cr-targetallocator.chainsaw-targetallocator-prometheuscr.svc:80
+          interval: 30s
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
     service:
-        pipelines:
-            metrics:
-                exporters:
-                    - prometheus
-                receivers:
-                    - prometheus
-        telemetry:
-            metrics:
-                readers:
-                    - pull:
-                          exporter:
-                              prometheus:
-                                  host: 0.0.0.0
-                                  port: 8888
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+      pipelines:
+        metrics:
+          exporters:
+            - prometheus
+          receivers:
+            - prometheus
 kind: ConfigMap
 metadata:
   labels:

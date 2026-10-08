@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-09-14T11:16:38Z"
+    createdAt: "2026-10-06T19:52:36Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.159.0
+  name: opentelemetry-operator.v0.160.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -380,6 +380,7 @@ spec:
         - apiGroups:
           - batch
           resources:
+          - cronjobs
           - jobs
           verbs:
           - get
@@ -411,6 +412,7 @@ spec:
           verbs:
           - get
           - list
+          - watch
         - apiGroups:
           - gateway.networking.k8s.io
           resources:
@@ -605,7 +607,7 @@ spec:
                   value: "true"
                 - name: TLS_CONFIGURE_OPERANDS
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.159.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.160.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -674,13 +676,21 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 env:
+                - name: SERVICE_ACCOUNT_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.serviceAccountName
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
                 - name: ENABLE_GO_AUTO_INSTRUMENTATION
                   value: "true"
                 - name: FEATURE_GATES
                   value: operand.networkpolicy
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.159.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.160.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -761,7 +771,7 @@ spec:
   minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.159.0
+  version: 0.160.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

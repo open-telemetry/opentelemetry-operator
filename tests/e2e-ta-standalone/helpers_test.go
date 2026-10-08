@@ -305,7 +305,15 @@ service:
 
 func waitForTargetDistribution(t *testing.T, ctx context.Context, cfg *envconf.Config, ns, jobName string, expectedCollectors int) map[string][]string {
 	return waitForTargetDistributionWithPredicate(t, ctx, cfg, ns, jobName, expectedCollectors, func(a map[string][]string) bool {
-		return len(allAssignedTargets(a)) == len(testTargets)
+		if len(allAssignedTargets(a)) != len(testTargets) {
+			return false
+		}
+		for _, targets := range a {
+			if len(targets) == 0 {
+				return false
+			}
+		}
+		return true
 	})
 }
 

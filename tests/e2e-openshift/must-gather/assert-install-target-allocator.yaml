@@ -18,42 +18,42 @@ status:
 apiVersion: v1
 data:
   collector.yaml: |
-    exporters:
-        debug: {}
-    processors: {}
     receivers:
-        jaeger:
-            protocols:
-                grpc:
-                    endpoint: 0.0.0.0:14250
-        prometheus:
-            config:
-                global:
-                    scrape_interval: 30s
-                    scrape_protocols:
-                        - PrometheusProto
-                        - OpenMetricsText1.0.0
-                        - OpenMetricsText0.0.1
-                        - PrometheusText0.0.4
-            target_allocator:
-                collector_id: ${POD_NAME}
-                endpoint: http://stateful-targetallocator.chainsaw-must-gather.svc:80
-                interval: 30s
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+      prometheus:
+        config:
+          global:
+            scrape_interval: 30s
+            scrape_protocols:
+              - PrometheusProto
+              - OpenMetricsText1.0.0
+              - OpenMetricsText0.0.1
+              - PrometheusText0.0.4
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://stateful-targetallocator.chainsaw-must-gather.svc:80
+          interval: 30s
+    exporters:
+      debug: {}
+    processors: {}
     service:
-        pipelines:
-            traces:
-                exporters:
-                    - debug
-                receivers:
-                    - jaeger
-        telemetry:
-            metrics:
-                readers:
-                    - pull:
-                          exporter:
-                              prometheus:
-                                  host: 0.0.0.0
-                                  port: 8888
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+      pipelines:
+        traces:
+          exporters:
+            - debug
+          receivers:
+            - jaeger
 kind: ConfigMap
 metadata:
   labels:

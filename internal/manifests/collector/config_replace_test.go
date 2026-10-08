@@ -10,8 +10,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
 
@@ -126,4 +129,143 @@ func TestReplaceConfig(t *testing.T) {
 
 		assert.Equal(t, customInterval.Duration.String(), promCfgMap["target_allocator"].(map[any]any)["interval"])
 	})
+}
+
+// TestReplaceConfigPreservesScalarTypes checks that the target allocator rewrite leaves every value with the
+// type it has in the CR, both inside the rewritten Prometheus receiver and elsewhere. The values are read back
+// the way the collector reads them.
+func TestReplaceConfigPreservesScalarTypes(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{
+					"prometheus": map[string]any{
+						"config": map[string]any{
+							"global": map[string]any{"external_labels": map[string]any{"cluster": "0e12", "on": "yes", "1e5": "true"}},
+							"scrape_configs": []any{map[string]any{
+								"job_name":       "1e10",
+								"scrape_timeout": "10s",
+								"static_configs": []any{map[string]any{"targets": []any{"0.0.0.0:9090"}}},
+							}},
+						},
+					},
+				}},
+				Processors: &v1beta1.AnyConfig{Object: map[string]any{
+					"metricstransform": map[string]any{"new_value": "0e12", "limit": float64(1000000), "ratio": float64(0.5), "enabled": true, "none": nil},
+				}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus"}, Processors: []string{"metricstransform"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+
+	doc, err := ReplaceConfig(otelcol, targetAllocator)
+	require.NoError(t, err)
+
+	var decoded map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(doc), &decoded))
+
+	prometheus := decoded["receivers"].(map[string]any)["prometheus"].(map[string]any)
+	assert.Equal(t, map[string]any{
+		"global": map[string]any{"external_labels": map[string]any{"cluster": "0e12", "on": "yes", "1e5": "true"}},
+	}, prometheus["config"], "scrape_configs are removed, the rest of the receiver config is kept as is")
+	assert.Equal(t, map[string]any{
+		"endpoint":     "http://test-targetallocator.default.svc:80",
+		"interval":     "30s",
+		"collector_id": "${POD_NAME}",
+	}, prometheus["target_allocator"])
+	assert.Equal(t, map[string]any{
+		"new_value": "0e12", "limit": 1000000, "ratio": 0.5, "enabled": true, "none": nil,
+	}, decoded["processors"].(map[string]any)["metricstransform"])
+
+	// The rewrite works on a copy: the CR's config is not modified.
+	scrapeConfigs := otelcol.Spec.Config.Receivers.Object["prometheus"].(map[string]any)["config"].(map[string]any)["scrape_configs"]
+	assert.Len(t, scrapeConfigs, 1)
+	assert.NotContains(t, otelcol.Spec.Config.Receivers.Object["prometheus"].(map[string]any), "target_allocator")
+}
+
+func TestReplaceConfigRejectsMissingReceivers(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "receivers")
+}
+
+func TestReplaceConfigRejectsMissingPrometheus(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheus")
+}
+
+func TestReplaceConfigRejectsInvalidPrometheusType(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"prometheus": "string"}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheus")
+}
+
+func TestReplaceConfigRejectsInvalidPrometheusConfig(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{
+					"prometheus": map[string]any{"config": "string"},
+				}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+	_, err := ReplaceConfig(otelcol, targetAllocator)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prometheusConfig")
 }
