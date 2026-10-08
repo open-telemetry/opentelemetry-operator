@@ -131,13 +131,26 @@ func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithCon
 	i.logger.V(1).Info("injecting PHP instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 	platform := inst.AdditionalAnnotations[annotationPhpPlatform]
+	if platform != "" && !slices.Contains(validPlatforms, platform) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-platform annotation value "+platform+" is not supported")
+		return pod
+	}
 	apiVersion := inst.AdditionalAnnotations[annotationPhpApiVersion]
+	if !slices.Contains(validApiVersions, apiVersion) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-api-version annotation value "+apiVersion+" is not supported")
+		return pod
+	}
 	threadSafety := inst.AdditionalAnnotations[annotationPhpThreadSafety]
+	if threadSafety != "" && !slices.Contains(validThreadSafety, threadSafety) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-thread-safety annotation value "+threadSafety+" is not supported")
+		return pod
+	}
+
 	containers := containersToInstrument(&inst, &pod)
 
 	if len(containers) > 0 {
 		for _, container := range containers {
-			if err := injectPhpSDKToContainer(otelinst.Spec.Php, container, platform, apiVersion, threadSafety); err != nil {
+			if err := injectPhpSDKToContainer(otelinst.Spec.Php, container); err != nil {
 				i.logger.Info("Skipping PHP SDK injection", "reason", err.Error(), "container", container.Name)
 			} else {
 				i.injectCommonEnvVar(otelinst, container)

@@ -4,9 +4,6 @@
 package instrumentation
 
 import (
-	"fmt"
-	"slices"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -44,22 +41,10 @@ var (
 	validThreadSafety = []string{nonZts, zts}
 )
 
-func injectPhpSDKToContainer(phpSpec v1alpha1.Php, container *corev1.Container, platform, apiVersion, threadSafety string) error {
+func injectPhpSDKToContainer(phpSpec v1alpha1.Php, container *corev1.Container) error {
 	err := validateContainerEnv(container.Env, phpIniScanDirEnvVarName, otelPhpAutoloadEnabledrEnvVarName)
 	if err != nil {
 		return err
-	}
-
-	if platform != "" && !slices.Contains(validPlatforms, platform) {
-		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-platform annotation value '%s' is not supported", platform)
-	}
-
-	if !slices.Contains(validApiVersions, apiVersion) {
-		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-api-version annotation value '%s' is not supported", apiVersion)
-	}
-
-	if threadSafety != "" && !slices.Contains(validThreadSafety, threadSafety) {
-		return fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-thread-safety annotation value '%s' is not supported", threadSafety)
 	}
 
 	// inject Php instrumentation spec env vars.
@@ -109,7 +94,7 @@ func injectPhpSDKToPod(phpSpec v1alpha1.Php, pod corev1.Pod, firstContainerName 
 // Containers must point into the provided pod and be ordered with init containers first.
 func injectPhpSDK(phpSpec v1alpha1.Php, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec, platform, apiVersion, threadSafety string) error {
 	for _, container := range containers {
-		if err := injectPhpSDKToContainer(phpSpec, container, platform, apiVersion, threadSafety); err != nil {
+		if err := injectPhpSDKToContainer(phpSpec, container); err != nil {
 			return err
 		}
 	}

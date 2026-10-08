@@ -587,8 +587,6 @@ spec:
                   value: "true"
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
-                - name: ENABLE_PHP_AUTO_INSTRUMENTATION
-                  value: "true"
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.160.0
                 livenessProbe:
                   httpGet:

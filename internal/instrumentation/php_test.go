@@ -4,7 +4,6 @@
 package instrumentation
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -835,79 +834,6 @@ func TestInjectPhpSDK(t *testing.T) {
 				},
 			},
 			err: nil,
-		},
-		{
-			name: "apiVersion not defined",
-			Php:  v1alpha1.Php{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{}},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{},
-					},
-				},
-			},
-			err: errors.New("provided instrumentation.opentelemetry.io/otel-php-api-version annotation value '' is not supported"),
-		},
-		{
-			name: "Unsupported platform value",
-			Php:  v1alpha1.Php{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{}},
-				},
-			},
-			platform:   "windows",
-			apiVersion: Php81ApiVersion,
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{},
-					},
-				},
-			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-platform annotation value '%s' is not supported", "windows"),
-		},
-		{
-			name: "Unsupported apiVersion value",
-			Php:  v1alpha1.Php{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{}},
-				},
-			},
-			apiVersion: "invalid",
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{},
-					},
-				},
-			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-api-version annotation value '%s' is not supported", "invalid"),
-		},
-		{
-			name: "Unsupported thread safety value",
-			Php:  v1alpha1.Php{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{}},
-				},
-			},
-			apiVersion:   Php81ApiVersion,
-			threadSafety: "invalid",
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{},
-					},
-				},
-			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-php-thread-safety annotation value '%s' is not supported", "invalid"),
 		},
 	}
 
