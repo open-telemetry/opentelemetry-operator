@@ -39,7 +39,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "~1.26.8"
+          go-version: "~1.27.2"
           cache-dependency-path: tests/test-e2e-apps/${{ matrix.app }}/go.sum
       - name: Vet and test
         working-directory: tests/test-e2e-apps/${{ matrix.app }}
@@ -159,4 +159,14 @@ jobs:
     uses: $/.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: otlp-sink
+      platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+  ruby:
+    permissions: # required by the reusable workflow
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    uses: $/.github/workflows/reusable-publish-test-e2e-images.yaml
+    with:
+      path: ruby
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le

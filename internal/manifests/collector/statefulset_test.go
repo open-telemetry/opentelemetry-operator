@@ -897,6 +897,46 @@ func TestStatefulSetEnableServiceLinks(t *testing.T) {
 	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
 }
 
+func TestStatefulSetImagePullSecrets(t *testing.T) {
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
+
+	imagePullSecrets := []corev1.LocalObjectReference{{Name: "my-registry-secret"}}
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-pull-secrets",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ImagePullSecrets: imagePullSecrets,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, imagePullSecrets, d2.Spec.Template.Spec.ImagePullSecrets)
+}
+
 func TestStatefulSetDNSConfig(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
@@ -1126,4 +1166,53 @@ func TestStatefulSetPodManagementPolicy(t *testing.T) {
 			assert.Equal(t, test.expectedPodManagementPolicy, ss.Spec.PodManagementPolicy)
 		})
 	}
+}
+
+func TestStatefulSetRevisionHistoryLimit(t *testing.T) {
+	// Test default (nil)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+		},
+	}
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, ss1.Spec.RevisionHistoryLimit)
+
+	// Test explicit value
+	limit := int32(3)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				RevisionHistoryLimit: &limit,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, ss2.Spec.RevisionHistoryLimit)
+	assert.Equal(t, limit, *ss2.Spec.RevisionHistoryLimit)
 }

@@ -20765,6 +20765,13 @@ Valid modes are: deployment, daemonset and statefulset.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is a list of references to secrets in the same namespace to use for pulling the images of the generated pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingress-1">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -20960,6 +20967,16 @@ resource resizes.<br/>
         <td>object</td>
         <td>
           Resources to set on generated pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>revisionHistoryLimit</b></td>
+        <td>integer</td>
+        <td>
+          RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -27390,6 +27407,40 @@ If empty, the route matches requests with any hostname.<br/>
 </table>
 
 
+### OpenTelemetryCollector.spec.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.ingress
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -33085,6 +33136,16 @@ that can be run in a high availability mode are consistent-hashing and per-node.
         <td>object</td>
         <td>
           Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>revisionHistoryLimit</b></td>
+        <td>integer</td>
+        <td>
+          RevisionHistoryLimit is The number of old replicasets to retain to allow rollback.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
         </td>
         <td>false</td>
       </tr><tr>
