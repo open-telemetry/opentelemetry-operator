@@ -323,7 +323,7 @@ add-instrumentation-images:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-dotnet-image=$(INSTRUMENTATION_DOTNET_IMG)
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-apache-httpd-image=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
 
-# Enable Go auto-instrumentation support in the operator
+# Enable Go, PHP auto-instrumentation support in the operator
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
