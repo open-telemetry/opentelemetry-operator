@@ -45,7 +45,12 @@ func IsTAMTLSUserProvided(mtls *v1beta1.TargetAllocatorMTLS) bool {
 		!*mtls.UseCertManager
 }
 
-// TAServerCertificateVolumes builds the volumes and volume mounts that provide
+// IsTAMTLSClientCertOmitted reports whether mTLS is user-provided but no
+// clientCertificate was set, meaning the collector mounts no client TLS volume.
+func IsTAMTLSClientCertOmitted(ta *v1alpha1.TargetAllocator) bool {
+	return IsTAMTLSUserProvided(ta.Spec.Mtls) && taClientCertificateReference(ta.Spec.Mtls) == nil
+}
+
 // TA's server certificate (and the CA used to verify collector clients).
 // There are 2 scenarios:
 //   - With cert-manager it mounts the operator-managed Secret at /tls.
@@ -101,13 +106,22 @@ type volumeIdentity struct {
 	name string
 }
 
+// TODO(iypetrov): Probably we can simplify the flow by removing the `useCertManager`
+// flag and relying on the presence of the `mtls` block instead. However, since
+// this flag is also used on other places as well, it should be double checked if
+// this approach is reasonable.
 func taCertificateVolumes(
 	ta *v1alpha1.TargetAllocator,
 	volumeName, certManagerSecretName string,
 	certRef *v1beta1.CertificateReference,
 ) ([]corev1.Volume, []corev1.VolumeMount) {
+	// user-provided case with no certificate reference: nothing to mount.
+	if IsTAMTLSUserProvided(ta.Spec.Mtls) && certRef == nil {
+		return nil, nil
+	}
+
 	// cert-manager case: mount the single operator-managed Secret at /tls.
-	if !IsTAMTLSUserProvided(ta.Spec.Mtls) || certRef == nil {
+	if !IsTAMTLSUserProvided(ta.Spec.Mtls) {
 		volumes := []corev1.Volume{{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
