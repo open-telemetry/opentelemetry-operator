@@ -327,6 +327,7 @@ add-instrumentation-images:
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-php-instrumentation=true
 
 # Enable multi-instrumentation support
 .PHONY: add-multi-instrumentation-params
