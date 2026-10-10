@@ -425,8 +425,10 @@ func NullObjects(c *v1beta1.Config) []string {
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
 func MetricsEndpoint(s *v1beta1.Service, logger logr.Logger) (host string, port int32, err error) {
-	telemetry := GetTelemetry(s, logger)
-	if telemetry == nil {
+	telemetry, err := GetTelemetry(s, logger)
+	// Telemetry that can't be parsed is left as it is, so the collector falls
+	// back to its default endpoint unless the user configured another one.
+	if err != nil || telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
@@ -468,7 +470,13 @@ func MetricsEndpoint(s *v1beta1.Service, logger logr.Logger) (host string, port 
 // Returns a list of events that should be recorded by the caller.
 func ServiceApplyDefaults(s *v1beta1.Service, logger logr.Logger) ([]v1beta1.EventInfo, error) {
 	var events []v1beta1.EventInfo
-	tel := GetTelemetry(s, logger)
+	tel, err := GetTelemetry(s, logger)
+	if err != nil {
+		// The operator parses less than the collector accepts, so telemetry it
+		// can't parse is left as it is rather than replaced by the defaults.
+		// See open-telemetry/opentelemetry-operator#5734.
+		return events, nil
+	}
 
 	if tel == nil {
 		logger.V(2).Info("no telemetry configuration parsed, creating default")
@@ -540,17 +548,19 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *Telemetry {
+// It returns nil and no error when the telemetry configuration is absent, and an error when it is set but
+// can't be parsed into Telemetry.
+func GetTelemetry(s *v1beta1.Service, logger logr.Logger) (*Telemetry, error) {
 	if s.Telemetry == nil {
 		logger.V(2).Info("no spec.service.telemetry configuration found")
-		return nil
+		return nil, nil
 	}
 
 	// Convert map to JSON bytes
 	jsonData, err := json.Marshal(s.Telemetry)
 	if err != nil {
 		logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
-		return nil
+		return nil, err
 	}
 
 	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
@@ -559,7 +569,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *Telemetry {
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
 		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
-		return nil
+		return nil, err
 	}
 
 	logger.V(2).Info("successfully parsed telemetry configuration",
@@ -567,7 +577,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) *Telemetry {
 		"metricsAddress", t.Metrics.Address,
 		"readersCount", len(t.Metrics.Readers))
 
-	return t
+	return t, nil
 }
 
 // TelemetryToAnyConfig converts the Telemetry struct to an AnyConfig struct.

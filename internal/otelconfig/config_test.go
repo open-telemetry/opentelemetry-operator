@@ -595,7 +595,9 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 		},
 	}
 	logger := logr.Discard()
-	assert.Equal(t, telemetry, GetTelemetry(&cfg.Service, logger))
+	got, err := GetTelemetry(&cfg.Service, logger)
+	require.NoError(t, err)
+	assert.Equal(t, telemetry, got)
 }
 
 func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
@@ -606,7 +608,22 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	logger := logr.Discard()
-	assert.Nil(t, GetTelemetry(&cfg.Service, logger))
+	got, err := GetTelemetry(&cfg.Service, logger)
+	require.NoError(t, err)
+	assert.Nil(t, got)
+}
+
+func TestGetTelemetryReturnsAnErrorWhenItCannotParse(t *testing.T) {
+	s := &v1beta1.Service{
+		Telemetry: &v1beta1.AnyConfig{
+			Object: map[string]any{
+				"metrics": "x",
+			},
+		},
+	}
+	got, err := GetTelemetry(s, logr.Discard())
+	require.Error(t, err)
+	assert.Nil(t, got)
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
@@ -781,6 +798,18 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			desc:         "missing telemetry",
 			expectedAddr: "0.0.0.0",
 			expectedPort: 8888,
+		},
+		{
+			desc:         "telemetry that can't be parsed",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
+			config: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": "x",
+					},
+				},
+			},
 		},
 		{
 			desc:         "configured telemetry",
@@ -1822,27 +1851,37 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := logr.Discard()
-	telemetry := GetTelemetry(&cfg.Service, logger)
+	telemetry, err := GetTelemetry(&cfg.Service, logger)
+	require.NoError(t, err)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
 }
 
-func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
-	cfg := &v1beta1.Config{
-		Service: v1beta1.Service{
-			Telemetry: &v1beta1.AnyConfig{
-				Object: map[string]any{
-					"metrics": map[string]any{
-						"level": "basic",
-						"readers": []any{
-							map[string]any{
-								"periodic": map[string]any{
-									"exporter": map[string]any{
-										"otlp": map[string]any{
-											"endpoint": "otlp_host:4317",
-											// Missing protocol - makes this invalid
-										},
-									},
+// The operator parses less than the collector accepts, so telemetry it can't
+// parse is left as it is instead of being replaced by the default reader.
+// See open-telemetry/opentelemetry-operator#5734.
+func TestServiceApplyDefaultsKeepsTelemetryItCannotParse(t *testing.T) {
+	for name, telemetry := range map[string]map[string]any{
+		"declarative resource attributes": {
+			"logs": map[string]any{"level": "debug"},
+			"resource": map[string]any{
+				"attributes": []any{
+					map[string]any{"name": "deployment.environment.name", "value": "prod"},
+				},
+			},
+		},
+		"metrics is not an object": {
+			"metrics": "x",
+		},
+		"otlp reader without protocol": {
+			"metrics": map[string]any{
+				"level": "basic",
+				"readers": []any{
+					map[string]any{
+						"periodic": map[string]any{
+							"exporter": map[string]any{
+								"otlp": map[string]any{
+									"endpoint": "otlp_host:4317",
 								},
 							},
 						},
@@ -1850,24 +1889,17 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 				},
 			},
 		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := v1beta1.Service{Telemetry: &v1beta1.AnyConfig{Object: telemetry}}
+			want := s.Telemetry.DeepCopy()
+
+			events, err := ServiceApplyDefaults(&s, logr.Discard())
+			require.NoError(t, err)
+			assert.Empty(t, events)
+			assert.Equal(t, want, s.Telemetry)
+		})
 	}
-
-	_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
-	require.NoError(t, err)
-
-	logger := logr.Discard()
-	telemetry := GetTelemetry(&cfg.Service, logger)
-	require.NotNil(t, telemetry)
-
-	require.Len(t, telemetry.Metrics.Readers, 1)
-
-	require.NotNil(t, telemetry.Metrics.Readers[0].Pull)
-	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
-	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
-	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
-	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutTypeSuffix)
-	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutUnits)
-	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
 // The operator.collector.usedefaulttelemetryshape gate is stable (always on):

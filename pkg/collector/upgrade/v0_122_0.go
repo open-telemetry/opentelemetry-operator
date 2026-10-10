@@ -11,9 +11,8 @@ import (
 )
 
 func upgrade0_122_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
-	tel := otelconfig.GetTelemetry(&otelcol.Spec.Config.Service, u.Log)
-
-	if tel == nil || tel.Metrics.Address == "" {
+	tel, err := otelconfig.GetTelemetry(&otelcol.Spec.Config.Service, u.Log)
+	if err != nil || tel == nil || tel.Metrics.Address == "" {
 		return otelcol, nil
 	}
 
