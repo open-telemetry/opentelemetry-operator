@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-ruby
+spec:
+  selector:
+    matchLabels:
+      app: my-ruby
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-ruby
+      annotations:
+        instrumentation.opentelemetry.io/inject-ruby: "true"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+        - name: myapp
+          image: ($appImage)
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /rolldice
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

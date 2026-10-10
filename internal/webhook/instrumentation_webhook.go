@@ -113,6 +113,21 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
+	if r.Spec.Ruby.Image == "" {
+		r.Spec.Ruby.Image = w.cfg.AutoInstrumentationRubyImage
+	}
+	if r.Spec.Ruby.Resources.Limits == nil {
+		r.Spec.Ruby.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		}
+	}
+	if r.Spec.Ruby.Resources.Requests == nil {
+		r.Spec.Ruby.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.DotNet.Image == "" {
 		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage
 	}
@@ -177,6 +192,7 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationRuby] = w.cfg.AutoInstrumentationRubyImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage
@@ -246,6 +262,10 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	if err != nil {
 		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
 	}
+	err = validateInstrVolume(r.Spec.Ruby.VolumeClaimTemplate, r.Spec.Ruby.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.ruby.volumeClaimTemplate and spec.ruby.volumeSizeLimit cannot both be defined: %w", err)
+	}
 
 	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
 
@@ -258,6 +278,9 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	}
 	if r.Spec.Python.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead")
+	}
+	if r.Spec.Ruby.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.ruby.volumeSizeLimit is deprecated and will be removed in a future release; use spec.ruby.volume.size instead")
 	}
 	if r.Spec.DotNet.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead")

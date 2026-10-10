@@ -50,3 +50,7 @@ func TestAutoInstrumentationNodeJSFallbackVersion(t *testing.T) {
 func TestAutoInstrumentationPythonFallbackVersion(t *testing.T) {
 	assert.Equal(t, "0.0.0", AutoInstrumentationPython())
 }
+
+func TestAutoInstrumentationRubyFallbackVersion(t *testing.T) {
+	assert.Equal(t, "0.0.0", AutoInstrumentationRuby())
+}

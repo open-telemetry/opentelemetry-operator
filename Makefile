@@ -13,6 +13,7 @@ OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell awk -F= '/^operator-opamp-bridge/ {pri
 DEFAULT_INSTRUMENTATION_JAVA_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-java=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nodejs=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-python=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_RUBY_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-ruby=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-dotnet=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
@@ -42,6 +43,7 @@ OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationJava=${DEFAULT_INSTRUMENTATION_JAVA_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationNodeJS=${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationPython=${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationRuby=${DEFAULT_INSTRUMENTATION_RUBY_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationDotNet=${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationGo=${DEFAULT_INSTRUMENTATION_GO_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}\
@@ -1162,6 +1164,7 @@ chlog-insert-components:
 	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
 	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
 	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Ruby - v${DEFAULT_INSTRUMENTATION_RUBY_VERSION}](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_RUBY_VERSION})" >>components.md
 	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md

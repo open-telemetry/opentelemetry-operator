@@ -19,10 +19,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/hack/autoinstrumentation-revision/revision"
 )
 
-const (
-	operatorImageRepo = "ghcr.io/open-telemetry/opentelemetry-operator"
-	goImageRepo       = "ghcr.io/open-telemetry/opentelemetry-go-instrumentation"
-)
+const operatorImageRepo = "ghcr.io/open-telemetry/opentelemetry-operator"
+
+// upstreamImageRepos lists the languages whose image is published by the
+// upstream instrumentation project rather than built by the operator.
+var upstreamImageRepos = map[string]string{
+	"go":   "ghcr.io/open-telemetry/opentelemetry-go-instrumentation",
+	"ruby": "ghcr.io/open-telemetry/opentelemetry-ruby-instrumentation",
+}
 
 var dirOverride = map[string]string{
 	"apacheHttpd": "apache-httpd",
@@ -153,18 +157,18 @@ func headerRegex(keys []string) *regexp.Regexp {
 }
 
 // resolveRefs returns the canonical image reference for each language key,
-// sourcing SDK versions and revisions from the revision package. go uses the
-// upstream image and has no operator-owned revision.
+// sourcing SDK versions and revisions from the revision package. Languages in
+// upstreamImageRepos use the upstream image and have no operator-owned revision.
 func resolveRefs(root string, keys []string) (map[string]string, error) {
 	repo := revision.New(root)
 	refs := make(map[string]string, len(keys))
 	for _, key := range keys {
-		if key == "go" {
-			v, err := goVersion(root)
+		if imageRepo, ok := upstreamImageRepos[key]; ok {
+			v, err := upstreamVersion(root, key)
 			if err != nil {
 				return nil, err
 			}
-			refs[key] = fmt.Sprintf("%s/autoinstrumentation-go:%s", goImageRepo, v)
+			refs[key] = fmt.Sprintf("%s/autoinstrumentation-%s:%s", imageRepo, key, v)
 			continue
 		}
 		dir := key
@@ -184,21 +188,21 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 	return refs, nil
 }
 
-// goVersion returns the upstream go instrumentation version from versions.txt.
-// Go references the upstream image directly and has no operator-owned revision.
-func goVersion(root string) (string, error) {
+// upstreamVersion returns the upstream instrumentation version for key from
+// versions.txt.
+func upstreamVersion(root, key string) (string, error) {
 	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
 	if err != nil {
 		return "", err
 	}
 	for line := range strings.SplitSeq(string(content), "\n") {
-		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-go="); ok {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-"+key+"="); ok {
 			if v = strings.TrimSpace(v); v != "" {
 				return v, nil
 			}
 		}
 	}
-	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
+	return "", fmt.Errorf("could not read autoinstrumentation-%s version from versions.txt", key)
 }
 
 // managedFiles returns the repo-relative example files to pin: every YAML or
