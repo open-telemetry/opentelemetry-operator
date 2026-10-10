@@ -9,6 +9,10 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 )
 
 func TestGetFlagSet(t *testing.T) {
@@ -114,4 +118,16 @@ func TestFlagGetters(t *testing.T) {
 			assert.Equal(t, tt.expectedValue, got)
 		})
 	}
+}
+
+func TestFeatureGatesFlag(t *testing.T) {
+	t.Cleanup(func() {
+		assert.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.TargetsRemainingAttributes.ID(), false))
+	})
+	fs := getFlagSet(pflag.ContinueOnError)
+
+	err := fs.Parse([]string{"--feature-gates=targetallocator.targetsremainingattributes"})
+
+	require.NoError(t, err)
+	assert.True(t, featuregate.TargetsRemainingAttributes.IsEnabled())
 }

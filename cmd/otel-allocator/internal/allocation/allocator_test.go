@@ -4,11 +4,21 @@
 package allocation
 
 import (
+	"context"
 	"testing"
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -383,5 +393,88 @@ func TestMultiJobAllocation(t *testing.T) {
 		// For per-node, none will be assigned due to missing node labels
 		assert.True(t, assignedCount == 0 || assignedCount == 6,
 			"expected all targets assigned or none, got %d/6", assignedCount)
+	})
+}
+
+func TestTargetsRemainingMetric(t *testing.T) {
+	newTarget := func(job, namespace, address string) *target.Item {
+		ls := labels.New(
+			labels.Label{Name: "__address__", Value: address},
+			labels.Label{Name: "__meta_kubernetes_namespace", Value: namespace},
+		)
+		return target.NewItem(job, address, ls, "", target.HashLabels(ls, job))
+	}
+	newAllocatorWithReader := func(t *testing.T) (Allocator, *sdkmetric.ManualReader) {
+		reader := sdkmetric.NewManualReader()
+		otel.SetMeterProvider(sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)))
+		allocator, err := New(consistentHashingStrategyName, logf.Log.WithName("unit-tests"))
+		require.NoError(t, err)
+		return allocator, reader
+	}
+	collect := func(t *testing.T, reader *sdkmetric.ManualReader) metricdata.Gauge[int64] {
+		var rm metricdata.ResourceMetrics
+		require.NoError(t, reader.Collect(context.Background(), &rm))
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				if m.Name == "opentelemetry_allocator_targets_remaining" {
+					return m.Data.(metricdata.Gauge[int64])
+				}
+			}
+		}
+		require.Fail(t, "opentelemetry_allocator_targets_remaining not recorded")
+		return metricdata.Gauge[int64]{}
+	}
+	point := func(value int64, attrs ...attribute.KeyValue) metricdata.DataPoint[int64] {
+		return metricdata.DataPoint[int64]{Attributes: attribute.NewSet(attrs...), Value: value}
+	}
+
+	t.Run("feature gate disabled", func(t *testing.T) {
+		allocator, reader := newAllocatorWithReader(t)
+
+		allocator.SetTargets([]*target.Item{
+			newTarget("job-a", "ns-1", "10.0.0.1:8080"),
+			newTarget("job-a", "ns-2", "10.0.0.2:8080"),
+			newTarget("job-b", "", "10.0.0.3:8080"),
+		})
+
+		metricdatatest.AssertEqual(t, metricdata.Gauge[int64]{
+			DataPoints: []metricdata.DataPoint[int64]{point(3)},
+		}, collect(t, reader), metricdatatest.IgnoreTimestamp())
+	})
+
+	t.Run("feature gate enabled", func(t *testing.T) {
+		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.TargetsRemainingAttributes.ID(), true))
+		t.Cleanup(func() {
+			assert.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.TargetsRemainingAttributes.ID(), false))
+		})
+		allocator, reader := newAllocatorWithReader(t)
+
+		allocator.SetTargets([]*target.Item{
+			newTarget("job-a", "ns-1", "10.0.0.1:8080"),
+			newTarget("job-a", "ns-1", "10.0.0.2:8080"),
+			newTarget("job-a", "ns-2", "10.0.0.3:8080"),
+			newTarget("job-b", "", "10.0.0.4:8080"),
+		})
+
+		metricdatatest.AssertEqual(t, metricdata.Gauge[int64]{
+			DataPoints: []metricdata.DataPoint[int64]{
+				point(2, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-1")),
+				point(1, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-2")),
+				point(1, attribute.String("job.name", "job-b")),
+			},
+		}, collect(t, reader), metricdatatest.IgnoreTimestamp())
+
+		// Series for a job and namespace without targets drop to zero.
+		allocator.SetTargets([]*target.Item{
+			newTarget("job-a", "ns-1", "10.0.0.1:8080"),
+		})
+
+		metricdatatest.AssertEqual(t, metricdata.Gauge[int64]{
+			DataPoints: []metricdata.DataPoint[int64]{
+				point(1, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-1")),
+				point(0, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-2")),
+				point(0, attribute.String("job.name", "job-b")),
+			},
+		}, collect(t, reader), metricdatatest.IgnoreTimestamp())
 	})
 }

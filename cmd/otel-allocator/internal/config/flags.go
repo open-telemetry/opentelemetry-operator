@@ -7,7 +7,10 @@ import (
 	"flag"
 
 	"github.com/spf13/pflag"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
 )
 
 // Flag names.
@@ -43,6 +46,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
+	flagSet.AddGoFlagSet(featuregate.Flags(colfeaturegate.GlobalRegistry()))
 	return flagSet
 }
 
