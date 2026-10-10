@@ -183,10 +183,12 @@ func TestDownstreamParsers(t *testing.T) {
 
 func TestSyslogReceiverPorts(t *testing.T) {
 	for _, tt := range []struct {
-		name     string
-		config   map[string]any
-		port     int32
-		protocol corev1.Protocol
+		name      string
+		config    map[string]any
+		port      int32
+		protocol  corev1.Protocol
+		wantEmpty bool
+		wantError bool
 	}{
 		{
 			name: "tcp",
@@ -204,11 +206,37 @@ func TestSyslogReceiverPorts(t *testing.T) {
 			port:     1514,
 			protocol: corev1.ProtocolUDP,
 		},
+		{
+			name:      "nil config",
+			config:    nil,
+			wantEmpty: true,
+		},
+		{
+			name:      "no transport",
+			config:    map[string]any{},
+			wantEmpty: true,
+		},
+		{
+			name: "missing listen address",
+			config: map[string]any{
+				"tcp": map[string]any{},
+			},
+			wantEmpty: true,
+			wantError: true,
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := receivers.ReceiverFor("syslog")
 			ports, err := parser.Ports(logger, "syslog/test", tt.config)
-			assert.NoError(t, err)
+			if tt.wantError {
+				assert.ErrorIs(t, err, components.PortNotFoundErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			if tt.wantEmpty {
+				assert.Empty(t, ports)
+				return
+			}
 			if !assert.Len(t, ports, 1) {
 				return
 			}
