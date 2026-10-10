@@ -1,0 +1,21 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add an `allocationStrategyConfig` field to the target allocator sections of the OpenTelemetryCollector and TargetAllocator CRDs.
+
+# One or more tracking issues related to the change
+issues: [5183]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The first option is the per-node strategy's fallback strategy, set via
+  `spec.targetAllocator.allocationStrategyConfig.perNode.fallbackStrategy.name`, which is rendered as
+  `allocation_strategy_config.per_node.fallback_strategy.name` in the target allocator configuration.
+  The field accepts `least-weighted` and `consistent-hashing`; `per-node` is rejected, as a per-node
+  fallback would fail on exactly the targets the primary strategy failed to assign.
