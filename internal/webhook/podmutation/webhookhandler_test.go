@@ -6,9 +6,11 @@ package podmutation_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admv1 "k8s.io/api/admission/v1"
@@ -27,6 +29,12 @@ import (
 )
 
 var logger = logf.Log.WithName("unit-tests")
+
+type podMutatorFunc func(context.Context, corev1.Namespace, corev1.Pod) (corev1.Pod, error)
+
+func (m podMutatorFunc) Mutate(ctx context.Context, namespace corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
+	return m(ctx, namespace, pod)
+}
 
 func TestShouldInjectSidecar(t *testing.T) {
 	for _, tt := range []struct {
@@ -139,15 +147,15 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(logger, scheme.Scheme, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), req)
 
 			// verify
 			assert.True(t, res.Allowed)
-			assert.Nil(t, res.Result)
+			require.NotNil(t, res.Result)
+			assert.Equal(t, http.StatusOK, int(res.Result.Code))
 			assert.Len(t, res.Patches, 2)
 
 			expectedMap := map[string]bool{
@@ -357,8 +365,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(logger, scheme.Scheme, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			require.NoError(t, err)
 
 			// test
@@ -366,7 +373,8 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// verify
 			assert.True(t, res.Allowed)
-			assert.Nil(t, res.Result)
+			require.NotNil(t, res.Result)
+			assert.Equal(t, http.StatusOK, int(res.Result.Code))
 			assert.Len(t, res.Patches, 0)
 
 			// cleanup
@@ -377,20 +385,117 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 	}
 }
 
+func TestWebhookDoesNotRemoveUnknownPodFields(t *testing.T) {
+	ctx := context.Background()
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "unknown-pod-fields"}}
+	require.NoError(t, k8sClient.Create(ctx, &namespace))
+	defer func() {
+		_ = k8sClient.Delete(ctx, &namespace)
+	}()
+
+	rawPod := []byte(`{"apiVersion":"v1","kind":"Pod","metadata":{"name":"unknown-pod-fields","namespace":"unknown-pod-fields"},"spec":{"futurePodField":"preserve-me"}}`)
+	request := admission.Request{AdmissionRequest: admv1.AdmissionRequest{
+		Namespace: namespace.Name,
+		Operation: admv1.Create,
+		Object:    runtime.RawExtension{Raw: rawPod},
+	}}
+
+	unchangedHandler := NewWebhookHandler(logger, scheme.Scheme, k8sClient, nil)
+	unchangedResponse := unchangedHandler.Handle(ctx, request)
+	require.True(t, unchangedResponse.Allowed)
+	assert.Empty(t, unchangedResponse.Patches)
+
+	mutatingHandler := NewWebhookHandler(
+		logger,
+		scheme.Scheme,
+		k8sClient,
+		[]PodMutator{podMutatorFunc(func(_ context.Context, _ corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
+			pod.Labels = map[string]string{"mutated": "true"}
+			return pod, nil
+		})},
+	)
+	response := mutatingHandler.Handle(ctx, request)
+	require.True(t, response.Allowed)
+	require.NotEmpty(t, response.Patches)
+
+	patchPaths := make([]string, 0, len(response.Patches))
+	for _, patch := range response.Patches {
+		patchPaths = append(patchPaths, patch.Path)
+		assert.NotEqual(t, "remove", patch.Operation, "patch should not remove unknown fields")
+	}
+	assert.NotContains(t, patchPaths, "")
+	assert.NotContains(t, patchPaths, "/spec")
+	assert.NotContains(t, patchPaths, "/spec/futurePodField")
+
+	patchBytes, err := json.Marshal(response.Patches)
+	require.NoError(t, err)
+	patch, err := jsonpatch.DecodePatch(patchBytes)
+	require.NoError(t, err)
+	patchedPod, err := patch.Apply(rawPod)
+	require.NoError(t, err)
+
+	var patchedObject struct {
+		Metadata struct {
+			Labels map[string]string `json:"labels"`
+		} `json:"metadata"`
+		Spec map[string]json.RawMessage `json:"spec"`
+	}
+	require.NoError(t, json.Unmarshal(patchedPod, &patchedObject))
+	var preservedField string
+	require.NoError(t, json.Unmarshal(patchedObject.Spec["futurePodField"], &preservedField))
+	assert.Equal(t, "preserve-me", preservedField)
+	assert.Equal(t, map[string]string{"mutated": "true"}, patchedObject.Metadata.Labels)
+}
+
+func TestWebhookDoesNotApplyPartialMutationsOnError(t *testing.T) {
+	ctx := context.Background()
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "mutator-error"}}
+	require.NoError(t, k8sClient.Create(ctx, &namespace))
+	defer func() {
+		_ = k8sClient.Delete(ctx, &namespace)
+	}()
+
+	request := admission.Request{AdmissionRequest: admv1.AdmissionRequest{
+		Namespace: namespace.Name,
+		Operation: admv1.Create,
+		Object: runtime.RawExtension{Raw: []byte(
+			`{"apiVersion":"v1","kind":"Pod","metadata":{"name":"mutator-error","namespace":"mutator-error"}}`,
+		)},
+	}}
+	mutators := []PodMutator{
+		podMutatorFunc(func(_ context.Context, _ corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
+			pod.Labels = map[string]string{"partial": "true"}
+			return pod, nil
+		}),
+		podMutatorFunc(func(_ context.Context, _ corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
+			return pod, errors.New("mutation failed")
+		}),
+	}
+	handler := NewWebhookHandler(logger, scheme.Scheme, k8sClient, mutators)
+	response := handler.Handle(ctx, request)
+
+	require.True(t, response.Allowed)
+	require.NotNil(t, response.Result)
+	assert.Equal(t, http.StatusInternalServerError, int(response.Result.Code))
+	assert.Empty(t, response.Patches)
+}
+
 func TestFailOnInvalidRequest(t *testing.T) {
 	// we use a typical Go table-test instad of Ginkgo's DescribeTable because we need to
 	// do an assertion during the declaration of the table params, which isn't supported (yet?)
 	for _, tt := range []struct {
-		req      admission.Request
-		name     string
-		expected int32
-		allowed  bool
+		req          admission.Request
+		name         string
+		expected     int32
+		expectStatus bool
+		allowed      bool
 	}{
 		{
-			name:     "empty payload",
-			req:      admission.Request{},
-			expected: http.StatusBadRequest,
-			allowed:  false,
+			name:         "empty payload",
+			req:          admission.Request{},
+			expected:     http.StatusBadRequest,
+			expectStatus: true,
+			allowed:      false,
 		},
 		{
 			name: "namespace doesn't exist",
@@ -408,23 +513,27 @@ func TestFailOnInvalidRequest(t *testing.T) {
 					},
 				}
 			}(),
-			expected: http.StatusInternalServerError,
-			allowed:  true,
+			expected:     http.StatusInternalServerError,
+			expectStatus: true,
+			allowed:      true,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			// prepare
 			cfg := config.New()
-			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(logger, scheme.Scheme, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)
 
 			// verify
 			assert.Equal(t, tt.allowed, res.Allowed)
-			assert.NotNil(t, res.Result)
-			assert.Equal(t, tt.expected, res.Result.Code)
+			if tt.expectStatus {
+				require.NotNil(t, res.Result)
+				assert.Equal(t, tt.expected, res.Result.Code)
+			} else {
+				assert.Nil(t, res.Result)
+			}
 		})
 	}
 }
