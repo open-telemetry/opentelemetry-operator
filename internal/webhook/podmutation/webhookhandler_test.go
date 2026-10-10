@@ -377,6 +377,48 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 	}
 }
 
+// panicMutator is a PodMutator that always panics, used to verify that a panic
+// in a mutator does not block pod creation.
+type panicMutator struct{}
+
+func (panicMutator) Mutate(_ context.Context, _ corev1.Namespace, _ corev1.Pod) (corev1.Pod, error) {
+	panic("boom")
+}
+
+func TestPanicInMutatorStillAllowsPod(t *testing.T) {
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-namespace-panic-mutator",
+		},
+	}
+	require.NoError(t, k8sClient.Create(context.Background(), &ns))
+	defer func() {
+		_ = k8sClient.Delete(context.Background(), &ns)
+	}()
+
+	encoded, err := json.Marshal(corev1.Pod{})
+	require.NoError(t, err)
+
+	req := admission.Request{
+		AdmissionRequest: admv1.AdmissionRequest{
+			Namespace: ns.Name,
+			Object: runtime.RawExtension{
+				Raw: encoded,
+			},
+		},
+	}
+
+	cfg := config.New()
+	decoder := admission.NewDecoder(scheme.Scheme)
+	injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{panicMutator{}})
+
+	res := injector.Handle(context.Background(), req)
+
+	// verify: the webhook uses failurePolicy=ignore and must never deny a pod,
+	// issue: https://github.com/open-telemetry/opentelemetry-operator/issues/5736
+	assert.True(t, res.Allowed)
+}
+
 func TestFailOnInvalidRequest(t *testing.T) {
 	// we use a typical Go table-test instad of Ginkgo's DescribeTable because we need to
 	// do an assertion during the declaration of the table params, which isn't supported (yet?)

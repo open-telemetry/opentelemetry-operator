@@ -7,6 +7,7 @@ package podmutation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-logr/logr"
@@ -57,7 +58,23 @@ func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder admission.
 	}
 }
 
-func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) (response admission.Response) {
+	/* a panic in a mutator would otherwise be recovered by controller-runtime into a
+	 denial response, which bypasses failurePolicy=ignore. We
+	 recover here instead and allow the pod through, matching the other error paths
+	 below.
+
+	issue:https://github.com/open-telemetry/opentelemetry-operator/issues/5736
+	another example issue: https://github.com/open-telemetry/opentelemetry-operator/issues/5702
+	*/
+	defer func() {
+		if r := recover(); r != nil {
+			p.logger.Error(fmt.Errorf("%v", r), "pod mutation webhook panicked, allowing pod")
+			response = admission.Errored(http.StatusInternalServerError, fmt.Errorf("%v", r))
+			response.Allowed = true
+		}
+	}()
+
 	pod := corev1.Pod{}
 	err := p.decoder.Decode(req, &pod)
 	if err != nil {
