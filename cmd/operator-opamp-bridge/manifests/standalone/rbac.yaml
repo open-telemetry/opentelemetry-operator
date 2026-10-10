@@ -11,7 +11,30 @@ rules:
   # Deployments + DaemonSets + StatefulSets: the bridge watches rollout status and updates pod template annotations to trigger rollouts
   - apiGroups: ["apps"]
     resources: ["deployments", "daemonsets", "statefulsets"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-opamp-bridge-standalone
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: ["kube-system"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-opamp-bridge-standalone
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-opamp-bridge-standalone
+subjects:
+  - kind: ServiceAccount
+    name: otel-opamp-bridge-standalone
+    namespace: opentelemetry-opamp-bridge
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

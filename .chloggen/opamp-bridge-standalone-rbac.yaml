@@ -1,0 +1,7 @@
+change_type: breaking
+component: opamp
+note: Use the Kubernetes cluster ID to compute standalone OpAMP Bridge agent instance IDs.
+issues: [5689]
+subtext: |
+  - Existing standalone agents will report new instance IDs after upgrade.
+  - The bridge now requires the "get" permission on the "kube-system" namespace to read the cluster ID.
