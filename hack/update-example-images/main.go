@@ -22,6 +22,7 @@ import (
 const (
 	operatorImageRepo = "ghcr.io/open-telemetry/opentelemetry-operator"
 	goImageRepo       = "ghcr.io/open-telemetry/opentelemetry-go-instrumentation"
+	phpImageRepo      = "ghcr.io/opentelemetry-php"
 )
 
 var dirOverride = map[string]string{
@@ -62,6 +63,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
 	headerRe := headerRegex(keys)
 
 	refs, err := resolveRefs(root, keys)
@@ -167,6 +169,14 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 			refs[key] = fmt.Sprintf("%s/autoinstrumentation-go:%s", goImageRepo, v)
 			continue
 		}
+		if key == "php" {
+			v, err := phpVersion(root)
+			if err != nil {
+				return nil, err
+			}
+			refs[key] = fmt.Sprintf("%s/autoinstrumentation-php:%s", phpImageRepo, v)
+			continue
+		}
 		dir := key
 		if d, ok := dirOverride[key]; ok {
 			dir = d
@@ -199,6 +209,23 @@ func goVersion(root string) (string, error) {
 		}
 	}
 	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
+}
+
+// phpVersion returns the upstream php instrumentation version from versions.txt.
+// Php references the upstream image directly and has no operator-owned revision.
+func phpVersion(root string) (string, error) {
+	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
+	if err != nil {
+		return "", err
+	}
+	for line := range strings.SplitSeq(string(content), "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-php="); ok {
+			if v = strings.TrimSpace(v); v != "" {
+				return v, nil
+			}
+		}
+	}
+	return "", errors.New("could not read autoinstrumentation-php version from versions.txt")
 }
 
 // managedFiles returns the repo-relative example files to pin: every YAML or

@@ -1144,6 +1144,276 @@ func TestInjectNodeJS(t *testing.T) {
 	}, pod)
 }
 
+func TestInjectPhp(t *testing.T) {
+	tests := []struct {
+		name     string
+		insts    languageInstrumentations
+		pod      corev1.Pod
+		expected corev1.Pod
+	}{
+		{
+			name: "inject php",
+			insts: languageInstrumentations{
+				Php: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Php: v1alpha1.Php{
+								Image: "img:1",
+							},
+						},
+					},
+					AdditionalAnnotations: map[string]string{
+						"instrumentation.opentelemetry.io/otel-php-api-version": Php85ApiVersion,
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: phpVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-php",
+							Image:   "img:1",
+							Command: []string{"/bin/sh", "-c"},
+							Args:    []string{phpAgentScript, "--", linuxPhpAutoInstrumentationSrc, phpInstrMountPath, glibc, Php85ApiVersion, nonZts},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-php",
+									MountPath: phpInstrMountPath,
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-php",
+									MountPath: phpInstrMountPath,
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.hostIP"},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"},
+									},
+								},
+								{
+									Name:  phpIniScanDirEnvVarName,
+									Value: phpIniScanDirEnvVarValue,
+								},
+								{
+									Name:  otelPhpAutoloadEnabledrEnvVarName,
+									Value: otelPhpAutoloadEnabledrEnvVarValue,
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "otel-php-api-version annotation not defined",
+			insts: languageInstrumentations{
+				Php: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Php: v1alpha1.Php{
+								Image: "img:1",
+							},
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Unsupported otel-php-platform value",
+			insts: languageInstrumentations{
+				Php: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Php: v1alpha1.Php{
+								Image: "img:1",
+							},
+						},
+					},
+					AdditionalAnnotations: map[string]string{
+						"instrumentation.opentelemetry.io/otel-php-platform":    "windows",
+						"instrumentation.opentelemetry.io/otel-php-api-version": Php85ApiVersion,
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Unsupported otel-php-api-version value",
+			insts: languageInstrumentations{
+				Php: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Php: v1alpha1.Php{
+								Image: "img:1",
+							},
+						},
+					},
+					AdditionalAnnotations: map[string]string{
+						"instrumentation.opentelemetry.io/otel-php-api-version": "invalid",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Unsupported otel-php-thread-safety value",
+			insts: languageInstrumentations{
+				Php: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Php: v1alpha1.Php{
+								Image: "img:1",
+							},
+						},
+					},
+					AdditionalAnnotations: map[string]string{
+						"instrumentation.opentelemetry.io/otel-php-api-version":   Php85ApiVersion,
+						"instrumentation.opentelemetry.io/otel-php-thread-safety": "invalid",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inj := sdkInjector{
+				logger: logr.Discard(),
+			}
+			pod := inj.inject(context.Background(), test.insts, testNamespace, test.pod, config.New())
+			assert.Equal(t, test.expected, pod)
+		})
+	}
+}
+
 func TestInjectPython(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{

@@ -22,6 +22,7 @@ func TestToStringMap(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		"auto-instrumentation-apache-httpd-image": "",
 		"auto-instrumentation-dot-net-image":      "",
+		"auto-instrumentation-php-image":          "",
 		"auto-instrumentation-go-image":           "",
 		"auto-instrumentation-java-image":         "",
 		"auto-instrumentation-nginx-image":        "",
@@ -36,6 +37,7 @@ func TestToStringMap(t *testing.T) {
 		"enable-apache-httpd-instrumentation":     "false",
 		"enable-cr-metrics":                       "false",
 		"enable-dot-net-auto-instrumentation":     "false",
+		"enable-php-auto-instrumentation":         "false",
 		"enable-instrumentation-crds":             "false",
 		"enable-go-auto-instrumentation":          "false",
 		"enable-java-auto-instrumentation":        "false",
