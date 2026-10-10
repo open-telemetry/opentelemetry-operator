@@ -5,6 +5,7 @@ package otelconfig
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"path"
 	"strings"
@@ -614,16 +615,22 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 }
 
 func TestGetTelemetryReturnsAnErrorWhenItCannotParse(t *testing.T) {
-	s := &v1beta1.Service{
-		Telemetry: &v1beta1.AnyConfig{
-			Object: map[string]any{
-				"metrics": "x",
-			},
+	for name, telemetry := range map[string]map[string]any{
+		"does not fit the Telemetry type": {
+			"metrics": "x",
 		},
+		// YAML's .inf decodes to +Inf, which JSON can't encode.
+		"can't be encoded as JSON": {
+			"metrics": map[string]any{"level": math.Inf(1)},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := &v1beta1.Service{Telemetry: &v1beta1.AnyConfig{Object: telemetry}}
+			got, err := GetTelemetry(s, logr.Discard())
+			require.Error(t, err)
+			assert.Nil(t, got)
+		})
 	}
-	got, err := GetTelemetry(s, logr.Discard())
-	require.Error(t, err)
-	assert.Nil(t, got)
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
