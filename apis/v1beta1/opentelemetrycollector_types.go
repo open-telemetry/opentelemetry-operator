@@ -269,7 +269,7 @@ type TargetAllocatorEmbedded struct {
 	// to the Prometheus /metrics endpoint.
 	//
 	// +optional
-	Telemetry TelemetryConfig `json:"telemetry,omitempty"`
+	Telemetry *TelemetryConfig `json:"telemetry,omitempty"`
 }
 
 type TargetAllocatorMTLS struct {
