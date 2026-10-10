@@ -35,7 +35,8 @@ var _ AutoDetect = (*autoDetect)(nil)
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
-	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
+	ClusterRBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
+	NamespacedRBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailability() (targetallocator.Availability, error)
 	CollectorAvailability() (collector.Availability, error)
@@ -126,8 +127,20 @@ func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability
 	return openshift.RoutesNotAvailable, nil
 }
 
-func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
-	w, err := autoRBAC.CheckRBACPermissions(ctx, a.reviewer)
+func (a *autoDetect) ClusterRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	w, err := autoRBAC.CheckClusterRBACPermissions(ctx, a.reviewer)
+	if err != nil {
+		return autoRBAC.NotAvailable, err
+	}
+	if w != nil {
+		return autoRBAC.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+	}
+
+	return autoRBAC.Available, nil
+}
+
+func (a *autoDetect) NamespacedRBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	w, err := autoRBAC.CheckNamespacedRBACPermissions(ctx, a.reviewer)
 	if err != nil {
 		return autoRBAC.NotAvailable, err
 	}
@@ -332,12 +345,19 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	c.PrometheusCRAvailability = pcrd
 	logger.V(2).Info("prometheus cr detected", "availability", pcrd)
 
-	rAuto, err := autoDetect.RBACPermissions(context.Background())
+	rAuto, err := autoDetect.ClusterRBACPermissions(context.Background())
 	if err != nil {
-		logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
+		logger.V(2).Info("the cluster rbac permissions are not set for the operator", "reason", err)
 	}
-	c.Internal.CreateRBACPermissions = rAuto
-	logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
+	c.Internal.CreateClusterRBACPermissions = rAuto
+	logger.V(2).Info("create cluster rbac permissions detected", "availability", rAuto)
+
+	nsRBAC, err := autoDetect.NamespacedRBACPermissions(context.Background())
+	if err != nil {
+		logger.V(2).Info("the namespaced rbac permissions are not set for the operator", "reason", err)
+	}
+	c.Internal.CreateNamespacedRBACPermissions = nsRBAC
+	logger.V(2).Info("create namespaced rbac permissions detected", "availability", nsRBAC)
 
 	cmAvl, err := autoDetect.CertManagerAvailability(context.Background())
 	if err != nil {
