@@ -109,6 +109,10 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	upgraded *v1alpha1.Instrumentation, blockedVersions map[string]string,
 ) {
 	upgraded = inst.DeepCopy()
+	// Automatic image upgrades would mask inherited images on referencing resources.
+	if inst.Spec.BaseRef != nil {
+		return upgraded, inst.Status.UpgradeBlockedVersions
+	}
 	for annotation, instCfg := range u.defaultAnnotationToConfig {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {

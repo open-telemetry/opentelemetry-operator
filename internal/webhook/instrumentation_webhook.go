@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -53,11 +54,19 @@ func (w InstrumentationWebhook) Default(_ context.Context, instrumentation *v1al
 }
 
 func (w InstrumentationWebhook) ValidateCreate(_ context.Context, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
-	return w.validate(inst)
+	warnings, err := w.validate(inst)
+	if err != nil {
+		return warnings, err
+	}
+	return warnings, validateInstrumentationBaseRef(inst)
 }
 
 func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
-	return w.validate(inst)
+	warnings, err := w.validate(inst)
+	if err != nil {
+		return warnings, err
+	}
+	return warnings, validateInstrumentationBaseRef(inst)
 }
 
 func (w InstrumentationWebhook) ValidateDelete(_ context.Context, inst *v1alpha1.Instrumentation) (admission.Warnings, error) {
@@ -67,6 +76,10 @@ func (w InstrumentationWebhook) ValidateDelete(_ context.Context, inst *v1alpha1
 func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
+	}
+	// Stored defaults would mask inherited settings during Pod admission.
+	if r.Spec.BaseRef != nil {
+		return nil
 	}
 	if r.Spec.Java.Image == "" {
 		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage
@@ -192,7 +205,9 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 
 	switch r.Spec.Type {
 	case "":
-		warnings = append(warnings, "sampler type not set")
+		if r.Spec.BaseRef == nil {
+			warnings = append(warnings, "sampler type not set")
+		}
 	case v1alpha1.TraceIDRatio, v1alpha1.ParentBasedTraceIDRatio:
 		if r.Spec.Argument != "" {
 			rate, err := strconv.ParseFloat(r.Spec.Argument, 64)
@@ -247,7 +262,7 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
 	}
 
-	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
+	warnings = append(warnings, validateExporter(r.Spec.Exporter, r.Spec.BaseRef != nil)...)
 
 	// Deprecated field warnings: spec.<lang>.volumeSizeLimit
 	if r.Spec.Java.VolumeSizeLimit != nil {
@@ -275,7 +290,7 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	return warnings, nil
 }
 
-func validateExporter(exporter v1alpha1.Exporter) []string {
+func validateExporter(exporter v1alpha1.Exporter, inheritEndpoint bool) []string {
 	var warnings []string
 	if exporter.TLS != nil {
 		tls := exporter.TLS
@@ -283,7 +298,7 @@ func validateExporter(exporter v1alpha1.Exporter) []string {
 			warnings = append(warnings, "both exporter.tls.key and exporter.tls.cert mut be set")
 		}
 
-		if !strings.HasPrefix(exporter.Endpoint, "https://") {
+		if !strings.HasPrefix(exporter.Endpoint, "https://") && (!inheritEndpoint || exporter.Endpoint != "") {
 			warnings = append(warnings, "exporter.tls is configured but exporter.endpoint is not enabling TLS with https://")
 		}
 	}
@@ -292,6 +307,28 @@ func validateExporter(exporter v1alpha1.Exporter) []string {
 	}
 
 	return warnings
+}
+
+func validateInstrumentationBaseRef(inst *v1alpha1.Instrumentation) error {
+	ref := inst.Spec.BaseRef
+	if ref == nil {
+		return nil
+	}
+	if inst.Spec.Argument != "" && inst.Spec.Type == "" {
+		return errors.New("spec.sampler.type is required when overriding spec.sampler.argument")
+	}
+	if errs := validation.IsDNS1123Subdomain(ref.Name); len(errs) != 0 {
+		return fmt.Errorf("spec.baseRef.name is invalid: %s", strings.Join(errs, ", "))
+	}
+	if ref.Namespace != "" {
+		if errs := validation.IsDNS1123Label(ref.Namespace); len(errs) != 0 {
+			return fmt.Errorf("spec.baseRef.namespace is invalid: %s", strings.Join(errs, ", "))
+		}
+	}
+	if ref.Name == inst.Name && (ref.Namespace == "" || ref.Namespace == inst.Namespace) {
+		return errors.New("spec.baseRef cannot reference the same Instrumentation")
+	}
+	return nil
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {

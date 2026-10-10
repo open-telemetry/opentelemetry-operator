@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: base-ref-first-before
+spec:
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-java'].image | [0]): ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.29.0
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-extension-0'].image | [0]): busybox:1.36.1
+  containers:
+  - name: app
+    (env[?name == 'SHARED_PRIORITY'].value | [0]): first
+    (env[?name == 'POD_PRIORITY'].value | [0]): pod
+    (env[?name == 'PARENT_ONLY'].value | [0]): base
+    (env[?name == 'CHILD_ONLY'].value | [0]): first
+    (env[?name == 'OTEL_JAVAAGENT_DEBUG'].value | [0]): "true"
+    (env[?name == 'JAVA_TOOL_OPTIONS'].value | [0]): ' -javaagent:/otel-auto-instrumentation-java-app/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-app/extensions'
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: base-ref-second-before
+  namespace: ($secondNamespace)
+spec:
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-java'].image | [0]): ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.29.0
+  (initContainers[?name == 'opentelemetry-auto-instrumentation-extension-0'].image | [0]): alpine:3.21
+  (length(initContainers)): 2
+  containers:
+  - name: app
+    (env[?name == 'SHARED_PRIORITY'].value | [0]): base
+    (env[?name == 'POD_PRIORITY'].value | [0]): base
+    (env[?name == 'PARENT_ONLY'].value | [0]): base
+    (env[?name == 'CHILD_ONLY'].value | [0]): second
+    (env[?name == 'OTEL_JAVAAGENT_DEBUG'].value | [0]): "true"
