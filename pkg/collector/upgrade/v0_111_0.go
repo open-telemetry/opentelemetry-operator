@@ -18,7 +18,13 @@ func upgrade0_111_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (
 }
 
 func applyDefaults(otelcol *v1beta1.OpenTelemetryCollector, logger logr.Logger) error {
-	if tel := otelconfig.GetTelemetry(&otelcol.Spec.Config.Service, logger); tel != nil && len(tel.Metrics.Readers) > 0 {
+	tel, err := otelconfig.GetTelemetry(&otelcol.Spec.Config.Service, logger)
+	if err != nil {
+		// Telemetry that can't be parsed is left as it is.
+		// See open-telemetry/opentelemetry-operator#5734.
+		return nil
+	}
+	if tel != nil && len(tel.Metrics.Readers) > 0 {
 		// service.telemetry.metrics.readers is already configured; setting the deprecated
 		// address field here would duplicate that endpoint. A later upgrade step migrates
 		// address to readers and would then add a second Prometheus reader for it, making

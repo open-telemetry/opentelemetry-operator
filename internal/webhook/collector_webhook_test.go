@@ -77,6 +77,25 @@ func TestValidate(t *testing.T) {
 				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.",
 			},
 		},
+		{
+			name: "telemetry the operator can't parse",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Telemetry: &v1beta1.AnyConfig{
+								Object: map[string]any{
+									"metrics": "x",
+								},
+							},
+						},
+					},
+				},
+			},
+			warnings: []string{
+				"spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: json: cannot unmarshal string into Go struct field Telemetry.metrics of type otelconfig.MetricsConfig",
+			},
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {

@@ -180,6 +180,10 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 
+	if _, err := otelconfig.GetTelemetry(&r.Spec.Config.Service, c.logger); err != nil {
+		warnings = append(warnings, fmt.Sprintf("spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: %v", err))
+	}
+
 	// Reject a config the operator cannot render faithfully here, where the user gets the error at admission,
 	// rather than at reconcile time. The rendering paths verify this property again for the documents they
 	// actually write, so this check is early feedback, not the guarantee.
