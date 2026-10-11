@@ -560,7 +560,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) (*Telemetry, error) {
 	jsonData, err := json.Marshal(s.Telemetry)
 	if err != nil {
 		logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal telemetry configuration to JSON: %w", err)
 	}
 
 	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
@@ -569,7 +569,7 @@ func GetTelemetry(s *v1beta1.Service, logger logr.Logger) (*Telemetry, error) {
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
 		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal telemetry configuration: %w", err)
 	}
 
 	logger.V(2).Info("successfully parsed telemetry configuration",

@@ -615,19 +615,28 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 }
 
 func TestGetTelemetryReturnsAnErrorWhenItCannotParse(t *testing.T) {
-	for name, telemetry := range map[string]map[string]any{
+	for name, tt := range map[string]struct {
+		telemetry map[string]any
+		wantErr   string
+		cause     any
+	}{
 		"does not fit the Telemetry type": {
-			"metrics": "x",
+			telemetry: map[string]any{"metrics": "x"},
+			wantErr:   "failed to unmarshal telemetry configuration: ",
+			cause:     new(*json.UnmarshalTypeError),
 		},
 		// YAML's .inf decodes to +Inf, which JSON can't encode.
 		"can't be encoded as JSON": {
-			"metrics": map[string]any{"level": math.Inf(1)},
+			telemetry: map[string]any{"metrics": map[string]any{"level": math.Inf(1)}},
+			wantErr:   "failed to marshal telemetry configuration to JSON: ",
+			cause:     new(*json.UnsupportedValueError),
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := &v1beta1.Service{Telemetry: &v1beta1.AnyConfig{Object: telemetry}}
+			s := &v1beta1.Service{Telemetry: &v1beta1.AnyConfig{Object: tt.telemetry}}
 			got, err := GetTelemetry(s, logr.Discard())
-			require.Error(t, err)
+			require.ErrorContains(t, err, tt.wantErr)
+			assert.ErrorAs(t, err, tt.cause)
 			assert.Nil(t, got)
 		})
 	}

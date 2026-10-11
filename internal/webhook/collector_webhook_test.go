@@ -93,7 +93,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			warnings: []string{
-				"spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: json: cannot unmarshal string into Go struct field Telemetry.metrics of type otelconfig.MetricsConfig",
+				"spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: failed to unmarshal telemetry configuration: json: cannot unmarshal string into Go struct field Telemetry.metrics of type otelconfig.MetricsConfig",
 			},
 		},
 	}
