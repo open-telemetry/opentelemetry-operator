@@ -213,7 +213,7 @@ require (
 
 require (
 	github.com/open-telemetry/opentelemetry-operator/apis v0.0.0-unpublished
-	github.com/openshift/controller-runtime-common v0.0.0-20261005093240-b39eb7218441
+	github.com/openshift/controller-runtime-common v0.0.0-20261008111711-8ec0dc844066
 	github.com/openshift/library-go v0.0.0-20261006114826-08c298325427
 	go.opentelemetry.io/contrib/bridges/prometheus v0.72.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.47.0

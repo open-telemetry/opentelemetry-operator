@@ -463,8 +463,8 @@ github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJw
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
 github.com/openshift/api v0.0.0-20261006163836-502232e87aad h1:1GLjeuqWV5BUEGivixoIblqID+0Ptebe7nS4VxgpLBg=
 github.com/openshift/api v0.0.0-20261006163836-502232e87aad/go.mod h1:2oI3aXQFDjjl7l4xA9ZPSkB+l+lyfWLg7P2sWg9yEvM=
-github.com/openshift/controller-runtime-common v0.0.0-20261005093240-b39eb7218441 h1:rxX9ejX5FTDiYguenwomjnlq1wnTho5Z45ocygeVLF0=
-github.com/openshift/controller-runtime-common v0.0.0-20261005093240-b39eb7218441/go.mod h1:wRo2jx/+tZd6HnYYmKayArJgL3T6LLbovLr28DGukMg=
+github.com/openshift/controller-runtime-common v0.0.0-20261008111711-8ec0dc844066 h1:dZ8exz2DPQdoQmjfb5p66b3hWwBrlbnMe0HifkouYgI=
+github.com/openshift/controller-runtime-common v0.0.0-20261008111711-8ec0dc844066/go.mod h1:wRo2jx/+tZd6HnYYmKayArJgL3T6LLbovLr28DGukMg=
 github.com/openshift/library-go v0.0.0-20261006114826-08c298325427 h1:Ca5+Rj6yk9pHVJHWye31JI+1QUQIygYervjfXWqmtlM=
 github.com/openshift/library-go v0.0.0-20261006114826-08c298325427/go.mod h1:k0EA2kHPdvdKgyV38lWS1u1eIgMBgrpWkCl2ei4A3ug=
 github.com/operator-framework/api v0.45.0 h1:hkROwtsLH3oszp4IW+WsXEFSDgveSahHI7DKStOtrUI=
