@@ -341,6 +341,13 @@ func TestListRequiredPermissionsScopesWatchesToConfiguredNamespaces(t *testing.T
 	}
 }
 
+func TestListRequiredPermissionsIncludesClusterIDNamespace(t *testing.T) {
+	perms, err := ListRequiredPermissions([]config.StandaloneAgentConfig{testAgentConfig()}, false)
+
+	require.NoError(t, err)
+	require.Contains(t, perms, config.Permission{Verb: "get", Resource: "namespaces", Name: "kube-system"})
+}
+
 func TestClientCheckPermissionsRejectsMissingConfiguredResourcePermission(t *testing.T) {
 	c := newTestClient(getPermissionReviewClient(t, func(attrs authorizationv1.ResourceAttributes) bool {
 		return attrs.Verb != "patch" || attrs.Resource != "deployments" || attrs.Name != "standalone-collector"
