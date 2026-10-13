@@ -4,7 +4,7 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/container-names: myapp,myrabbit
     instrumentation.opentelemetry.io/inject-php: "true"
-    instrumentation.opentelemetry.io/otel-php-api-version: "20240924"
+    instrumentation.opentelemetry.io/otel-php-api-version: "20250925"
   labels:
     app: my-php-multi
 spec:
