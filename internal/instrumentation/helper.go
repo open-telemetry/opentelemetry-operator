@@ -38,6 +38,7 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			javaInitContainerName,
 			nodejsInitContainerName,
 			pythonInitContainerName,
+			phpInitContainerName,
 			apacheAgentInitContainerName,
 			apacheAgentCloneContainerName,
 		}, cont.Name) {

@@ -54,6 +54,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.NodeJS.Instrumentation != nil {
 		pod = i.injectNodeJS(ctx, insts.NodeJS, ns, pod)
 	}
+	if insts.Php.Instrumentation != nil {
+		pod = i.injectPhp(ctx, insts.Php, ns, pod)
+	}
 	if insts.Python.Instrumentation != nil {
 		pod = i.injectPython(ctx, insts.Python, ns, pod)
 	}
@@ -118,6 +121,45 @@ func (i *sdkInjector) injectNodeJS(ctx context.Context, inst instrumentationWith
 
 		pod = injectNodeJSSDKToPod(otelinst.Spec.NodeJS, pod, containers[0].Name, otelinst.Spec)
 		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), nodejsInitContainerName)
+	}
+
+	return pod
+}
+
+func (i *sdkInjector) injectPhp(ctx context.Context, inst instrumentationWithContainers, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+	otelinst := *inst.Instrumentation
+	i.logger.V(1).Info("injecting PHP instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+	platform := inst.AdditionalAnnotations[annotationPhpPlatform]
+	if platform != "" && !slices.Contains(validPlatforms, platform) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-platform annotation value "+platform+" is not supported")
+		return pod
+	}
+	apiVersion := inst.AdditionalAnnotations[annotationPhpApiVersion]
+	if !slices.Contains(validApiVersions, apiVersion) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-api-version annotation value "+apiVersion+" is not supported")
+		return pod
+	}
+	threadSafety := inst.AdditionalAnnotations[annotationPhpThreadSafety]
+	if threadSafety != "" && !slices.Contains(validThreadSafety, threadSafety) {
+		i.logger.Info("Skipping PHP SDK injection", "reason", "provided instrumentation.opentelemetry.io/otel-php-thread-safety annotation value "+threadSafety+" is not supported")
+		return pod
+	}
+
+	containers := containersToInstrument(&inst, &pod)
+
+	if len(containers) > 0 {
+		for _, container := range containers {
+			if err := injectPhpSDKToContainer(otelinst.Spec.Php, container); err != nil {
+				i.logger.Info("Skipping PHP SDK injection", "reason", err.Error(), "container", container.Name)
+			} else {
+				i.injectCommonEnvVar(otelinst, container)
+				i.injectDefaultPhpEnvVars(container)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
+			}
+		}
+		pod = injectPhpSDKToPod(otelinst.Spec.Php, pod, containers[0].Name, otelinst.Spec, platform, apiVersion, threadSafety)
+		pod = i.setInitContainerSecurityContext(pod, resolveInitContainerSecurityContext(otelinst.Spec.InitContainerSecurityContext, containers[0].SecurityContext), phpInitContainerName)
 	}
 
 	return pod
@@ -408,6 +450,11 @@ func (*sdkInjector) injectDefaultJavaEnvVars(container *corev1.Container, javaSp
 func (*sdkInjector) injectDefaultNodeJSEnvVars(container *corev1.Container) {
 	envVars := getDefaultNodeJSEnvVars(container)
 	container.Env = appendOrReplace(container.Env, envVars...)
+}
+
+// injectDefaultPhpEnvVars injects default environment variables for PHP.
+func (*sdkInjector) injectDefaultPhpEnvVars(container *corev1.Container) {
+	container.Env = appendIfNotSet(container.Env, getDefaultPhpEnvVars()...)
 }
 
 // injectDefaultPythonEnvVars injects default environment variables for Python.
