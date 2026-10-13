@@ -11,7 +11,7 @@ spec:
       certificateAuthorityCertificate:
         configMap:
           name: mtls-ca
-      # Needed to creat proper volume/volume mounts in OTel Collector.
+      # Needed to create a proper volumes and volume mounts for the OTel Collector.
       clientCertificate:
         certificateSecret:
           name: ta-client-cert
