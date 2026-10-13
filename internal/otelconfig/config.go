@@ -241,6 +241,12 @@ func applyDefaultForComponentKinds(c *v1beta1.Config, logger logr.Logger, parser
 			retriever = extensions.ParserFor
 			cfg = *c.Extensions
 		}
+		// The mutating webhook runs before CRD validation, so receivers or
+		// exporters can be missing here.
+		// See open-telemetry/opentelemetry-operator#5735.
+		if cfg.Object == nil {
+			continue
+		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]

@@ -27,3 +27,12 @@ func TestOperatorPermissionsPatchOnlyWithRestartCommand(t *testing.T) {
 	require.Equal(t, 0, countPatch(false))
 	require.Equal(t, 3, countPatch(true))
 }
+
+func TestOperatorPermissionsIncludeClusterIDNamespace(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+
+	perms, err := cfg.OperatorPermissions()
+
+	require.NoError(t, err)
+	require.Contains(t, perms, Permission{Verb: "get", Resource: "namespaces", Name: "kube-system"})
+}
