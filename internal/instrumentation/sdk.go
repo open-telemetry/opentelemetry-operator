@@ -263,7 +263,7 @@ func (i *sdkInjector) injectSdk(ctx context.Context, inst instrumentationWithCon
 }
 
 func ensureContainer(inst *instrumentationWithContainers, pod corev1.Pod) {
-	if len(inst.Containers) == 0 {
+	if len(inst.Containers) == 0 && len(pod.Spec.Containers) > 0 {
 		inst.Containers = []string{pod.Spec.Containers[0].Name}
 	}
 }

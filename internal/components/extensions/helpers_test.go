@@ -37,6 +37,20 @@ func TestCanRegister(t *testing.T) {
 	assert.Equal(t, ports[0].Port, int32(9000))
 }
 
+func TestExtensionParserAliases(t *testing.T) {
+	for _, tt := range []struct {
+		alias        string
+		canonicalTag string
+	}{
+		{"cgroupruntime", "__cgroup_runtime"},
+	} {
+		t.Run(tt.alias, func(t *testing.T) {
+			parser := ParserFor(tt.alias)
+			assert.Equal(t, tt.canonicalTag, parser.ParserName())
+		})
+	}
+}
+
 func TestExtensionsComponentParsers(t *testing.T) {
 	for _, tt := range []struct {
 		exporterName string

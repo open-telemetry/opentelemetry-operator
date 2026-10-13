@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -186,7 +187,6 @@ func TestTargetAllocatorReconciler_GetOwnedResourceTypes(t *testing.T) {
 	cfg := config.New()
 	cfg.PrometheusCRAvailability = prometheus.Available
 	cfg.CertManagerAvailability = certmanager.Available
-	cfg.Internal.KubeAPIServerPort = 443
 	reconciler := NewTargetAllocatorReconciler(
 		fake.NewFakeClient(),
 		testScheme,
@@ -195,9 +195,10 @@ func TestTargetAllocatorReconciler_GetOwnedResourceTypes(t *testing.T) {
 		testLogger,
 	)
 	params := targetallocator.Params{
-		Config: cfg,
-		Log:    testLogger,
-		Scheme: testScheme,
+		Config:             cfg,
+		Log:                testLogger,
+		Scheme:             testScheme,
+		APIServerEndpoints: []apiserverendpoints.Endpoint{{IP: "10.96.0.1", Port: 443}},
 		TargetAllocator: v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 			Spec: v1alpha1.TargetAllocatorSpec{
@@ -226,4 +227,34 @@ func TestTargetAllocatorReconciler_GetOwnedResourceTypes(t *testing.T) {
 		require.NoError(t, gvkErr)
 		assert.True(t, ownedTypes[gvk], "%s is built but not returned by GetOwnedResourceTypes", gvk.Kind)
 	}
+}
+
+func TestGetTargetAllocatorsWithNetworkPolicy(t *testing.T) {
+	withPolicy := func(name, namespace string, enabled *bool) *v1alpha1.TargetAllocator {
+		return &v1alpha1.TargetAllocator{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+			Spec: v1alpha1.TargetAllocatorSpec{
+				NetworkPolicy: v1beta1.NetworkPolicy{Enabled: enabled},
+			},
+		}
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(
+		withPolicy("enabled", "ns1", new(true)),
+		withPolicy("enabled", "ns2", new(true)),
+		withPolicy("disabled", "ns1", new(false)),
+		withPolicy("unset", "ns1", nil),
+	).Build()
+	reconciler := NewTargetAllocatorReconciler(
+		fakeClient,
+		testScheme,
+		events.NewFakeRecorder(10),
+		config.New(),
+		testLogger,
+	)
+
+	requests := reconciler.getTargetAllocatorsWithNetworkPolicy(t.Context(), nil)
+	assert.ElementsMatch(t, []reconcile.Request{
+		{NamespacedName: types.NamespacedName{Name: "enabled", Namespace: "ns1"}},
+		{NamespacedName: types.NamespacedName{Name: "enabled", Namespace: "ns2"}},
+	}, requests)
 }

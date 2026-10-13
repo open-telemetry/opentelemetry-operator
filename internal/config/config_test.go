@@ -32,7 +32,6 @@ func TestToStringMap(t *testing.T) {
 		"clusterobservability-collector-image":    "",
 		"collector-configmap-entry":               "",
 		"collector-image":                         "myexample:1.0",
-		"create-rbac-permissions":                 "0",
 		"create-service-monitor-operator-metrics": "false",
 		"enable-apache-httpd-instrumentation":     "false",
 		"enable-cr-metrics":                       "false",

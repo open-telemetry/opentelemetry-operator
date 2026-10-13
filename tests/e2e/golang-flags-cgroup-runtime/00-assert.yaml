@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cgroup-runtime-collector
+spec:
+  template:
+    spec:
+      containers:
+        - name: otc-container
+          (env[?name == 'GOMEMLIMIT'] | length(@)): 0
+          (env[?name == 'GOMAXPROCS'] | length(@)): 0
+status:
+  readyReplicas: 1

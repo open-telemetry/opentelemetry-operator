@@ -2,6 +2,88 @@
 
 <!-- next version -->
 
+## 0.160.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator, collector, target allocator`: Disable operator, collector, and target allocator network policies by default. (#5551, #5558, #5621, #5624, #5654)
+  The `operator.networkpolicy` and `operand.networkpolicy` feature gates are moved back to alpha and are disabled by default.
+  The generated network policies can block API server access on some clusters.
+  To keep creating network policies, enable them with `--feature-gates=+operator.networkpolicy,+operand.networkpolicy`,
+  or set `spec.networkPolicy.enabled: true` on individual collectors and target allocators.
+  
+
+### 🚩 Deprecations 🚩
+
+- `auto-instrumentation`: Remove autoinstrumentation-php image definition from the repository (#932)
+  The PHP autoinstrumentation image will be hosted by the packaging SIG.
+  The one released image (v0.1.0) of the image in the operator registry will
+  eventually be deleted. This image was never used for any functionality shipped by the operator.
+
+### 💡 Enhancements 💡
+
+- `collector`: Add RBAC support for extracting labels and annotations from CronJobs (and Jobs) via the `k8sattributes` processor. (#5527)
+  The operator's own ServiceAccount must itself hold `get`/`list`/`watch` on `batch/jobs` and
+  `batch/cronjobs` for this to take effect, since Kubernetes RBAC only lets a ServiceAccount
+  grant permissions it already has. This PR also extends the operator's own ClusterRole
+  accordingly (`config/rbac/role.yaml`).
+  
+- `collector, target allocator`: Add `enableServiceLinks` to the OpenTelemetryCollector and TargetAllocator CRs, passed through to the pod spec of the generated workloads. It defaults to true, matching the Kubernetes Pod field. (#5569)
+- `operator`: Add support for Kubernetes 1.37 (#5650)
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Honor Instrumentation CRD/API json tags when loading `--config-file` (no-CRD webhook configs). (#5618)
+  Operator Config fields still load with gopkg.in/yaml.v3 (yaml tags). The
+  `instrumentations` block is re-parsed with sigs.k8s.io/yaml so embedded API
+  types keep their json tags (for example `apacheHttpd`, `imagePullPolicy`,
+  `resourceAttributes`, `valueFrom`, `volumeLimitSize`, `configPath`).
+  
+- `collector`: Preserve TCP and UDP protocols when generating NetworkPolicy ports. (#5611)
+- `target allocator`: Use the `.svc` FQDN for the TargetAllocator endpoint injected into the collector's Prometheus receiver so it works on clusters behind an HTTP proxy. (#5586)
+  The bare service name (http://<name>-targetallocator:80) does not match the standard NO_PROXY
+  entries (.svc, .cluster.local), so Go routes the request through the proxy. Using
+  <name>-targetallocator.<namespace>.svc matches NO_PROXY=.svc while staying compatible with
+  custom cluster domains (unlike the full .svc.cluster.local endpoint reverted in #3248).
+  
+- `target allocator`: Restore `promhttp_metric_handler_requests_total` and `promhttp_metric_handler_requests_in_flight` on the `/metrics` endpoint when a custom gatherer is configured. (#5622)
+  `#5294` switched the `/metrics` handler to `promhttp.HandlerFor` when a custom gatherer
+  is set, but omitted the `InstrumentMetricHandler` wrapper that registers these two metrics.
+  The handler is now built once in `NewServer` (after options are applied) using
+  `InstrumentMetricHandler`, restoring the missing metrics for both code paths.
+  
+- `target allocator`: Watch and prune all the resources the TargetAllocator controller creates. (#5657)
+  The controller now watches the resources it creates, so manual changes to them are reverted.
+  It also deletes the resources it no longer needs, for example the NetworkPolicy after
+  `spec.networkPolicy.enabled` is set to false, or the ServiceMonitor after
+  `spec.observability.metrics.enableMetrics` is set to false.
+  
+- `collector`: Fix string values that look like numbers, booleans, timestamps or special floats (e.g. `"0e12"`, `".inf"`) being written unquoted to the collector ConfigMap, which made the collector read them as a different type and fail to start. (#4314)
+  The ConfigMap is now rendered with the same YAML library the collector parses it with (`go.yaml.in/yaml/v3`),
+  and the rendered document is checked to decode back to the values held by the CR before it is written.
+  The target allocator rewrite of the Prometheus receiver no longer re-parses the rendered config, and the
+  resulting ConfigMap uses the same formatting as configs without a target allocator (2-space indentation).
+  
+- `collector`: Detect Gateway API availability by the `HTTPRoute` kind served in `gateway.networking.k8s.io/v1` instead of the API group alone, so the operator no longer crash-loops on clusters with a partial Gateway API bundle (for example only `GatewayClass`). (#5571)
+- `target allocator`: Stop assigning targets to collector pods that are being deleted. A terminating pod keeps reporting Ready until the kubelet confirms the deletion, which never happens while its node is unreachable, so its targets were never reassigned. (#5576)
+- `webhook`: Configure the standalone OpenShift webhook with the environment variables required for cert-manager autodetection. (#5660)
+  This allows TargetAllocator mTLS admission to discover cert-manager when the webhook is
+  installed through the OpenShift/OLM deployment path.
+  
+- `opamp`: Only require workload patch permissions when the AcceptsRestartCommand capability is enabled, and reject restart commands when it is not. (#5573)
+
+### Components
+
+* [OpenTelemetry Collector - v0.160.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.160.0)
+* [OpenTelemetry Contrib - v0.160.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.160.0)
+* [Java auto-instrumentation - v2.31.1-2](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.31.1)
+* [.NET auto-instrumentation - v1.17.0-2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.17.0)
+* [Node.JS - v0.78.0-5](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.66b0-2](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.159.0
 
 ### 🛑 Breaking changes 🛑

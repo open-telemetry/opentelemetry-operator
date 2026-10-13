@@ -995,6 +995,11 @@ func (in *OpenTelemetryCommonFields) DeepCopyInto(out *OpenTelemetryCommonFields
 		*out = new(int32)
 		**out = **in
 	}
+	if in.RevisionHistoryLimit != nil {
+		in, out := &in.RevisionHistoryLimit, &out.RevisionHistoryLimit
+		*out = new(int32)
+		**out = **in
+	}
 	if in.PodDisruptionBudget != nil {
 		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
 		*out = new(PodDisruptionBudgetSpec)
@@ -1016,6 +1021,11 @@ func (in *OpenTelemetryCommonFields) DeepCopyInto(out *OpenTelemetryCommonFields
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
@@ -1497,6 +1507,11 @@ func (in *TargetAllocatorEmbedded) DeepCopyInto(out *TargetAllocatorEmbedded) {
 	*out = *in
 	if in.Replicas != nil {
 		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
+	if in.RevisionHistoryLimit != nil {
+		in, out := &in.RevisionHistoryLimit, &out.RevisionHistoryLimit
 		*out = new(int32)
 		**out = **in
 	}

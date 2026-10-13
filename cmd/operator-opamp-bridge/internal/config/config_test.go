@@ -691,7 +691,7 @@ func TestNewStandaloneAgentConfigUsesWorkloadRefNameAsHostName(t *testing.T) {
 			Kind:       "Deployment",
 			Name:       "collector-workload",
 		},
-	})
+	}, "test-cluster-id")
 
 	desc := agentCfg.GetDescription()
 	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "host.name", Value: &protobufs.AnyValue{
@@ -742,7 +742,7 @@ func TestNewStandaloneAgentConfigMergesAgentDescription(t *testing.T) {
 			Kind:       "Deployment",
 			Name:       "collector-workload",
 		},
-	})
+	}, "test-cluster-id")
 
 	desc := agentCfg.GetDescription()
 	assert.Contains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "deployment.environment", Value: &protobufs.AnyValue{
@@ -760,4 +760,23 @@ func TestNewStandaloneAgentConfigMergesAgentDescription(t *testing.T) {
 	assert.NotContains(t, desc.NonIdentifyingAttributes, &protobufs.KeyValue{Key: "k8s.workload.name", Value: &protobufs.AnyValue{
 		Value: &protobufs.AnyValue_StringValue{StringValue: "user-supplied-workload-name"},
 	}})
+}
+
+func TestNewStandaloneAgentConfigGeneratesInstanceIDFromAgentIdentity(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	agent := StandaloneAgentConfig{
+		Namespace: "default",
+		Type:      "otel-collector",
+		WorkloadRef: StandaloneWorkloadRef{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "collector-workload",
+		},
+	}
+
+	firstCluster := NewStandaloneAgentConfig(cfg, agent, "first-cluster")
+	secondCluster := NewStandaloneAgentConfig(cfg, agent, "second-cluster")
+
+	assert.Equal(t, uuid.NewSHA1(uuid.NameSpaceURL, []byte("first-cluster/default/Deployment/collector-workload/otel-collector")), firstCluster.GetInstanceId())
+	assert.NotEqual(t, firstCluster.GetInstanceId(), secondCluster.GetInstanceId())
 }

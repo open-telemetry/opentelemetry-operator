@@ -136,7 +136,7 @@ These fields are read from YAML only and have no CLI or environment variable equ
 | `collector-configmap-entry` | ConfigMap key for collector config (default: `collector.yaml`) |
 | `target-allocator-configmap-entry` | ConfigMap key for Target Allocator config |
 | `operator-op-amp-bridge-configmap-entry` | ConfigMap key for OpAMP bridge config |
-| `create-rbac-permissions` | Deprecated; use CLI `--create-rbac-permissions` only |
+| `create-rbac-permissions` | Autodetected; the operator checks whether its service account can create ClusterRoles and ClusterRoleBindings |
 
 HTTP(S) proxy settings (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) are captured from the operator pod environment and propagated to managed workloads; they are not part of the YAML schema.
 

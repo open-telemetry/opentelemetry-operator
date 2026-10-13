@@ -16,6 +16,8 @@ spec:
     spec:
       shareProcessNamespace: true
       enableServiceLinks: false
+      imagePullSecrets:
+        - name: my-registry-secret
       terminationGracePeriodSeconds: 600
       nodeSelector:
         kubernetes.io/os: linux

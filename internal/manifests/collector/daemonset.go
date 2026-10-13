@@ -56,6 +56,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					HostUsers:                     params.OtelCol.Spec.HostUsers,
 					HostAliases:                   params.OtelCol.Spec.HostAliases,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 					EnableServiceLinks:            params.OtelCol.Spec.EnableServiceLinks,
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig, params.OtelCol.Spec.DNSPolicy),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,

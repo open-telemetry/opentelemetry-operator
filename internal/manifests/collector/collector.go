@@ -64,7 +64,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.Config.CreateRBACPermissions == rbac.Available {
+	if params.Config.Internal.CreateRBACPermissions == rbac.Available {
 		manifestFactories = append(manifestFactories,
 			manifests.Factory(ClusterRole),
 			manifests.Factory(ClusterRoleBinding),
@@ -115,7 +115,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 
 func needsCheckSaPermissions(params manifests.Params) bool {
 	return params.ErrorAsWarning &&
-		params.Config.CreateRBACPermissions == rbac.NotAvailable &&
+		params.Config.Internal.CreateRBACPermissions == rbac.NotAvailable &&
 		params.Reviewer != nil &&
 		params.OtelCol.Spec.ServiceAccount != ""
 }

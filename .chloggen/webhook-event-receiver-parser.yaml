@@ -5,16 +5,12 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Add RBAC support for extracting labels and annotations from CronJobs (and Jobs) via the `k8sattributes` processor."
+note: Register the `webhook_event` receiver (alias `webhookevent`) so the operator derives its Service port from `endpoint`, which the receiver requires, and rejects a configuration that omits it.
 
-# One or more tracking issues related to the change
-issues: [5527]
+# One or more tracking issues related to the change. The pull request number can be used when there is no issue.
+issues: [5631]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: |
-  The operator's own ServiceAccount must itself hold `get`/`list`/`watch` on `batch/jobs` and
-  `batch/cronjobs` for this to take effect, since Kubernetes RBAC only lets a ServiceAccount
-  grant permissions it already has. This PR also extends the operator's own ClusterRole
-  accordingly (`config/rbac/role.yaml`).
+subtext:

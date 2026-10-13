@@ -8,6 +8,10 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 1.17.0-2
+
+- Rebuild .NET auto-instrumentation image (base image or dependency update). (#5671)
+
 ## 1.17.0-1
 
 - Update .NET auto-instrumentation from 1.16.0 to 1.17.0. See [release notes](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.17.0). (#5652)

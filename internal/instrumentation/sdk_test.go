@@ -2848,3 +2848,17 @@ func Test_parseServiceVersionFromImage(t *testing.T) {
 		})
 	}
 }
+
+func TestEnsureContainerEmptyContainers(t *testing.T) {
+	inst := &instrumentationWithContainers{
+		Containers: []string{},
+	}
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{},
+		},
+	}
+
+	ensureContainer(inst, pod)
+	require.Empty(t, inst.Containers)
+}

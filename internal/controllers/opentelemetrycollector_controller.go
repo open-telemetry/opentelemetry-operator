@@ -371,7 +371,7 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&v1alpha1.TargetAllocator{},
 	}
 
-	if r.config.CreateRBACPermissions == rbac.Available {
+	if r.config.Internal.CreateRBACPermissions == rbac.Available {
 		ownedResources = append(ownedResources, &rbacv1.ClusterRole{})
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
@@ -396,7 +396,7 @@ const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
 	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
-	if params.Config.CreateRBACPermissions == rbac.Available {
+	if params.Config.Internal.CreateRBACPermissions == rbac.Available {
 		objects, err := r.findClusterRoleObjects(ctx, params)
 		if err != nil {
 			return err
@@ -407,7 +407,7 @@ func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context
 }
 
 func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryCollector) bool {
-	if params.Config.CreateRBACPermissions == rbac.Available && !controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
+	if params.Config.Internal.CreateRBACPermissions == rbac.Available && !controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
 		return controllerutil.AddFinalizer(instance, collectorFinalizer)
 	}
 	return false
@@ -415,7 +415,7 @@ func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryC
 
 func removeFinalizer(ctx context.Context, r *OpenTelemetryCollectorReconciler, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
 	deletionTimestamp := instance.GetDeletionTimestamp()
-	if deletionTimestamp != nil || params.Config.CreateRBACPermissions != rbac.Available {
+	if deletionTimestamp != nil || params.Config.Internal.CreateRBACPermissions != rbac.Available {
 		if controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
 			// If the finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.

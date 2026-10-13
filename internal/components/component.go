@@ -42,6 +42,10 @@ type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config Com
 // It's expected that type Config is the configuration used by a parser.
 type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]corev1.EnvVar, error)
 
+// SuppressedEnvVarsGenerator is a function that returns the names of environment variables
+// the operator must not set on the collector container for the given component config.
+type SuppressedEnvVarsGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]string, error)
+
 // DefaultConfig holds configuration options for applying defaults to components.
 type DefaultConfig struct {
 	// TLSProfile provides TLS settings to inject into components with tls: blocks.
@@ -120,6 +124,9 @@ type Parser interface {
 
 	// GetEnvironmentVariables returns a list of environment variables for the collector
 	GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error)
+
+	// GetSuppressedEnvVars returns the names of environment variables the operator must not set on the collector
+	GetSuppressedEnvVars(logger logr.Logger, config any) ([]string, error)
 
 	// GetReadinessProbe returns a readiness probe set for the collector
 	GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error)

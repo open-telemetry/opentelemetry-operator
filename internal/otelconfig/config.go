@@ -241,6 +241,12 @@ func applyDefaultForComponentKinds(c *v1beta1.Config, logger logr.Logger, parser
 			retriever = extensions.ParserFor
 			cfg = *c.Extensions
 		}
+		// The mutating webhook runs before CRD validation, so receivers or
+		// exporters can be missing here.
+		// See open-telemetry/opentelemetry-operator#5735.
+		if cfg.Object == nil {
+			continue
+		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]
@@ -330,6 +336,25 @@ func GetLivenessProbe(c *v1beta1.Config, logger logr.Logger) (*corev1.Probe, err
 		}
 	}
 	return nil, nil
+}
+
+// GetSuppressedEnvVars returns the names of environment variables that enabled extensions suppress.
+func GetSuppressedEnvVars(c *v1beta1.Config, logger logr.Logger) (map[string]bool, error) {
+	suppressed := map[string]bool{}
+	for componentName := range GetEnabledComponents(c)[v1beta1.KindExtension] {
+		var extensionConfig any
+		if c.Extensions != nil {
+			extensionConfig = c.Extensions.Object[componentName]
+		}
+		names, err := extensions.ParserFor(componentName).GetSuppressedEnvVars(logger, extensionConfig)
+		if err != nil {
+			return nil, err
+		}
+		for _, name := range names {
+			suppressed[name] = true
+		}
+	}
+	return suppressed, nil
 }
 
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled

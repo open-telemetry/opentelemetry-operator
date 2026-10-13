@@ -7,11 +7,13 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -263,13 +266,15 @@ func TestBuildError_TargetAllocator(t *testing.T) {
 }
 
 func TestPruneOwnedObjects_TargetAllocator(t *testing.T) {
-	// prepare
+	// prepare - the NetworkPolicy needs API server endpoints, which envtest doesn't publish
+	t.Setenv("KUBERNETES_SERVICE_HOST", "10.96.0.1")
+	t.Setenv("KUBERNETES_SERVICE_PORT", "443")
 	cfg := config.Config{
 		TargetAllocatorImage:          "default-ta",
 		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 		CollectorConfigMapEntry:       "collector.yaml",
 	}
-	cfg.Internal.KubeAPIServerPort = 443
+	cfg.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(syncedReader{k8sClient}, time.Hour)
 	nsn := types.NamespacedName{Name: "my-instance-prune", Namespace: "default"}
 	reconciler := createTestTargetAllocatorReconciler(t, ctx, cfg)
 	created := &v1alpha1.TargetAllocator{
@@ -348,4 +353,91 @@ func TestSetupCaches_SharedWithCollector(t *testing.T) {
 
 	// verify
 	require.NoError(t, targetAllocatorReconciler.SetupCaches(runtimeCluster))
+}
+
+func TestNetworkPolicyFollowsAPIServerEndpoints_TargetAllocator(t *testing.T) {
+	// make the result independent of the environment the test runs in
+	t.Setenv("KUBERNETES_SERVICE_HOST", "")
+	t.Setenv("KUBERNETES_SERVICE_PORT", "")
+
+	nsn := types.NamespacedName{Name: "network-policy-apiserver", Namespace: "default"}
+	cfg := config.Config{
+		TargetAllocatorImage:          "default-ta",
+		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+		CollectorConfigMapEntry:       "collector.yaml",
+	}
+	cfg.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(syncedReader{k8sClient}, time.Hour)
+	reconciler := createTestTargetAllocatorReconciler(t, ctx, cfg)
+	ta := &v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nsn.Name,
+			Namespace: nsn.Namespace,
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			NetworkPolicy: v1beta1.NetworkPolicy{Enabled: new(true)},
+		},
+	}
+	require.NoError(t, k8sClient.Create(t.Context(), ta))
+	t.Cleanup(func() {
+		assert.NoError(t, k8sClient.Delete(context.Background(), ta))
+	})
+	req := k8sreconcile.Request{NamespacedName: nsn}
+
+	// envtest doesn't run the API server endpoint reconciler, so there are no endpoints yet
+	_, err := reconciler.Reconcile(t.Context(), req)
+	require.ErrorContains(t, err, "no endpoints found for the Kubernetes API server")
+
+	slice := &discoveryv1.EndpointSlice{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubernetes-network-policy-test",
+			Namespace: apiserverendpoints.Namespace,
+			Labels:    map[string]string{discoveryv1.LabelServiceName: apiserverendpoints.ServiceName},
+		},
+		AddressType: discoveryv1.AddressTypeIPv4,
+		Endpoints:   []discoveryv1.Endpoint{{Addresses: []string{"172.18.0.2"}}},
+		Ports:       []discoveryv1.EndpointPort{{Name: new("https"), Port: new(int32(6443))}},
+	}
+	require.NoError(t, k8sClient.Create(t.Context(), slice))
+	t.Cleanup(func() {
+		assert.NoError(t, k8sClient.Delete(context.Background(), slice))
+	})
+
+	getEgressCIDRs := func() []string {
+		var np networkingv1.NetworkPolicy
+		require.NoError(t, k8sClient.Get(t.Context(), types.NamespacedName{
+			Name:      naming.TargetAllocatorNetworkPolicy(nsn.Name),
+			Namespace: nsn.Namespace,
+		}, &np))
+		require.Len(t, np.Spec.Egress, 1)
+		var cidrs []string
+		for _, peer := range np.Spec.Egress[0].To {
+			cidrs = append(cidrs, peer.IPBlock.CIDR)
+		}
+		return cidrs
+	}
+
+	result, err := reconciler.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"172.18.0.2/32"}, getEgressCIDRs())
+	assert.Zero(t, result.RequeueAfter)
+
+	// the API server endpoints change, e.g. during a control plane upgrade
+	slice.Endpoints = []discoveryv1.Endpoint{{Addresses: []string{"172.18.0.3"}}, {Addresses: []string{"172.18.0.4"}}}
+	require.NoError(t, k8sClient.Update(t.Context(), slice))
+
+	// the removed endpoint is still allowed until it expires
+	result, err = reconciler.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"172.18.0.2/32", "172.18.0.3/32", "172.18.0.4/32"}, getEgressCIDRs())
+	assert.Positive(t, result.RequeueAfter)
+	assert.LessOrEqual(t, result.RequeueAfter, time.Hour)
+}
+
+// syncedReader adapts a client to apiserverendpoints.CacheReader.
+type syncedReader struct {
+	client.Reader
+}
+
+func (syncedReader) WaitForCacheSync(context.Context) bool {
+	return true
 }
