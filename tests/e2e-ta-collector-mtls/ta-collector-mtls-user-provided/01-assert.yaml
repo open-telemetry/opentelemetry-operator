@@ -2,6 +2,46 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-cr-targetallocator
+spec:
+  template:
+    spec:
+      containers:
+        - name: ta-container
+          volumeMounts:
+            - mountPath: /conf
+              name: ta-internal
+            - mountPath: /tls/ca.crt
+              name: prometheus-cr-ta-server-cert-0
+              readOnly: true
+              subPath: ca.crt
+            - mountPath: /tls/tls.crt
+              name: prometheus-cr-ta-server-cert-1
+              readOnly: true
+              subPath: tls.crt
+            - mountPath: /tls/tls.key
+              name: prometheus-cr-ta-server-cert-2
+              readOnly: true
+              subPath: tls.key
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: targetallocator.yaml
+                path: targetallocator.yaml
+            name: prometheus-cr-targetallocator
+          name: ta-internal
+        - configMap:
+            defaultMode: 420
+            name: mtls-ca
+          name: prometheus-cr-ta-server-cert-0
+        - name: prometheus-cr-ta-server-cert-1
+          secret:
+            defaultMode: 420
+            secretName: ta-server-cert
+        - name: prometheus-cr-ta-server-cert-2
+          secret:
+            defaultMode: 420
+            secretName: ta-server-key
 status:
   readyReplicas: 1
   replicas: 1
@@ -10,6 +50,41 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: prometheus-cr-collector
+spec:
+  template:
+    spec:
+      containers:
+        - name: otc-container
+          volumeMounts:
+            - mountPath: /conf
+              name: otc-internal
+            - mountPath: /tls/ca.crt
+              name: prometheus-cr-ta-client-cert-0
+              readOnly: true
+              subPath: ca.crt
+            - mountPath: /tls/tls.crt
+              name: prometheus-cr-ta-client-cert-1
+              readOnly: true
+              subPath: tls.crt
+            - mountPath: /tls/tls.key
+              name: prometheus-cr-ta-client-cert-1
+              readOnly: true
+              subPath: tls.key
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: collector.yaml
+                path: collector.yaml
+          name: otc-internal
+        - configMap:
+            defaultMode: 420
+            name: mtls-ca
+          name: prometheus-cr-ta-client-cert-0
+        - name: prometheus-cr-ta-client-cert-1
+          secret:
+            defaultMode: 420
+            secretName: ta-client-cert
 status:
   readyReplicas: 1
   replicas: 1
