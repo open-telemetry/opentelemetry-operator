@@ -199,7 +199,7 @@ func New() Config {
 		EnableGoAutoInstrumentation:         false,
 		EnableNginxAutoInstrumentation:      false,
 		EnablePythonAutoInstrumentation:     true,
-		EnableRubyAutoInstrumentation:       true,
+		EnableRubyAutoInstrumentation:       false,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
 		TargetAllocatorImage:                fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator),
