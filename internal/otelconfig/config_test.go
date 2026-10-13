@@ -1870,6 +1870,45 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.Nil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.WithoutScopeInfo)
 }
 
+// The mutating webhook runs before CRD validation, so receivers or exporters
+// can be missing. They must stay missing, so CRD validation rejects the object.
+// See open-telemetry/opentelemetry-operator#5735.
+func TestApplyDefaultsWithoutReceiversOrExporters(t *testing.T) {
+	t.Run("receivers", func(t *testing.T) {
+		cfg := &v1beta1.Config{
+			Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": map[string]any{}}},
+			Service: v1beta1.Service{
+				Pipelines: map[string]*v1beta1.Pipeline{
+					"traces": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+				},
+			},
+		}
+
+		var err error
+		require.NotPanics(t, func() { _, err = ApplyDefaults(cfg, logr.Discard()) })
+		require.NoError(t, err)
+		assert.Nil(t, cfg.Receivers.Object)
+	})
+
+	t.Run("exporters", func(t *testing.T) {
+		cfg := &v1beta1.Config{
+			Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{
+				"protocols": map[string]any{"grpc": map[string]any{}},
+			}}},
+			Service: v1beta1.Service{
+				Pipelines: map[string]*v1beta1.Pipeline{
+					"metrics": {Receivers: []string{"otlp"}, Exporters: []string{"prometheus"}},
+				},
+			},
+		}
+
+		var err error
+		require.NotPanics(t, func() { _, err = ApplyDefaults(cfg, logr.Discard()) })
+		require.NoError(t, err)
+		assert.Nil(t, cfg.Exporters.Object)
+	})
+}
+
 // The operator.collector.usedefaulttelemetryshape gate is stable (always on):
 // the injected reader carries no shape overrides, so the collector's defaults apply.
 func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T) {

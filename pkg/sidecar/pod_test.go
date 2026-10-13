@@ -401,3 +401,78 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 	assert.Len(t, changed.Spec.Containers, 2)
 	assert.Contains(t, changed.Spec.Containers[1].Env, extraEnv)
 }
+
+func TestAddSidecarZeroContainers(t *testing.T) {
+	for _, tt := range []struct {
+		desc                 string
+		containers           []corev1.Container
+		nativeSidecarSupport bool
+	}{
+		{
+			desc:                 "regular sidecar with empty containers",
+			containers:           []corev1.Container{},
+			nativeSidecarSupport: false,
+		},
+		{
+			desc:                 "native sidecar with empty containers",
+			containers:           []corev1.Container{},
+			nativeSidecarSupport: true,
+		},
+		{
+			desc:                 "regular sidecar with nil containers",
+			containers:           nil,
+			nativeSidecarSupport: false,
+		},
+		{
+			desc:                 "native sidecar with nil containers",
+			containers:           nil,
+			nativeSidecarSupport: true,
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			pod := corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: tt.containers,
+					InitContainers: []corev1.Container{
+						{Name: "my-init"},
+					},
+				},
+			}
+			otelcol := v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "otelcol-sample",
+					Namespace: "some-app",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						InitContainers: []corev1.Container{
+							{Name: "collector-init"},
+						},
+					},
+					Mode: v1beta1.ModeSidecar,
+					ConfigMaps: []v1beta1.ConfigMapsSpec{
+						{
+							Name:      "test-config",
+							MountPath: "/tmp/test",
+						},
+					},
+				},
+			}
+			cfg := config.Config{
+				CollectorImage: "some-default-image",
+				Internal: config.Internal{
+					NativeSidecarSupport: tt.nativeSidecarSupport,
+				},
+			}
+
+			changed, err := add(cfg, logger, otelcol, pod, nil)
+
+			assert.NoError(t, err)
+			assert.Empty(t, changed.Spec.Containers)
+			assert.Len(t, changed.Spec.InitContainers, 1)
+			assert.Equal(t, "my-init", changed.Spec.InitContainers[0].Name)
+			assert.Empty(t, changed.Spec.Volumes)
+			assert.NotContains(t, changed.Labels, injectedLabel)
+		})
+	}
+}
