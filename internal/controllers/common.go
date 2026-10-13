@@ -188,7 +188,7 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 			"object_name", desired.GetName(),
 			"object_kind", desired.GetObjectKind(),
 		)
-		if isNamespaceScoped(desired) {
+		if isNamespaceScoped(desired) && desired.GetNamespace() == owner.GetNamespace() {
 			if setErr := ctrl.SetControllerReference(owner, desired, scheme); setErr != nil {
 				l.Error(setErr, "failed to set controller owner reference to desired")
 				errs = append(errs, setErr)

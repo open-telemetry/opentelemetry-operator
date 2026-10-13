@@ -15,22 +15,23 @@ import (
 type ParserOption[ComponentConfigType any] func(*Settings[ComponentConfigType])
 
 type Settings[ComponentConfigType any] struct {
-	protocol        corev1.Protocol
-	appProtocol     *string
-	targetPort      intstr.IntOrString
-	nodePort        int32
-	name            string
-	port            int32
-	defaultRecAddr  string
-	portParser      PortParser[ComponentConfigType]
-	rbacGen         RBACRuleGenerator[ComponentConfigType]
-	livenessGen     ProbeGenerator[ComponentConfigType]
-	readinessGen    ProbeGenerator[ComponentConfigType]
-	startupGen      ProbeGenerator[ComponentConfigType]
-	defaultsApplier Defaulter[ComponentConfigType]
-	envVarGen       EnvVarGenerator[ComponentConfigType]
-	suppressedGen   SuppressedEnvVarsGenerator[ComponentConfigType]
-	aliases         []string
+	protocol          corev1.Protocol
+	appProtocol       *string
+	targetPort        intstr.IntOrString
+	nodePort          int32
+	name              string
+	port              int32
+	defaultRecAddr    string
+	portParser        PortParser[ComponentConfigType]
+	rbacGen           RBACRuleGenerator[ComponentConfigType]
+	namespacedRbacGen NamespacedRBACRuleGenerator[ComponentConfigType]
+	livenessGen       ProbeGenerator[ComponentConfigType]
+	readinessGen      ProbeGenerator[ComponentConfigType]
+	startupGen        ProbeGenerator[ComponentConfigType]
+	defaultsApplier   Defaulter[ComponentConfigType]
+	envVarGen         EnvVarGenerator[ComponentConfigType]
+	suppressedGen     SuppressedEnvVarsGenerator[ComponentConfigType]
+	aliases           []string
 }
 
 func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
@@ -125,6 +126,12 @@ func (b Builder[ComponentConfigType]) WithRbacGen(rbacGen RBACRuleGenerator[Comp
 	})
 }
 
+func (b Builder[ComponentConfigType]) WithNamespacedRbacGen(gen NamespacedRBACRuleGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.namespacedRbacGen = gen
+	})
+}
+
 func (b Builder[ComponentConfigType]) WithLivenessGen(livenessGen ProbeGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.livenessGen = livenessGen
@@ -168,17 +175,18 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		return nil, errors.New("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{
-		name:            o.name,
-		aliases:         o.aliases,
-		portParser:      o.portParser,
-		rbacGen:         o.rbacGen,
-		envVarGen:       o.envVarGen,
-		suppressedGen:   o.suppressedGen,
-		livenessGen:     o.livenessGen,
-		readinessGen:    o.readinessGen,
-		startupGen:      o.startupGen,
-		defaultsApplier: o.defaultsApplier,
-		settings:        o,
+		name:              o.name,
+		aliases:           o.aliases,
+		portParser:        o.portParser,
+		rbacGen:           o.rbacGen,
+		namespacedRbacGen: o.namespacedRbacGen,
+		envVarGen:         o.envVarGen,
+		suppressedGen:     o.suppressedGen,
+		livenessGen:       o.livenessGen,
+		readinessGen:      o.readinessGen,
+		startupGen:        o.startupGen,
+		defaultsApplier:   o.defaultsApplier,
+		settings:          o,
 	}, nil
 }
 

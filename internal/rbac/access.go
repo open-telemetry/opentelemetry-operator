@@ -20,6 +20,7 @@ const (
 
 type SAReviewer interface {
 	CheckPolicyRules(ctx context.Context, serviceAccount, serviceAccountNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error)
+	CheckPolicyRulesInNamespace(ctx context.Context, serviceAccount, serviceAccountNamespace, targetNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error)
 	CanAccess(ctx context.Context, serviceAccount, serviceAccountNamespace string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error)
 }
 
@@ -51,6 +52,12 @@ func AllSubjectAccessReviewsAllowed(subjectAccessReviews []*v1.SubjectAccessRevi
 
 // CheckPolicyRules is a convenience function that lets the caller check access for a set of PolicyRules.
 func (r *Reviewer) CheckPolicyRules(ctx context.Context, serviceAccount, serviceAccountNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
+	return r.CheckPolicyRulesInNamespace(ctx, serviceAccount, serviceAccountNamespace, "", rules...)
+}
+
+// CheckPolicyRulesInNamespace checks access for PolicyRules scoped to a specific namespace.
+// When targetNamespace is empty, it checks cluster-scoped access.
+func (r *Reviewer) CheckPolicyRulesInNamespace(ctx context.Context, serviceAccount, serviceAccountNamespace, targetNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
 	var subjectAccessReviews []*v1.SubjectAccessReview
 	var errs []error
 	for _, rule := range rules {
@@ -60,6 +67,9 @@ func (r *Reviewer) CheckPolicyRules(ctx context.Context, serviceAccount, service
 		resourceAttributes := policyRuleToResourceAttributes(rule)
 		nonResourceAttributes := policyRuleToNonResourceAttributes(rule)
 		for _, res := range resourceAttributes {
+			if targetNamespace != "" {
+				res.Namespace = targetNamespace
+			}
 			sar, err := r.CanAccess(ctx, serviceAccount, serviceAccountNamespace, res, nil)
 			subjectAccessReviews = append(subjectAccessReviews, sar)
 			errs = append(errs, err)

@@ -1,0 +1,41 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: simplest-k8sattr-filter-target-role
+  namespace: k8sattr-filter-target
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - "apps"
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: simplest-k8sattr-filter-target-rolebinding
+  namespace: k8sattr-filter-target
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: simplest-k8sattr-filter-target-role
+subjects:
+- kind: ServiceAccount
+  name: simplest-collector
+  namespace: chainsaw-k8sattr-filter-ns
+---
+(x_k8s_exists($client, 'rbac.authorization.k8s.io/v1', 'ClusterRole', '', 'simplest-chainsaw-k8sattr-filter-ns-cluster-role')): false
+---
+(x_k8s_exists($client, 'rbac.authorization.k8s.io/v1', 'ClusterRoleBinding', '', 'simplest-chainsaw-k8sattr-filter-ns-collector')): false

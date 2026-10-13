@@ -2062,7 +2062,7 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 				CollectorImage:       "default-collector",
 				TargetAllocatorImage: "default-ta-allocator",
 				Internal: config.Internal{
-					CreateRBACPermissions: tt.createRBACPerms,
+					CreateClusterRBACPermissions: tt.createRBACPerms,
 				},
 			}
 			cvw := webhook.NewCollectorWebhook(
