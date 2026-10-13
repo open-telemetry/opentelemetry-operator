@@ -48,8 +48,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	replaceCfgOpts := []ta.TAOption{}
 
-	if params.TargetAllocator != nil && manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) &&
-		!manifestutils.IsTAMTLSClientCertOmitted(params.TargetAllocator) {
+	if params.TargetAllocator != nil && manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
 			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
 			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
