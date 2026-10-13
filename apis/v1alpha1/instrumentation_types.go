@@ -264,8 +264,8 @@ type Ruby struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
-	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with a size limit of 200Mi.
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// Env defines Ruby specific env vars. There are four layers for env vars' definitions and

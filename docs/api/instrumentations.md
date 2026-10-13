@@ -8980,16 +8980,8 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecrubyvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
-If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>volumeLimitSize</b></td>
-        <td>int or string</td>
-        <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with a size limit of 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9430,8 +9422,8 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
-If omitted, an emptyDir is used with size limit VolumeSizeLimit
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with a size limit of 200Mi.
 
 <table>
     <thead>

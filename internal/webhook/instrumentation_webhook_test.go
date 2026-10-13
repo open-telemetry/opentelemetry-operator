@@ -558,23 +558,6 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			warnings: []string{"sampler type not set"},
 		},
 		{
-			name: "Ruby with volume and volumeSizeLimit",
-			err:  "spec.ruby.volumeClaimTemplate and spec.ruby.volumeSizeLimit cannot both be defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Ruby: v1alpha1.Ruby{
-						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
-							Spec: corev1.PersistentVolumeClaimSpec{
-								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-							},
-						},
-						VolumeSizeLimit: &defaultVolumeSize,
-					},
-				},
-			},
-			warnings: []string{"sampler type not set"},
-		},
-		{
 			name: "Go with volume and volumeSizeLimit",
 			err:  "spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined",
 			inst: v1alpha1.Instrumentation{
@@ -694,11 +677,6 @@ func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 			name: "python volumeSizeLimit deprecated",
 			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Python: v1alpha1.Python{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead",
-		},
-		{
-			name: "ruby volumeSizeLimit deprecated",
-			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Ruby: v1alpha1.Ruby{VolumeSizeLimit: &defaultSize}}},
-			want: "spec.ruby.volumeSizeLimit is deprecated and will be removed in a future release; use spec.ruby.volume.size instead",
 		},
 		{
 			name: "dotnet volumeSizeLimit deprecated",

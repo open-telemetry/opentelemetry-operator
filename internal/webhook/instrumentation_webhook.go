@@ -262,10 +262,6 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	if err != nil {
 		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
 	}
-	err = validateInstrVolume(r.Spec.Ruby.VolumeClaimTemplate, r.Spec.Ruby.VolumeSizeLimit)
-	if err != nil {
-		return warnings, fmt.Errorf("spec.ruby.volumeClaimTemplate and spec.ruby.volumeSizeLimit cannot both be defined: %w", err)
-	}
 
 	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
 
@@ -278,9 +274,6 @@ func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission
 	}
 	if r.Spec.Python.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead")
-	}
-	if r.Spec.Ruby.VolumeSizeLimit != nil {
-		warnings = append(warnings, "spec.ruby.volumeSizeLimit is deprecated and will be removed in a future release; use spec.ruby.volume.size instead")
 	}
 	if r.Spec.DotNet.VolumeSizeLimit != nil {
 		warnings = append(warnings, "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead")

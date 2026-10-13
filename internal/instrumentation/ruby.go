@@ -18,7 +18,7 @@ const (
 )
 
 func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Container) error {
-	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, rubySpec.VolumeSizeLimit)
+	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, nil)
 
 	err := validateContainerEnv(container.Env, envRubyOptions)
 	if err != nil {
@@ -46,7 +46,7 @@ func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Containe
 }
 
 func injectRubySDKToPod(rubySpec v1alpha1.Ruby, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
-	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, rubySpec.VolumeSizeLimit)
+	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, nil)
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, rubyInitContainerName) {
