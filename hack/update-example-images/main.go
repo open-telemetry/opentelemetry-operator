@@ -26,11 +26,6 @@ const (
 	rubyImageRepo     = "ghcr.io/open-telemetry/opentelemetry-ruby-instrumentation"
 )
 
-var upstreamImageRepos = map[string]string{
-	"go":   goImageRepo,
-	"ruby": rubyImageRepo,
-}
-
 var dirOverride = map[string]string{
 	"apacheHttpd": "apache-httpd",
 	"nginx":       "apache-httpd",
@@ -161,18 +156,18 @@ func headerRegex(keys []string) *regexp.Regexp {
 }
 
 // resolveRefs returns the canonical image reference for each language key,
-// sourcing SDK versions and revisions from the revision package. Languages in
-// upstreamImageRepos use the upstream image and have no operator-owned revision.
+// sourcing SDK versions and revisions from the revision package. go, php, and
+// ruby use the upstream image and have no operator-owned revision.
 func resolveRefs(root string, keys []string) (map[string]string, error) {
 	repo := revision.New(root)
 	refs := make(map[string]string, len(keys))
 	for _, key := range keys {
-		if imageRepo, ok := upstreamImageRepos[key]; ok {
-			v, err := upstreamVersion(root, key)
+		if key == "go" {
+			v, err := goVersion(root)
 			if err != nil {
 				return nil, err
 			}
-			refs[key] = fmt.Sprintf("%s/autoinstrumentation-%s:%s", imageRepo, key, v)
+			refs[key] = fmt.Sprintf("%s/autoinstrumentation-go:%s", goImageRepo, v)
 			continue
 		}
 		if key == "php" {
@@ -181,6 +176,14 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 				return nil, err
 			}
 			refs[key] = fmt.Sprintf("%s/autoinstrumentation-php:%s", phpImageRepo, v)
+			continue
+		}
+		if key == "ruby" {
+			v, err := rubyVersion(root)
+			if err != nil {
+				return nil, err
+			}
+			refs[key] = fmt.Sprintf("%s/autoinstrumentation-ruby:%s", rubyImageRepo, v)
 			continue
 		}
 		dir := key
@@ -200,21 +203,21 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 	return refs, nil
 }
 
-// upstreamVersion returns the upstream instrumentation version for key from
-// versions.txt.
-func upstreamVersion(root, key string) (string, error) {
+// goVersion returns the upstream go instrumentation version from versions.txt.
+// Go references the upstream image directly and has no operator-owned revision.
+func goVersion(root string) (string, error) {
 	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
 	if err != nil {
 		return "", err
 	}
 	for line := range strings.SplitSeq(string(content), "\n") {
-		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-"+key+"="); ok {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-go="); ok {
 			if v = strings.TrimSpace(v); v != "" {
 				return v, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("could not read autoinstrumentation-%s version from versions.txt", key)
+	return "", errors.New("could not read autoinstrumentation-go version from versions.txt")
 }
 
 // phpVersion returns the upstream php instrumentation version from versions.txt.
@@ -232,6 +235,23 @@ func phpVersion(root string) (string, error) {
 		}
 	}
 	return "", errors.New("could not read autoinstrumentation-php version from versions.txt")
+}
+
+// rubyVersion returns the upstream ruby instrumentation version from versions.txt.
+// Ruby references the upstream image directly and has no operator-owned revision.
+func rubyVersion(root string) (string, error) {
+	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
+	if err != nil {
+		return "", err
+	}
+	for line := range strings.SplitSeq(string(content), "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-ruby="); ok {
+			if v = strings.TrimSpace(v); v != "" {
+				return v, nil
+			}
+		}
+	}
+	return "", errors.New("could not read autoinstrumentation-ruby version from versions.txt")
 }
 
 // managedFiles returns the repo-relative example files to pin: every YAML or
