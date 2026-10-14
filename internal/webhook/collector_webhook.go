@@ -444,9 +444,8 @@ func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r
 
 	// Step 4: check the requesting user against the delta only.
 	username := req.UserInfo.Username
-	groups := req.UserInfo.Groups
 
-	userSARs, err := c.reviewer.CheckSARsForUser(ctx, username, groups, delta)
+	userSARs, err := c.reviewer.CheckSARsForUser(ctx, req.UserInfo, delta)
 	if err != nil {
 		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", username, err)
 	}
