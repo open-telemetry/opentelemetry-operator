@@ -26,6 +26,11 @@ const (
 	rubyImageRepo     = "ghcr.io/open-telemetry/opentelemetry-ruby-instrumentation"
 )
 
+var upstreamImageRepos = map[string]string{
+	"go":   goImageRepo,
+	"ruby": rubyImageRepo,
+}
+
 var dirOverride = map[string]string{
 	"apacheHttpd": "apache-httpd",
 	"nginx":       "apache-httpd",
