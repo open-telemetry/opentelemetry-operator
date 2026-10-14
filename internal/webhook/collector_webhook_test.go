@@ -77,6 +77,25 @@ func TestValidate(t *testing.T) {
 				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.",
 			},
 		},
+		{
+			name: "telemetry the operator can't parse",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Telemetry: &v1beta1.AnyConfig{
+								Object: map[string]any{
+									"metrics": "x",
+								},
+							},
+						},
+					},
+				},
+			},
+			warnings: []string{
+				"spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: failed to unmarshal telemetry configuration: json: cannot unmarshal string into Go struct field Telemetry.metrics of type otelconfig.MetricsConfig",
+			},
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
@@ -1965,14 +1984,31 @@ func getReviewerDelta(saAllowed, userAllowed bool) *rbac.Reviewer {
 	return rbac.NewReviewer(c)
 }
 
-// requestContext injects an admission.Request carrying the given username and groups into ctx.
-func requestContext(ctx context.Context, username string, groups []string) context.Context {
+// getReviewerRequiringOID returns a Reviewer whose fake client denies SA SARs and allows user
+// SARs only when they carry the "oid" extra field, as the AKS Azure RBAC authorizer requires.
+func getReviewerRequiringOID() *rbac.Reviewer {
+	c := fake.NewClientset()
+	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
+		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
+		if !ok || sar == nil {
+			return false, nil, errors.New("bad object")
+		}
+		_, hasOID := sar.Spec.Extra["oid"]
+		allowed := !strings.HasPrefix(sar.Spec.User, "system:serviceaccount:") && hasOID
+		sar.Status = authv1.SubjectAccessReviewStatus{
+			Allowed: allowed,
+			Denied:  !allowed,
+		}
+		return true, sar, nil
+	})
+	return rbac.NewReviewer(c)
+}
+
+// requestContext injects an admission.Request carrying the given user into ctx.
+func requestContext(ctx context.Context, user authenticationv1.UserInfo) context.Context {
 	return admission.NewContextWithRequest(ctx, admission.Request{
 		AdmissionRequest: admissionv1.AdmissionRequest{
-			UserInfo: authenticationv1.UserInfo{
-				Username: username,
-				Groups:   groups,
-			},
+			UserInfo: user,
 		},
 	})
 }
@@ -2010,8 +2046,7 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 		createRBACPerms  autoRBAC.Availability
 		reviewer         *rbac.Reviewer
 		injectRequest    bool
-		username         string
-		groups           []string
+		user             authenticationv1.UserInfo
 		expectedWarnings []string
 		expectedErr      string
 	}{
@@ -2020,7 +2055,7 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 			createRBACPerms: autoRBAC.NotAvailable,
 			reviewer:        getReviewerDelta(false, false), // would deny everything but never called
 			injectRequest:   true,
-			username:        "alice",
+			user:            authenticationv1.UserInfo{Username: "alice"},
 		},
 		{
 			name:            "no admission request in context — check skipped",
@@ -2033,26 +2068,36 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 			createRBACPerms: autoRBAC.Available,
 			reviewer:        getReviewerDelta(true, false), // SA allowed, user would be denied but delta is empty
 			injectRequest:   true,
-			username:        "alice",
-			groups:          []string{"platform"},
+			user:            authenticationv1.UserInfo{Username: "alice", Groups: []string{"platform"}},
 		},
 		{
 			name:            "SA lacks permissions, user holds them — allowed",
 			createRBACPerms: autoRBAC.Available,
 			reviewer:        getReviewerDelta(false, true), // SA denied → delta = all rules; user allowed
 			injectRequest:   true,
-			username:        "alice",
-			groups:          []string{"platform"},
+			user:            authenticationv1.UserInfo{Username: "alice", Groups: []string{"platform"}},
 		},
 		{
 			name:            "SA lacks permissions, user also lacks them — request rejected",
 			createRBACPerms: autoRBAC.Available,
 			reviewer:        getReviewerDelta(false, false), // SA denied → delta = all rules; user also denied
 			injectRequest:   true,
-			username:        "bob",
-			groups:          []string{"readonly"},
+			user:            authenticationv1.UserInfo{Username: "bob", Groups: []string{"readonly"}},
 			// k8s_events receiver requires get/list/watch on events (core group).
 			expectedErr: `user "bob" is not allowed to create a collector whose config would grant permissions they do not hold`,
+		},
+		{
+			name:            "SA lacks permissions, user authorized through extra fields — allowed",
+			createRBACPerms: autoRBAC.Available,
+			reviewer:        getReviewerRequiringOID(),
+			injectRequest:   true,
+			user: authenticationv1.UserInfo{
+				Username: "a3674898-e302-49d1-9f8f-1b9d6c0496a3",
+				Groups:   []string{"system:authenticated"},
+				Extra: map[string]authenticationv1.ExtraValue{
+					"oid": {"a3674898-e302-49d1-9f8f-1b9d6c0496a3"},
+				},
+			},
 		},
 	}
 
@@ -2078,7 +2123,7 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 
 			ctx := context.Background()
 			if tt.injectRequest {
-				ctx = requestContext(ctx, tt.username, tt.groups)
+				ctx = requestContext(ctx, tt.user)
 			}
 
 			warnings, err := cvw.ValidateCreate(ctx, col.DeepCopy())

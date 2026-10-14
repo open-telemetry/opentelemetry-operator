@@ -55,12 +55,14 @@ func TestUpgrade(t *testing.T) {
 		AutoInstrumentationRubyImage:        "ruby:1",
 		AutoInstrumentationDotNetImage:      "dotnet:1",
 		AutoInstrumentationGoImage:          "go:1",
+		AutoInstrumentationPhpImage:         "php:1",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
 		AutoInstrumentationNginxImage:       "nginx:1",
 		EnableApacheHttpdInstrumentation:    true,
 		EnableDotNetAutoInstrumentation:     true,
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
+		EnablePhpAutoInstrumentation:        true,
 		EnablePythonAutoInstrumentation:     true,
 		EnableRubyAutoInstrumentation:       true,
 		EnableNodeJSAutoInstrumentation:     true,
@@ -74,6 +76,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
+	assert.Equal(t, "php:1", inst.Spec.Php.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
 	assert.Equal(t, "ruby:1", inst.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
@@ -90,12 +93,14 @@ func TestUpgrade(t *testing.T) {
 		AutoInstrumentationRubyImage:        "ruby:2",
 		AutoInstrumentationDotNetImage:      "dotnet:2",
 		AutoInstrumentationGoImage:          "go:2",
+		AutoInstrumentationPhpImage:         "php:2",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:2",
 		AutoInstrumentationNginxImage:       "nginx:2",
 		EnableApacheHttpdInstrumentation:    true,
 		EnableDotNetAutoInstrumentation:     true,
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
+		EnablePhpAutoInstrumentation:        true,
 		EnablePythonAutoInstrumentation:     true,
 		EnableRubyAutoInstrumentation:       true,
 		EnableNodeJSAutoInstrumentation:     true,
@@ -117,6 +122,8 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
 	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
+	assert.Equal(t, "php:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPhp])
+	assert.Equal(t, "php:2", updated.Spec.Php.Image)
 	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
 	assert.Equal(t, "ruby:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationRuby])
@@ -167,12 +174,14 @@ func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 		AutoInstrumentationPythonImage:      "python:1",
 		AutoInstrumentationDotNetImage:      "dotnet:1",
 		AutoInstrumentationGoImage:          "go:1",
+		AutoInstrumentationPhpImage:         "php:1",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
 		AutoInstrumentationNginxImage:       "nginx:1",
 		EnableApacheHttpdInstrumentation:    true,
 		EnableDotNetAutoInstrumentation:     true,
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
+		EnablePhpAutoInstrumentation:        true,
 		EnablePythonAutoInstrumentation:     true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
@@ -193,12 +202,14 @@ func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 		AutoInstrumentationPythonImage:      "python:2",
 		AutoInstrumentationDotNetImage:      "dotnet:2",
 		AutoInstrumentationGoImage:          "go:2",
+		AutoInstrumentationPhpImage:         "php:2",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:2",
 		AutoInstrumentationNginxImage:       "nginx:2",
 		EnableApacheHttpdInstrumentation:    true,
 		EnableDotNetAutoInstrumentation:     true,
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
+		EnablePhpAutoInstrumentation:        true,
 		EnablePythonAutoInstrumentation:     true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
@@ -223,6 +234,8 @@ func TestUpgradeBlockedForUnupgradableVersion(t *testing.T) {
 	// Other languages should be upgraded
 	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
+	assert.Equal(t, "php:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPhp])
+	assert.Equal(t, "php:2", updated.Spec.Php.Image)
 	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
 
@@ -266,6 +279,7 @@ func TestUpgradeClearsStaleBlockedStatus(t *testing.T) {
 		AutoInstrumentationNodeJSImage:      "nodejs:1",
 		AutoInstrumentationPythonImage:      "python:1",
 		AutoInstrumentationDotNetImage:      "dotnet:1",
+		AutoInstrumentationPhpImage:         "php:1",
 		AutoInstrumentationGoImage:          "go:1",
 		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
 		AutoInstrumentationNginxImage:       "nginx:1",
@@ -273,6 +287,7 @@ func TestUpgradeClearsStaleBlockedStatus(t *testing.T) {
 		EnableDotNetAutoInstrumentation:     true,
 		EnableGoAutoInstrumentation:         true,
 		EnableNginxAutoInstrumentation:      true,
+		EnablePhpAutoInstrumentation:        true,
 		EnablePythonAutoInstrumentation:     true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,

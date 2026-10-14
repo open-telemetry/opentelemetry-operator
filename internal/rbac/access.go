@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,9 +88,9 @@ func (r *Reviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccount
 	return r.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
 }
 
-// CheckPolicyRulesForUser is a convenience function that checks whether a user (identified by
-// username and group membership) holds all the permissions described by the given PolicyRules.
-func (r *Reviewer) CheckPolicyRulesForUser(ctx context.Context, username string, groups []string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
+// CheckPolicyRulesForUser is a convenience function that checks whether a user holds all the
+// permissions described by the given PolicyRules.
+func (r *Reviewer) CheckPolicyRulesForUser(ctx context.Context, user authenticationv1.UserInfo, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
 	var subjectAccessReviews []*v1.SubjectAccessReview
 	var errs []error
 	for _, rule := range rules {
@@ -99,12 +100,12 @@ func (r *Reviewer) CheckPolicyRulesForUser(ctx context.Context, username string,
 		resourceAttributes := policyRuleToResourceAttributes(rule)
 		nonResourceAttributes := policyRuleToNonResourceAttributes(rule)
 		for _, res := range resourceAttributes {
-			sar, err := r.CanAccessAsUser(ctx, username, groups, res, nil)
+			sar, err := r.CanAccessAsUser(ctx, user, res, nil)
 			subjectAccessReviews = append(subjectAccessReviews, sar)
 			errs = append(errs, err)
 		}
 		for _, nonResourceAttribute := range nonResourceAttributes {
-			sar, err := r.CanAccessAsUser(ctx, username, groups, nil, nonResourceAttribute)
+			sar, err := r.CanAccessAsUser(ctx, user, nil, nonResourceAttribute)
 			subjectAccessReviews = append(subjectAccessReviews, sar)
 			errs = append(errs, err)
 		}
@@ -117,11 +118,11 @@ func (r *Reviewer) CheckPolicyRulesForUser(ctx context.Context, username string,
 // a ServiceAccount was found to be missing: the caller runs CheckPolicyRules for the SA, collects
 // the denied results, and passes them here to see whether the requesting user holds those
 // permissions themselves.
-func (r *Reviewer) CheckSARsForUser(ctx context.Context, username string, groups []string, sars []*v1.SubjectAccessReview) ([]*v1.SubjectAccessReview, error) {
+func (r *Reviewer) CheckSARsForUser(ctx context.Context, user authenticationv1.UserInfo, sars []*v1.SubjectAccessReview) ([]*v1.SubjectAccessReview, error) {
 	var result []*v1.SubjectAccessReview
 	var errs []error
 	for _, sar := range sars {
-		userSAR, err := r.CanAccessAsUser(ctx, username, groups, sar.Spec.ResourceAttributes, sar.Spec.NonResourceAttributes)
+		userSAR, err := r.CanAccessAsUser(ctx, user, sar.Spec.ResourceAttributes, sar.Spec.NonResourceAttributes)
 		result = append(result, userSAR)
 		errs = append(errs, err)
 	}
@@ -129,13 +130,24 @@ func (r *Reviewer) CheckSARsForUser(ctx context.Context, username string, groups
 }
 
 // CanAccessAsUser checks whether a user is able to access a single requested resource attribute.
-func (r *Reviewer) CanAccessAsUser(ctx context.Context, username string, groups []string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {
+// The review carries the user's UID and extra fields, since some authorizers require them, e.g. AKS
+// with Azure RBAC reads the "oid" extra field. See open-telemetry/opentelemetry-operator#5659.
+func (r *Reviewer) CanAccessAsUser(ctx context.Context, user authenticationv1.UserInfo, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {
+	var extra map[string]v1.ExtraValue
+	if len(user.Extra) > 0 {
+		extra = make(map[string]v1.ExtraValue, len(user.Extra))
+		for k, val := range user.Extra {
+			extra[k] = v1.ExtraValue(val)
+		}
+	}
 	sar := &v1.SubjectAccessReview{
 		Spec: v1.SubjectAccessReviewSpec{
 			ResourceAttributes:    res,
 			NonResourceAttributes: nonResourceAttributes,
-			User:                  username,
-			Groups:                groups,
+			User:                  user.Username,
+			Groups:                user.Groups,
+			UID:                   user.UID,
+			Extra:                 extra,
 		},
 	}
 	return r.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})

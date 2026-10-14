@@ -18,6 +18,7 @@ const (
 	InstrumentationPrefix                           = "instrumentation.opentelemetry.io/"
 	AnnotationDefaultAutoInstrumentationJava        = InstrumentationPrefix + "default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS      = InstrumentationPrefix + "default-auto-instrumentation-nodejs-image"
+	AnnotationDefaultAutoInstrumentationPhp         = InstrumentationPrefix + "default-auto-instrumentation-php-image"
 	AnnotationDefaultAutoInstrumentationPython      = InstrumentationPrefix + "default-auto-instrumentation-python-image"
 	AnnotationDefaultAutoInstrumentationRuby        = InstrumentationPrefix + "default-auto-instrumentation-ruby-image"
 	AnnotationDefaultAutoInstrumentationDotNet      = InstrumentationPrefix + "default-auto-instrumentation-dotnet-image"
@@ -47,6 +48,7 @@ type InstrumentationLanguage string
 const (
 	InstrumentationLanguageJava        InstrumentationLanguage = "java"
 	InstrumentationLanguageNodeJS      InstrumentationLanguage = "nodejs"
+	InstrumentationLanguagePhp         InstrumentationLanguage = "php"
 	InstrumentationLanguagePython      InstrumentationLanguage = "python"
 	InstrumentationLanguageRuby        InstrumentationLanguage = "ruby"
 	InstrumentationLanguageDotNet      InstrumentationLanguage = "dotnet"
