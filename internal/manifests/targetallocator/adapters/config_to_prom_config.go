@@ -302,8 +302,7 @@ func WithCollectorTargetReloadInterval(interval string) TAOption {
 }
 
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
-// If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
-// removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
+// It removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
 func AddTAConfigToPromConfig(prometheus map[any]any, taServiceName string, taOpts ...TAOption) (map[any]any, error) {
 	// When the receiver has a `config:` block, strip any user-provided scrape_configs:
 	// they will be supplied by the target allocator at runtime. When the block is absent
