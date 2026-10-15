@@ -199,13 +199,37 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"tls":      map[string]any{},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP256}),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
 					"tls": map[string]any{
-						"min_version":   "1.2",
-						"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"min_version":       "1.2",
+						"cipher_suites":     []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"curve_preferences": []string{"X25519", "P256"},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing curve_preferences",
+			config: map[string]any{
+				"http": map[string]any{
+					"endpoint": "127.0.0.1:16686",
+					"tls": map[string]any{
+						"curve_preferences": []string{"P384"},
+					},
+				},
+			},
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP256}),
+			want: map[string]any{
+				"http": map[string]any{
+					"endpoint": "127.0.0.1:16686",
+					"tls": map[string]any{
+						"min_version":       "1.2",
+						"cipher_suites":     []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"curve_preferences": []string{"P384"},
 					},
 				},
 			},
@@ -218,7 +242,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"endpoint": "127.0.0.1:16686",
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -236,7 +260,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -258,7 +282,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -278,12 +302,15 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"tls":      map[string]any{},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP384}),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
 					"tls": map[string]any{
 						"min_version": "1.3",
+						// no cipher_suites - TLS 1.3 doesn't allow configuring them;
+						// curve_preferences remain configurable under TLS 1.3
+						"curve_preferences": []string{"X25519", "P384"},
 					},
 				},
 			},
