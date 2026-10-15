@@ -4,6 +4,7 @@
 package targetallocator
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/mitchellh/mapstructure"
@@ -45,12 +46,12 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
 		}
 
-		globalConfig, err = getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config)
+		globalConfig, err = getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config, taSpec.PrometheusReceiverID)
 		if err != nil {
 			return nil, err
 		}
 
-		scrapeConfigs, err = getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config)
+		scrapeConfigs, err = getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config, taSpec.PrometheusReceiverID)
 		if err != nil {
 			return nil, err
 		}
@@ -282,20 +283,20 @@ func convertHeaders(headers []v1beta1.NameValuePair) []taNameValue {
 	return out
 }
 
-func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {
+func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config, promReceiverID string) (map[string]any, error) {
 	// global config from the target allocator has priority
 	if len(taGlobalConfig.Object) > 0 {
 		return taGlobalConfig.Object, nil
 	}
 
-	collectorGlobalConfig, err := getGlobalConfigFromOtelConfig(collectorConfig)
+	collectorGlobalConfig, err := getGlobalConfigFromOtelConfig(collectorConfig, promReceiverID)
 	if err != nil {
 		return nil, err
 	}
 	return collectorGlobalConfig.Object, nil
 }
 
-func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1beta1.Config) ([]v1beta1.AnyConfig, error) {
+func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1beta1.Config, promReceiverID string) ([]v1beta1.AnyConfig, error) {
 	scrapeConfigs := []v1beta1.AnyConfig{}
 
 	// we take scrape configs from both the target allocator spec and the collector config
@@ -303,7 +304,7 @@ func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1bet
 		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
 	}
 
-	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(collectorConfig)
+	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(collectorConfig, promReceiverID)
 	if err != nil {
 		return nil, err
 	}
@@ -311,30 +312,29 @@ func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1bet
 	return append(scrapeConfigs, collectorScrapeConfigs...), nil
 }
 
-func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig, error) {
+func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config, promReceiverID string) (v1beta1.AnyConfig, error) {
 	// TODO: Eventually we should figure out a way to pull this in to the main specification for the TA
 	type promReceiverConfig struct {
-		Prometheus struct {
-			Config struct {
-				Global map[string]any `mapstructure:"global"`
-			} `mapstructure:"config"`
-		} `mapstructure:"prometheus"`
+		Config struct {
+			Global map[string]any `mapstructure:"global"`
+		} `mapstructure:"config"`
 	}
+	promReceiverID = adapters.PrometheusReceiverID(promReceiverID)
 	decodedConfig := &promReceiverConfig{}
-	if err := mapstructure.Decode(otelConfig.Receivers.Object, decodedConfig); err != nil {
-		return v1beta1.AnyConfig{}, err
+	if err := mapstructure.Decode(otelConfig.Receivers.Object[promReceiverID], decodedConfig); err != nil {
+		return v1beta1.AnyConfig{}, fmt.Errorf("receiver %q: %w", promReceiverID, err)
 	}
 	return v1beta1.AnyConfig{
-		Object: decodedConfig.Prometheus.Config.Global,
+		Object: decodedConfig.Config.Global,
 	}, nil
 }
 
-func getScrapeConfigsFromOtelConfig(collectorConfig v1beta1.Config) ([]v1beta1.AnyConfig, error) {
+func getScrapeConfigsFromOtelConfig(collectorConfig v1beta1.Config, promReceiverID string) ([]v1beta1.AnyConfig, error) {
 	cfg, err := collectoradapters.ConfigFromStruct(&collectorConfig)
 	if err != nil {
 		return nil, err
 	}
-	promConfig, err := adapters.PromReceiverConfig(cfg)
+	promConfig, err := adapters.PromReceiverConfig(cfg, promReceiverID)
 	if err != nil {
 		return nil, err
 	}

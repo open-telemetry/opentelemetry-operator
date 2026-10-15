@@ -264,6 +264,13 @@ type TargetAllocatorEmbedded struct {
 	// +optional
 	Mtls *TargetAllocatorMTLS `json:"mtls,omitempty"`
 
+	// PrometheusReceiverID is the ID of the Prometheus receiver in the collector configuration that the target
+	// allocator manages, for example "prometheus/ta". Other Prometheus receivers are left unchanged.
+	// The default is "prometheus".
+	// +optional
+	// +kubebuilder:validation:Pattern=`^prometheus(/.+)?$`
+	PrometheusReceiverID string `json:"prometheusReceiverID,omitempty"`
+
 	// Telemetry defines the self-telemetry configuration for the TargetAllocator.
 	// When set, the TargetAllocator exports its own metrics via OTLP in addition
 	// to the Prometheus /metrics endpoint.

@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	collectoradapters "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
 
@@ -118,10 +119,33 @@ func TestExtractPromConfigFromNamedPrometheusReceivers(t *testing.T) {
 
 	// test
 	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.EqualError(t, err, `the target allocator requires a receiver named exactly "prometheus", but only named instances were found: prometheus/loki, prometheus/otelcol; rename one of them to "prometheus"`)
+	assert.EqualError(t, err, `the target allocator requires a receiver named exactly "prometheus" unless prometheusReceiverID is set, but only named instances were found: prometheus/loki, prometheus/otelcol; rename one of them to "prometheus" or set prometheusReceiverID to one of them`)
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
+}
+
+func TestPromReceiverConfigWithReceiverID(t *testing.T) {
+	config, err := collectoradapters.ConfigFromString(`receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: self
+  prometheus/ta:
+    config:
+      scrape_configs:
+      - job_name: ta
+`)
+	assert.NoError(t, err)
+
+	promConfig, err := ta.PromReceiverConfig(config, "prometheus/ta")
+	assert.NoError(t, err)
+	assert.Equal(t, map[any]any{
+		"config": map[any]any{"scrape_configs": []any{map[any]any{"job_name": "ta"}}},
+	}, promConfig)
+
+	_, err = ta.PromReceiverConfig(config, "prometheus/missing")
+	assert.EqualError(t, err, "no prometheus/missing available as part of the configuration")
 }
 
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prom-receiver-id-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prom-receiver-id-targetallocator
+status:
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: prom-receiver-id
+spec:
+  prometheusReceiverID: prometheus/ta
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prom-receiver-id-targetallocator
+data:
+  targetallocator.yaml:
+    ( contains(@, 'job_name: ta-managed-job') ): true
+    ( contains(@, 'job_name: self-scrape-job') ): false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  (starts_with(name, 'prom-receiver-id-collector-')): true
+data:
+  collector.yaml:
+    ( contains(@, 'endpoint: http://prom-receiver-id-targetallocator.chainsaw-ta-prometheus-receiver-id.svc:80') ): true
+    ( contains(@, 'job_name: ta-managed-job') ): false
+    ( contains(@, 'job_name: self-scrape-job') ): true
