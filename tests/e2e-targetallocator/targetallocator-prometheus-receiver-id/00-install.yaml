@@ -1,0 +1,35 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: prom-receiver-id
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    prometheusReceiverID: prometheus/ta
+    prometheusCR:
+      enabled: false
+  config:
+    receivers:
+      prometheus/ta:
+        config:
+          scrape_configs:
+          - job_name: ta-managed-job
+            scrape_interval: 30s
+            static_configs:
+            - targets: ['0.0.0.0:8888']
+      prometheus/self:
+        config:
+          scrape_configs:
+          - job_name: self-scrape-job
+            scrape_interval: 30s
+            static_configs:
+            - targets: ['0.0.0.0:8888']
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus/ta, prometheus/self]
+          exporters: [debug]

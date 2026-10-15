@@ -348,7 +348,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, err
 	}
 	// validate Prometheus config for target allocation
-	promCfg, err := ta.PromReceiverConfig(cfg)
+	promCfg, err := ta.PromReceiverConfig(cfg, r.Spec.TargetAllocator.PrometheusReceiverID)
 	if err != nil {
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}

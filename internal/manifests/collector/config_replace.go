@@ -13,7 +13,7 @@ import (
 )
 
 // ReplaceConfig renders the collector configuration written to the collector's ConfigMap. When a target
-// allocator is in use, the Prometheus receiver is rewritten to fetch its scrape targets from it.
+// allocator is in use, the Prometheus receiver it manages is rewritten to fetch its scrape targets from it.
 //
 // The rendering is always a single otelconfig.RenderYAML call on the values the CR holds. The target allocator rewrite
 // happens on a generic map derived from those values through their JSON representation (adapters.ConfigFromStruct
@@ -32,7 +32,8 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 		return "", err
 	}
 
-	promCfgMap, getCfgPromErr := ta.PromReceiverConfig(config)
+	promReceiverID := ta.PrometheusReceiverID(targetAllocator.Spec.PrometheusReceiverID)
+	promCfgMap, getCfgPromErr := ta.PromReceiverConfig(config, promReceiverID)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}
@@ -54,7 +55,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	}
 
 	// type coercion checks are handled in the AddTAConfigToPromConfig method above
-	config["receivers"].(map[any]any)["prometheus"] = updPromCfgMap
+	config["receivers"].(map[any]any)[promReceiverID] = updPromCfgMap
 
 	updatedConfig, err := adapters.ConfigToStruct(config)
 	if err != nil {

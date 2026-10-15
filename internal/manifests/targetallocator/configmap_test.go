@@ -5,11 +5,11 @@ package targetallocator
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	colfg "go.opentelemetry.io/collector/featuregate"
@@ -668,7 +668,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := getScrapeConfigsFromOtelConfig(testCase.input)
+			actual, err := getScrapeConfigsFromOtelConfig(testCase.input, "")
 			assert.Equal(t, testCase.wantErr, err)
 			assert.Equal(t, testCase.want, actual)
 		})
@@ -730,7 +730,7 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getGlobalConfigFromOtelConfig(tt.args.otelConfig)
+			got, err := getGlobalConfigFromOtelConfig(tt.args.otelConfig, "")
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -741,6 +741,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 	type args struct {
 		taScrapeConfigs []v1beta1.AnyConfig
 		collectorConfig v1beta1.Config
+		promReceiverID  string
 	}
 	testCases := []struct {
 		name    string
@@ -813,11 +814,37 @@ func TestGetScrapeConfigs(t *testing.T) {
 			},
 			wantErr: errors.New("no scrape_configs available as part of the configuration"),
 		},
+		{
+			name: "scrape configs from the receiver set by prometheusReceiverID",
+			args: args{
+				taScrapeConfigs: []v1beta1.AnyConfig{},
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"scrape_configs": []any{map[string]any{"job": "self"}},
+								},
+							},
+							"prometheus/ta": map[string]any{
+								"config": map[string]any{
+									"scrape_configs": []any{map[string]any{"job": "collector"}},
+								},
+							},
+						},
+					},
+				},
+				promReceiverID: "prometheus/ta",
+			},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]any{"job": "collector"}},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := getScrapeConfigs(testCase.args.taScrapeConfigs, testCase.args.collectorConfig)
+			actual, err := getScrapeConfigs(testCase.args.taScrapeConfigs, testCase.args.collectorConfig, testCase.args.promReceiverID)
 			assert.Equal(t, testCase.wantErr, err)
 			assert.Equal(t, testCase.want, actual)
 		})
@@ -828,6 +855,7 @@ func TestGetGlobalConfig(t *testing.T) {
 	type args struct {
 		taGlobalConfig  v1beta1.AnyConfig
 		collectorConfig v1beta1.Config
+		promReceiverID  string
 	}
 	tests := []struct {
 		name    string
@@ -917,12 +945,38 @@ func TestGetGlobalConfig(t *testing.T) {
 				},
 				taGlobalConfig: v1beta1.AnyConfig{},
 			},
-			wantErr: &mapstructure.Error{Errors: []string{"'prometheus' expected a map, got 'string'"}},
+			wantErr: fmt.Errorf("receiver %q: %w", "prometheus", errors.New("'' expected a map, got 'string'")),
+		},
+		{
+			name: "Global Config from the receiver set by prometheusReceiverID",
+			args: args{
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"global": map[string]any{"scrape_interval": "60s"},
+								},
+							},
+							"prometheus/ta": map[string]any{
+								"config": map[string]any{
+									"global": map[string]any{"scrape_interval": "15s"},
+								},
+							},
+						},
+					},
+				},
+				taGlobalConfig: v1beta1.AnyConfig{},
+				promReceiverID: "prometheus/ta",
+			},
+			want: map[string]any{
+				"scrape_interval": "15s",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getGlobalConfig(tt.args.taGlobalConfig, tt.args.collectorConfig)
+			got, err := getGlobalConfig(tt.args.taGlobalConfig, tt.args.collectorConfig, tt.args.promReceiverID)
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, got)
 		})

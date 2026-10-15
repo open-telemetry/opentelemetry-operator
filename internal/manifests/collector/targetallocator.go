@@ -66,6 +66,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			AllowInsecureAuthSecrets:     taSpec.AllowInsecureAuthSecrets,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
 			Mtls:                         taSpec.Mtls,
+			PrometheusReceiverID:         taSpec.PrometheusReceiverID,
 			Telemetry:                    taSpec.Telemetry,
 		},
 	}, nil
