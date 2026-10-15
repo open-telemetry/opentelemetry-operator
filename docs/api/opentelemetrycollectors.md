@@ -33121,6 +33121,15 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>prometheusReceiverID</b></td>
+        <td>string</td>
+        <td>
+          PrometheusReceiverID is the ID of the Prometheus receiver in the collector configuration that the target
+allocator manages, for example "prometheus/ta". Other Prometheus receivers are left unchanged.
+The default is "prometheus".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>

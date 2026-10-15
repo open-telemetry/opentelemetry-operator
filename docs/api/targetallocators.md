@@ -391,6 +391,15 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>prometheusReceiverID</b></td>
+        <td>string</td>
+        <td>
+          PrometheusReceiverID is the ID of the Prometheus receiver in the collector configuration that the target
+allocator manages, for example "prometheus/ta". Other Prometheus receivers are left unchanged.
+The default is "prometheus".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecreadinessprobe">readinessProbe</a></b></td>
         <td>object</td>
         <td>
