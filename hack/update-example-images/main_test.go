@@ -15,6 +15,7 @@ var testRefs = map[string]string{
 	"python":      "ghcr.io/otel/autoinstrumentation-python:0.2b0-1",
 	"dotnet":      "ghcr.io/otel/autoinstrumentation-dotnet:1.0.0-1",
 	"go":          "ghcr.io/otel/autoinstrumentation-go:v0.3.0",
+	"php":         "ghcr.io/otel/autoinstrumentation-php:1.4.1",
 	"apacheHttpd": "ghcr.io/otel/autoinstrumentation-apache-httpd:1.0.0-1",
 	"nginx":       "ghcr.io/otel/autoinstrumentation-apache-httpd:1.0.0-1",
 }
@@ -144,7 +145,7 @@ func TestLanguageKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("languageKeys() error: %v", err)
 	}
-	want := []string{"apacheHttpd", "dotnet", "go", "java", "nginx", "nodejs", "python"}
+	want := []string{"apacheHttpd", "dotnet", "go", "java", "nginx", "nodejs", "php", "python"}
 	if !slices.Equal(got, want) {
 		t.Errorf("languageKeys() = %v, want %v", got, want)
 	}
