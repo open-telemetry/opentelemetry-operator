@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/rollout"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
 
 var clientLogger = logr.Discard()
@@ -483,4 +484,258 @@ func TestClient_Restart_PartialFailure(t *testing.T) {
 	result := &appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workload1, Namespace: "default"}, result))
 	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
+}
+
+// TestClient_ApplyUpdatePreservesOperatorOwnedFields reproduces the failure
+// reported in issue #4481: applying a remote configuration that only carries
+// spec.config to an existing DaemonSet-mode collector must not reset the rest
+// of the spec. The old full-object update was built from the received remote
+// configuration alone and wiped spec.mode and the target allocation strategy,
+// which both clobbered operator-owned state and tripped mode-specific webhook
+// validation for DaemonSet pools. The bridge now builds the desired object
+// from the current instance and applies the managed fields (config, replicas)
+// as a merge patch, preserving operator-owned fields by construction.
+func TestClient_ApplyUpdatePreservesOperatorOwnedFields(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+
+	namespace := "testing"
+
+	// Existing collector: DaemonSet mode with a per-node target allocator,
+	// the webhook-sensitive shape from issue #4481.
+	existingYAML := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  mode: daemonset
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    allocationStrategy: per-node
+`)
+	var existing v1beta1.OpenTelemetryCollector
+	require.NoError(t, yaml.Unmarshal(existingYAML, &existing))
+	setTypedMeta(&existing)
+	require.NoError(t, fakeClient.Create(context.Background(), &existing))
+
+	// Remote configuration carrying only spec.config.
+	remoteConfig := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+`)
+	err := c.Apply(NewKubeResourceKey(namespace, "simplest").String(), &protobufs.AgentConfigFile{
+		Body:        remoteConfig,
+		ContentType: "yaml",
+	})
+	require.NoError(t, err, "Should be able to update the collector with a config-only remote configuration")
+
+	updated, err := c.GetInstance("simplest", namespace)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+
+	// Operator-owned fields must be preserved.
+	assert.Equal(t, v1beta1.ModeDaemonSet, updated.Spec.Mode, "spec.mode must be preserved by the update")
+	assert.True(t, updated.Spec.TargetAllocator.Enabled, "target allocator must be preserved by the update")
+	assert.Equal(t, v1beta1.TargetAllocatorAllocationStrategyPerNode, updated.Spec.TargetAllocator.AllocationStrategy, "target allocation strategy must be preserved by the update")
+
+	// The remote configuration must be applied.
+	require.NotNil(t, updated.Spec.Config.Processors)
+	_, ok := updated.Spec.Config.Processors.Object["batch"]
+	assert.True(t, ok, "spec.config must be updated with the remote configuration")
+}
+
+func TestClient_ApplyUpdateRemoteConfigWithoutSpec(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+
+	namespace := "testing"
+	existingYAML := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  config:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: []
+          exporters: [debug]
+`)
+	var existing v1beta1.OpenTelemetryCollector
+	require.NoError(t, yaml.Unmarshal(existingYAML, &existing))
+	setTypedMeta(&existing)
+	require.NoError(t, fakeClient.Create(context.Background(), &existing))
+
+	// A remote configuration without a spec manages nothing and must be
+	// rejected cleanly instead of crashing or mutating the instance.
+	remoteConfig := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+`)
+	err := c.Apply(NewKubeResourceKey(namespace, "simplest").String(), &protobufs.AgentConfigFile{
+		Body:        remoteConfig,
+		ContentType: "yaml",
+	})
+	assert.Error(t, err, "a remote configuration without a config or replicas should be rejected")
+	assert.Contains(t, err.Error(), "carries no config or replicas")
+}
+
+// TestClient_ApplyUpdateSurvivesWebhookValidation verifies the bridge's update
+// path produces a collector that satisfies the real validating webhook for the
+// #4481 shape: a DaemonSet-mode collector with a per-node target allocator
+// updated with a remote configuration that carries the target allocator
+// settings but not spec.mode. The old full-object update reset spec.mode to ""
+// while leaving the target allocator enabled, which the webhook rejects. The
+// update now preserves operator-owned fields, so the resulting collector still
+// passes validation.
+func TestClient_ApplyUpdateSurvivesWebhookValidation(t *testing.T) {
+	fakeClient := getFakeClient(t)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+
+	namespace := "testing"
+	existingYAML := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  mode: daemonset
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    allocationStrategy: per-node
+`)
+	var existing v1beta1.OpenTelemetryCollector
+	require.NoError(t, yaml.Unmarshal(existingYAML, &existing))
+	setTypedMeta(&existing)
+	require.NoError(t, fakeClient.Create(context.Background(), &existing))
+
+	// Remote configuration carrying the target allocator settings but not
+	// spec.mode - the shape that made the old full-object update produce a
+	// webhook-invalid collector (mode="" + target allocator enabled).
+	remoteConfig := []byte(`
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: ` + namespace + `
+  labels:
+    opentelemetry.io/opamp-managed: "true"
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: otel
+              static_configs:
+                - targets: [localhost:9090]
+    processors:
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp, prometheus]
+          processors: [batch]
+          exporters: [debug]
+  targetAllocator:
+    enabled: true
+    allocationStrategy: per-node
+`)
+	err := c.Apply(NewKubeResourceKey(namespace, "simplest").String(), &protobufs.AgentConfigFile{
+		Body:        remoteConfig,
+		ContentType: "yaml",
+	})
+	require.NoError(t, err, "should apply the remote configuration")
+
+	updated, err := c.GetInstance("simplest", namespace)
+	require.NoError(t, err)
+
+	// The updated collector must still satisfy the real validating webhook.
+	_, err = webhook.CollectorWebhook{}.Validate(context.Background(), updated)
+	require.NoError(t, err, "the updated collector must pass the validating webhook")
+
+	// Counterfactual: what the old full-object update produced - spec.mode
+	// reset to "" with the target allocator still enabled - is rejected by
+	// the webhook.
+	oldResult := updated.DeepCopy()
+	oldResult.Spec.Mode = ""
+	_, err = webhook.CollectorWebhook{}.Validate(context.Background(), oldResult)
+	require.Error(t, err, "the old full-update result must be rejected by the webhook")
+	require.Contains(t, err.Error(), "does not support the target allocation deployment")
 }
