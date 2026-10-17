@@ -2,7 +2,7 @@
 
 Container images used by the e2e test suites: sample workloads for the
 auto-instrumentation tests (`java`, `nodejs`, `php`, `python`, `dotnet`, `golang`,
-`apache-httpd`), a fake OpAMP server (`bridge-server`), a scrape target with
+`apache-httpd`, `ruby`), a fake OpAMP server (`bridge-server`), a scrape target with
 basic auth (`metrics-basic-auth`), and an OTLP backend that records received
 telemetry for assertions (`otlp-sink`).
 

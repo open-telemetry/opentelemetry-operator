@@ -27,6 +27,9 @@ autoinstrumentation-php=1.4.1
 # Should match value in autoinstrumentation/python/requirements.txt
 autoinstrumentation-python=0.66b1
 
+# Represents the current release of Ruby instrumentation.
+autoinstrumentation-ruby=0.1.0
+
 # Represents the current release of DotNet instrumentation.
 autoinstrumentation-dotnet=1.17.0
 

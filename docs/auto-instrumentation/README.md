@@ -1,6 +1,6 @@
 # Auto-instrumentation
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS, PHP and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS, PHP, Python and Ruby are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -79,6 +79,7 @@ The possible values for the annotation can be
 - [Go](languages/go.md)
 - [Apache HTTPD](languages/apache-httpd.md)
 - [Nginx](languages/nginx.md)
+- [Ruby](languages/ruby.md)
 - [SDK environment variables only](languages/sdk-only.md)
 
 ## Topics
