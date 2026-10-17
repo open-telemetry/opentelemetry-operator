@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: base-ref-missing
+spec:
+  (!contains(keys(@), 'initContainers')): true
