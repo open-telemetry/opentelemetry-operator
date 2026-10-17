@@ -177,6 +177,8 @@ metadata:
   name: test
   namespace: test
 spec:
+  allocationStrategyConfig:
+    perNode: {}
   filterStrategy: relabel-config
   global: null
   networkPolicy: {}
