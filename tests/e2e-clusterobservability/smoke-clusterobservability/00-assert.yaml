@@ -2,6 +2,8 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: cluster-obs
+  finalizers:
+  - clusterobservability.opentelemetry.io/finalizer
 status:
   (conditions[?type == 'Configured']):
   - status: "True"
