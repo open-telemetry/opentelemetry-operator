@@ -91,7 +91,9 @@ Default container images are version-tagged at build time. In OLM deployments, `
 | `operatoropampbridge-image` | `--operator-opamp-bridge-image` | `RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE` |
 | `auto-instrumentation-java-image` | `--auto-instrumentation-java-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA` |
 | `auto-instrumentation-node-js-image` | `--auto-instrumentation-nodejs-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS` |
+| `auto-instrumentation-php-image` | `--auto-instrumentation-php-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_PHP` |
 | `auto-instrumentation-python-image` | `--auto-instrumentation-python-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON` |
+| `auto-instrumentation-ruby-image` | `--auto-instrumentation-ruby-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_RUBY` |
 | `auto-instrumentation-dot-net-image` | `--auto-instrumentation-dotnet-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET` |
 | `auto-instrumentation-go-image` | `--auto-instrumentation-go-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_GO` |
 | `auto-instrumentation-apache-httpd-image` | `--auto-instrumentation-apache-httpd-image` | `RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD` |
@@ -104,7 +106,9 @@ Default container images are version-tagged at build time. In OLM deployments, `
 | `enable-multi-instrumentation` | `--enable-multi-instrumentation` | `ENABLE_MULTI_INSTRUMENTATION` | `true` |
 | `enable-java-auto-instrumentation` | `--enable-java-instrumentation` | `ENABLE_JAVA_AUTO_INSTRUMENTATION` | `true` |
 | `enable-node-js-auto-instrumentation` | `--enable-nodejs-instrumentation` | `ENABLE_NODEJS_AUTO_INSTRUMENTATION` | `true` |
+| `enable-php-auto-instrumentation` | `--enable-php-instrumentation` | `ENABLE_PHP_AUTO_INSTRUMENTATION` | `false` |
 | `enable-python-auto-instrumentation` | `--enable-python-instrumentation` | `ENABLE_PYTHON_AUTO_INSTRUMENTATION` | `true` |
+| `enable-ruby-auto-instrumentation` | `--enable-ruby-instrumentation` | `ENABLE_RUBY_AUTO_INSTRUMENTATION` | `false` |
 | `enable-dot-net-auto-instrumentation` | `--enable-dotnet-instrumentation` | `ENABLE_DOTNET_AUTO_INSTRUMENTATION` | `true` |
 | `enable-go-auto-instrumentation` | `--enable-go-instrumentation` | `ENABLE_GO_AUTO_INSTRUMENTATION` | `false` |
 | `enable-nginx-auto-instrumentation` | `--enable-nginx-instrumentation` | `ENABLE_NGINX_AUTO_INSTRUMENTATION` | `false` |

@@ -210,7 +210,7 @@ func (c *Client) CheckPermissions(ctx context.Context, agents []config.Standalon
 // ListRequiredPermissions builds the Kubernetes permissions needed for standalone watches and configured agents.
 // remoteConfigEnabled adds update permissions for managed ConfigMaps and workloads because applying config triggers rollouts.
 func ListRequiredPermissions(agents []config.StandaloneAgentConfig, remoteConfigEnabled bool) ([]config.Permission, error) {
-	perms := []config.Permission{}
+	perms := []config.Permission{{Verb: "get", Resource: "namespaces", Name: "kube-system"}}
 	namespaces := namespacesForAgents(agents)
 	for _, rule := range []struct {
 		apiGroup string

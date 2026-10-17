@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -251,17 +252,15 @@ func TestReviewer_CanAccessAsUser(t *testing.T) {
 		name      string
 		status    v1.SubjectAccessReviewStatus
 		mockErr   error
-		username  string
-		groups    []string
+		user      authenticationv1.UserInfo
 		res       *v1.ResourceAttributes
 		wantAllow bool
 		wantErr   bool
 	}{
 		{
-			name:     "user can access",
-			status:   v1.SubjectAccessReviewStatus{Allowed: true},
-			username: "alice",
-			groups:   []string{"devs"},
+			name:   "user can access",
+			status: v1.SubjectAccessReviewStatus{Allowed: true},
+			user:   authenticationv1.UserInfo{Username: "alice", Groups: []string{"devs"}},
 			res: &v1.ResourceAttributes{
 				Verb:     "list",
 				Resource: "nodes",
@@ -269,15 +268,32 @@ func TestReviewer_CanAccessAsUser(t *testing.T) {
 			wantAllow: true,
 		},
 		{
-			name:     "user cannot access",
-			status:   v1.SubjectAccessReviewStatus{Denied: true},
-			username: "bob",
-			groups:   []string{"viewers"},
+			name:   "user cannot access",
+			status: v1.SubjectAccessReviewStatus{Denied: true},
+			user:   authenticationv1.UserInfo{Username: "bob", Groups: []string{"viewers"}},
 			res: &v1.ResourceAttributes{
 				Verb:     "list",
 				Resource: "nodes",
 			},
 			wantAllow: false,
+		},
+		{
+			name:   "user UID and extra fields are forwarded",
+			status: v1.SubjectAccessReviewStatus{Allowed: true},
+			user: authenticationv1.UserInfo{
+				Username: "a3674898-e302-49d1-9f8f-1b9d6c0496a3",
+				UID:      "a3674898-e302-49d1-9f8f-1b9d6c0496a3",
+				Groups:   []string{"system:authenticated"},
+				Extra: map[string]authenticationv1.ExtraValue{
+					"oid": {"a3674898-e302-49d1-9f8f-1b9d6c0496a3"},
+				},
+			},
+			res: &v1.ResourceAttributes{
+				Verb:     "create",
+				Group:    "coordination.k8s.io",
+				Resource: "leases",
+			},
+			wantAllow: true,
 		},
 		{
 			name:    "handles error",
@@ -292,7 +308,7 @@ func TestReviewer_CanAccessAsUser(t *testing.T) {
 			c.PrependReactor(createVerb, sarResource, cr.react)
 			r := NewReviewer(c)
 
-			got, err := r.CanAccessAsUser(context.Background(), tt.username, tt.groups, tt.res, nil)
+			got, err := r.CanAccessAsUser(context.Background(), tt.user, tt.res, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CanAccessAsUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -303,10 +319,15 @@ func TestReviewer_CanAccessAsUser(t *testing.T) {
 
 			assert.Equal(t, tt.wantAllow, got.Status.Allowed)
 
-			// Verify the SAR was submitted with the correct user fields (not the SA form).
+			// Verify the SAR was submitted with the full user identity (not the SA form).
 			require.Len(t, cr.captured, 1)
-			assert.Equal(t, tt.username, cr.captured[0].Spec.User)
-			assert.Equal(t, tt.groups, cr.captured[0].Spec.Groups)
+			assert.Equal(t, tt.user.Username, cr.captured[0].Spec.User)
+			assert.Equal(t, tt.user.Groups, cr.captured[0].Spec.Groups)
+			assert.Equal(t, tt.user.UID, cr.captured[0].Spec.UID)
+			assert.Len(t, cr.captured[0].Spec.Extra, len(tt.user.Extra))
+			for k, val := range tt.user.Extra {
+				assert.Equal(t, v1.ExtraValue(val), cr.captured[0].Spec.Extra[k])
+			}
 			// The SA format "system:serviceaccount:..." must NOT appear.
 			assert.NotContains(t, cr.captured[0].Spec.User, "system:serviceaccount")
 		})
@@ -325,23 +346,20 @@ func TestReviewer_CheckSARsForUser(t *testing.T) {
 		name      string
 		status    v1.SubjectAccessReviewStatus
 		mockErr   error
-		username  string
-		groups    []string
+		user      authenticationv1.UserInfo
 		wantAllow bool
 		wantErr   bool
 	}{
 		{
 			name:      "user holds the delta permissions — allowed",
 			status:    v1.SubjectAccessReviewStatus{Allowed: true},
-			username:  "alice",
-			groups:    []string{"platform"},
+			user:      authenticationv1.UserInfo{Username: "alice", Groups: []string{"platform"}},
 			wantAllow: true,
 		},
 		{
 			name:      "user lacks the delta permissions — denied",
 			status:    v1.SubjectAccessReviewStatus{Denied: true},
-			username:  "bob",
-			groups:    []string{"readonly"},
+			user:      authenticationv1.UserInfo{Username: "bob", Groups: []string{"readonly"}},
 			wantAllow: false,
 		},
 		{
@@ -357,7 +375,7 @@ func TestReviewer_CheckSARsForUser(t *testing.T) {
 			c.PrependReactor(createVerb, sarResource, cr.react)
 			r := NewReviewer(c)
 
-			got, err := r.CheckSARsForUser(context.Background(), tt.username, tt.groups, deniedSARs)
+			got, err := r.CheckSARsForUser(context.Background(), tt.user, deniedSARs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckSARsForUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -373,8 +391,8 @@ func TestReviewer_CheckSARsForUser(t *testing.T) {
 			// Verify the re-issued SARs carry the user identity and the same resource attributes.
 			require.Len(t, cr.captured, len(deniedSARs))
 			for i, sar := range cr.captured {
-				assert.Equal(t, tt.username, sar.Spec.User)
-				assert.Equal(t, tt.groups, sar.Spec.Groups)
+				assert.Equal(t, tt.user.Username, sar.Spec.User)
+				assert.Equal(t, tt.user.Groups, sar.Spec.Groups)
 				assert.Equal(t, deniedSARs[i].Spec.ResourceAttributes, sar.Spec.ResourceAttributes)
 			}
 		})
@@ -400,8 +418,7 @@ func TestReviewer_CheckPolicyRulesForUser(t *testing.T) {
 		name             string
 		status           v1.SubjectAccessReviewStatus
 		mockErr          error
-		username         string
-		groups           []string
+		user             authenticationv1.UserInfo
 		wantAllow        bool
 		wantErr          bool
 		numDeniedReviews int
@@ -409,22 +426,20 @@ func TestReviewer_CheckPolicyRulesForUser(t *testing.T) {
 		{
 			name:      "all rules allowed",
 			status:    v1.SubjectAccessReviewStatus{Allowed: true},
-			username:  "alice",
-			groups:    []string{"platform"},
+			user:      authenticationv1.UserInfo{Username: "alice", Groups: []string{"platform"}},
 			wantAllow: true,
 		},
 		{
 			name:             "all rules denied",
 			status:           v1.SubjectAccessReviewStatus{Denied: true},
-			username:         "bob",
-			groups:           []string{"readonly"},
+			user:             authenticationv1.UserInfo{Username: "bob", Groups: []string{"readonly"}},
 			wantAllow:        false,
 			numDeniedReviews: totalSARs,
 		},
 		{
 			name:             "api error propagates",
 			mockErr:          errors.New("api unavailable"),
-			username:         "alice",
+			user:             authenticationv1.UserInfo{Username: "alice"},
 			wantErr:          true,
 			numDeniedReviews: totalSARs,
 		},
@@ -436,7 +451,7 @@ func TestReviewer_CheckPolicyRulesForUser(t *testing.T) {
 			c.PrependReactor(createVerb, sarResource, cr.react)
 			r := NewReviewer(c)
 
-			got, err := r.CheckPolicyRulesForUser(context.Background(), tt.username, tt.groups, policyRules...)
+			got, err := r.CheckPolicyRulesForUser(context.Background(), tt.user, policyRules...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckPolicyRulesForUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -450,8 +465,8 @@ func TestReviewer_CheckPolicyRulesForUser(t *testing.T) {
 
 			// All captured SARs should carry the user identity, not the SA form.
 			for _, sar := range cr.captured {
-				assert.Equal(t, tt.username, sar.Spec.User)
-				assert.Equal(t, tt.groups, sar.Spec.Groups)
+				assert.Equal(t, tt.user.Username, sar.Spec.User)
+				assert.Equal(t, tt.user.Groups, sar.Spec.Groups)
 			}
 		})
 	}

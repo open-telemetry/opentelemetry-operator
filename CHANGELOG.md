@@ -2,6 +2,60 @@
 
 <!-- next version -->
 
+## 0.161.0
+
+### 🛑 Breaking changes 🛑
+
+- `opamp`: Use the Kubernetes cluster ID to compute standalone OpAMP Bridge agent instance IDs. (#5689)
+  - Existing standalone agents will report new instance IDs after upgrade.
+  - The bridge now requires the "get" permission on the "kube-system" namespace to read the cluster ID.
+  
+- `collector`: Remove the deprecated `--create-rbac-permissions` CLI flag. RBAC permission creation is now exclusively autodetected at startup. (#2588)
+  The flag was deprecated in v0.88.0. The operator now always autodetects whether its service account can create ClusterRoles and ClusterRoleBindings.
+
+### 💡 Enhancements 💡
+
+- `collector`: Add `revisionHistoryLimit` field to OpenTelemetryCommonFields to control the number of old ReplicaSets retained for Deployment and StatefulSet workloads, and for the TargetAllocator Deployment. (#0)
+- `collector`: Skip the automatic `GOMEMLIMIT` and `GOMAXPROCS` environment variables when the collector config enables the `cgroup_runtime` extension. (#5651)
+  The extension sets both variables from the cgroup limits and does nothing when they are already present.
+  The deprecated `cgroupruntime` type name is recognized as well.
+  Each variable is skipped only while its `gomemlimit.enabled` or `gomaxprocs.enabled` setting is true.
+  
+- `collector, target allocator`: Add `imagePullSecrets` to the OpenTelemetryCollector and TargetAllocator CRs, passed through to the pod spec of the generated workloads. A target allocator embedded in an OpenTelemetryCollector uses the collector's `imagePullSecrets`. (#4376)
+- `collector`: Register the `webhook_event` receiver (alias `webhookevent`) so the operator derives its Service port from `endpoint`, which the receiver requires, and rejects a configuration that omits it. (#5631)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix the collector defaulting webhook panicking when `receivers` or `exporters` is missing. (#5735)
+  The request is now rejected by CRD validation, as it already was when no component defaults apply.
+- `target allocator`: Honor the cumulative temporality preference for counters bridged from the Prometheus registry in OTLP self-telemetry. (#5700)
+  Bridged counters, such as the Prometheus service discovery metrics, were converted to delta regardless of
+  `temporality_preference`. They are now converted only when the preference selects delta for counters
+  (`delta` or `low_memory`), and are exported as cumulative otherwise.
+  
+- `target allocator`: Keep the Kubernetes API server addresses in the target allocator NetworkPolicy up to date. (#5551)
+  The operator now watches the EndpointSlices of the `default/kubernetes` Service and updates the target allocator
+  NetworkPolicy when they change, instead of using the addresses discovered once at operator startup.
+  Addresses which disappear from the EndpointSlices remain allowed for 5 minutes, to tolerate transient changes.
+  The NetworkPolicy also allows egress to the `kubernetes` Service ClusterIP, and uses correct CIDRs for IPv6 addresses.
+  The operator now requires the `watch` permission on `endpointslices` in the `discovery.k8s.io` API group.
+  
+- `operator`: Fix the `--tls-min-version` CLI flag being ignored because it was matched against the wrong flag name. (#3565)
+- `sidecar`: Prevent sidecar injection into invalid pods with zero regular containers (#5737)
+  Pods without containers are invalid in Kubernetes. Skipping injection allows Kubernetes to reject the invalid Pod rather than mutating it into a valid one.
+
+### Components
+
+* [OpenTelemetry Collector - v0.161.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.161.0)
+* [OpenTelemetry Contrib - v0.161.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.161.0)
+* [Java auto-instrumentation - v2.32.0-1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.32.0)
+* [.NET auto-instrumentation - v1.17.0-2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.17.0)
+* [Node.JS - v0.78.0-6](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.78.0)
+* [Python - v0.66b1-2](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b1)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [ApacheHTTPD - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.160.0
 
 ### 🛑 Breaking changes 🛑
