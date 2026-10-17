@@ -10,7 +10,25 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
+
+func TestLoadCollectorConfigPassesThroughOpaqueExporter(t *testing.T) {
+	exporter := map[string]any{
+		"endpoint": "https://otel.example.com:4318",
+		"auth": map[string]any{
+			"authenticator": "bearertokenauth",
+		},
+		"future_option": []any{"value", float64(2)},
+	}
+
+	got, err := NewConfigLoader().LoadCollectorConfig(AgentCollectorType, "", v1alpha1.ClusterObservabilitySpec{
+		Exporter: v1beta1.AnyConfig{Object: exporter},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, exporter, requireMap(t, got.Exporters.Object, "otlp_http"))
+}
 
 func TestLoadAgentCollectorConfigOpenShiftTLSOverride(t *testing.T) {
 	loader := NewConfigLoader()

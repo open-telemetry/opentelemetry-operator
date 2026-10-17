@@ -145,115 +145,13 @@ func (c *ConfigLoader) loadDistroOverrides(collectorType CollectorType, distroPr
 	return &config, nil
 }
 
-// buildExportersConfig builds exporters configuration from the single OTLP HTTP exporter spec.
+// buildExportersConfig passes the exporter configuration through unchanged.
 func (*ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]any {
-	exporters := make(map[string]any)
-
-	// Build the OTLP HTTP exporter configuration.
-	otlpConfig := map[string]any{}
-
-	// Handle endpoints - either base endpoint or per-signal endpoints
-	if spec.Exporter.Endpoint != "" {
-		otlpConfig["endpoint"] = spec.Exporter.Endpoint
+	otlpConfig := spec.Exporter.Object
+	if otlpConfig == nil {
+		otlpConfig = map[string]any{}
 	}
-	if spec.Exporter.TracesEndpoint != "" {
-		otlpConfig["traces_endpoint"] = spec.Exporter.TracesEndpoint
-	}
-	if spec.Exporter.MetricsEndpoint != "" {
-		otlpConfig["metrics_endpoint"] = spec.Exporter.MetricsEndpoint
-	}
-	if spec.Exporter.LogsEndpoint != "" {
-		otlpConfig["logs_endpoint"] = spec.Exporter.LogsEndpoint
-	}
-	if spec.Exporter.ProfilesEndpoint != "" {
-		otlpConfig["profiles_endpoint"] = spec.Exporter.ProfilesEndpoint
-	}
-
-	// TODO: We do not really handle taking the CA/Cert/Key.
-	if spec.Exporter.TLS != nil {
-		tlsConfig := map[string]any{}
-		if spec.Exporter.TLS.CAFile != "" {
-			tlsConfig["ca_file"] = spec.Exporter.TLS.CAFile
-		}
-		if spec.Exporter.TLS.CertFile != "" {
-			tlsConfig["cert_file"] = spec.Exporter.TLS.CertFile
-		}
-		if spec.Exporter.TLS.KeyFile != "" {
-			tlsConfig["key_file"] = spec.Exporter.TLS.KeyFile
-		}
-		if spec.Exporter.TLS.Insecure {
-			tlsConfig["insecure"] = spec.Exporter.TLS.Insecure
-		}
-		if spec.Exporter.TLS.ServerName != "" {
-			tlsConfig["server_name"] = spec.Exporter.TLS.ServerName
-		}
-		if len(tlsConfig) > 0 {
-			otlpConfig["tls"] = tlsConfig
-		}
-	}
-
-	if spec.Exporter.Timeout != "" {
-		otlpConfig["timeout"] = spec.Exporter.Timeout
-	}
-	if spec.Exporter.ReadBufferSize != nil {
-		otlpConfig["read_buffer_size"] = *spec.Exporter.ReadBufferSize
-	}
-	if spec.Exporter.WriteBufferSize != nil {
-		otlpConfig["write_buffer_size"] = *spec.Exporter.WriteBufferSize
-	}
-	if spec.Exporter.Encoding != "" {
-		otlpConfig["encoding"] = spec.Exporter.Encoding
-	}
-	if spec.Exporter.Compression != "" {
-		otlpConfig["compression"] = spec.Exporter.Compression
-	}
-	if len(spec.Exporter.Headers) > 0 {
-		otlpConfig["headers"] = spec.Exporter.Headers
-	}
-
-	if spec.Exporter.SendingQueue != nil {
-		queueConfig := map[string]any{}
-		if spec.Exporter.SendingQueue.Enabled != nil {
-			queueConfig["enabled"] = *spec.Exporter.SendingQueue.Enabled
-		}
-		if spec.Exporter.SendingQueue.NumConsumers != nil {
-			queueConfig["num_consumers"] = *spec.Exporter.SendingQueue.NumConsumers
-		}
-		if spec.Exporter.SendingQueue.QueueSize != nil {
-			queueConfig["queue_size"] = *spec.Exporter.SendingQueue.QueueSize
-		}
-		if len(queueConfig) > 0 {
-			otlpConfig["sending_queue"] = queueConfig
-		}
-	}
-
-	if spec.Exporter.RetryOnFailure != nil {
-		retryConfig := map[string]any{}
-		if spec.Exporter.RetryOnFailure.Enabled != nil {
-			retryConfig["enabled"] = *spec.Exporter.RetryOnFailure.Enabled
-		}
-		if spec.Exporter.RetryOnFailure.InitialInterval != "" {
-			retryConfig["initial_interval"] = spec.Exporter.RetryOnFailure.InitialInterval
-		}
-		if spec.Exporter.RetryOnFailure.RandomizationFactor != "" {
-			retryConfig["randomization_factor"] = spec.Exporter.RetryOnFailure.RandomizationFactor
-		}
-		if spec.Exporter.RetryOnFailure.Multiplier != "" {
-			retryConfig["multiplier"] = spec.Exporter.RetryOnFailure.Multiplier
-		}
-		if spec.Exporter.RetryOnFailure.MaxInterval != "" {
-			retryConfig["max_interval"] = spec.Exporter.RetryOnFailure.MaxInterval
-		}
-		if spec.Exporter.RetryOnFailure.MaxElapsedTime != "" {
-			retryConfig["max_elapsed_time"] = spec.Exporter.RetryOnFailure.MaxElapsedTime
-		}
-		if len(retryConfig) > 0 {
-			otlpConfig["retry_on_failure"] = retryConfig
-		}
-	}
-
-	exporters["otlp_http"] = otlpConfig
-	return exporters
+	return map[string]any{"otlp_http": otlpConfig}
 }
 
 // buildPipelinesWithExporters creates service pipelines based on collector type.

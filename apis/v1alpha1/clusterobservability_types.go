@@ -5,153 +5,18 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
-
-// OTLPHTTPExporter defines OTLP HTTP exporter configuration.
-// This structure mirrors the official OpenTelemetry Collector otlphttpexporter configuration.
-type OTLPHTTPExporter struct {
-	// Endpoint is the target base URL to send data to (e.g., https://example.com:4318).
-	// +optional
-	Endpoint string `json:"endpoint,omitempty"`
-
-	// TracesEndpoint is the target URL to send trace data to (e.g., https://example.com:4318/v1/traces).
-	// If this setting is present the endpoint setting is ignored for traces.
-	// +optional
-	TracesEndpoint string `json:"traces_endpoint,omitempty"`
-
-	// MetricsEndpoint is the target URL to send metric data to (e.g., https://example.com:4318/v1/metrics).
-	// If this setting is present the endpoint setting is ignored for metrics.
-	// +optional
-	MetricsEndpoint string `json:"metrics_endpoint,omitempty"`
-
-	// LogsEndpoint is the target URL to send log data to (e.g., https://example.com:4318/v1/logs).
-	// If this setting is present the endpoint setting is ignored for logs.
-	// +optional
-	LogsEndpoint string `json:"logs_endpoint,omitempty"`
-
-	// ProfilesEndpoint is the target URL to send profile data to (e.g., https://example.com:4318/v1/development/profiles).
-	// If this setting is present the endpoint setting is ignored for profiles.
-	// +optional
-	ProfilesEndpoint string `json:"profiles_endpoint,omitempty"`
-
-	// TLS defines TLS configuration for the exporter.
-	// +optional
-	TLS *TLSConfig `json:"tls,omitempty"`
-
-	// Timeout is the HTTP request time limit (e.g., "30s", "1m"). Default is 30s.
-	// +optional
-	Timeout string `json:"timeout,omitempty"`
-
-	// ReadBufferSize for HTTP client. Default is 0.
-	// +optional
-	// +kubebuilder:validation:Minimum=0
-	ReadBufferSize *int `json:"read_buffer_size,omitempty"`
-
-	// WriteBufferSize for HTTP client. Default is 512 * 1024.
-	// +optional
-	// +kubebuilder:validation:Minimum=0
-	WriteBufferSize *int `json:"write_buffer_size,omitempty"`
-
-	// SendingQueue defines configuration for the sending queue.
-	// +optional
-	SendingQueue *SendingQueueConfig `json:"sending_queue,omitempty"`
-
-	// RetryOnFailure defines retry configuration for failed requests.
-	// +optional
-	RetryOnFailure *RetryConfig `json:"retry_on_failure,omitempty"`
-
-	// Encoding defines the encoding to use for the messages.
-	// Valid options: proto, json. Default is proto.
-	// +optional
-	// +kubebuilder:validation:Enum=proto;json
-	Encoding string `json:"encoding,omitempty"`
-
-	// Compression defines the compression algorithm to use.
-	// By default gzip compression is enabled. Use "none" to disable.
-	// +optional
-	// +kubebuilder:validation:Enum=gzip;none;""
-	Compression string `json:"compression,omitempty"`
-
-	// Headers defines additional headers to be sent with each request.
-	// +optional
-	Headers map[string]string `json:"headers,omitempty"`
-}
-
-// TLSConfig defines TLS configuration for the OTLP HTTP exporter.
-// This mirrors the OpenTelemetry Collector configtls settings.
-type TLSConfig struct {
-	// CAFile is the path to the CA certificate file for server verification.
-	// +optional
-	CAFile string `json:"ca_file,omitempty"`
-
-	// CertFile is the path to the client certificate file for mutual TLS.
-	// +optional
-	CertFile string `json:"cert_file,omitempty"`
-
-	// KeyFile is the path to the client private key file for mutual TLS.
-	// +optional
-	KeyFile string `json:"key_file,omitempty"`
-
-	// Insecure controls whether to use insecure transport. Default is false.
-	// +optional
-	Insecure bool `json:"insecure,omitempty"`
-
-	// ServerName for TLS handshake. If empty, uses the hostname from endpoint.
-	// +optional
-	ServerName string `json:"server_name,omitempty"`
-}
-
-// SendingQueueConfig defines configuration for the sending queue.
-type SendingQueueConfig struct {
-	// Enabled controls whether the queue is enabled. Default is true.
-	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// NumConsumers is the number of consumers that dequeue batches. Default is 10.
-	// +optional
-	// +kubebuilder:validation:Minimum=1
-	NumConsumers *int `json:"num_consumers,omitempty"`
-
-	// QueueSize is the maximum number of batches allowed in queue at a given time. Default is 1000.
-	// +optional
-	// +kubebuilder:validation:Minimum=1
-	QueueSize *int `json:"queue_size,omitempty"`
-}
-
-// RetryConfig defines retry configuration for failed requests.
-type RetryConfig struct {
-	// Enabled controls whether retry is enabled. Default is true.
-	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// InitialInterval is the initial retry interval (e.g., "5s"). Default is 5s.
-	// +optional
-	InitialInterval string `json:"initial_interval,omitempty"`
-
-	// RandomizationFactor is the randomization factor for retry intervals (e.g., "0.5"). Default is 0.5.
-	// +optional
-	RandomizationFactor string `json:"randomization_factor,omitempty"`
-
-	// Multiplier is the multiplier for retry intervals (e.g., "1.5"). Default is 1.5.
-	// +optional
-	Multiplier string `json:"multiplier,omitempty"`
-
-	// MaxInterval is the maximum retry interval (e.g., "30s"). Default is 30s.
-	// +optional
-	MaxInterval string `json:"max_interval,omitempty"`
-
-	// MaxElapsedTime is the maximum elapsed time for retries (e.g., "5m"). Default is 5m.
-	// +optional
-	MaxElapsedTime string `json:"max_elapsed_time,omitempty"`
-}
 
 // ClusterObservabilitySpec defines the desired state of ClusterObservability.
 // This follows a simplified design using a single OTLP HTTP exporter for all signals.
 type ClusterObservabilitySpec struct {
-	// Exporter defines the OTLP HTTP exporter configuration for all signals.
-	// The collector will automatically append appropriate paths for each signal type.
+	// Exporter configures the OTLP HTTP exporter used by all generated pipelines.
+	// Its fields are passed through unchanged.
 	// +required
-	Exporter OTLPHTTPExporter `json:"exporter"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Exporter v1beta1.AnyConfig `json:"exporter"`
 }
 
 // ClusterObservabilityConditionType represents the type of condition.

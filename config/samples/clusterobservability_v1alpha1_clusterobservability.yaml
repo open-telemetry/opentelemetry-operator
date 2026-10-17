@@ -9,7 +9,7 @@ metadata:
   name: cluster-observability
   namespace: opentelemetry-operator-system
 spec:
-  # OTLP HTTP exporter configuration
+  # Passed through to the Collector's OTLP HTTP exporter.
   exporter:
     # Base endpoint for all signals (e.g., https://otel-backend.example.com:4318)
     endpoint: "https://otel-backend.example.com:4318"

@@ -13,6 +13,11 @@ metadata:
   name: cluster-obs-agent
 spec:
   mode: daemonset
+  config:
+    exporters:
+      otlp_http:
+        sending_queue:
+          block_on_overflow: true
 ---
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
@@ -20,6 +25,11 @@ metadata:
   name: cluster-obs-cluster
 spec:
   mode: statefulset
+  config:
+    exporters:
+      otlp_http:
+        sending_queue:
+          block_on_overflow: true
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
