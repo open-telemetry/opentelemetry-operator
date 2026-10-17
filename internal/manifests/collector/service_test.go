@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -274,6 +275,46 @@ func TestHeadlessService(t *testing.T) {
 	})
 }
 
+func TestServingCertSecretNameAnnotations(t *testing.T) {
+	const servingCertAnnotation = "service.beta.openshift.io/serving-cert-secret-name"
+
+	t.Run("base service gets its own unique serving-cert secret name", func(t *testing.T) {
+		actual, err := Service(deploymentParams())
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, "test-collector-tls", actual.GetAnnotations()[servingCertAnnotation])
+	})
+
+	t.Run("headless service keeps its own unique serving-cert secret name", func(t *testing.T) {
+		actual, err := HeadlessService(deploymentParams())
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, "test-collector-headless-tls", actual.GetAnnotations()[servingCertAnnotation])
+	})
+
+	t.Run("operator-managed names win over a CR-level serving-cert annotation", func(t *testing.T) {
+		// Even if the user sets the annotation on the CR, base and headless keep
+		// their own unique names so they never request the same Secret.
+		params := deploymentParams()
+		params.OtelCol.Annotations = map[string]string{
+			servingCertAnnotation: "shared-secret",
+		}
+
+		base, err := Service(params)
+		require.NoError(t, err)
+		require.NotNil(t, base)
+		headless, err := HeadlessService(params)
+		require.NoError(t, err)
+		require.NotNil(t, headless)
+
+		assert.Equal(t, "test-collector-tls", base.GetAnnotations()[servingCertAnnotation])
+		assert.Equal(t, "test-collector-headless-tls", headless.GetAnnotations()[servingCertAnnotation])
+		assert.NotEqual(t,
+			base.GetAnnotations()[servingCertAnnotation],
+			headless.GetAnnotations()[servingCertAnnotation])
+	})
+}
+
 func TestMonitoringService(t *testing.T) {
 	t.Run("returned service should expose monitoring port in the default port", func(t *testing.T) {
 		expected := []v1.ServicePort{{
@@ -539,6 +580,8 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 	if err != nil {
 		return v1.Service{}
 	}
+	// The base service requests a serving certificate with a name unique to it.
+	annotations["service.beta.openshift.io/serving-cert-secret-name"] = fmt.Sprintf("%s-tls", name)
 
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
