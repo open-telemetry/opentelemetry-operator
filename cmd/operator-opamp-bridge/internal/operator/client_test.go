@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -379,11 +380,16 @@ func TestClient_getCollectorPods(t *testing.T) {
 // managedCollector creates a v1beta1 OpenTelemetryCollector with the managed label set,
 // which makes it visible to listOpenTelemetryCollectors.
 func managedCollector(name string, mode v1beta1.Mode) *v1beta1.OpenTelemetryCollector {
+	return labeledCollector(name, mode, map[string]string{ManagedLabelKey: "true"})
+}
+
+// labeledCollector creates a v1beta1 OpenTelemetryCollector with an arbitrary label set.
+func labeledCollector(name string, mode v1beta1.Mode, labels map[string]string) *v1beta1.OpenTelemetryCollector {
 	return &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "default",
-			Labels:    map[string]string{ManagedLabelKey: "true"},
+			Labels:    labels,
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: mode,
@@ -483,4 +489,128 @@ func TestClient_Restart_PartialFailure(t *testing.T) {
 	result := &appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workload1, Namespace: "default"}, result))
 	assert.NotEmpty(t, result.Spec.Template.Annotations[rollout.RestartAnnotation])
+}
+
+func TestClient_Restart_LabelCheck(t *testing.T) {
+	type args struct {
+		labels map[string]string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantRestart bool
+	}{
+		{
+			name: "managed collector",
+			args: args{
+				labels: map[string]string{ManagedLabelKey: "true"},
+			},
+			wantRestart: true,
+		},
+		{
+			name: "managed by bridge name",
+			args: args{
+				labels: map[string]string{ManagedLabelKey: bridgeName},
+			},
+			wantRestart: true,
+		},
+		{
+			name: "reporting-only collector",
+			args: args{
+				labels: map[string]string{ReportingLabelKey: "true"},
+			},
+			wantRestart: false,
+		},
+		{
+			name: "both labels",
+			args: args{
+				labels: map[string]string{ManagedLabelKey: "true", ReportingLabelKey: "true"},
+			},
+			wantRestart: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			col := labeledCollector("test-col", v1beta1.ModeDeployment, tt.args.labels)
+			workloadName := naming.Collector(col.Name)
+			deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: workloadName, Namespace: "default"}}
+
+			fakeClient := getFakeClient(t)
+			require.NoError(t, fakeClient.Create(context.Background(), col))
+			require.NoError(t, fakeClient.Create(context.Background(), deploy))
+
+			c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+			require.NoError(t, c.Restart(context.Background()))
+
+			result := &appsv1.Deployment{}
+			require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKey{Name: workloadName, Namespace: "default"}, result))
+			got := result.Spec.Template.Annotations[rollout.RestartAnnotation]
+			if tt.wantRestart {
+				assert.NotEmptyf(t, got, "Restart(%v)", tt.args.labels)
+			} else {
+				assert.Emptyf(t, got, "Restart(%v)", tt.args.labels)
+			}
+		})
+	}
+}
+
+func TestClient_Delete_LabelCheck(t *testing.T) {
+	type args struct {
+		labels map[string]string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantDelete bool
+	}{
+		{
+			name: "managed collector",
+			args: args{
+				labels: map[string]string{ManagedLabelKey: "true"},
+			},
+			wantDelete: true,
+		},
+		{
+			name: "relabelled reporting-only after apply",
+			args: args{
+				labels: map[string]string{
+					ReportingLabelKey:     "true",
+					ResourceIdentifierKey: ResourceIdentifierValue,
+				},
+			},
+			wantDelete: false,
+		},
+		{
+			name: "both labels",
+			args: args{
+				labels: map[string]string{ManagedLabelKey: "true", ReportingLabelKey: "true"},
+			},
+			wantDelete: false,
+		},
+		{
+			name: "no managed label",
+			args: args{
+				labels: map[string]string{"app": "unrelated"},
+			},
+			wantDelete: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			col := labeledCollector("test-col", v1beta1.ModeDeployment, tt.args.labels)
+
+			fakeClient := getFakeClient(t)
+			require.NoError(t, fakeClient.Create(context.Background(), col))
+
+			c := NewClient(bridgeName, clientLogger, fakeClient, nil)
+			require.NoError(t, c.Delete(NewKubeResourceKey("default", col.Name).String()), "a skipped delete is not an error")
+
+			err := fakeClient.Get(context.Background(), client.ObjectKey{Name: col.Name, Namespace: "default"}, &v1beta1.OpenTelemetryCollector{})
+			if tt.wantDelete {
+				assert.Truef(t, apierrors.IsNotFound(err), "Delete(%v) should have removed the collector, got %v", tt.args.labels, err)
+			} else {
+				assert.NoErrorf(t, err, "Delete(%v) should have kept the collector", tt.args.labels)
+			}
+		})
+	}
 }
