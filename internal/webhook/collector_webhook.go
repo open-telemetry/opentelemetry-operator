@@ -25,6 +25,8 @@ import (
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	adapters "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -142,6 +144,18 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, otelcol *v1beta1.O
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, otelcolOld, otelcol *v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
 	if otelcolOld.Spec.Mode != otelcol.Spec.Mode {
 		return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support modification", otelcolOld.Spec.Mode)
+	}
+	if otelcol.Spec.Mode == v1beta1.ModeStatefulSet {
+		// The operator would otherwise delete and recreate the StatefulSet, and its pods with it.
+		// See open-telemetry/opentelemetry-operator#5329.
+		oldSts := collectorManifests.StatefulSetImmutableFields(*otelcolOld)
+		newSts := collectorManifests.StatefulSetImmutableFields(*otelcol)
+		var immutableErr *manifests.ImmutableFieldChangeErr
+		if err := manifests.ImmutableStatefulSetFieldChange(oldSts, newSts); errors.As(err, &immutableErr) {
+			attribute := strings.TrimPrefix(immutableErr.Field, "Spec.")
+			attribute = strings.ToLower(attribute[:1]) + attribute[1:]
+			return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support changing the attribute '%s' after creation", otelcol.Spec.Mode, attribute)
+		}
 	}
 	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {

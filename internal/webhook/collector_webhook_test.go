@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -1610,6 +1611,37 @@ func TestCollectorMTLSValidation(t *testing.T) {
 	}
 }
 
+func statefulSetCollector(modify func(spec *v1beta1.OpenTelemetryCollectorSpec)) v1beta1.OpenTelemetryCollector {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{}}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": map[string]any{}}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	modify(&otelcol.Spec)
+	return otelcol
+}
+
+func claimTemplates(storage string) []v1.PersistentVolumeClaim {
+	return []v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "data"},
+		Spec: v1.PersistentVolumeClaimSpec{
+			Resources: v1.VolumeResourceRequirements{
+				Requests: v1.ResourceList{v1.ResourceStorage: resource.MustParse(storage)},
+			},
+		},
+	}}
+}
+
 func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -1628,6 +1660,47 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Mode: v1beta1.ModeDeployment},
 			},
 			expectedErr: "which does not support modification",
+		},
+		{
+			name:        "statefulset volumeClaimTemplates should not be changed",
+			otelcolOld:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("2Gi") }),
+			expectedErr: "does not support changing the attribute 'volumeClaimTemplates' after creation",
+		},
+		{
+			name:        "statefulset volumeClaimTemplates should not be added",
+			otelcolOld:  statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			expectedErr: "does not support changing the attribute 'volumeClaimTemplates' after creation",
+		},
+		{
+			name:        "statefulset serviceName should not be changed",
+			otelcolOld:  statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.ServiceName = "custom-service" }),
+			expectedErr: "does not support changing the attribute 'serviceName' after creation",
+		},
+		{
+			name:       "statefulset podManagementPolicy should not be changed",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
+			}),
+			expectedErr: "does not support changing the attribute 'podManagementPolicy' after creation",
+		},
+		{
+			name:       "statefulset podManagementPolicy set to its default is not a change",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.PodManagementPolicy = appsv1.ParallelPodManagement
+			}),
+		},
+		{
+			name:       "statefulset volumeClaimTemplates left as they are",
+			otelcolOld: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.VolumeClaimTemplates = claimTemplates("1Gi")
+				spec.Replicas = new(int32(3))
+			}),
 		},
 	}
 

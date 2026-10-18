@@ -345,6 +345,23 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
+// ImmutableStatefulSetFieldChange returns an ImmutableFieldChangeErr when desired changes a StatefulSet field
+// that the Kubernetes API does not allow to change after creation, apart from the selector.
+func ImmutableStatefulSetFieldChange(existing, desired *appsv1.StatefulSet) error {
+	if hasVolumeClaimsTemplatesChanged(existing, desired) {
+		return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
+	}
+	if !apiequality.Semantic.DeepEqual(desired.Spec.ServiceName, existing.Spec.ServiceName) {
+		return &ImmutableFieldChangeErr{Field: "Spec.ServiceName"}
+	}
+	// PodManagementPolicy is immutable, so a change must recreate the StatefulSet
+	// rather than fail the update with a forbidden error.
+	if !apiequality.Semantic.DeepEqual(desired.Spec.PodManagementPolicy, existing.Spec.PodManagementPolicy) {
+		return &ImmutableFieldChangeErr{Field: "Spec.PodManagementPolicy"}
+	}
+	return nil
+}
+
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	if !existing.CreationTimestamp.IsZero() {
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
@@ -353,16 +370,8 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
 			return err
 		}
-		if hasVolumeClaimsTemplatesChanged(existing, desired) {
-			return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
-		}
-		if !apiequality.Semantic.DeepEqual(desired.Spec.ServiceName, existing.Spec.ServiceName) {
-			return &ImmutableFieldChangeErr{Field: "Spec.ServiceName"}
-		}
-		// PodManagementPolicy is immutable, so a change must recreate the StatefulSet
-		// rather than fail the update with a forbidden error.
-		if !apiequality.Semantic.DeepEqual(desired.Spec.PodManagementPolicy, existing.Spec.PodManagementPolicy) {
-			return &ImmutableFieldChangeErr{Field: "Spec.PodManagementPolicy"}
+		if err := ImmutableStatefulSetFieldChange(existing, desired); err != nil {
+			return err
 		}
 	}
 
