@@ -150,11 +150,20 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, otelcolOld, otelco
 		// See open-telemetry/opentelemetry-operator#5329.
 		oldSts := collectorManifests.StatefulSetImmutableFields(*otelcolOld)
 		newSts := collectorManifests.StatefulSetImmutableFields(*otelcol)
-		var immutableErr *manifests.ImmutableFieldChangeErr
-		if err := manifests.ImmutableStatefulSetFieldChange(oldSts, newSts); errors.As(err, &immutableErr) {
-			attribute := strings.TrimPrefix(immutableErr.Field, "Spec.")
-			attribute = strings.ToLower(attribute[:1]) + attribute[1:]
-			return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support changing the attribute '%s' after creation", otelcol.Spec.Mode, attribute)
+		if err := manifests.ImmutableStatefulSetFieldChange(oldSts, newSts); err != nil {
+			var attributes []string
+			for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
+				var immutableErr *manifests.ImmutableFieldChangeErr
+				if errors.As(e, &immutableErr) {
+					attribute := strings.TrimPrefix(immutableErr.Field, "Spec.")
+					attributes = append(attributes, "'"+strings.ToLower(attribute[:1])+attribute[1:]+"'")
+				}
+			}
+			noun := "attribute"
+			if len(attributes) > 1 {
+				noun = "attributes"
+			}
+			return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support changing the %s %s after creation", otelcol.Spec.Mode, noun, strings.Join(attributes, ", "))
 		}
 	}
 	warnings, err := c.Validate(ctx, otelcol)

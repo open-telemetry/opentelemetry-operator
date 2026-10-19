@@ -30,7 +30,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -1686,6 +1685,15 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
 			}),
 			expectedErr: "does not support changing the attribute 'podManagementPolicy' after creation",
+		},
+		{
+			name:       "statefulset reports every changed immutable attribute",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.ServiceName = "custom-service"
+				spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
+			}),
+			expectedErr: "does not support changing the attributes 'serviceName', 'podManagementPolicy' after creation",
 		},
 		{
 			name:       "statefulset podManagementPolicy set to its default is not a change",

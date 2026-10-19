@@ -2115,6 +2115,27 @@ func TestMutateStatefulSetPodManagementPolicy(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestImmutableStatefulSetFieldChangeJoinsErrors(t *testing.T) {
+	existing := &appsv1.StatefulSet{
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName:         "existing",
+			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+		},
+	}
+	desired := existing.DeepCopy()
+	desired.Spec.ServiceName = "changed"
+	desired.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
+
+	err := ImmutableStatefulSetFieldChange(existing, desired)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "Spec.ServiceName")
+	assert.ErrorContains(t, err, "Spec.PodManagementPolicy")
+	var immutableErr *ImmutableFieldChangeErr
+	assert.ErrorAs(t, err, &immutableErr)
+
+	assert.NoError(t, ImmutableStatefulSetFieldChange(existing, existing.DeepCopy()))
+}
+
 func TestMutateDaemonsetLabelChange(t *testing.T) {
 	tests := []struct {
 		name     string
