@@ -25,10 +25,15 @@ The test validates end-to-end TLS profile injection by:
 
 The operator applies the cluster's TLS security profile at **reconciliation time** during ConfigMap generation, not in the webhook. This means:
 
-- The CR (OpenTelemetryCollector) does **not** store TLS profile settings (`min_version`, `cipher_suites`)
+- The CR (OpenTelemetryCollector) does **not** store TLS profile settings (`min_version`, `cipher_suites`, `curve_preferences`)
 - The generated ConfigMap contains the injected TLS settings
 - When the cluster TLS profile changes, the operator restarts and regenerates ConfigMaps with the new profile
 - Verification scripts read from the **ConfigMap**, not the CR
+
+The profile's groups are injected as `curve_preferences` using the collector's spellings
+(`X25519MLKEM768`, `X25519`, `P256`, `P384` for the Intermediate and Modern profiles). A
+Custom profile that sets no groups gets no `curve_preferences`, and `curve_preferences`
+remains configurable under TLS 1.3, unlike `cipher_suites`.
 
 ## Test Scenarios
 
@@ -42,6 +47,8 @@ The operator applies the cluster's TLS security profile at **reconciliation time
 | S6 | User-specified TLS values preserved | 10 |
 | S7 | Changed profile (Modern/Custom) injected after update | 06 |
 | S8 | Dynamic profile change detected after operator restart | 05-06 |
+| S9 | Profile groups injected as `curve_preferences` | 02, 06 |
+| S10 | User-specified `curve_preferences` preserved | 10 |
 
 ## Test Steps
 
@@ -59,6 +66,7 @@ The operator applies the cluster's TLS security profile at **reconciliation time
   - OTLP gRPC receiver (has TLS block)
   - Zipkin receiver (has TLS block)
   - Prometheus exporter (has TLS block)
+- Verifies `curve_preferences` match the Intermediate profile groups (`X25519MLKEM768`, `X25519`, `P256`, `P384`) for the same components
 - Verifies no TLS injection for:
   - OTLP HTTP receiver (no TLS block)
   - Debug exporter (no TLS block)
@@ -85,6 +93,7 @@ The operator applies the cluster's TLS security profile at **reconciliation time
 - **Script:** [`06-verify-changed-profile.sh`](tls-profile/06-verify-changed-profile.sh)
 - Reads expected values from the `tls-profile-expected` ConfigMap
 - Verifies `min_version` and `cipher_suites` match the new profile
+- Verifies `curve_preferences`: the Modern profile's groups are injected; the Custom fallback sets no groups, so `curve_preferences` is absent
 
 ### Step 7: Functional TLS Verification (Changed)
 - **Script:** [`07-verify-nmap-changed.sh`](tls-profile/07-verify-nmap-changed.sh)
@@ -99,15 +108,17 @@ The operator applies the cluster's TLS security profile at **reconciliation time
 ### Step 9: Deploy User Override Collector
 - Waits for operator readiness after TLS profile revert
 - Deploys a collector with user-specified TLS overrides:
-  - gRPC: user sets `min_version: "1.3"`, does NOT set `cipher_suites`
-  - HTTP: user sets `cipher_suites`, does NOT set `min_version`
+  - gRPC: user sets `min_version: "1.3"` and `curve_preferences: [P384]`, does NOT set `cipher_suites`
+  - HTTP: user sets `cipher_suites`, does NOT set `min_version` or `curve_preferences`
 
 ### Step 10: Verify User Overrides
 - **Script:** [`10-verify-user-override.sh`](tls-profile/10-verify-user-override.sh)
 - Verifies user-specified `min_version: "1.3"` is preserved on gRPC
 - Verifies cluster `cipher_suites` are injected on gRPC (user didn't set them)
+- Verifies user-specified `curve_preferences: [P384]` is preserved on gRPC
 - Verifies cluster `min_version: "1.2"` is injected on HTTP (user didn't set it)
 - Verifies user-specified `cipher_suites` are preserved on HTTP
+- Verifies cluster `curve_preferences` are injected on HTTP (user didn't set them)
 
 ## Running the Test
 
