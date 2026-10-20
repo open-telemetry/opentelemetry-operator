@@ -1216,3 +1216,56 @@ func TestStatefulSetRevisionHistoryLimit(t *testing.T) {
 	assert.NotNil(t, ss2.Spec.RevisionHistoryLimit)
 	assert.Equal(t, limit, *ss2.Spec.RevisionHistoryLimit)
 }
+
+func TestStatefulSetImmutableFields(t *testing.T) {
+	claim := corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "data"}}
+	tests := []struct {
+		name string
+		spec v1beta1.OpenTelemetryCollectorSpec
+		want appsv1.StatefulSetSpec
+	}{
+		{
+			name: "defaults",
+			spec: v1beta1.OpenTelemetryCollectorSpec{Mode: "statefulset"},
+			want: appsv1.StatefulSetSpec{
+				ServiceName:          "my-instance-collector-headless",
+				PodManagementPolicy:  appsv1.ParallelPodManagement,
+				VolumeClaimTemplates: []corev1.PersistentVolumeClaim(nil),
+			},
+		},
+		{
+			name: "explicit values",
+			spec: v1beta1.OpenTelemetryCollectorSpec{
+				Mode: "statefulset",
+				StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+					ServiceName:          "custom-service",
+					PodManagementPolicy:  appsv1.OrderedReadyPodManagement,
+					VolumeClaimTemplates: []corev1.PersistentVolumeClaim{claim},
+				},
+			},
+			want: appsv1.StatefulSetSpec{
+				ServiceName:          "custom-service",
+				PodManagementPolicy:  appsv1.OrderedReadyPodManagement,
+				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{claim},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			otelcol := v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "my-namespace"},
+				Spec:       tt.spec,
+			}
+
+			got := StatefulSetImmutableFields(otelcol)
+			assert.Equal(t, tt.want, got.Spec)
+
+			// the immutable fields must agree with the StatefulSet the operator builds
+			ss, err := StatefulSet(manifests.Params{OtelCol: otelcol, Config: config.New()})
+			require.NoError(t, err)
+			assert.Equal(t, ss.Spec.ServiceName, got.Spec.ServiceName)
+			assert.Equal(t, ss.Spec.PodManagementPolicy, got.Spec.PodManagementPolicy)
+			assert.Equal(t, ss.Spec.VolumeClaimTemplates, got.Spec.VolumeClaimTemplates)
+		})
+	}
+}
