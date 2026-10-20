@@ -153,8 +153,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, otelcolOld, otelco
 		if err := manifests.ImmutableStatefulSetFieldChange(oldSts, newSts); err != nil {
 			var attributes []string
 			for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
-				var immutableErr *manifests.ImmutableFieldChangeErr
-				if errors.As(e, &immutableErr) {
+				if immutableErr, ok := errors.AsType[*manifests.ImmutableFieldChangeErr](e); ok {
 					attribute := strings.TrimPrefix(immutableErr.Field, "Spec.")
 					attributes = append(attributes, "'"+strings.ToLower(attribute[:1])+attribute[1:]+"'")
 				}
