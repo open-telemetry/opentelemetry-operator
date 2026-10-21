@@ -28,8 +28,8 @@ metadata:
   name: prom-receiver-id-targetallocator
 data:
   targetallocator.yaml:
-    ( contains(@, 'job_name: ta-managed-job') ): true
-    ( contains(@, 'job_name: self-scrape-job') ): false
+    ( contains(@, join(':', ['job_name', ' ta-managed-job'])) ): true
+    ( contains(@, join(':', ['job_name', ' self-scrape-job'])) ): false
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -37,6 +37,6 @@ metadata:
   (starts_with(name, 'prom-receiver-id-collector-')): true
 data:
   collector.yaml:
-    ( contains(@, 'endpoint: http://prom-receiver-id-targetallocator.chainsaw-ta-prometheus-receiver-id.svc:80') ): true
-    ( contains(@, 'job_name: ta-managed-job') ): false
-    ( contains(@, 'job_name: self-scrape-job') ): true
+    ( contains(@, 'http://prom-receiver-id-targetallocator.chainsaw-ta-prometheus-receiver-id.svc:80') ): true
+    ( contains(@, join(':', ['job_name', ' ta-managed-job'])) ): false
+    ( contains(@, join(':', ['job_name', ' self-scrape-job'])) ): true
