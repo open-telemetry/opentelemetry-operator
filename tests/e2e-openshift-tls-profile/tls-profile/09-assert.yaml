@@ -2,3 +2,10 @@ apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: tls-profile-test
+---
+# Wait for the operator to reconcile the new collector (it may have just restarted),
+# so the generated ConfigMap exists before the next step reads it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-profile-test-collector
