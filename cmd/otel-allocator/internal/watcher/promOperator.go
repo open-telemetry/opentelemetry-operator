@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -70,10 +72,12 @@ func NewPrometheusCRWatcher(
 	secretsAllowList := cfg.PrometheusCR.GetSecretsAllowList(cfg.CollectorNamespace)
 	metaDataInformerFactory := informers.NewMetadataInformerFactory(secretsAllowList, denyList, mdClient, allocatorconfig.DefaultResyncTime, nil)
 
-	monitoringInformers, err := getInformers(monitoringInformerFactory, cfg.ClusterConfig, promLogger, metaDataInformerFactory)
+	monitoringInformers, rawMissingCRDs, dcl, err := getInformers(monitoringInformerFactory, cfg.ClusterConfig, promLogger, metaDataInformerFactory)
 	if err != nil {
 		return nil, err
 	}
+
+	filteredMissingCRDs := filterMissingCRDs(rawMissingCRDs, cfg.PrometheusCR, slog.New(logr.ToSlogHandler(logger)))
 
 	// we want to use endpointslices by default
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
@@ -138,6 +142,9 @@ func NewPrometheusCRWatcher(
 		kubeMonitoringClient:            monitoringclient,
 		k8sClient:                       client,
 		informers:                       monitoringInformers,
+		missingCRDs:                     filteredMissingCRDs,
+		informerFactory:                 monitoringInformerFactory,
+		dcl:                             dcl,
 		nsInformer:                      nsMonInf,
 		stopChannel:                     make(chan struct{}),
 		eventInterval:                   minEventInterval,
@@ -158,7 +165,11 @@ type PrometheusCRWatcher struct {
 	logger                          *slog.Logger
 	kubeMonitoringClient            monitoringclient.Interface
 	k8sClient                       kubernetes.Interface
+	mu                              sync.RWMutex
 	informers                       map[string]*informers.ForResource
+	missingCRDs                     map[string]schema.GroupVersionResource
+	informerFactory                 informers.FactoriesForNamespaces
+	dcl                             discovery.DiscoveryInterface
 	nsInformer                      cache.SharedIndexInformer
 	eventInterval                   time.Duration
 	stopChannel                     chan struct{}
@@ -260,79 +271,140 @@ func createInformerIfAvailable(
 	return informer, nil
 }
 
-// getInformers returns a map of informers for the given resources.
-func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger, metaDataInformerFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
-	informersMap := make(map[string]*informers.ForResource)
+// getInformers returns a map of created informers, a map of CRDs absent at startup (by resource name → GVR),
+// the discovery client (for later re-checks), and any error.
+func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger, metaDataInformerFactory informers.FactoriesForNamespaces) (informersMap map[string]*informers.ForResource, missingCRDs map[string]schema.GroupVersionResource, dcl discovery.DiscoveryInterface, err error) {
+	informersMap = make(map[string]*informers.ForResource)
+	missingCRDs = make(map[string]schema.GroupVersionResource)
 
-	// Get the discovery client
-	dcl, err := discovery.NewDiscoveryClientForConfig(clusterConfig)
+	dcl, err = discovery.NewDiscoveryClientForConfig(clusterConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create discovery client: %w", err)
-	}
-
-	// ServiceMonitor
-	serviceMonitorInformer, err := createInformerIfAvailable(
-		factory, dcl, "servicemonitors",
-		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
-		logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if serviceMonitorInformer != nil {
-		informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformer
+		return nil, nil, nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	// PodMonitor
-	podMonitorInformer, err := createInformerIfAvailable(
-		factory, dcl, "podmonitors",
-		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
-		logger,
-	)
-	if err != nil {
-		return nil, err
+	type crdDef struct {
+		resourceName string
+		informerName string
+		gvr          schema.GroupVersionResource
 	}
-	if podMonitorInformer != nil {
-		informersMap[monitoringv1.PodMonitorName] = podMonitorInformer
-	}
-
-	// Probe
-	probeInformer, err := createInformerIfAvailable(
-		factory, dcl, "probes",
-		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
-		logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if probeInformer != nil {
-		informersMap[monitoringv1.ProbeName] = probeInformer
+	crdDefs := []crdDef{
+		{"servicemonitors", monitoringv1.ServiceMonitorName, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName)},
+		{"podmonitors", monitoringv1.PodMonitorName, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName)},
+		{"probes", monitoringv1.ProbeName, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName)},
+		{"scrapeconfigs", promv1alpha1.ScrapeConfigName, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName)},
 	}
 
-	// ScrapeConfig
-	scrapeConfigInformer, err := createInformerIfAvailable(
-		factory, dcl, "scrapeconfigs",
-		promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
-		logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if scrapeConfigInformer != nil {
-		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformer
+	for _, def := range crdDefs {
+		inf, infErr := createInformerIfAvailable(factory, dcl, def.resourceName, def.gvr, logger)
+		if infErr != nil {
+			return nil, nil, nil, infErr
+		}
+		if inf != nil {
+			informersMap[def.informerName] = inf
+		} else {
+			missingCRDs[def.resourceName] = def.gvr
+		}
 	}
 
 	// Use the namespace-scoped secrets metadata informer factory so that secrets
 	// list/watch only requires a namespaced Role instead of cluster-wide access.
 	secretInformers, err := informers.NewInformersForResourceWithTransform(metaDataInformerFactory, v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)), informers.PartialObjectMetadataStrip(operator.SecretGVK()))
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	if secretInformers != nil {
 		informersMap[string(v1.ResourceSecrets)] = secretInformers
 	}
 
-	return informersMap, nil
+	return informersMap, missingCRDs, dcl, nil
+}
+
+// filterMissingCRDs applies the RetryMissingCRDs / WaitForCRDs config to the raw missing-CRD set.
+// Returns nil when retry is disabled, the full set when WaitForCRDs is empty, or a filtered subset.
+func filterMissingCRDs(missing map[string]schema.GroupVersionResource, cfg allocatorconfig.PrometheusCRConfig, logger *slog.Logger) map[string]schema.GroupVersionResource {
+	if !cfg.RetryMissingCRDs || len(missing) == 0 {
+		return nil
+	}
+	if len(cfg.WaitForCRDs) == 0 {
+		return missing
+	}
+	validNames := map[string]struct{}{
+		"servicemonitors": {},
+		"podmonitors":     {},
+		"probes":          {},
+		"scrapeconfigs":   {},
+	}
+	allowed := make(map[string]struct{}, len(cfg.WaitForCRDs))
+	for _, name := range cfg.WaitForCRDs {
+		if _, ok := validNames[name]; !ok {
+			logger.Warn("unrecognized CRD name in wait_for_crds, will never match", "name", name)
+		}
+		allowed[name] = struct{}{}
+	}
+	filtered := make(map[string]schema.GroupVersionResource)
+	for name, gvr := range missing {
+		if _, ok := allowed[name]; ok {
+			filtered[name] = gvr
+		}
+	}
+	return filtered
+}
+
+// recheckMissingCRDs checks whether any CRDs that were absent at startup have appeared.
+// For each newly available CRD, it creates and starts an informer, then sends a notify.
+func (w *PrometheusCRWatcher) recheckMissingCRDs(notifyEvents chan struct{}) {
+	w.mu.RLock()
+	if len(w.missingCRDs) == 0 {
+		w.mu.RUnlock()
+		return
+	}
+	toCheck := make(map[string]schema.GroupVersionResource, len(w.missingCRDs))
+	maps.Copy(toCheck, w.missingCRDs)
+	w.mu.RUnlock()
+
+	for resourceName, gvr := range toCheck {
+		available, err := checkCRDAvailability(w.dcl, resourceName)
+		if err != nil {
+			w.logger.Warn("CRD availability check failed", "resource", resourceName, "error", err)
+			continue
+		}
+		if !available {
+			continue
+		}
+
+		inf, err := informers.NewInformersForResource(w.informerFactory, gvr)
+		if err != nil {
+			w.logger.Error("failed to create informer for late-arriving CRD", "resource", resourceName, "error", err)
+			continue
+		}
+
+		inf.Start(w.stopChannel)
+		if ok := w.WaitForNamedCacheSync(resourceName, inf.HasSynced); !ok {
+			w.logger.Error("failed to sync cache for late-arriving CRD", "resource", resourceName)
+			continue
+		}
+
+		inf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    func(any) { sendNotify(notifyEvents) },
+			UpdateFunc: func(any, any) { sendNotify(notifyEvents) },
+			DeleteFunc: func(any) { sendNotify(notifyEvents) },
+		})
+
+		w.mu.Lock()
+		w.informers[resourceName] = inf
+		delete(w.missingCRDs, resourceName)
+		w.mu.Unlock()
+
+		w.logger.Info("CRD now available, informer started", "resource", resourceName)
+		sendNotify(notifyEvents)
+	}
+}
+
+func sendNotify(ch chan struct{}) {
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
 }
 
 // Watch wrapped informers and wait for an initial sync.
@@ -457,6 +529,21 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 	}
 	if !success {
 		return errors.New("failed to sync one of the caches")
+	}
+
+	if len(w.missingCRDs) > 0 {
+		go func() {
+			ticker := time.NewTicker(resyncPeriod)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-w.stopChannel:
+					return
+				case <-ticker.C:
+					w.recheckMissingCRDs(notifyEvents)
+				}
+			}
+		}()
 	}
 
 	// limit the rate of outgoing events
@@ -589,6 +676,14 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	promCfg := &promconfig.Config{}
 
 	if w.resourceSelector != nil {
+		// Snapshot informer references under read lock to avoid races with recheckMissingCRDs.
+		w.mu.RLock()
+		smInformer := w.informers[monitoringv1.ServiceMonitorName]
+		pmInformer := w.informers[monitoringv1.PodMonitorName]
+		probeInformer := w.informers[monitoringv1.ProbeName]
+		scInformer := w.informers[promv1alpha1.ScrapeConfigName]
+		w.mu.RUnlock()
+
 		// Initialize empty maps for all resource types
 		serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 		podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
@@ -596,8 +691,8 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		scrapeConfigInstances := make(map[string]*promv1alpha1.ScrapeConfig)
 
 		// Get ServiceMonitors if the informer exists
-		if informer, ok := w.informers[monitoringv1.ServiceMonitorName]; ok {
-			selection, err := w.resourceSelector.SelectServiceMonitors(ctx, informer.ListAllByNamespace)
+		if smInformer != nil {
+			selection, err := w.resourceSelector.SelectServiceMonitors(ctx, smInformer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -605,8 +700,8 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		}
 
 		// Get PodMonitors if the informer exists
-		if informer, ok := w.informers[monitoringv1.PodMonitorName]; ok {
-			selection, err := w.resourceSelector.SelectPodMonitors(ctx, informer.ListAllByNamespace)
+		if pmInformer != nil {
+			selection, err := w.resourceSelector.SelectPodMonitors(ctx, pmInformer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -614,8 +709,8 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		}
 
 		// Get Probes if the informer exists
-		if informer, ok := w.informers[monitoringv1.ProbeName]; ok {
-			selection, err := w.resourceSelector.SelectProbes(ctx, informer.ListAllByNamespace)
+		if probeInformer != nil {
+			selection, err := w.resourceSelector.SelectProbes(ctx, probeInformer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -623,8 +718,8 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		}
 
 		// Get ScrapeConfigs if the informer exists
-		if informer, ok := w.informers[promv1alpha1.ScrapeConfigName]; ok {
-			selection, err := w.resourceSelector.SelectScrapeConfigs(ctx, informer.ListAllByNamespace)
+		if scInformer != nil {
+			selection, err := w.resourceSelector.SelectScrapeConfigs(ctx, scInformer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
