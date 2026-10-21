@@ -23,6 +23,7 @@ const (
 	operatorImageRepo = "ghcr.io/open-telemetry/opentelemetry-operator"
 	goImageRepo       = "ghcr.io/open-telemetry/opentelemetry-go-instrumentation"
 	phpImageRepo      = "ghcr.io/opentelemetry-php"
+	rubyImageRepo     = "ghcr.io/open-telemetry/opentelemetry-ruby-instrumentation"
 )
 
 var dirOverride = map[string]string{
@@ -155,8 +156,8 @@ func headerRegex(keys []string) *regexp.Regexp {
 }
 
 // resolveRefs returns the canonical image reference for each language key,
-// sourcing SDK versions and revisions from the revision package. go uses the
-// upstream image and has no operator-owned revision.
+// sourcing SDK versions and revisions from the revision package. go, php, and
+// ruby use the upstream image and have no operator-owned revision.
 func resolveRefs(root string, keys []string) (map[string]string, error) {
 	repo := revision.New(root)
 	refs := make(map[string]string, len(keys))
@@ -175,6 +176,14 @@ func resolveRefs(root string, keys []string) (map[string]string, error) {
 				return nil, err
 			}
 			refs[key] = fmt.Sprintf("%s/autoinstrumentation-php:%s", phpImageRepo, v)
+			continue
+		}
+		if key == "ruby" {
+			v, err := rubyVersion(root)
+			if err != nil {
+				return nil, err
+			}
+			refs[key] = fmt.Sprintf("%s/autoinstrumentation-ruby:%s", rubyImageRepo, v)
 			continue
 		}
 		dir := key
@@ -226,6 +235,23 @@ func phpVersion(root string) (string, error) {
 		}
 	}
 	return "", errors.New("could not read autoinstrumentation-php version from versions.txt")
+}
+
+// rubyVersion returns the upstream ruby instrumentation version from versions.txt.
+// Ruby references the upstream image directly and has no operator-owned revision.
+func rubyVersion(root string) (string, error) {
+	content, err := os.ReadFile(filepath.Join(root, "versions.txt"))
+	if err != nil {
+		return "", err
+	}
+	for line := range strings.SplitSeq(string(content), "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "autoinstrumentation-ruby="); ok {
+			if v = strings.TrimSpace(v); v != "" {
+				return v, nil
+			}
+		}
+	}
+	return "", errors.New("could not read autoinstrumentation-ruby version from versions.txt")
 }
 
 // managedFiles returns the repo-relative example files to pin: every YAML or

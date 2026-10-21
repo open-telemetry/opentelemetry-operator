@@ -20,6 +20,9 @@ const (
 	java200WarningMessage = "Java instrumentation 2.0.0 contains breaking HTTP semantic convention changes. " +
 		"See https://opentelemetry.io/blog/2023/http-conventions-declared-stable/ for a general description of the changes. " +
 		"To upgrade, manually set the image on this Instrumentation resource to 2.0.0 or higher."
+	nodeJS0790WarningMessage = "NodeJS instrumentation 0.79.0 contains breaking HTTP, network, and database semantic convention changes and removes support for legacy output. " +
+		"See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for migration details. " +
+		"To upgrade, manually set the image on this Instrumentation resource to 0.79.0 or higher."
 )
 
 // unupgradableInstrumentationVersions contains instrumentation versions that cannot be automatically upgraded from.
@@ -30,6 +33,10 @@ var unupgradableInstrumentationVersions = map[constants.InstrumentationLanguage]
 	},
 	constants.InstrumentationLanguageJava: {
 		"2.0.0": java200WarningMessage,
+	},
+	constants.InstrumentationLanguageNodeJS: {
+		// Numeric image revisions sort before the SDK version in semver. See autoinstrumentation/README.md.
+		"0.79.0-0": nodeJS0790WarningMessage,
 	},
 }
 
