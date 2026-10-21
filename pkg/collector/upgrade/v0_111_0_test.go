@@ -62,6 +62,17 @@ func Test0_111_0Upgrade(t *testing.T) {
 		},
 	}
 
+	defaultCollectorWithUnparseableTelemetry := defaultCollector.DeepCopy()
+	defaultCollectorWithUnparseableTelemetry.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
+		Object: map[string]any{
+			"resource": map[string]any{
+				"attributes": []any{
+					map[string]any{"name": "deployment.environment.name", "value": "prod"},
+				},
+			},
+		},
+	}
+
 	tt := []struct {
 		name     string
 		input    v1beta1.OpenTelemetryCollector
@@ -97,6 +108,12 @@ func Test0_111_0Upgrade(t *testing.T) {
 			name:     "telemetry readers already configured",
 			input:    *defaultCollectorWithReaders,
 			expected: *defaultCollectorWithReaders,
+		},
+		{
+			// See https://github.com/open-telemetry/opentelemetry-operator/issues/5734.
+			name:     "telemetry the operator can't parse",
+			input:    *defaultCollectorWithUnparseableTelemetry,
+			expected: *defaultCollectorWithUnparseableTelemetry,
 		},
 	}
 

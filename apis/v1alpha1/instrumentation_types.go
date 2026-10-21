@@ -46,9 +46,17 @@ type InstrumentationSpec struct {
 	// +optional
 	NodeJS NodeJS `json:"nodejs,omitempty"`
 
+	// PHP defines configuration for PHP auto-instrumentation.
+	// +optional
+	Php Php `json:"php,omitempty"`
+
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
 	Python Python `json:"python,omitempty"`
+
+	// Ruby defines configuration for Ruby auto-instrumentation.
+	// +optional
+	Ruby Ruby `json:"ruby,omitempty"`
 
 	// DotNet defines configuration for DotNet auto-instrumentation.
 	// +optional
@@ -76,7 +84,7 @@ type InstrumentationSpec struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// InitContainerSecurityContext applied to the auto-instrumentation init
-	// containers created for Java, NodeJS, Python, DotNet, Apache HTTPD and
+	// containers created for Java, NodeJS, PHP, Python, DotNet, Apache HTTPD and
 	// Nginx. When unset, init containers inherit the security context of the
 	// first application container being instrumented (existing behavior). The
 	// Go auto-instrumentation sidecar is intentionally excluded — its security
@@ -228,6 +236,26 @@ type NodeJS struct {
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
+// Php defines PHP SDK and instrumentation configuration.
+type Php struct {
+	// Image is a container image with PHP SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// Env defines PHP specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
 // Python defines Python SDK and instrumentation configuration.
 type Python struct {
 	// Image is a container image with Python SDK and auto-instrumentation.
@@ -245,6 +273,26 @@ type Python struct {
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+type Ruby struct {
+	// Image is a container image with Ruby SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with a size limit of 200Mi.
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// Env defines Ruby specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional

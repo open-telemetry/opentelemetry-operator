@@ -21,10 +21,11 @@ type TLSProfileProvider interface {
 type TLSConfig struct {
 	Ciphers    []string `mapstructure:"cipher_suites,omitempty"`
 	MinVersion string   `mapstructure:"min_version,omitempty"`
+	Curves     []string `mapstructure:"curve_preferences,omitempty"`
 }
 
-// ApplyTLSProfileDefaults sets MinVersion and Ciphers from the given TLS
-// profile when the corresponding fields are not already configured.
+// ApplyTLSProfileDefaults sets MinVersion, Ciphers, and Curves from the given
+// TLS profile when the corresponding fields are not already configured.
 func (t *TLSConfig) ApplyTLSProfileDefaults(profile TLSProfile) {
 	if t == nil || profile == nil {
 		return
@@ -34,6 +35,11 @@ func (t *TLSConfig) ApplyTLSProfileDefaults(profile TLSProfile) {
 	}
 	if t.Ciphers == nil && len(profile.CipherSuiteNames()) > 0 {
 		t.Ciphers = profile.CipherSuiteNames()
+	}
+	if t.Curves == nil {
+		if names, _ := profile.CurveNamesOTEL(); len(names) > 0 {
+			t.Curves = names
+		}
 	}
 }
 
@@ -50,6 +56,14 @@ type TLSProfile interface {
 	// CipherSuiteNames returns the cipher suite names in Go/IANA format.
 	// For TLS 1.3, this returns nil as cipher suites are not configurable.
 	CipherSuiteNames() []string
+	// CurveIDs returns the supported groups as Go crypto/tls constants.
+	// Unlike cipher suites, supported groups remain configurable under TLS 1.3.
+	CurveIDs() []tls.CurveID
+	// CurveNamesOTEL returns the supported group names in OpenTelemetry
+	// collector format (e.g., "P256"), and the Go spellings of groups with no
+	// collector translation; those groups are dropped from the first return.
+	// Unlike cipher suites, supported groups remain configurable under TLS 1.3.
+	CurveNamesOTEL() ([]string, []string)
 }
 
 // TLSVersionToCollectorFormat converts a TLS version constant to collector format string.
@@ -81,12 +95,14 @@ var _ TLSProfile = (*StaticTLSProfile)(nil)
 type StaticTLSProfile struct {
 	minVersion uint16
 	ciphers    []uint16
+	curves     []tls.CurveID
 }
 
-func NewStaticTLSProfile(minVersion uint16, ciphers []uint16) StaticTLSProfile {
+func NewStaticTLSProfile(minVersion uint16, ciphers []uint16, curves []tls.CurveID) StaticTLSProfile {
 	return StaticTLSProfile{
 		minVersion: minVersion,
 		ciphers:    ciphers,
+		curves:     curves,
 	}
 }
 
@@ -120,4 +136,38 @@ func (p StaticTLSProfile) CipherSuiteNames() []string {
 		names = append(names, tls.CipherSuiteName(c))
 	}
 	return names
+}
+
+func (p StaticTLSProfile) CurveIDs() []tls.CurveID {
+	// Unlike cipher suites, supported groups remain configurable under TLS 1.3.
+	return p.curves
+}
+
+// curveNamesOTEL maps Go crypto/tls CurveID values to the OpenTelemetry
+// collector's curve_preferences spellings. The collector's vocabulary cannot
+// be derived from Go: CurveID.String() yields "CurveP256", which matches
+// neither the OpenShift nor the collector spelling.
+var curveNamesOTEL = map[tls.CurveID]string{
+	tls.X25519:         "X25519",
+	tls.CurveP256:      "P256",
+	tls.CurveP384:      "P384",
+	tls.CurveP521:      "P521",
+	tls.X25519MLKEM768: "X25519MLKEM768",
+}
+
+// CurveNamesOTEL returns the supported group names in OpenTelemetry collector
+// format (e.g., "P256"), and the Go spellings of groups that have no
+// collector curve_preferences translation in curveNamesOTEL; such groups are
+// dropped from the first return. A newer Go release can add a group the
+// collector does not know, so callers log the second return. Unlike cipher
+// suites, supported groups remain configurable under TLS 1.3.
+func (p StaticTLSProfile) CurveNamesOTEL() (names, unmapped []string) {
+	for _, c := range p.curves {
+		if name, ok := curveNamesOTEL[c]; ok {
+			names = append(names, name)
+		} else {
+			unmapped = append(unmapped, c.String())
+		}
+	}
+	return names, unmapped
 }

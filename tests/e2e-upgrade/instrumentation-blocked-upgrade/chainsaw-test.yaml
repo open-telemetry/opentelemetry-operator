@@ -18,6 +18,19 @@ spec:
           NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
 
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+          if [ -n "$CSV_NAME" ]; then
+            ORIGINAL_INSTRUMENTATION_ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" -o json \
+              | jq -c '[.spec.install.spec.deployments[0].spec.template.spec.containers[0].args[] | select(startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image="))]')
+          else
+            ORIGINAL_INSTRUMENTATION_ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" -o json \
+              | jq -c '[.spec.template.spec.containers[0].args[] | select(startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image="))]')
+          fi
+          kubectl create configmap original-instrumentation-args -n "$NAMESPACE" \
+            --from-literal=args="$ORIGINAL_INSTRUMENTATION_ARGS"
+
           # Get the operator's effective default images (env var overrides compiled-in args).
           DEFAULT_DOTNET=$(kubectl get deploy -n "$NS" "$DEPLOY" \
             -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET")].value}' 2>/dev/null || true)
@@ -65,7 +78,7 @@ spec:
           (contains($stdout, 'cannot be automatically upgraded')): true
     - assert:
         file: 00-assert.yaml
-  - name: Patch operator to use old dotnet and java versions as defaults
+  - name: Patch operator to use old dotnet, java, and nodejs versions as defaults
     try:
     - script:
         timeout: 5m
@@ -84,6 +97,12 @@ spec:
             -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA")].value}' 2>/dev/null || true)
           [ -z "$DEFAULT_DOTNET" ] && DEFAULT_DOTNET="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0"
           [ -z "$DEFAULT_JAVA" ] && DEFAULT_JAVA="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.28.1"
+
+          DEFAULT_NODEJS=$(kubectl get deploy -n "$NS" "$DEPLOY" \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS")].value}' 2>/dev/null || true)
+          [ -z "$DEFAULT_NODEJS" ] && DEFAULT_NODEJS="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.78.0"
+          NODEJS_REPO="${DEFAULT_NODEJS%:*}"
+          OLD_NODEJS_IMG="${NODEJS_REPO}:0.78.0-6"
 
           DOTNET_REPO="${DEFAULT_DOTNET%:*}"
           JAVA_REPO="${DEFAULT_JAVA%:*}"
@@ -126,7 +145,8 @@ spec:
             NEW_ARGS=$(echo "$ARGS" | jq -c \
               --arg dotnet "$OLD_DOTNET_IMG" \
               --arg java "$OLD_JAVA_IMG" \
-              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+              --arg nodejs "$OLD_NODEJS_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java, "--auto-instrumentation-nodejs-image=" + $nodejs]')
 
             kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
               -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -158,7 +178,8 @@ spec:
             NEW_ARGS=$(echo "$ARGS" | jq -c \
               --arg dotnet "$OLD_DOTNET_IMG" \
               --arg java "$OLD_JAVA_IMG" \
-              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java]')
+              --arg nodejs "$OLD_NODEJS_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image=")) | not)] + ["--auto-instrumentation-dotnet-image=" + $dotnet, "--auto-instrumentation-java-image=" + $java, "--auto-instrumentation-nodejs-image=" + $nodejs]')
 
             kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
               -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -182,7 +203,7 @@ spec:
         file: 01-install-instrumentation-upgrade-test.yaml
     - assert:
         file: 01-assert.yaml
-  - name: Restore operator to default dotnet and java versions and trigger upgrade
+  - name: Restore dotnet and java defaults and upgrade nodejs to 0.79.0
     try:
     - script:
         timeout: 5m
@@ -194,6 +215,10 @@ spec:
           NS=opentelemetry-operator-system
           DEPLOY=opentelemetry-operator-controller-manager
 
+          OLD_NODEJS_IMG=$(kubectl get instrumentation upgrade-test -n "$NAMESPACE" -o jsonpath='{.spec.nodejs.image}')
+          # The compiled NodeJS default can still be below the blocked release.
+          TARGET_NODEJS_IMG="${OLD_NODEJS_IMG%:*}:0.79.0-1"
+
           CSV_NAME=$(kubectl get csv -n "$NS" \
             -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
             | grep -i opentelemetry | head -1 || true)
@@ -203,8 +228,8 @@ spec:
 
             ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
               -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
-            NEW_ARGS=$(echo "$ARGS" | jq -c \
-              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+            NEW_ARGS=$(echo "$ARGS" | jq -c --arg nodejs "$TARGET_NODEJS_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image=")) | not)] + ["--auto-instrumentation-nodejs-image=" + $nodejs]')
 
             kubectl patch csv "$CSV_NAME" -n "$NS" --type=json \
               -p="[{\"op\":\"replace\",\"path\":\"/spec/install/spec/deployments/0/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -233,8 +258,8 @@ spec:
             echo "Direct install detected (no CSV) — restoring Deployment args directly"
 
             ARGS=$(kubectl get deploy -n "$NS" "$DEPLOY" -o json | jq -c '.spec.template.spec.containers[0].args')
-            NEW_ARGS=$(echo "$ARGS" | jq -c \
-              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=")) | not)]')
+            NEW_ARGS=$(echo "$ARGS" | jq -c --arg nodejs "$TARGET_NODEJS_IMG" \
+              '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image=")) | not)] + ["--auto-instrumentation-nodejs-image=" + $nodejs]')
 
             kubectl patch deploy -n "$NS" "$DEPLOY" --type='json' \
               -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":$NEW_ARGS}]"
@@ -245,15 +270,25 @@ spec:
           sleep 5
   - name: Assert upgrades were blocked
     try:
-    # The Instrumentation status should record the blocked upgrade reason for both
+    # The Instrumentation status should record the blocked upgrade reason for all
     # languages, regardless of which image registry or tag the operator uses.
     - assert:
         file: 02-assert.yaml
-    # Verify both UpgradeBlocked events were emitted by the operator. We do
-    # this in a script (instead of two chainsaw `assert` blocks on the Event
+    - script:
+        shell: /bin/bash
+        content: |
+          set -eo pipefail
+          NODEJS_IMG=$(kubectl get instrumentation upgrade-test -n "$NAMESPACE" -o jsonpath='{.spec.nodejs.image}')
+          kubectl patch instrumentation blocked-upgrade-test -n "$NAMESPACE" --type=merge \
+            -p="$(jq -nc --arg image "$NODEJS_IMG" '{spec: {nodejs: {image: $image}}}')" 2>&1
+        check:
+          (contains($stdout, 'nodejs image')): true
+          (contains($stdout, 'NodeJS instrumentation 0.79.0')): true
+    # Verify all UpgradeBlocked events were emitted by the operator. We do
+    # this in a script (instead of separate chainsaw `assert` blocks on the Event
     # resource) because chainsaw's assertion-tree matcher cannot reliably
-    # disambiguate two Events that share every field except `note` — it picks
-    # one actual event and compares it against both expected matchers, which
+    # disambiguate Events that share every field except `note` — it picks
+    # one actual event and compares it against multiple expected matchers, which
     # fails for at least one of them.
     - script:
         timeout: 90s
@@ -289,9 +324,16 @@ spec:
             echo "ERROR: java image was auto-upgraded to current default '$CURRENT_JAVA' — blocking failed" >&2
             exit 1
           fi
+          ACTUAL_NODEJS=$(kubectl get instrumentation upgrade-test -n "$NAMESPACE" \
+            -o jsonpath='{.spec.nodejs.image}')
+          if [ -z "$ACTUAL_NODEJS" ] || [ "$ACTUAL_NODEJS" != "${ACTUAL_NODEJS%:*}:0.78.0-6" ]; then
+            echo "ERROR: nodejs image was not preserved at 0.78.0-6: '$ACTUAL_NODEJS'" >&2
+            exit 1
+          fi
           echo "Images preserved at blocked version (not auto-upgraded):"
           echo "  dotnet: $ACTUAL_DOTNET"
           echo "  java:   $ACTUAL_JAVA"
+          echo "  nodejs: $ACTUAL_NODEJS"
 
           # Events are queued by the operator's event recorder and flushed
           # asynchronously, so the Instrumentation status may be updated before
@@ -304,6 +346,7 @@ spec:
             missing=()
             grep -qF "Automated upgrade blocked for dotnet:" <<<"$notes" || missing+=("dotnet")
             grep -qF "Automated upgrade blocked for java:"   <<<"$notes" || missing+=("java")
+            grep -qF "Automated upgrade blocked for nodejs:" <<<"$notes" || missing+=("nodejs")
             [ ${#missing[@]} -eq 0 ] && exit 0
             sleep 2
           done
@@ -328,3 +371,30 @@ spec:
           kubectl logs -n opentelemetry-operator-system \
             -l app.kubernetes.io/name=opentelemetry-operator \
             --container manager --tail=100 || true
+    finally:
+    - script:
+        timeout: 5m
+        shell: /bin/bash
+        content: |
+          set -eo pipefail
+          ORIGINAL_INSTRUMENTATION_ARGS=$(kubectl get configmap original-instrumentation-args -n "$NAMESPACE" -o jsonpath='{.data.args}')
+          NS=opentelemetry-operator-system
+          DEPLOY=opentelemetry-operator-controller-manager
+          CSV_NAME=$(kubectl get csv -n "$NS" \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+            | grep -i opentelemetry | head -1 || true)
+          if [ -n "$CSV_NAME" ]; then
+            ARGS=$(kubectl get csv "$CSV_NAME" -n "$NS" \
+              -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            ARGS_PATH=/spec/install/spec/deployments/0/spec/template/spec/containers/0/args
+            RESOURCE="csv/$CSV_NAME"
+          else
+            ARGS=$(kubectl get deploy "$DEPLOY" -n "$NS" -o json | jq -c '.spec.template.spec.containers[0].args')
+            ARGS_PATH=/spec/template/spec/containers/0/args
+            RESOURCE="deploy/$DEPLOY"
+          fi
+          NEW_ARGS=$(jq -c --argjson original "$ORIGINAL_INSTRUMENTATION_ARGS" \
+            '[.[] | select((startswith("--auto-instrumentation-dotnet-image=") or startswith("--auto-instrumentation-java-image=") or startswith("--auto-instrumentation-nodejs-image=")) | not)] + $original' <<<"$ARGS")
+          kubectl patch "$RESOURCE" -n "$NS" --type=json \
+            -p="$(jq -nc --arg path "$ARGS_PATH" --argjson args "$NEW_ARGS" '[{op: "replace", path: $path, value: $args}]')"
+          kubectl rollout status deploy/$DEPLOY -n "$NS" --timeout=120s

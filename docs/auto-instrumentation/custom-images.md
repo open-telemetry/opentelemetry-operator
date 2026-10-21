@@ -13,6 +13,8 @@ spec:
     image: your-customized-auto-instrumentation-image:java
   nodejs:
     image: your-customized-auto-instrumentation-image:nodejs
+  php:
+    image: your-customized-auto-instrumentation-image:php
   python:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
