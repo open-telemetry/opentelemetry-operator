@@ -200,13 +200,8 @@ spec:
             content: |
               #!/bin/bash
               set -eu
-              kubectl run -n "$NAMESPACE" send-restart-cmd \
-                --image=mirror.gcr.io/alpine/curl:latest \
-                --restart=Never --rm -i \
-                --command -- curl -fsS -X POST \
-                "http://e2e-test-app-bridge-server:4321/agents/send-command" \
-                -H "Content-Type: application/json" \
-                -d '{"command_type":"restart"}'
+              printf '%s' '{"command_type":"restart"}' | kubectl create --raw \
+                "/api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents/send-command" -f -
         # Poll until the restartedAt annotation appears on the collector Deployment.
         - script:
             timeout: 60s
