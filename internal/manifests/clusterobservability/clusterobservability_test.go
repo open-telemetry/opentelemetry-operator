@@ -144,11 +144,13 @@ func TestBuildInstrumentations_Endpoint(t *testing.T) {
 		Config: operatorcfg.Config{
 			EnableJavaAutoInstrumentation:   true,
 			EnableNodeJSAutoInstrumentation: true,
+			EnablePhpAutoInstrumentation:    true,
 			EnablePythonAutoInstrumentation: true,
 			EnableDotNetAutoInstrumentation: true,
 			EnableGoAutoInstrumentation:     true,
 			AutoInstrumentationJavaImage:    "java:latest",
 			AutoInstrumentationNodeJSImage:  "nodejs:latest",
+			AutoInstrumentationPhpImage:     "php:latest",
 			AutoInstrumentationPythonImage:  "python:latest",
 			AutoInstrumentationDotNetImage:  "dotnet:latest",
 			AutoInstrumentationGoImage:      "go:latest",
@@ -165,6 +167,7 @@ func TestBuildInstrumentations_Endpoint(t *testing.T) {
 	assert.Equal(t, "http://$(OTEL_NODE_IP):4318", inst.Spec.Endpoint)
 	assert.Empty(t, inst.Spec.Java.Env)
 	assert.Empty(t, inst.Spec.NodeJS.Env)
+	assert.Empty(t, inst.Spec.Php.Env)
 	assert.Empty(t, inst.Spec.Python.Env)
 	assert.Empty(t, inst.Spec.DotNet.Env)
 	assert.Empty(t, inst.Spec.Go.Env)

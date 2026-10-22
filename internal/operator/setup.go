@@ -91,7 +91,11 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 		for _, t := range tlsOptsFuncs {
 			t(tlsCfg)
 		}
-		cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites)
+		profile := components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites, tlsCfg.CurvePreferences)
+		if _, unmapped := profile.CurveNamesOTEL(); len(unmapped) > 0 {
+			setupLog.Info("some TLS groups from cluster profile have no collector curve_preferences spelling and will not be injected into operands", "groups", unmapped)
+		}
+		cfg.Internal.OperandTLSProfile = profile
 	}
 
 	metricsOptions := buildMetricsOptions(*cfg, tlsOptsFuncs)

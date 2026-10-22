@@ -2,18 +2,19 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: target allocator
+component: collector, target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Honor the cumulative temporality preference for counters bridged from the Prometheus registry in OTLP self-telemetry.
+note: "Use pointer for TargetAllocator Telemetry field so omitempty works correctly with encoding/json"
 
 # One or more tracking issues related to the change
-issues: [5700]
+issues: [5695]
 
-# (Optional) One or more lines of additional information to render under the main note.
+# (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Bridged counters, such as the Prometheus service discovery metrics, were converted to delta regardless of
-  `temporality_preference`. They are now converted only when the preference selects delta for counters
-  (`delta` or `low_memory`), and are exported as cumulative otherwise.
+  Go's encoding/json does not omit zero-value structs with omitempty. The non-pointer
+  TelemetryConfig field caused targetAllocator.telemetry to always be serialized during
+  server-side apply, even when not set, breaking consumers that use a CRD version without
+  this field.

@@ -31,6 +31,33 @@ rules:
       - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-opamp-bridge-standalone
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    resourceNames:
+      - kube-system
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-opamp-bridge-standalone
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-opamp-bridge-standalone
+subjects:
+  - kind: ServiceAccount
+    name: otel-opamp-bridge-standalone
+    namespace: ($namespace)
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: otel-opamp-bridge-standalone

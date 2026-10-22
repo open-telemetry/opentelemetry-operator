@@ -21,6 +21,8 @@ spec:
     spec:
       shareProcessNamespace: true
       enableServiceLinks: false
+      imagePullSecrets:
+        - name: my-registry-secret
       nodeSelector:
         kubernetes.io/os: linux
       (affinity != null): true

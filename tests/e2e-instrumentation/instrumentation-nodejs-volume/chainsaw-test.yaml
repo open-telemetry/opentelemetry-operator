@@ -24,8 +24,8 @@ spec:
       value: "5"
     - name: searchStrings
       value: |
-        Name: http.server.duration
-        Description: Measures the duration of inbound HTTP requests
+        Name: http.server.request.duration
+        Description: Duration of HTTP server requests.
     - name: catchPodLabelSelector
       value: app.kubernetes.io/name=deployment-collector
     - name: catchContainer

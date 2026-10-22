@@ -5,6 +5,12 @@ metadata:
   name: ta-collector-mtls-scrapeconfig-node
 spec:
   steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+  - name: Setup Collector RBAC
+    use:
+      template: ../../step-templates/collector-with-target-allocator-rbac-comprehensive.yaml
   - name: step-00
     try:
     - apply:
