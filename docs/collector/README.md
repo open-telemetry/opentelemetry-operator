@@ -6,5 +6,6 @@ Documentation for the `OpenTelemetryCollector` Custom Resource.
 - [Sidecar injection](sidecar-injection.md)
 - [Using imagePullSecrets](image-pull-secrets.md)
 - [ClusterObservability controller](cluster-observability.md)
+- [Security and RBAC](security.md)
 
 See also the [API reference](../api/opentelemetrycollectors.md).
