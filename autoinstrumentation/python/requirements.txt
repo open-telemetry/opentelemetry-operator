@@ -1,6 +1,8 @@
 opentelemetry-distro==0.66b1
 
 urllib3 <2.8.1
+# Excludes the distrusted emSign roots. See open-telemetry/opentelemetry-collector-releases#1722.
+certifi >=2026.10.19
 # We don't use the distro[otlp] option which automatically includes exporters since gRPC is not appropriate for
 # injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
 opentelemetry-exporter-otlp-proto-http==1.45.1
