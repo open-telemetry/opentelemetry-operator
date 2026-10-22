@@ -40,7 +40,8 @@ func Labels(instance metav1.ObjectMeta, name, image, component string, filterLab
 
 	maps.Copy(base, SelectorLabels(instance, component))
 
-	version := strings.Split(image, ":")
+	// Only the last path segment holds the tag and digest; a colon before it is a registry port.
+	version := strings.Split(image[strings.LastIndex(image, "/")+1:], ":")
 	for _, v := range version {
 		if before, ok := strings.CutSuffix(v, "@sha256"); ok {
 			versionLabel = before
