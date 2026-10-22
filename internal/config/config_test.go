@@ -122,3 +122,11 @@ func TestApply(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyEnvVars(t *testing.T) {
+	t.Setenv("RELATED_IMAGE_CLUSTER_OBSERVABILITY_COLLECTOR", "custom-clusterobservability-collector:1.0")
+	cfg := New()
+	err := cfg.Apply("")
+	require.NoError(t, err)
+	assert.Equal(t, "custom-clusterobservability-collector:1.0", cfg.ClusterObservabilityCollectorImage)
+}

@@ -15,6 +15,9 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("RELATED_IMAGE_COLLECTOR"); ok {
 		cfg.CollectorImage = v
 	}
+	if v, ok := os.LookupEnv("RELATED_IMAGE_CLUSTER_OBSERVABILITY_COLLECTOR"); ok {
+		cfg.ClusterObservabilityCollectorImage = v
+	}
 	if v, ok := os.LookupEnv("RELATED_IMAGE_TARGET_ALLOCATOR"); ok {
 		cfg.TargetAllocatorImage = v
 	}
