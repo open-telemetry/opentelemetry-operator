@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator, target allocator, opamp, auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: "Remove the distrusted emSign root CAs from the operator, target allocator, OpAMP bridge, and Python auto-instrumentation images."
+
+# One or more tracking issues related to the change
+issues: []
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The operator, target allocator, and OpAMP bridge images require Alpine `ca-certificates` 20261020-r0 or later.
+  The Python auto-instrumentation image requires `certifi` 2026.10.19 or later and is published as `0.66b1-3`.
+  The updated CA bundle removes the distrusted eMudhra emSign roots, including `emSign ECC Root CA - G3`.
+  Images are built with Go 1.27.3, which includes the `crypto/x509` security fixes released on 2026-10-19.
