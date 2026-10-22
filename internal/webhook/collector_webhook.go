@@ -145,7 +145,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, otelcolOld, otelco
 	if otelcolOld.Spec.Mode != otelcol.Spec.Mode {
 		return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support modification", otelcolOld.Spec.Mode)
 	}
-	if otelcol.Spec.Mode == v1beta1.ModeStatefulSet {
+	if featuregate.RejectImmutableStatefulSetChanges.IsEnabled() && otelcol.Spec.Mode == v1beta1.ModeStatefulSet {
 		// The operator would otherwise delete and recreate the StatefulSet, and its pods with it.
 		// See open-telemetry/opentelemetry-operator#5329.
 		oldSts := collectorManifests.StatefulSetImmutableFields(*otelcolOld)

@@ -17,6 +17,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -41,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var testScheme = scheme.Scheme
@@ -1733,6 +1735,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			require.NoError(t, colfg.GlobalRegistry().Set(featuregate.RejectImmutableStatefulSetChanges.ID(), true))
+			t.Cleanup(func() {
+				require.NoError(t, colfg.GlobalRegistry().Set(featuregate.RejectImmutableStatefulSetChanges.ID(), false))
+			})
 			cfg := config.Config{
 				CollectorImage:       "collector:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
@@ -1758,6 +1764,24 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
 		})
 	}
+}
+
+func TestOTELColValidateUpdateWebhookImmutableStatefulSetGateDisabled(t *testing.T) {
+	oldCol := statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") })
+	newCol := statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("2Gi") })
+
+	cvw := webhook.NewCollectorWebhook(
+		logr.Discard(),
+		testScheme,
+		config.Config{CollectorImage: "collector:v0.0.0", TargetAllocatorImage: "ta:v0.0.0"},
+		getReviewer(false),
+		nil,
+		nil,
+		func(_ context.Context, _ v1beta1.OpenTelemetryCollector) admission.Warnings { return nil },
+		nil,
+	)
+	_, err := cvw.ValidateUpdate(context.Background(), &oldCol, &newCol)
+	assert.NoError(t, err)
 }
 
 func TestValidationViaCRDAnnotations(t *testing.T) {
