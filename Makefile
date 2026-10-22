@@ -12,7 +12,9 @@ TARGETALLOCATOR_VERSION ?= $(shell awk -F= '/^targetallocator=/ {print $$2}' ver
 OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell awk -F= '/^operator-opamp-bridge/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_JAVA_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-java=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nodejs=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_PHP_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-php=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-python=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_RUBY_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-ruby=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-dotnet=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
@@ -42,8 +44,10 @@ OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationJava=${DEFAULT_INSTRUMENTATION_JAVA_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationNodeJS=${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationPython=${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationRuby=${DEFAULT_INSTRUMENTATION_RUBY_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationDotNet=${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationGo=${DEFAULT_INSTRUMENTATION_GO_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationPhp=${DEFAULT_INSTRUMENTATION_PHP_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}\
 	-X ${VERSION_PKG}.autoInstrumentationNginx=${DEFAULT_INSTRUMENTATION_NGINX_VERSION}
 ARCH ?= $(shell go env GOARCH)
@@ -73,7 +77,7 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # registry versions, letting tests run against local changes before they are merged
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
-TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink python
+TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink php python ruby
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -131,7 +135,7 @@ endif
 
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.36
+KUBE_VERSION ?= 1.37
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 CHAINSAW_SELECTOR := $(shell [ "$(shell printf '%s\n' "$(KUBE_VERSION)" "1.29" | sort -V | head -n1)" = "1.29" ] && echo "--selector sidecar=native" || echo "--selector sidecar=legacy")
@@ -321,10 +325,12 @@ add-instrumentation-images:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-dotnet-image=$(INSTRUMENTATION_DOTNET_IMG)
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-apache-httpd-image=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
 
-# Enable Go auto-instrumentation support in the operator
+# Enable Go, PHP auto-instrumentation support in the operator
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-php-instrumentation=true
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-ruby-instrumentation=true
 
 # Enable multi-instrumentation support
 .PHONY: add-multi-instrumentation-params
@@ -467,7 +473,7 @@ chlog-check:
 fmt: golangci-lint
 	@set -e; for dir in $(GO_MODULE_DIRS); do \
 		echo "Running fmt in $$dir"; \
-		(cd $$dir && go fmt ./... && $(GOLANGCI_LINT) run --fix); \
+		(cd $$dir && $(GOLANGCI_LINT) run --fix); \
 	done
 
 # Run go vet in every Go module in the repository
@@ -907,11 +913,11 @@ GOTESTSUM ?= $(LOCALBIN)/gotestsum
 GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.8.1
+KUSTOMIZE_VERSION ?= v5.8.2
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.22.0
+CONTROLLER_TOOLS_VERSION ?= v0.23.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.13.2
+GOLANGCI_LINT_VERSION ?= v2.15.0
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.33.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -919,7 +925,7 @@ CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.8.0
+GOVULNCHECK_VERSION ?= v1.9.0
 PROMTOOL ?= $(LOCALBIN)/promtool
 # promtool is the golden source for the target-allocator conformance suite. It must match
 # the prometheus/prometheus library the operator links against, so derive the release version
@@ -936,10 +942,27 @@ install-tools: kustomize golangci-lint kind controller-gen crdoc operator-sdk ch
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
-# Download golangci-lint locally if necessary
+# Download golangci-lint locally if necessary. Use the release binary rather than go install:
+# gci formats with the go/printer of the Go version that built golangci-lint, and it must match
+# the Go version gofumpt is based on. See golangci/golangci-lint#6814.
+# A binary built by go install reports a "mod sum" in its version output and is replaced.
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	@{ \
+	set -e ;\
+	if [ "$$($(GOLANGCI_LINT) version --short 2>/dev/null)" = "$(GOLANGCI_LINT_VERSION:v%=%)" ] && \
+		! $(GOLANGCI_LINT) version 2>&1 | grep -q 'mod sum' ; then \
+		exit 0; \
+	fi ;\
+	TMP_DIR=$$(mktemp -d) ;\
+	NAME=golangci-lint-$(GOLANGCI_LINT_VERSION:v%=%)-`go env GOOS`-`go env GOARCH` ;\
+	curl -fSL --retry 5 --retry-delay 2 --retry-all-errors -o $$TMP_DIR/golangci-lint.tar.gz https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/$$NAME.tar.gz ;\
+	gzip -t $$TMP_DIR/golangci-lint.tar.gz || { echo "ERROR: downloaded golangci-lint archive is corrupt or incomplete" >&2; exit 1; } ;\
+	tar xzf $$TMP_DIR/golangci-lint.tar.gz -C $$TMP_DIR --strip-components=1 $$NAME/golangci-lint ;\
+	[ -d $(LOCALBIN) ] || mkdir -p $(LOCALBIN) ;\
+	mv $$TMP_DIR/golangci-lint $(GOLANGCI_LINT) ;\
+	rm -rf $$TMP_DIR ;\
+	}
 
 # Download kind locally if necessary
 .PHONY: kind
@@ -1145,7 +1168,9 @@ chlog-insert-components:
 	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
 	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
 	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Ruby - v${DEFAULT_INSTRUMENTATION_RUBY_VERSION}](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_RUBY_VERSION})" >>components.md
 	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md
+    @echo "* [PHP - ${DEFAULT_INSTRUMENTATION_PHP_VERSION}](https://packagist.org/packages/open-telemetry/ext-opentelemetry/#${DEFAULT_INSTRUMENTATION_PHP_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}-${INSTRUMENTATION_APACHE_HTTPD_REVISION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
 	@$(SED_INPLACE) '/<!-- next version -->/r ./components.md' CHANGELOG.md

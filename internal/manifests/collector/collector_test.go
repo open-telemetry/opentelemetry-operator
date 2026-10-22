@@ -33,7 +33,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			params: manifests.Params{
 				ErrorAsWarning: true,
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.NotAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.NotAvailable,
+					},
 				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -51,7 +53,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			params: manifests.Params{
 				ErrorAsWarning: false,
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.NotAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.NotAvailable,
+					},
 				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -69,7 +73,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			params: manifests.Params{
 				ErrorAsWarning: true,
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.Available,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.Available,
+					},
 				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -87,7 +93,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			params: manifests.Params{
 				ErrorAsWarning: true,
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.NotAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.NotAvailable,
+					},
 				},
 				Reviewer: nil,
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -105,7 +113,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			params: manifests.Params{
 				ErrorAsWarning: true,
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.Available,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.Available,
+					},
 				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
@@ -239,7 +249,9 @@ func TestBuild(t *testing.T) {
 					},
 				},
 				Config: config.Config{
-					CreateRBACPermissions: autoRbac.Available,
+					Internal: config.Internal{
+						CreateRBACPermissions: autoRbac.Available,
+					},
 				},
 			},
 			expectedObjects: 7,

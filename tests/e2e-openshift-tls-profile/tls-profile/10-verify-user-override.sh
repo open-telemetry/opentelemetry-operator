@@ -23,6 +23,11 @@ GRPC_CIPHERS=$(echo "$CONFIG" | jq '.receivers.otlp.protocols.grpc.tls.cipher_su
 [ "$GRPC_CIPHERS" != "null" ] && [ "$GRPC_CIPHERS" != "[]" ] \
   || fail "otlp.grpc.tls.cipher_suites: expected cluster ciphers injected, got '$GRPC_CIPHERS'"
 
+# Curve preferences: user set them to ["P384"], should be preserved.
+GRPC_CURVES=$(echo "$CONFIG" | jq -c '.receivers.otlp.protocols.grpc.tls.curve_preferences')
+[ "$GRPC_CURVES" = '["P384"]' ] \
+  || fail "otlp.grpc.tls.curve_preferences: expected '[\"P384\"]' (user value), got '$GRPC_CURVES'"
+
 # --- HTTP: user set cipher_suites, did NOT set min_version ---
 
 HTTP_MIN=$(echo "$CONFIG" | jq -r '.receivers.otlp.protocols.http.tls.min_version // empty')
@@ -32,5 +37,10 @@ HTTP_MIN=$(echo "$CONFIG" | jq -r '.receivers.otlp.protocols.http.tls.min_versio
 HTTP_CIPHERS=$(echo "$CONFIG" | jq -c '.receivers.otlp.protocols.http.tls.cipher_suites')
 [ "$HTTP_CIPHERS" = '["TLS_AES_128_GCM_SHA256"]' ] \
   || fail "otlp.http.tls.cipher_suites: expected '[\"TLS_AES_128_GCM_SHA256\"]' (user value), got '$HTTP_CIPHERS'"
+
+# Curve preferences: user didn't set them, so cluster groups should be injected.
+HTTP_CURVES=$(echo "$CONFIG" | jq -c '.receivers.otlp.protocols.http.tls.curve_preferences')
+[ "$HTTP_CURVES" = '["X25519MLKEM768","X25519","P256","P384"]' ] \
+  || fail "otlp.http.tls.curve_preferences: expected cluster groups injected, got '$HTTP_CURVES'"
 
 echo "PASS: User TLS override verification"

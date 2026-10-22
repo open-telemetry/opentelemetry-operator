@@ -1141,6 +1141,106 @@ func TestGetEnvironmentVariables(t *testing.T) {
 			},
 		},
 		{
+			name: "with cgroup_runtime extension enabled",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: mustUnmarshalToConfig(t, `extensions:
+  cgroup_runtime:
+    gomemlimit:
+      ratio: 0.5
+service:
+  extensions: [cgroup_runtime]
+`),
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with deprecated cgroupruntime type and gomemlimit disabled",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: mustUnmarshalToConfig(t, `extensions:
+  cgroupruntime/custom:
+    gomemlimit:
+      enabled: false
+service:
+  extensions: [cgroupruntime/custom]
+`),
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with cgroup_runtime extension defined but not enabled",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: mustUnmarshalToConfig(t, `extensions:
+  cgroup_runtime: {}
+service:
+  extensions: []
+`),
+				},
+			},
+			enableSetGolangFlags: true,
+			expectedEnvVars: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "proxy environment variables",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{},

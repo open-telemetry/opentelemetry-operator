@@ -718,7 +718,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 // TestOpenTelemetryCollectorReconciler_RemoveDisabled starts off with optional resources enabled, and then disables
 // them one by one to ensure they're actually deleted.
 func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
-	expectedStartingResourceCount := 8
+	expectedStartingResourceCount := 7
 	startingCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "placeholder",
@@ -1212,10 +1212,12 @@ service:
 	cfg := config.Config{
 		CollectorImage:                    "default-collector",
 		TargetAllocatorImage:              "default-ta-allocator",
-		CreateRBACPermissions:             autoRBAC.Available,
 		CollectorConfigMapEntry:           "collector.yaml",
 		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 		EnableInstrumentationCRDs:         true,
+		Internal: config.Internal{
+			CreateRBACPermissions: autoRBAC.Available,
+		},
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1510,6 +1512,7 @@ func TestTLSDefaultingAtReconcileTime(t *testing.T) {
 	cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(
 		tls.VersionTLS12,
 		[]uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+		[]tls.CurveID{tls.X25519, tls.CurveP256},
 	)
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1578,6 +1581,12 @@ func TestTLSDefaultingAtReconcileTime(t *testing.T) {
 	assert.True(t, ok, "cipher_suites should be set at reconcile time")
 	expectedCiphers := []any{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"}
 	assert.Equal(t, expectedCiphers, cipherSuites, "cipher_suites should match TLS profile")
+
+	// Check that curve_preferences was injected
+	curvePreferences, ok := tlsConfig["curve_preferences"]
+	assert.True(t, ok, "curve_preferences should be set at reconcile time")
+	expectedCurves := []any{"X25519", "P256"}
+	assert.Equal(t, expectedCurves, curvePreferences, "curve_preferences should match TLS profile")
 }
 
 // getAllResources gets all the resource types owned by the controller.

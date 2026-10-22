@@ -7,8 +7,6 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
-
-	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 )
 
 var args = os.Args[1:]
@@ -25,13 +23,14 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("enable-leader-election", cfg.EnableLeaderElection,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	f.Bool("create-rbac-permissions", cfg.CreateRBACPermissions == autoRBAC.Available, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	f.Bool("openshift-create-dashboard", cfg.OpenshiftCreateDashboard, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
 	f.Bool("enable-multi-instrumentation", cfg.EnableMultiInstrumentation, "Controls whether the operator supports multi instrumentation")
 	f.Bool("enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	f.Bool("enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")
 	f.Bool("enable-go-instrumentation", cfg.EnableGoAutoInstrumentation, "Controls whether the operator supports Go auto-instrumentation")
+	f.Bool("enable-php-instrumentation", cfg.EnablePhpAutoInstrumentation, "Controls whether the operator supports PHP auto-instrumentation")
 	f.Bool("enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation, "Controls whether the operator supports python auto-instrumentation")
+	f.Bool("enable-ruby-instrumentation", cfg.EnableRubyAutoInstrumentation, "Controls whether the operator supports ruby auto-instrumentation")
 	f.Bool("enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation, "Controls whether the operator supports nginx auto-instrumentation")
 	f.Bool("enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
 	f.Bool("enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
@@ -45,6 +44,8 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("auto-instrumentation-java-image", cfg.AutoInstrumentationJavaImage, "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-nodejs-image", cfg.AutoInstrumentationNodeJSImage, "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-python-image", cfg.AutoInstrumentationPythonImage, "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	f.String("auto-instrumentation-ruby-image", cfg.AutoInstrumentationRubyImage, "The default OpenTelemetry Ruby instrumentation image. This image is used when no image is specified in the CustomResource.")
+	f.String("auto-instrumentation-php-image", cfg.AutoInstrumentationPhpImage, "The default OpenTelemetry PHP instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-dotnet-image", cfg.AutoInstrumentationDotNetImage, "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-go-image", cfg.AutoInstrumentationGoImage, "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-apache-httpd-image", cfg.AutoInstrumentationApacheHttpdImage, "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
@@ -86,8 +87,12 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableDotNetAutoInstrumentation, _ = f.GetBool("enable-dotnet-instrumentation")
 			case "enable-go-instrumentation":
 				cfg.EnableGoAutoInstrumentation, _ = f.GetBool("enable-go-instrumentation")
+			case "enable-php-instrumentation":
+				cfg.EnablePhpAutoInstrumentation, _ = f.GetBool("enable-php-instrumentation")
 			case "enable-python-instrumentation":
 				cfg.EnablePythonAutoInstrumentation, _ = f.GetBool("enable-python-instrumentation")
+			case "enable-ruby-instrumentation":
+				cfg.EnableRubyAutoInstrumentation, _ = f.GetBool("enable-ruby-instrumentation")
 			case "enable-nginx-instrumentation":
 				cfg.EnableNginxAutoInstrumentation, _ = f.GetBool("enable-nginx-instrumentation")
 			case "enable-nodejs-instrumentation":
@@ -108,8 +113,12 @@ func ApplyCLI(cfg *Config) error {
 				cfg.AutoInstrumentationJavaImage, _ = f.GetString("auto-instrumentation-java-image")
 			case "auto-instrumentation-nodejs-image":
 				cfg.AutoInstrumentationNodeJSImage, _ = f.GetString("auto-instrumentation-nodejs-image")
+			case "auto-instrumentation-php-image":
+				cfg.AutoInstrumentationPhpImage, _ = f.GetString("auto-instrumentation-php-image")
 			case "auto-instrumentation-python-image":
 				cfg.AutoInstrumentationPythonImage, _ = f.GetString("auto-instrumentation-python-image")
+			case "auto-instrumentation-ruby-image":
+				cfg.AutoInstrumentationRubyImage, _ = f.GetString("auto-instrumentation-ruby-image")
 			case "auto-instrumentation-dotnet-image":
 				cfg.AutoInstrumentationDotNetImage, _ = f.GetString("auto-instrumentation-dotnet-image")
 			case "auto-instrumentation-go-image":
@@ -150,8 +159,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.TLS.UseClusterProfile, _ = f.GetBool("tls-cluster-profile")
 			case "tls-configure-operands":
 				cfg.TLS.ConfigureOperands, _ = f.GetBool("tls-configure-operands")
-			case "min-tls-version":
-				cfg.TLS.MinVersion, _ = f.GetString("min-tls-version")
+			case "tls-min-version":
+				cfg.TLS.MinVersion, _ = f.GetString("tls-min-version")
 			case "tls-cipher-suites":
 				cfg.TLS.CipherSuites, _ = f.GetStringSlice("tls-cipher-suites")
 			case "zap-message-key":
@@ -166,13 +175,6 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
 			case "watch-namespace":
 				cfg.WatchNamespace, _ = f.GetString("watch-namespace")
-			case "create-rbac-permissions":
-				val, _ := f.GetBool("create-rbac-permissions")
-				if val {
-					cfg.CreateRBACPermissions = autoRBAC.Available
-				} else {
-					cfg.CreateRBACPermissions = autoRBAC.NotAvailable
-				}
 			case "openshift-webhook-replicas":
 				cfg.OpenShiftWebhookReplicas, _ = f.GetInt32("openshift-webhook-replicas")
 			}

@@ -51,7 +51,8 @@ spec:
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-collector
 
-  # Step 2: Verify Intermediate profile injection on CR fields.
+  # Step 2: Verify Intermediate profile injection on CR fields,
+  # including curve_preferences from the profile groups (S9).
   - name: step-02
     try:
     - script:
@@ -139,7 +140,8 @@ spec:
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-collector
 
-  # Step 6: Verify changed profile injection on CR fields.
+  # Step 6: Verify changed profile injection on CR fields,
+  # including curve_preferences (S9).
   - name: step-06
     try:
     - script:
@@ -169,7 +171,8 @@ spec:
         content: ./11-revert-apiserver.sh
 
   # Step 9: Delete collector A, apply collector B (user overrides).
-  # Covers S6 (user-specified values preserved).
+  # Covers S6 (user-specified values preserved) and S10 (user-specified
+  # curve_preferences preserved).
   - name: step-09
     try:
     - script:

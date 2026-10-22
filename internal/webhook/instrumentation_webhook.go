@@ -98,6 +98,21 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
+	if r.Spec.Php.Image == "" {
+		r.Spec.Php.Image = w.cfg.AutoInstrumentationPhpImage
+	}
+	if r.Spec.Php.Resources.Limits == nil {
+		r.Spec.Php.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		}
+	}
+	if r.Spec.Php.Resources.Requests == nil {
+		r.Spec.Php.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.Python.Image == "" {
 		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage
 	}
@@ -109,6 +124,21 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	}
 	if r.Spec.Python.Resources.Requests == nil {
 		r.Spec.Python.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
+	if r.Spec.Ruby.Image == "" {
+		r.Spec.Ruby.Image = w.cfg.AutoInstrumentationRubyImage
+	}
+	if r.Spec.Ruby.Resources.Limits == nil {
+		r.Spec.Ruby.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		}
+	}
+	if r.Spec.Ruby.Resources.Requests == nil {
+		r.Spec.Ruby.Resources.Requests = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
@@ -176,7 +206,9 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	}
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPhp] = w.cfg.AutoInstrumentationPhpImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationRuby] = w.cfg.AutoInstrumentationRubyImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage
@@ -352,6 +384,7 @@ func (w InstrumentationWebhook) checkUnupgradableVersions(r *v1alpha1.Instrument
 	languageImages := map[constants.InstrumentationLanguage]langImage{
 		constants.InstrumentationLanguageJava:        {r.Spec.Java.Image, w.cfg.AutoInstrumentationJavaImage},
 		constants.InstrumentationLanguageNodeJS:      {r.Spec.NodeJS.Image, w.cfg.AutoInstrumentationNodeJSImage},
+		constants.InstrumentationLanguagePhp:         {r.Spec.Php.Image, w.cfg.AutoInstrumentationPhpImage},
 		constants.InstrumentationLanguagePython:      {r.Spec.Python.Image, w.cfg.AutoInstrumentationPythonImage},
 		constants.InstrumentationLanguageDotNet:      {r.Spec.DotNet.Image, w.cfg.AutoInstrumentationDotNetImage},
 		constants.InstrumentationLanguageGo:          {r.Spec.Go.Image, w.cfg.AutoInstrumentationGoImage},

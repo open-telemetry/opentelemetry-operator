@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -49,6 +50,11 @@ func TestShouldInjectSidecar(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{sidecar.Annotation: "my-instance"},
 				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "app"},
+					},
+				},
 			},
 			otelcols: []v1alpha1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +75,13 @@ func TestShouldInjectSidecar(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "my-instance"},
 				},
 			},
-			pod: corev1.Pod{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "app"},
+					},
+				},
+			},
 			otelcols: []v1alpha1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
@@ -89,7 +101,13 @@ func TestShouldInjectSidecar(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "true"},
 				},
 			},
-			pod: corev1.Pod{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "app"},
+					},
+				},
+			},
 			otelcols: []v1alpha1.OpenTelemetryCollector{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -152,20 +170,18 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			expectedMap := map[string]bool{
 				"/metadata/labels": false, // add a new label
-				"/spec/containers": false, // replace the containers, adding one new container
+				"containers":       false, // add one new container
 			}
 			for _, patch := range res.Patches {
-				// quick and dirty solution
-				if patch.Path == "/spec/containers" {
-					assert.Equal(t, "replace", patch.Operation)
-				} else {
+				if strings.HasPrefix(patch.Path, "/spec/containers") {
+					expectedMap["containers"] = true
+				} else if patch.Path == "/metadata/labels" {
 					assert.Equal(t, "add", patch.Operation)
+					expectedMap["/metadata/labels"] = true
 				}
-
-				expectedMap[patch.Path] = true
 			}
 			for k := range expectedMap {
-				assert.True(t, expectedMap[k], "patch with path %s not found", k)
+				assert.True(t, expectedMap[k], "patch for %s not found", k)
 			}
 
 			// cleanup

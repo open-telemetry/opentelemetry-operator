@@ -44,7 +44,9 @@ type instrumentationWithContainers struct {
 type languageInstrumentations struct {
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
+	Php         instrumentationWithContainers
 	Python      instrumentationWithContainers
+	Ruby        instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
 	Nginx       instrumentationWithContainers
@@ -56,7 +58,9 @@ func instrumentationsList(langInsts *languageInstrumentations) []*instrumentatio
 	return []*instrumentationWithContainers{
 		&langInsts.Java,
 		&langInsts.NodeJS,
+		&langInsts.Php,
 		&langInsts.Python,
+		&langInsts.Ruby,
 		&langInsts.DotNet,
 		&langInsts.ApacheHttpd,
 		&langInsts.Nginx,
@@ -159,8 +163,16 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod
 			annotation: annotationInjectNodeJSContainersName,
 		},
 		{
+			iwc:        &langInsts.Php,
+			annotation: annotationInjectPhpContainersName,
+		},
+		{
 			iwc:        &langInsts.Python,
 			annotation: annotationInjectPythonContainersName,
+		},
+		{
+			iwc:        &langInsts.Ruby,
+			annotation: annotationInjectRubyContainersName,
 		},
 		{
 			iwc:        &langInsts.DotNet,
@@ -252,6 +264,23 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
 	}
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPhp); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnablePhpAutoInstrumentation || inst == nil {
+		insts.Php.Instrumentation = inst
+		insts.Php.AdditionalAnnotations = map[string]string{
+			annotationPhpPlatform:     annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPhpPlatform),
+			annotationPhpApiVersion:   annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPhpApiVersion),
+			annotationPhpThreadSafety: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPhpThreadSafety),
+		}
+	} else {
+		logger.Error(nil, "support for PHP auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for PHP auto instrumentation is not enabled")
+	}
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -263,6 +292,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectRuby); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnableRubyAutoInstrumentation || inst == nil {
+		insts.Ruby.Instrumentation = inst
+	} else {
+		logger.Error(err, "support for Ruby auto instrumentation is not enabled")
+		pm.Recorder.Eventf(pod.DeepCopy(), nil, "Warning", "InstrumentationRequestRejected", "InstrumentationRequestRejected", "support for Ruby auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {

@@ -2,3 +2,6 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: upgrade-test
+spec:
+  nodejs:
+    (ends_with(image, ':0.78.0-6')): true

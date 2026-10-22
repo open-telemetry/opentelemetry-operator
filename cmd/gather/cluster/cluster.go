@@ -146,9 +146,7 @@ func (c *Cluster) GetOLMInfo() error {
 
 	// OperatorGroups
 	operatorGroups := operatorsv1.OperatorGroupList{}
-	if err := c.config.KubernetesClient.List(context.TODO(), &operatorGroups, &client.ListOptions{
-		Namespace: operatorNamespace,
-	}); err != nil {
+	if err := c.config.KubernetesClient.List(context.TODO(), &operatorGroups, client.InNamespace(operatorNamespace)); err != nil {
 		return err
 	}
 	for i := range operatorGroups.Items {
@@ -159,9 +157,7 @@ func (c *Cluster) GetOLMInfo() error {
 
 	// Subscriptions
 	subscriptions := operatorsv1alpha1.SubscriptionList{}
-	if err := c.config.KubernetesClient.List(context.TODO(), &subscriptions, &client.ListOptions{
-		Namespace: operatorNamespace,
-	}); err != nil {
+	if err := c.config.KubernetesClient.List(context.TODO(), &subscriptions, client.InNamespace(operatorNamespace)); err != nil {
 		return err
 	}
 	for i := range subscriptions.Items {
@@ -170,9 +166,7 @@ func (c *Cluster) GetOLMInfo() error {
 
 	// InstallPlans
 	ips := operatorsv1alpha1.InstallPlanList{}
-	if err := c.config.KubernetesClient.List(context.TODO(), &ips, &client.ListOptions{
-		Namespace: operatorNamespace,
-	}); err != nil {
+	if err := c.config.KubernetesClient.List(context.TODO(), &ips, client.InNamespace(operatorNamespace)); err != nil {
 		return err
 	}
 	for i := range ips.Items {
@@ -181,9 +175,7 @@ func (c *Cluster) GetOLMInfo() error {
 
 	// ClusterServiceVersions
 	csvs := operatorsv1alpha1.ClusterServiceVersionList{}
-	if err := c.config.KubernetesClient.List(context.TODO(), &csvs, &client.ListOptions{
-		Namespace: operatorNamespace,
-	}); err != nil {
+	if err := c.config.KubernetesClient.List(context.TODO(), &csvs, client.InNamespace(operatorNamespace)); err != nil {
 		return err
 	}
 	for i := range csvs.Items {
@@ -369,13 +361,14 @@ func (c *Cluster) processPodsByInstance(owner any) error {
 	}
 
 	pods := corev1.PodList{}
-	if err := c.config.KubernetesClient.List(context.TODO(), &pods, &client.ListOptions{
+	err := c.config.KubernetesClient.List(context.TODO(), &pods, &client.ListOptions{
 		Namespace: namespace,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", namespace, name),
 		}),
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("failed to list pods for %s/%s: %w", namespace, name, err)
 	}
 

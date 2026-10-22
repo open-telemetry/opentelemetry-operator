@@ -28,6 +28,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
@@ -86,6 +87,7 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	logger := ctrl.Log
 	logger.Info("Feature gates", "feature-gates", featureGates.Lookup(featuregate.FeatureGatesFlag).Value.String())
 
+	result.Config.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(result.Manager.GetCache(), apiserverendpoints.DefaultTTL)
 	if err := discoverKubeAPIServer(context.Background(), result.Clientset, &result.Config); err != nil {
 		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
 	}
@@ -187,26 +189,28 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	}
 
 	if result.Config.TargetAllocatorAvailability == targetallocator.Available {
-		if err := controllers.NewTargetAllocatorReconciler(
+		err := controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
 			mgr.GetEventRecorder("targetallocator"),
 			result.Config,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
-		).SetupWithManager(mgr); err != nil {
+		).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
 			os.Exit(1)
 		}
 	}
 
 	if result.Config.OpAmpBridgeAvailability == opampbridge.Available {
-		if err := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+		err := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
 			Scheme:   mgr.GetScheme(),
 			Config:   result.Config,
 			Recorder: mgr.GetEventRecorder("opamp-bridge"),
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 			os.Exit(1)
 		}
@@ -214,13 +218,14 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 
 	if featuregate.EnableClusterObservability.IsEnabled() {
 		setupLog.Info("ClusterObservability feature is enabled")
-		if err := controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{
+		err := controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("ClusterObservability"),
 			Scheme:   mgr.GetScheme(),
 			Config:   result.Config,
 			Recorder: mgr.GetEventRecorder("cluster-observability"),
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr)
+		if err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ClusterObservability")
 			os.Exit(1)
 		}
@@ -245,11 +250,12 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 			setupLog.Info("Setting up pod-webhook replica controller",
 				"namespace", namespace,
 				"desiredReplicas", result.Config.OpenShiftWebhookReplicas)
-			if err := (&controllers.CSVWebhookReconciler{
+			err = (&controllers.CSVWebhookReconciler{
 				Client:          mgr.GetClient(),
 				Namespace:       namespace,
 				DesiredReplicas: result.Config.OpenShiftWebhookReplicas,
-			}).SetupWithManager(mgr); err != nil {
+			}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CSVWebhook")
 				os.Exit(1)
 			}

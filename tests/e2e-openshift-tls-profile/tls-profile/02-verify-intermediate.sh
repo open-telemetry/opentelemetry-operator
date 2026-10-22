@@ -2,7 +2,10 @@
 # Verifies Intermediate TLS profile injection in the generated collector ConfigMap.
 # TLS defaults are applied at reconciliation time (ConfigMap generation), not stored in the CR.
 # Checks S1 (injection with TLS block), S2 (no injection without TLS block),
-# S3 (multi-protocol), S4 (single-endpoint), S5 (exporter TLS).
+# S3 (multi-protocol), S4 (single-endpoint), S5 (exporter TLS),
+# S9 (curve_preferences injected from cluster profile groups).
+# The Intermediate profile groups (X25519MLKEM768, X25519, secp256r1, secp384r1)
+# map to collector curve_preferences spellings in this exact order.
 set -euo pipefail
 
 fail() { echo "FAIL: $1"; exit 1; }
@@ -23,6 +26,9 @@ GRPC_MIN=$(echo "$CONFIG" | jq -r '.receivers.otlp.protocols.grpc.tls.min_versio
 GRPC_CIPHERS=$(echo "$CONFIG" | jq '.receivers.otlp.protocols.grpc.tls.cipher_suites')
 [ "$GRPC_CIPHERS" != "null" ] && [ "$GRPC_CIPHERS" != "[]" ] \
   || fail "otlp.grpc.tls.cipher_suites: expected non-empty, got '$GRPC_CIPHERS'"
+GRPC_CURVES=$(echo "$CONFIG" | jq -c '.receivers.otlp.protocols.grpc.tls.curve_preferences')
+[ "$GRPC_CURVES" = '["X25519MLKEM768","X25519","P256","P384"]' ] \
+  || fail "otlp.grpc.tls.curve_preferences: expected cluster groups, got '$GRPC_CURVES'"
 
 # S4: Zipkin (single-endpoint receiver)
 ZIPKIN_MIN=$(echo "$CONFIG" | jq -r '.receivers.zipkin.tls.min_version // empty')
@@ -30,6 +36,9 @@ ZIPKIN_MIN=$(echo "$CONFIG" | jq -r '.receivers.zipkin.tls.min_version // empty'
 ZIPKIN_CIPHERS=$(echo "$CONFIG" | jq '.receivers.zipkin.tls.cipher_suites')
 [ "$ZIPKIN_CIPHERS" != "null" ] && [ "$ZIPKIN_CIPHERS" != "[]" ] \
   || fail "zipkin.tls.cipher_suites: expected non-empty, got '$ZIPKIN_CIPHERS'"
+ZIPKIN_CURVES=$(echo "$CONFIG" | jq -c '.receivers.zipkin.tls.curve_preferences')
+[ "$ZIPKIN_CURVES" = '["X25519MLKEM768","X25519","P256","P384"]' ] \
+  || fail "zipkin.tls.curve_preferences: expected cluster groups, got '$ZIPKIN_CURVES'"
 
 # S5: Prometheus exporter
 PROM_MIN=$(echo "$CONFIG" | jq -r '.exporters.prometheus.tls.min_version // empty')
@@ -37,6 +46,9 @@ PROM_MIN=$(echo "$CONFIG" | jq -r '.exporters.prometheus.tls.min_version // empt
 PROM_CIPHERS=$(echo "$CONFIG" | jq '.exporters.prometheus.tls.cipher_suites')
 [ "$PROM_CIPHERS" != "null" ] && [ "$PROM_CIPHERS" != "[]" ] \
   || fail "prometheus.tls.cipher_suites: expected non-empty, got '$PROM_CIPHERS'"
+PROM_CURVES=$(echo "$CONFIG" | jq -c '.exporters.prometheus.tls.curve_preferences')
+[ "$PROM_CURVES" = '["X25519MLKEM768","X25519","P256","P384"]' ] \
+  || fail "prometheus.tls.curve_preferences: expected cluster groups, got '$PROM_CURVES'"
 
 # --- Components without TLS (S2: no injection expected) ---
 

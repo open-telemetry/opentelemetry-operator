@@ -143,7 +143,9 @@ func TestMaybeAddFinalizer(t *testing.T) {
 
 			params := manifests.Params{
 				Config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 
@@ -243,13 +245,17 @@ func TestRemoveFinalizer(t *testing.T) {
 				log:    logr.Discard(),
 				scheme: reconcilerTestScheme,
 				config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 
 			params := manifests.Params{
 				Config: config.Config{
-					CreateRBACPermissions: tc.rbacAvailable,
+					Internal: config.Internal{
+						CreateRBACPermissions: tc.rbacAvailable,
+					},
 				},
 			}
 

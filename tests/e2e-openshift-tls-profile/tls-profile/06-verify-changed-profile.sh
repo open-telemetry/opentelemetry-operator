@@ -8,7 +8,9 @@ fail() { echo "FAIL: $1"; exit 1; }
 
 EXPECTED_MIN=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath='{.data.min_version}')
 EXPECTED_CIPHERS=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath='{.data.expect_ciphers}')
-echo "Verifying profile: min_version=$EXPECTED_MIN, expect_ciphers=$EXPECTED_CIPHERS"
+EXPECT_CURVES=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath='{.data.expect_curves}')
+EXPECTED_CURVES=$(oc get configmap tls-profile-expected -n "$NAMESPACE" -o jsonpath='{.data.expected_curves}')
+echo "Verifying profile: min_version=$EXPECTED_MIN, expect_ciphers=$EXPECTED_CIPHERS, expect_curves=$EXPECT_CURVES"
 
 # Get the collector ConfigMap name from the deployment's volume reference.
 # The operator intentionally keeps the previous ConfigMap for one extra reconcile cycle
@@ -35,13 +37,40 @@ else
   [ "$GRPC_CIPHERS" = "null" ] || fail "otlp.grpc.tls.cipher_suites: expected null (TLS 1.3), got '$GRPC_CIPHERS'"
 fi
 
+GRPC_CURVES=$(echo "$CONFIG" | jq -c '.receivers.otlp.protocols.grpc.tls.curve_preferences')
+if [ "$EXPECT_CURVES" = "true" ]; then
+  [ "$GRPC_CURVES" = "$EXPECTED_CURVES" ] \
+    || fail "otlp.grpc.tls.curve_preferences: expected '$EXPECTED_CURVES', got '$GRPC_CURVES'"
+else
+  [ "$GRPC_CURVES" = "null" ] \
+    || fail "otlp.grpc.tls.curve_preferences: expected null (profile has no groups), got '$GRPC_CURVES'"
+fi
+
 # Zipkin
 ZIPKIN_MIN=$(echo "$CONFIG" | jq -r '.receivers.zipkin.tls.min_version // empty')
 [ "$ZIPKIN_MIN" = "$EXPECTED_MIN" ] || fail "zipkin.tls.min_version: expected '$EXPECTED_MIN', got '$ZIPKIN_MIN'"
 
+ZIPKIN_CURVES=$(echo "$CONFIG" | jq -c '.receivers.zipkin.tls.curve_preferences')
+if [ "$EXPECT_CURVES" = "true" ]; then
+  [ "$ZIPKIN_CURVES" = "$EXPECTED_CURVES" ] \
+    || fail "zipkin.tls.curve_preferences: expected '$EXPECTED_CURVES', got '$ZIPKIN_CURVES'"
+else
+  [ "$ZIPKIN_CURVES" = "null" ] \
+    || fail "zipkin.tls.curve_preferences: expected null (profile has no groups), got '$ZIPKIN_CURVES'"
+fi
+
 # Prometheus exporter
 PROM_MIN=$(echo "$CONFIG" | jq -r '.exporters.prometheus.tls.min_version // empty')
 [ "$PROM_MIN" = "$EXPECTED_MIN" ] || fail "prometheus.tls.min_version: expected '$EXPECTED_MIN', got '$PROM_MIN'"
+
+PROM_CURVES=$(echo "$CONFIG" | jq -c '.exporters.prometheus.tls.curve_preferences')
+if [ "$EXPECT_CURVES" = "true" ]; then
+  [ "$PROM_CURVES" = "$EXPECTED_CURVES" ] \
+    || fail "prometheus.tls.curve_preferences: expected '$EXPECTED_CURVES', got '$PROM_CURVES'"
+else
+  [ "$PROM_CURVES" = "null" ] \
+    || fail "prometheus.tls.curve_preferences: expected null (profile has no groups), got '$PROM_CURVES'"
+fi
 
 # --- Components without TLS (no injection expected) ---
 HTTP_TLS=$(echo "$CONFIG" | jq '.receivers.otlp.protocols.http.tls // empty')

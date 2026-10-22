@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: golang-flags-cgroup-runtime
+# Verifies that the operator does not inject GOMEMLIMIT and GOMAXPROCS when the
+# collector config enables the cgroup_runtime extension, and that the collector
+# starts with that config. See open-telemetry/opentelemetry-operator#5651.
+spec:
+  steps:
+    - name: install
+      description: install a collector with the cgroup_runtime extension enabled
+      try:
+        - script:
+            content: |
+              VERSION=$(kubectl logs deployment/opentelemetry-operator-controller-manager \
+                -n opentelemetry-operator-system | \
+                grep -o '"collector-image":"[^"]*"' | head -1 | \
+                grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+              printf '%s' "${VERSION:-latest}"
+            outputs:
+              - name: collectorVersion
+                value: ($stdout)
+        - apply:
+            template: true
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml

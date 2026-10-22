@@ -16,9 +16,10 @@ Language support can be disabled by passing the flag with a value of `false`.
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
 | Go          | `enable-go-instrumentation`           | `false`       |
 | Nginx       | `enable-nginx-instrumentation`        | `false`       |
+| Ruby        | `enable-ruby-instrumentation`         | `false`       |
 
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
-These features can be enabled using the `enable-multi-instrumentation` flag. By default flag is `false`.
+These features are enabled by default. Set the `enable-multi-instrumentation` flag to `false` to disable them.
 
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](../auto-instrumentation/multi-instrumentation.md).

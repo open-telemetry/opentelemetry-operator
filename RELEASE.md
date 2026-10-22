@@ -45,11 +45,11 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.160.0 | @iblancasa      |
-| v0.161.0 | @atoulme        |
 | v0.162.0 | @jaronoff97     |
 | v0.163.0 | @yuriolisa      |
 | v0.164.0 | @TylerHelmuth   |
 | v0.165.0 | @frzifus        |
 | v0.166.0 | @pavolloffay    |
 | v0.167.0 | @swiatekm       |
+| v0.168.0 | @iblancasa      |
+| v0.169.0 | @atoulme        |

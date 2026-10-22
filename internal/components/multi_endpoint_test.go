@@ -356,6 +356,9 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			startupProbe, startupErr := s.GetStartupProbe(logr.Discard(), tt.args.config)
 			assert.NoError(t, startupErr)
 			assert.Nil(t, startupProbe)
+			suppressed, suppressedErr := s.GetSuppressedEnvVars(logr.Discard(), tt.args.config)
+			assert.NoError(t, suppressedErr)
+			assert.Nil(t, suppressed)
 		})
 	}
 }
@@ -521,4 +524,50 @@ func TestMultiMustBuildPanics(t *testing.T) {
 	assert.Panics(t, func() {
 		b.MustBuild()
 	})
+}
+
+func TestMultiPortReceiver_ParserAliases(t *testing.T) {
+	tests := []struct {
+		name     string
+		builder  components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]
+		expected []string
+	}{
+		{
+			name:     "multi port receiver always returns nil aliases",
+			builder:  components.NewMultiPortReceiverBuilder("receiver1"),
+			expected: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := tt.builder.Build()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, p.ParserAliases())
+		})
+	}
+}
+
+func TestMultiPortReceiver_GetEnvironmentVariables(t *testing.T) {
+	tests := []struct {
+		name        string
+		builder     components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]
+		config      any
+		expectedEnv []corev1.EnvVar
+	}{
+		{
+			name:        "multi port receiver always returns nil env vars and nil error",
+			builder:     components.NewMultiPortReceiverBuilder("receiver1"),
+			config:      httpConfig,
+			expectedEnv: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := tt.builder.Build()
+			assert.NoError(t, err)
+			envVars, err := p.GetEnvironmentVariables(logr.Discard(), tt.config)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedEnv, envVars)
+		})
+	}
 }

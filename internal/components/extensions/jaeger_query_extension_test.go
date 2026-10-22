@@ -199,13 +199,37 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"tls":      map[string]any{},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP256}),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
 					"tls": map[string]any{
-						"min_version":   "1.2",
-						"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"min_version":       "1.2",
+						"cipher_suites":     []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"curve_preferences": []string{"X25519", "P256"},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing curve_preferences",
+			config: map[string]any{
+				"http": map[string]any{
+					"endpoint": "127.0.0.1:16686",
+					"tls": map[string]any{
+						"curve_preferences": []string{"P384"},
+					},
+				},
+			},
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP256}),
+			want: map[string]any{
+				"http": map[string]any{
+					"endpoint": "127.0.0.1:16686",
+					"tls": map[string]any{
+						"min_version":       "1.2",
+						"cipher_suites":     []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+						"curve_preferences": []string{"P384"},
 					},
 				},
 			},
@@ -218,7 +242,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"endpoint": "127.0.0.1:16686",
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -236,7 +260,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -258,7 +282,7 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, nil),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
@@ -278,12 +302,15 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 					"tls":      map[string]any{},
 				},
 			},
-			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}),
+			tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}, []tls.CurveID{tls.X25519, tls.CurveP384}),
 			want: map[string]any{
 				"http": map[string]any{
 					"endpoint": "127.0.0.1:16686",
 					"tls": map[string]any{
 						"min_version": "1.3",
+						// no cipher_suites - TLS 1.3 doesn't allow configuring them;
+						// curve_preferences remain configurable under TLS 1.3
+						"curve_preferences": []string{"X25519", "P384"},
 					},
 				},
 			},
@@ -307,4 +334,109 @@ func TestJaegerQueryExtensionTLSProfile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseJaegerQueryExtensionConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		cfg           *JaegerQueryExtensionConfig
+		defaultPort   *corev1.ServicePort
+		expectedPorts []corev1.ServicePort
+		expectedErr   error
+	}{
+		{
+			name: "nil config returns nil without error",
+			cfg:  nil,
+			defaultPort: &corev1.ServicePort{
+				Port:       16686,
+				TargetPort: intstr.FromInt32(16686),
+			},
+			expectedPorts: nil,
+			expectedErr:   nil,
+		},
+		{
+			name: "error when endpoint port cannot be parsed and default port is unset",
+			cfg: &JaegerQueryExtensionConfig{
+				HTTP: jaegerHTTPAddress{
+					Endpoint: "invalid-endpoint-without-port",
+				},
+			},
+			defaultPort: &corev1.ServicePort{
+				Name: "jaeger-query",
+				Port: components.UnsetPort,
+			},
+			expectedPorts: []corev1.ServicePort{},
+			expectedErr:   components.PortNotFoundErr,
+		},
+		{
+			name: "fallback to default port when http endpoint is empty",
+			cfg:  &JaegerQueryExtensionConfig{},
+			defaultPort: &corev1.ServicePort{
+				Name:       "jaeger-query",
+				Port:       16686,
+				TargetPort: intstr.FromInt32(16686),
+			},
+			expectedPorts: []corev1.ServicePort{
+				{
+					Name:       "jaeger-query",
+					Port:       16686,
+					TargetPort: intstr.FromInt32(16686),
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "grpc config present but endpoint is empty",
+			cfg: &JaegerQueryExtensionConfig{
+				HTTP: jaegerHTTPAddress{
+					Endpoint: "0.0.0.0:16686",
+				},
+				GRPC: &jaegerGRPCAddress{
+					Endpoint: "",
+				},
+			},
+			defaultPort: &corev1.ServicePort{
+				Name:       "jaeger-query",
+				Port:       16686,
+				TargetPort: intstr.FromInt32(16686),
+			},
+			expectedPorts: []corev1.ServicePort{
+				{
+					Name:       "jaeger-query",
+					Port:       16686,
+					TargetPort: intstr.FromInt32(16686),
+				},
+			},
+			expectedErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ports, err := ParseJaegerQueryExtensionConfig(logr.Discard(), "jaeger_query", tt.defaultPort, tt.cfg)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, tt.expectedErr)
+				assert.Equal(t, tt.expectedPorts, ports)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedPorts, ports)
+			}
+		})
+	}
+}
+
+func TestJaegerQueryExtensionConfig_GetPortNum(t *testing.T) {
+	t.Run("empty http endpoint returns unset port and error", func(t *testing.T) {
+		cfg := &JaegerQueryExtensionConfig{}
+		port, err := cfg.GetPortNum()
+		assert.Equal(t, components.UnsetPort, port)
+		assert.ErrorIs(t, err, components.PortNotFoundErr)
+	})
+
+	t.Run("GetPortNumOrDefault falls back to default on error", func(t *testing.T) {
+		cfg := &JaegerQueryExtensionConfig{}
+		port := cfg.GetPortNumOrDefault(logr.Discard(), 16686)
+		assert.Equal(t, int32(16686), port)
+	})
 }

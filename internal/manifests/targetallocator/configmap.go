@@ -157,8 +157,8 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
-	if len(taSpec.Telemetry.Metrics.Readers) > 0 {
-		if tc := buildTelemetryConfig(taSpec.Telemetry); tc != nil {
+	if taSpec.Telemetry != nil && len(taSpec.Telemetry.Metrics.Readers) > 0 {
+		if tc := buildTelemetryConfig(*taSpec.Telemetry); tc != nil {
 			taConfig["telemetry"] = tc
 		}
 	}

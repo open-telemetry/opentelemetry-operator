@@ -180,6 +180,10 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 
+	if _, err := otelconfig.GetTelemetry(&r.Spec.Config.Service, c.logger); err != nil {
+		warnings = append(warnings, fmt.Sprintf("spec.config.service.telemetry could not be parsed, so the operator did not apply its defaults to it: %v", err))
+	}
+
 	// Reject a config the operator cannot render faithfully here, where the user gets the error at admission,
 	// rather than at reconcile time. The rendering paths verify this property again for the documents they
 	// actually write, so this check is early feedback, not the guarantee.
@@ -395,11 +399,11 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 // occur and the check passes regardless of the requesting user's permissions.
 //
 // The check is skipped when:
-//   - CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
+//   - Internal.CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
 //   - the collector config requires no extra RBAC rules, or
 //   - no admission.Request is present in the context (direct calls from tests / internal code).
 func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r *v1beta1.OpenTelemetryCollector) error {
-	if c.cfg.CreateRBACPermissions != autoRBAC.Available {
+	if c.cfg.Internal.CreateRBACPermissions != autoRBAC.Available {
 		return nil
 	}
 
@@ -444,9 +448,8 @@ func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r
 
 	// Step 4: check the requesting user against the delta only.
 	username := req.UserInfo.Username
-	groups := req.UserInfo.Groups
 
-	userSARs, err := c.reviewer.CheckSARsForUser(ctx, username, groups, delta)
+	userSARs, err := c.reviewer.CheckSARsForUser(ctx, req.UserInfo, delta)
 	if err != nil {
 		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", username, err)
 	}

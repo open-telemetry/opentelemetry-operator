@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"strings"
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -16,8 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -118,6 +122,62 @@ func getList[T client.Object](ctx context.Context, cl client.Client, l T, option
 		ownedObjects[typedObj.GetUID()] = typedObj
 	}
 	return ownedObjects, nil
+}
+
+// ownerIndexKey returns the cache index key used to look up the objects owned by an owner of the given kind. The key
+// contains the owner kind because an index name can only be registered once per resource type, and controllers for
+// different owner kinds own overlapping resource types.
+func ownerIndexKey(ownerKind string) string {
+	return fmt.Sprintf(".metadata.owner.%s", strings.ToLower(ownerKind))
+}
+
+// indexOwnedResources indexes the given resource types by the name of their controller owner of kind ownerKind,
+// making them listable with findOwnedObjects.
+func indexOwnedResources(ctx context.Context, cluster cluster.Cluster, ownerKind string, ownedTypes []client.Object) error {
+	indexKey := ownerIndexKey(ownerKind)
+	for _, resource := range ownedTypes {
+		if err := cluster.GetCache().IndexField(ctx, resource, indexKey, controllerOwnerIndexFunc(ownerKind)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// controllerOwnerIndexFunc returns the index function used by indexOwnedResources to index objects by the name
+// of their controller owner of kind ownerKind.
+func controllerOwnerIndexFunc(ownerKind string) func(client.Object) []string {
+	return func(rawObj client.Object) []string {
+		owner := metav1.GetControllerOf(rawObj)
+		if owner == nil || owner.Kind != ownerKind {
+			return nil
+		}
+		return []string{owner.Name}
+	}
+}
+
+// findOwnedObjects lists the objects of the given types owned by the owner of kind ownerKind identified by namespace
+// and name. It requires indexOwnedResources to have been called for the same owner kind and resource types.
+func findOwnedObjects(ctx context.Context, cl client.Client, ownerKind string, ownedTypes []client.Object, namespace, name string) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingFields{ownerIndexKey(ownerKind): name},
+	}
+	for _, objectType := range ownedTypes {
+		objs, err := getList(ctx, cl, objectType, listOpts...)
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(ownedObjects, objs)
+	}
+	return ownedObjects, nil
+}
+
+// ownAll makes the controller being built watch all the given resource types as owned resources.
+func ownAll(ctrlBuilder *builder.Builder, ownedTypes []client.Object) {
+	for _, resource := range ownedTypes {
+		ctrlBuilder.Owns(resource)
+	}
 }
 
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.

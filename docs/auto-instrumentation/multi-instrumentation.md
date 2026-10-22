@@ -1,6 +1,6 @@
 # Multi-container pods with multiple instrumentations
 
-Works only when `enable-multi-instrumentation` flag is `true`.
+Works only when the `enable-multi-instrumentation` flag is `true`, which is the default.
 
 Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used (these also support init container names for Java, Python, Node.js, .NET, and SDK):
 

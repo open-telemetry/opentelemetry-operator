@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
@@ -101,8 +102,15 @@ func expandHeaders(headers []config.NameValuePair) map[string]string {
 // Exactly one of otlp_grpc or otlp_http must be set; validation in validateTelemetry
 // enforces this before we reach here.
 func newOTLPMetricReader(ctx context.Context, cfg *config.PeriodicMetricReader) (sdkmetric.Reader, error) {
-	readerOpts := periodicReaderOptions(cfg)
 	exp := cfg.Exporter
+	var preference string
+	switch {
+	case exp.OTLPGrpc != nil:
+		preference = exp.OTLPGrpc.TemporalityPreference
+	case exp.OTLPHttp != nil:
+		preference = exp.OTLPHttp.TemporalityPreference
+	}
+	readerOpts := periodicReaderOptions(cfg, temporalitySelector(preference))
 	if exp.OTLPGrpc != nil {
 		return newGRPCMetricReader(ctx, exp.OTLPGrpc, readerOpts)
 	}
@@ -170,21 +178,23 @@ func newHTTPMetricReader(ctx context.Context, cfg *config.OTLPHttpExporterConfig
 
 // periodicReaderOptions builds PeriodicReaderOptions from the interval and timeout config.
 // Interval and Timeout are in milliseconds, matching the otelconf spec.
-func periodicReaderOptions(cfg *config.PeriodicMetricReader) []sdkmetric.PeriodicReaderOption {
-	opts := []sdkmetric.PeriodicReaderOption{
-		// Bridge the metrics registered directly on the default Prometheus registry
-		// (Prometheus service discovery internals, Go runtime and process collectors)
-		// into the OTLP export. Without this, those metrics would be visible on the
-		// Prometheus /metrics endpoint but missing from OTLP. The SDK's own metrics live
-		// on a separate registry and are collected natively by this reader, so bridging
-		// the default registry does not double-count them.
-		//
-		// The bridge always returns CumulativeTemporality for counters, but the
-		// PeriodicReader does not apply the TemporalitySelector to external Producer
-		// output. deltaProducer wraps the bridge and converts cumulative monotonic
-		// sums to delta for backends configured to expect delta temporality.
-		sdkmetric.WithProducer(newDeltaProducer(prometheusbridge.NewMetricProducer())),
+func periodicReaderOptions(cfg *config.PeriodicMetricReader, temporality sdkmetric.TemporalitySelector) []sdkmetric.PeriodicReaderOption {
+	// Bridge the metrics registered directly on the default Prometheus registry
+	// (Prometheus service discovery internals, Go runtime and process collectors)
+	// into the OTLP export. Without this, those metrics would be visible on the
+	// Prometheus /metrics endpoint but missing from OTLP. The SDK's own metrics live
+	// on a separate registry and are collected natively by this reader, so bridging
+	// the default registry does not double-count them.
+	//
+	// The bridge always returns CumulativeTemporality for counters, but the
+	// PeriodicReader does not apply the TemporalitySelector to external Producer
+	// output. deltaProducer wraps the bridge and converts cumulative monotonic
+	// sums to delta when the selector chooses delta for counters.
+	bridge := prometheusbridge.NewMetricProducer()
+	if temporality(sdkmetric.InstrumentKindCounter) == metricdata.DeltaTemporality {
+		bridge = newDeltaProducer(bridge)
 	}
+	opts := []sdkmetric.PeriodicReaderOption{sdkmetric.WithProducer(bridge)}
 	if cfg.Interval > 0 {
 		opts = append(opts, sdkmetric.WithInterval(time.Duration(cfg.Interval)*time.Millisecond))
 	}

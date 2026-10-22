@@ -6,8 +6,9 @@ images the operator SIG publishes. Each subdirectory maps to one image published
 (and, for some languages, mirrored to `otel/autoinstrumentation-<language>` on
 Docker Hub).
 
-Go auto-instrumentation is **not** built here — the operator references the
-upstream `opentelemetry-go-instrumentation` image directly. Nginx
+Go and Ruby auto-instrumentation are **not** built here — the operator references
+the upstream `opentelemetry-go-instrumentation` and
+`opentelemetry-ruby-instrumentation` images directly. Nginx
 auto-instrumentation shares the `apache-httpd` image.
 
 ## Image tagging
@@ -57,7 +58,6 @@ The upstream SDK version for each language is read from:
 |--------------|-------------------------------------------------------------------------------------|
 | java         | `java/version.txt`                                                                  |
 | dotnet       | `dotnet/version.txt`                                                                |
-| php          | `php/version.txt`                                                                   |
 | apache-httpd | `apache-httpd/version.txt`                                                          |
 | python       | first line of `python/requirements.txt` (`opentelemetry-distro==<version>`)         |
 | nodejs       | `nodejs/package.json` → `dependencies["@opentelemetry/auto-instrumentations-node"]` |

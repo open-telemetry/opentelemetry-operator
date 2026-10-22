@@ -30,6 +30,7 @@ import (
 func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
+
 	if err := v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
@@ -50,9 +51,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &one,
-					},
-					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: new(true),
 					},
 				},
 			},
@@ -79,9 +77,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 						},
 					},
 					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
-					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: new(true),
-					},
 				},
 			},
 		},
@@ -101,9 +96,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas: &five,
-					},
-					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: new(true),
 					},
 				},
 			},
@@ -126,9 +118,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
-					},
-					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: new(true),
 					},
 				},
 			},
@@ -160,9 +149,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 								StrVal: "10%",
 							},
 						},
-					},
-					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: new(true),
 					},
 				},
 			},

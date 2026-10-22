@@ -399,30 +399,6 @@ func TestCheckChangelog(t *testing.T) {
 	}
 }
 
-func TestChangelogExcludesPHP(t *testing.T) {
-	root := t.TempDir()
-	writeLang(t, root, "php", map[string]string{"version.txt": "1.1.0", "revision.txt": "1"}) // no CHANGELOG.md on purpose
-	repo := Repo{Root: root, Git: fakeGit{base: map[string]string{
-		"autoinstrumentation/php/version.txt":  "1.0.0",
-		"autoinstrumentation/php/revision.txt": "1",
-	}}}
-
-	entries, err := repo.ApplyChangelog("BASE", "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(entries) != 0 {
-		t.Errorf("expected php to be excluded, got %+v", entries)
-	}
-	problems, err := repo.CheckChangelog("BASE")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(problems) != 0 {
-		t.Errorf("expected no problems for excluded php, got %+v", problems)
-	}
-}
-
 func TestChangelogNewImageIsNoOp(t *testing.T) {
 	root := t.TempDir()
 	writeLang(t, root, "java", map[string]string{"version.txt": "1.0.0", "revision.txt": "1", "CHANGELOG.md": changelogSeed})

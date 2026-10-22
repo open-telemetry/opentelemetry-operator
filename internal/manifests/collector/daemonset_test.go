@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
@@ -290,12 +291,12 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedAnnotations := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
-		"operator.opentelemetry.io/prometheus-annotations-added": "true",
+		"annotation-key":                            "annotation-value",
+		"opentelemetry-operator-config/sha256":      "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
+		"prometheus.io/path":                        "/metrics",
+		"prometheus.io/port":                        "8888",
+		"prometheus.io/scrape":                      "true",
+		manifestutils.PrometheusAnnotationsAddedKey: "true",
 	}
 
 	// verify
@@ -764,6 +765,46 @@ func TestDaemonsetEnableServiceLinks(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, d2.Spec.Template.Spec.EnableServiceLinks)
 	assert.False(t, *d2.Spec.Template.Spec.EnableServiceLinks)
+}
+
+func TestDaemonsetImagePullSecrets(t *testing.T) {
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	params1 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
+
+	imagePullSecrets := []v1.LocalObjectReference{{Name: "my-registry-secret"}}
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-pull-secrets",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ImagePullSecrets: imagePullSecrets,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		Config:  config.New(),
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, imagePullSecrets, d2.Spec.Template.Spec.ImagePullSecrets)
 }
 
 func TestDaemonSetDNSConfig(t *testing.T) {

@@ -120,7 +120,7 @@ func TestInstrumentationConvertTo(t *testing.T) {
 			Env: []corev1.EnvVar{
 				{Name: "COMMON_ENV", Value: "common"},
 			},
-			Java: v1beta1.Java{
+			Java: &v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java-image:latest",
 					Env: []corev1.EnvVar{
@@ -176,7 +176,7 @@ func TestInstrumentationConvertFrom(t *testing.T) {
 			Env: []corev1.EnvVar{
 				{Name: "OTEL_ENV", Value: "prod"},
 			},
-			Java: v1beta1.Java{
+			Java: &v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java-beta:latest",
 				},
@@ -245,7 +245,7 @@ func TestInstrumentationConvertFromWithAnnotation(t *testing.T) {
 					Endpoint: "http://collector:4317",
 				},
 			},
-			Java: v1beta1.Java{
+			Java: &v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java:latest",
 					Env: []corev1.EnvVar{
@@ -253,7 +253,7 @@ func TestInstrumentationConvertFromWithAnnotation(t *testing.T) {
 					},
 				},
 			},
-			ApacheHttpd: v1beta1.ApacheHttpd{
+			ApacheHttpd: &v1beta1.ApacheHttpd{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "apache:latest",
 				},
@@ -489,17 +489,17 @@ func TestInstrumentationConvertFromWithoutAnnotation(t *testing.T) {
 					Endpoint: "http://collector:4318",
 				},
 			},
-			Java: v1beta1.Java{
+			Java: &v1beta1.Java{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "java:latest",
 				},
 			},
-			ApacheHttpd: v1beta1.ApacheHttpd{
+			ApacheHttpd: &v1beta1.ApacheHttpd{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "apache:latest",
 				},
 			},
-			Nginx: v1beta1.Nginx{
+			Nginx: &v1beta1.Nginx{
 				CommonLanguageSpec: v1beta1.CommonLanguageSpec{
 					Image: "nginx:latest",
 				},

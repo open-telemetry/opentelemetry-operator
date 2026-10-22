@@ -1,0 +1,11 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: np
+spec:
+  networkPolicy:
+    enabled: true
+  scrapeConfigs:
+    - job_name: prometheus
+      static_configs:
+      - targets: [ "localhost:9090" ]
