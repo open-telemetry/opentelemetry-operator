@@ -8,5 +8,7 @@ RUN bundle install
 COPY app.rb ./
 
 ENV PORT=8080
+# Outside production mode Sinatra rejects Host headers other than localhost, .test and IPs.
+ENV APP_ENV=production
 
 CMD ["bundle", "exec", "ruby", "app.rb"]
