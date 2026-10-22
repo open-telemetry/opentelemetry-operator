@@ -42,6 +42,8 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			phpInitContainerName,
 			apacheAgentInitContainerName,
 			apacheAgentCloneContainerName,
+			nginxAgentInitContainerName,
+			nginxAgentCloneContainerName,
 		}, cont.Name) {
 			return true
 		}

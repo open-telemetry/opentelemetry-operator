@@ -89,6 +89,32 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "AutoInstrumentation_Already_Inject_nginx_init",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: nginxAgentInitContainerName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Already_Inject_nginx_clone",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: nginxAgentCloneContainerName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
 			name: "AutoInstrumentation_Already_Inject_go",
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
