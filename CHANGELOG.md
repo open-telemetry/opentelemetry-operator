@@ -2,6 +2,69 @@
 
 <!-- next version -->
 
+## 0.162.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Block automatic NodeJS instrumentation upgrades across 0.79.0 because of breaking HTTP, network, and database semantic convention changes. (#2542)
+  To upgrade, manually set spec.nodejs.image to an image using instrumentation 0.79.0 or higher. See https://github.com/open-telemetry/opentelemetry-operator/issues/2542 for migration details.
+
+### 🚀 New components 🚀
+
+- `auto-instrumentation`: Add support for auto-instrumentation in PHP applications. (#932)
+  Auto-instrumentation in PHP applications is disabled by default in operator. Users can enable it by setting the
+  `--enable-php-instrumentation` or `ENABLE_PHP_AUTO_INSTRUMENTATION` environment variable to `true` in operator
+  and setting up the annotations `instrumentation.opentelemetry.io/inject-php` and `instrumentation.opentelemetry.io/otel-php-api-version`.
+  For more information, please refer to the documentation.
+  
+- `auto-instrumentation`: Add initial version of autoinstrumentation for ruby (#3762)
+  Ruby auto-instrumentation is disabled by default. Enable it with `--enable-ruby-instrumentation=true`.
+
+### 💡 Enhancements 💡
+
+- `collector`: Inject the cluster TLS profile's supported groups as `curve_preferences` into generated collector configurations. (#6893)
+  Receivers and extensions with a `tls` block in `spec.config` now get `curve_preferences` defaulted from the
+  cluster's TLS security profile `groups`, following the same defaults-only rule as `min_version` and
+  `cipher_suites`: values set by the user are never overridden.
+  Groups without a collector `curve_preferences` spelling are logged at operator startup and not injected.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `operator, target allocator, opamp, auto-instrumentation`: Remove the distrusted emSign root CAs from the operator, target allocator, OpAMP bridge, and Python auto-instrumentation images. (#5802)
+  The operator, target allocator, and OpAMP bridge images require Alpine `ca-certificates` 20261020-r0 or later.
+  The Python auto-instrumentation image requires `certifi` 2026.10.19 or later and is published as `0.66b1-3`.
+  The updated CA bundle removes the distrusted eMudhra emSign roots, including `emSign ECC Root CA - G3`.
+  Images are built with Go 1.27.3, which includes the `crypto/x509` security fixes released on 2026-10-19.
+  
+- `collector`: Include the requesting user's UID and extra fields in the SubjectAccessReviews used to check RBAC privilege escalation. (#5659)
+  Authorizers that rely on these fields, such as AKS with Azure RBAC for Kubernetes Authorization, denied the check
+  for users who held the required permissions.
+  
+- `collector, target allocator`: Use pointer for TargetAllocator Telemetry field so omitempty works correctly with encoding/json (#5695)
+  Go's encoding/json does not omit zero-value structs with omitempty. The non-pointer
+  TelemetryConfig field caused targetAllocator.telemetry to always be serialized during
+  server-side apply, even when not set, breaking consumers that use a CRD version without
+  this field.
+- `collector`: Keep `service.telemetry` unchanged when the operator cannot parse it, instead of replacing it with the default Prometheus reader. (#5734)
+  The collector accepts telemetry settings the operator does not parse, such as `resource.attributes`.
+  Such a configuration now gets an admission warning, and no default metrics reader is added to it.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.162.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.162.0)
+* [OpenTelemetry Contrib - v0.162.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.162.0)
+* [Java auto-instrumentation - v2.32.0-1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.32.0)
+* [.NET auto-instrumentation - v1.17.0-2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.17.0)
+* [Node.JS - v0.82.0-1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.82.0)
+* [Python - v0.66b1-3](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b1)
+* [Ruby - v0.1.0](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v0.1.0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [PHP - 1.4.1](https://packagist.org/packages/open-telemetry/ext-opentelemetry/#1.4.1)
+* [ApacheHTTPD - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.161.0
 
 ### 🛑 Breaking changes 🛑
