@@ -53,6 +53,15 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
+	// RejectImmutableStatefulSetChanges is the feature gate that makes the collector admission webhook reject updates
+	// that change an immutable StatefulSet attribute, instead of the operator deleting and recreating the StatefulSet.
+	// See open-telemetry/opentelemetry-operator#5329.
+	RejectImmutableStatefulSetChanges = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.rejectimmutablestatefulsetchanges",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("rejects updates of a statefulset mode collector that change an immutable StatefulSet attribute, instead of deleting and recreating the StatefulSet"),
+		featuregate.WithRegisterFromVersion("v0.162.0"),
+	)
 	// UseCollectorDefaultTelemetryShape, when enabled (stable, always on), makes
 	// the operator-injected Prometheus telemetry reader use collector defaults
 	// for without_type_suffix, without_units, and without_scope_info — metric

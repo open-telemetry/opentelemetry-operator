@@ -17,6 +17,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -41,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/otelconfig"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var testScheme = scheme.Scheme
@@ -1610,6 +1612,37 @@ func TestCollectorMTLSValidation(t *testing.T) {
 	}
 }
 
+func statefulSetCollector(modify func(spec *v1beta1.OpenTelemetryCollectorSpec)) v1beta1.OpenTelemetryCollector {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": map[string]any{}}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": map[string]any{}}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {Receivers: []string{"otlp"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	modify(&otelcol.Spec)
+	return otelcol
+}
+
+func claimTemplates(storage string) []v1.PersistentVolumeClaim {
+	return []v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "data"},
+		Spec: v1.PersistentVolumeClaimSpec{
+			Resources: v1.VolumeResourceRequirements{
+				Requests: v1.ResourceList{v1.ResourceStorage: resource.MustParse(storage)},
+			},
+		},
+	}}
+}
+
 func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -1628,6 +1661,56 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Mode: v1beta1.ModeDeployment},
 			},
 			expectedErr: "which does not support modification",
+		},
+		{
+			name:        "statefulset volumeClaimTemplates should not be changed",
+			otelcolOld:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("2Gi") }),
+			expectedErr: "does not support changing the attribute 'volumeClaimTemplates' after creation",
+		},
+		{
+			name:        "statefulset volumeClaimTemplates should not be added",
+			otelcolOld:  statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			expectedErr: "does not support changing the attribute 'volumeClaimTemplates' after creation",
+		},
+		{
+			name:        "statefulset serviceName should not be changed",
+			otelcolOld:  statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew:  statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.ServiceName = "custom-service" }),
+			expectedErr: "does not support changing the attribute 'serviceName' after creation",
+		},
+		{
+			name:       "statefulset podManagementPolicy should not be changed",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
+			}),
+			expectedErr: "does not support changing the attribute 'podManagementPolicy' after creation",
+		},
+		{
+			name:       "statefulset reports every changed immutable attribute",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.ServiceName = "custom-service"
+				spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
+			}),
+			expectedErr: "does not support changing the attributes 'serviceName', 'podManagementPolicy' after creation",
+		},
+		{
+			name:       "statefulset podManagementPolicy set to its default is not a change",
+			otelcolOld: statefulSetCollector(func(_ *v1beta1.OpenTelemetryCollectorSpec) {}),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.PodManagementPolicy = appsv1.ParallelPodManagement
+			}),
+		},
+		{
+			name:       "statefulset volumeClaimTemplates left as they are",
+			otelcolOld: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") }),
+			otelcolNew: statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) {
+				spec.VolumeClaimTemplates = claimTemplates("1Gi")
+				spec.Replicas = new(int32(3))
+			}),
 		},
 	}
 
@@ -1652,6 +1735,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			require.NoError(t, colfg.GlobalRegistry().Set(featuregate.RejectImmutableStatefulSetChanges.ID(), true))
+			t.Cleanup(func() {
+				require.NoError(t, colfg.GlobalRegistry().Set(featuregate.RejectImmutableStatefulSetChanges.ID(), false))
+			})
 			cfg := config.Config{
 				CollectorImage:       "collector:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
@@ -1677,6 +1764,24 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
 		})
 	}
+}
+
+func TestOTELColValidateUpdateWebhookImmutableStatefulSetGateDisabled(t *testing.T) {
+	oldCol := statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("1Gi") })
+	newCol := statefulSetCollector(func(spec *v1beta1.OpenTelemetryCollectorSpec) { spec.VolumeClaimTemplates = claimTemplates("2Gi") })
+
+	cvw := webhook.NewCollectorWebhook(
+		logr.Discard(),
+		testScheme,
+		config.Config{CollectorImage: "collector:v0.0.0", TargetAllocatorImage: "ta:v0.0.0"},
+		getReviewer(false),
+		nil,
+		nil,
+		func(_ context.Context, _ v1beta1.OpenTelemetryCollector) admission.Warnings { return nil },
+		nil,
+	)
+	_, err := cvw.ValidateUpdate(context.Background(), &oldCol, &newCol)
+	assert.NoError(t, err)
 }
 
 func TestValidationViaCRDAnnotations(t *testing.T) {

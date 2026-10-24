@@ -1,0 +1,19 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add the `operator.collector.rejectimmutablestatefulsetchanges` feature gate to reject updates that change an immutable StatefulSet attribute of a collector at admission.
+
+# One or more tracking issues related to the change
+issues: [5329]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  When the gate is enabled, changing `volumeClaimTemplates`, `serviceName` or `podManagementPolicy` of a collector in statefulset mode
+  is rejected, as Kubernetes does for a StatefulSet, instead of deleting and recreating the StatefulSet and its pods.
+  The gate is alpha and disabled by default. Enable it with `--feature-gates=+operator.collector.rejectimmutablestatefulsetchanges`.

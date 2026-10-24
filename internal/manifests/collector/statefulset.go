@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -28,16 +29,6 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 		return nil, err
 	}
 
-	serviceName := params.OtelCol.Spec.ServiceName
-	if serviceName == "" {
-		serviceName = naming.HeadlessService(params.OtelCol.Name)
-	}
-
-	podManagementPolicy := params.OtelCol.Spec.PodManagementPolicy
-	if podManagementPolicy == "" {
-		podManagementPolicy = appsv1.ParallelPodManagement
-	}
-
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -46,7 +37,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: serviceName,
+			ServiceName: statefulSetServiceName(params.OtelCol),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
@@ -80,9 +71,35 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 			},
 			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
 			RevisionHistoryLimit:                 params.OtelCol.Spec.RevisionHistoryLimit,
-			PodManagementPolicy:                  podManagementPolicy,
+			PodManagementPolicy:                  statefulSetPodManagementPolicy(params.OtelCol),
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,
 		},
 	}, nil
+}
+
+// StatefulSetImmutableFields returns a StatefulSet that carries only the fields of the collector's
+// StatefulSet that cannot change after creation, other than the selector.
+func StatefulSetImmutableFields(otelcol v1beta1.OpenTelemetryCollector) *appsv1.StatefulSet {
+	return &appsv1.StatefulSet{
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName:          statefulSetServiceName(otelcol),
+			PodManagementPolicy:  statefulSetPodManagementPolicy(otelcol),
+			VolumeClaimTemplates: VolumeClaimTemplates(*otelcol.DeepCopy()),
+		},
+	}
+}
+
+func statefulSetServiceName(otelcol v1beta1.OpenTelemetryCollector) string {
+	if otelcol.Spec.ServiceName == "" {
+		return naming.HeadlessService(otelcol.Name)
+	}
+	return otelcol.Spec.ServiceName
+}
+
+func statefulSetPodManagementPolicy(otelcol v1beta1.OpenTelemetryCollector) appsv1.PodManagementPolicyType {
+	if otelcol.Spec.PodManagementPolicy == "" {
+		return appsv1.ParallelPodManagement
+	}
+	return otelcol.Spec.PodManagementPolicy
 }
