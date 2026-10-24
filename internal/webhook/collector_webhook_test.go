@@ -880,6 +880,26 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec Prometheus configuration is incorrect",
 		},
 		{
+			name: "target allocator receiver set by prometheusReceiverID is missing",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{"scrape_configs": []any{}},
+							},
+						}},
+					},
+					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+						Enabled:              true,
+						PrometheusReceiverID: "prometheus/ta",
+					},
+				},
+			},
+			expectedErr: "no prometheus/ta available as part of the configuration",
+		},
+		{
 			name: "invalid target allocation strategy",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
