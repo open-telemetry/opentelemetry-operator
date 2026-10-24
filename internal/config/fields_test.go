@@ -29,18 +29,22 @@ type configTriple struct {
 var expectedTriples = []configTriple{
 	{"targetallocator-image", "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR"},
 	{"operatoropampbridge-image", "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE"},
+	{"auto-instrumentation-ruby-image", "auto-instrumentation-ruby-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_RUBY"},
 	{"auto-instrumentation-python-image", "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON"},
 	{"collector-image", "collector-image", "RELATED_IMAGE_COLLECTOR"},
 	{"clusterobservability-collector-image", "clusterobservability-collector-image", ""},
 	{"collector-configmap-entry", "", ""},
 	{"enable-multi-instrumentation", "enable-multi-instrumentation", "ENABLE_MULTI_INSTRUMENTATION"},
 	{"enable-apache-httpd-instrumentation", "enable-apache-httpd-instrumentation", "ENABLE_APACHE_HTTPD_AUTO_INSTRUMENTATION"},
+	{"enable-php-auto-instrumentation", "enable-php-instrumentation", "ENABLE_PHP_AUTO_INSTRUMENTATION"},
 	{"enable-dot-net-auto-instrumentation", "enable-dotnet-instrumentation", "ENABLE_DOTNET_AUTO_INSTRUMENTATION"},
 	{"enable-go-auto-instrumentation", "enable-go-instrumentation", "ENABLE_GO_AUTO_INSTRUMENTATION"},
 	{"enable-nginx-auto-instrumentation", "enable-nginx-instrumentation", "ENABLE_NGINX_AUTO_INSTRUMENTATION"},
+	{"enable-ruby-auto-instrumentation", "enable-ruby-instrumentation", "ENABLE_RUBY_AUTO_INSTRUMENTATION"},
 	{"enable-python-auto-instrumentation", "enable-python-instrumentation", "ENABLE_PYTHON_AUTO_INSTRUMENTATION"},
 	{"enable-node-js-auto-instrumentation", "enable-nodejs-instrumentation", "ENABLE_NODEJS_AUTO_INSTRUMENTATION"},
 	{"enable-java-auto-instrumentation", "enable-java-instrumentation", "ENABLE_JAVA_AUTO_INSTRUMENTATION"},
+	{"auto-instrumentation-php-image", "auto-instrumentation-php-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PHP"},
 	{"auto-instrumentation-dot-net-image", "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET"},
 	{"auto-instrumentation-go-image", "auto-instrumentation-go-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_GO"},
 	{"auto-instrumentation-apache-httpd-image", "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD"},
@@ -76,6 +80,7 @@ var expectedTriples = []configTriple{
 	{"tls.configureoperands", "tls-configure-operands", "TLS_CONFIGURE_OPERANDS"},
 	{"tls.minversion", "tls-min-version", "TLS_MIN_VERSION"},
 	{"tls.ciphersuites", "tls-cipher-suites", "TLS_CIPHER_SUITES"},
+	{"tls.curvepreferences", "tls-curve-preferences", "TLS_CURVE_PREFERENCES"},
 	{"zap.message-key", "zap-message-key", "ZAP_MESSAGE_KEY"},
 	{"zap.time-key", "zap-time-key", "ZAP_TIME_KEY"},
 	{"zap.level-key", "zap-level-key", "ZAP_LEVEL_KEY"},
@@ -257,8 +262,8 @@ func changedFields(a, b Config) []string {
 	return changed
 }
 
-// sentinelArg returns a string value guaranteed to differ from the field's default, for
-// the field's kind, plus whether the kind is supported.
+// sentinelArg returns a string value guaranteed to differ from the field's default,
+// for the field's kind, plus whether the kind is supported.
 func sentinelArg(fs fieldSpec) (string, bool) {
 	switch fs.value.Kind() {
 	case reflect.String:
@@ -271,10 +276,18 @@ func sentinelArg(fs fieldSpec) (string, bool) {
 	case reflect.Int, reflect.Int32:
 		return strconv.FormatInt(fs.value.Int()+1, 10), true
 	case reflect.Slice:
-		if _, ok := reflect.TypeAssert[[]string](fs.value); ok {
+		switch fs.value.Type().Elem().Kind() {
+		case reflect.String:
 			return "zzsentinel", true
+		case reflect.Int32:
+			def, _ := reflect.TypeAssert[[]int32](fs.value)
+			if len(def) == 0 {
+				return "1", true
+			}
+			return strconv.FormatInt(int64(def[0])+1, 10), true
+		default:
+			return "", false
 		}
-		return "", false
 	default:
 		return "", false
 	}

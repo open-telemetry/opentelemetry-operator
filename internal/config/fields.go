@@ -124,14 +124,20 @@ func registerFlags(f *pflag.FlagSet, defaults Config) {
 			v, _ := reflect.TypeAssert[int32](fs.value)
 			f.Int32(fs.flag, v, fs.usage)
 		case reflect.Slice:
-			if def, ok := reflect.TypeAssert[[]string](fs.value); ok {
-				// Copy the default so the registered flag never aliases the New() slice.
+			switch fs.value.Type().Elem().Kind() {
+			case reflect.String:
+				def, _ := reflect.TypeAssert[[]string](fs.value)
 				def = append([]string(nil), def...)
 				if fs.array {
 					f.StringArray(fs.flag, def, fs.usage)
 				} else {
 					f.StringSlice(fs.flag, def, fs.usage)
 				}
+			case reflect.Int32:
+				def, _ := reflect.TypeAssert[[]int32](fs.value)
+				def = append([]int32(nil), def...)
+				f.Int32Slice(fs.flag, def, fs.usage)
+			default:
 			}
 		default:
 		}
@@ -164,6 +170,12 @@ func applyFlags(cfg *Config, f *pflag.FlagSet) {
 			if sv, ok := fl.Value.(pflag.SliceValue); ok {
 				fv.Set(reflect.ValueOf(sv.GetSlice()))
 			}
+		case "int32Slice":
+			values, err := f.GetInt32Slice(fl.Name)
+			if err == nil {
+				fv.Set(reflect.ValueOf(values))
+			}
+		default:
 		}
 	})
 }
@@ -193,62 +205,21 @@ func applyEnv(cfg *Config) {
 				fs.value.SetInt(n)
 			}
 		case reflect.Slice:
-			if _, ok := reflect.TypeAssert[[]string](fs.value); ok {
+			switch fs.value.Type().Elem().Kind() {
+			case reflect.String:
 				fs.value.Set(reflect.ValueOf(strings.Split(v, ",")))
+			case reflect.Int32:
+				var values []int32
+				for s := range strings.SplitSeq(v, ",") {
+					s = strings.TrimSpace(s)
+					if n, err := strconv.ParseInt(s, 10, 32); err == nil {
+						values = append(values, int32(n))
+					}
+				}
+				fs.value.Set(reflect.ValueOf(values))
+			default:
 			}
 		default:
 		}
 	})
-}
-
-// DocField is a documentation view of one configurable field, used by the config-docs
-// generator. It is produced from the same tags that drive the runtime consumers.
-// issue: https://github.com/open-telemetry/opentelemetry-operator/issues/3565
-type DocField struct {
-	Group   string
-	YAML    string
-	Flag    string
-	Env     string
-	Default string
-	Usage   string
-}
-
-// DocFields returns the documentable fields.
-func DocFields() []DocField {
-	var out []DocField
-	walkConfig(reflect.ValueOf(New()), "", func(fs fieldSpec) {
-		if fs.group == "" {
-			return
-		}
-		def := defaultString(fs.value)
-		if fs.manual {
-			def = ""
-		}
-		out = append(out, DocField{
-			Group:   fs.group,
-			YAML:    fs.yaml,
-			Flag:    fs.flag,
-			Env:     fs.env,
-			Default: def,
-			Usage:   fs.usage,
-		})
-	})
-	return out
-}
-
-func defaultString(v reflect.Value) string {
-	switch v.Kind() {
-	case reflect.String:
-		return v.String()
-	case reflect.Bool:
-		return strconv.FormatBool(v.Bool())
-	case reflect.Int, reflect.Int32, reflect.Int64:
-		return strconv.FormatInt(v.Int(), 10)
-	case reflect.Slice:
-		if s, ok := reflect.TypeAssert[[]string](v); ok {
-			return strings.Join(s, ",")
-		}
-	default:
-	}
-	return ""
 }
