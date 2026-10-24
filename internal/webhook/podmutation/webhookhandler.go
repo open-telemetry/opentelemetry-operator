@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -68,14 +69,17 @@ func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) 
 	ns := corev1.Namespace{}
 	err = p.client.Get(ctx, types.NamespacedName{Name: req.Namespace, Namespace: ""}, &ns)
 	if err != nil {
-		res := admission.Errored(http.StatusInternalServerError, err)
-		// By default, admission.Errored sets Allowed to false which blocks pod creation even though the failurePolicy=ignore.
-		// Allowed set to true makes sure failure does not block pod creation in case of an error.
-		// Using the http.StatusInternalServerError creates a k8s event associated with the replica set.
-		// The admission.Allowed("").WithWarnings(err.Error()) or http.StatusBadRequest does not
-		// create any event. Additionally, an event/log cannot be created explicitly because the pod name is not known.
-		res.Allowed = true
-		return res
+		if !apierrors.IsForbidden(err) {
+			res := admission.Errored(http.StatusInternalServerError, err)
+			// By default, admission.Errored sets Allowed to false which blocks pod creation even though the failurePolicy=ignore.
+			// Allowed set to true makes sure failure does not block pod creation in case of an error.
+			// Using the http.StatusInternalServerError creates a k8s event associated with the replica set.
+			// The admission.Allowed("").WithWarnings(err.Error()) or http.StatusBadRequest does not
+			// create any event. Additionally, an event/log cannot be created explicitly because the pod name is not known.
+			res.Allowed = true
+			return res
+		}
+		p.logger.Info("Missing get permission for namespace, namespace annotation will not be inspected", "namespace", req.Namespace, "severity", "warning")
 	}
 
 	for _, m := range p.podMutators {
