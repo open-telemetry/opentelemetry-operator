@@ -1,23 +1,3 @@
-apiVersion: config.openshift.io/v1
-kind: ImageDigestMirrorSet
-metadata:
-  name: otel-idms
-spec:
-  imageDigestMirrors:
-  - source: registry.redhat.io/rhosdt/opentelemetry-collector-rhel9
-    mirrors:
-      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-collector
-  - source: registry.redhat.io/rhosdt/opentelemetry-target-allocator-rhel9
-    mirrors:
-      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-target-allocator
-  - source: registry.redhat.io/rhosdt/opentelemetry-rhel9-operator
-    mirrors:
-      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-operator
-  - source: registry.redhat.io/rhosdt/opentelemetry-operator-bundle
-    mirrors:
-      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-bundle
-
----
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
