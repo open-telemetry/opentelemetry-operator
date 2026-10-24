@@ -24,14 +24,6 @@ var (
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 		featuregate.WithRegisterToVersion("v0.160.0"),
 	)
-	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
-	// strategy for allocation strategies that might not assign all jobs (per-node).
-	EnableTargetAllocatorFallbackStrategy = featuregate.GlobalRegistry().MustRegister(
-		"operator.targetallocator.fallbackstrategy",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("enables fallback allocation strategy for the target allocator"),
-		featuregate.WithRegisterFromVersion("v0.114.0"),
-	)
 	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
 	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operator.networkpolicy",
