@@ -29,18 +29,22 @@ type configTriple struct {
 var expectedTriples = []configTriple{
 	{"targetallocator-image", "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR"},
 	{"operatoropampbridge-image", "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE"},
+	{"auto-instrumentation-ruby-image", "auto-instrumentation-ruby-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_RUBY"},
 	{"auto-instrumentation-python-image", "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON"},
 	{"collector-image", "collector-image", "RELATED_IMAGE_COLLECTOR"},
-	{"clusterobservability-collector-image", "clusterobservability-collector-image", ""},
+	{"clusterobservability-collector-image", "clusterobservability-collector-image", "RELATED_IMAGE_CLUSTER_OBSERVABILITY_COLLECTOR"},
 	{"collector-configmap-entry", "", ""},
 	{"enable-multi-instrumentation", "enable-multi-instrumentation", "ENABLE_MULTI_INSTRUMENTATION"},
 	{"enable-apache-httpd-instrumentation", "enable-apache-httpd-instrumentation", "ENABLE_APACHE_HTTPD_AUTO_INSTRUMENTATION"},
+	{"enable-php-auto-instrumentation", "enable-php-instrumentation", "ENABLE_PHP_AUTO_INSTRUMENTATION"},
 	{"enable-dot-net-auto-instrumentation", "enable-dotnet-instrumentation", "ENABLE_DOTNET_AUTO_INSTRUMENTATION"},
 	{"enable-go-auto-instrumentation", "enable-go-instrumentation", "ENABLE_GO_AUTO_INSTRUMENTATION"},
 	{"enable-nginx-auto-instrumentation", "enable-nginx-instrumentation", "ENABLE_NGINX_AUTO_INSTRUMENTATION"},
+	{"enable-ruby-auto-instrumentation", "enable-ruby-instrumentation", "ENABLE_RUBY_AUTO_INSTRUMENTATION"},
 	{"enable-python-auto-instrumentation", "enable-python-instrumentation", "ENABLE_PYTHON_AUTO_INSTRUMENTATION"},
 	{"enable-node-js-auto-instrumentation", "enable-nodejs-instrumentation", "ENABLE_NODEJS_AUTO_INSTRUMENTATION"},
 	{"enable-java-auto-instrumentation", "enable-java-instrumentation", "ENABLE_JAVA_AUTO_INSTRUMENTATION"},
+	{"auto-instrumentation-php-image", "auto-instrumentation-php-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PHP"},
 	{"auto-instrumentation-dot-net-image", "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET"},
 	{"auto-instrumentation-go-image", "auto-instrumentation-go-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_GO"},
 	{"auto-instrumentation-apache-httpd-image", "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD"},
@@ -76,6 +80,7 @@ var expectedTriples = []configTriple{
 	{"tls.configureoperands", "tls-configure-operands", "TLS_CONFIGURE_OPERANDS"},
 	{"tls.minversion", "tls-min-version", "TLS_MIN_VERSION"},
 	{"tls.ciphersuites", "tls-cipher-suites", "TLS_CIPHER_SUITES"},
+	{"tls.curvepreferences", "tls-curve-preferences", "TLS_CURVE_PREFERENCES"},
 	{"zap.message-key", "zap-message-key", "ZAP_MESSAGE_KEY"},
 	{"zap.time-key", "zap-time-key", "ZAP_TIME_KEY"},
 	{"zap.level-key", "zap-level-key", "ZAP_LEVEL_KEY"},
@@ -115,11 +120,24 @@ func TestApplyCLIDefaultsUnchanged(t *testing.T) {
 // defaults (ProxyEnvVars aside, which is always read from the environment).
 func TestApplyEnvDefaultsUnchanged(t *testing.T) {
 	c := New()
-	ApplyEnvVars(&c)
+	require.NoError(t, ApplyEnvVars(&c))
 
 	expected := New()
 	expected.ProxyEnvVars = proxy.ReadProxyVarsFromEnv()
 	require.Equal(t, expected, c)
+}
+
+// TestSupportedKind locks the set of field kinds the walker can bind. A new Config field of
+// an unsupported kind must be rejected here and by TestEveryFieldDeclaresConfigTags.
+func TestSupportedKind(t *testing.T) {
+	supported := []any{"", true, int(0), int32(0), []string(nil), []int32(nil)}
+	for _, v := range supported {
+		require.Truef(t, supportedKind(reflect.ValueOf(v)), "%T should be supported", v)
+	}
+	unsupported := []any{int64(0), uint(0), 1.5, []bool(nil), map[string]string(nil)}
+	for _, v := range unsupported {
+		require.Falsef(t, supportedKind(reflect.ValueOf(v)), "%T should be unsupported", v)
+	}
 }
 
 // TestPrecedence confirms CLI beats env beats file beats default across the field kinds.
@@ -192,7 +210,7 @@ func TestSliceFlagTypes(t *testing.T) {
 		t.Setenv("TLS_CIPHER_SUITES", "c,d")
 
 		c := New()
-		ApplyEnvVars(&c)
+		require.NoError(t, ApplyEnvVars(&c))
 		require.Equal(t, []string{"a", "b"}, c.LabelsFilter)
 		require.Equal(t, []string{"c", "d"}, c.TLS.CipherSuites)
 	})
@@ -213,9 +231,8 @@ func forEachLeafField(t reflect.Type, visit func(reflect.StructField)) {
 
 // TestEveryFieldDeclaresConfigTags enforces that every field makes an explicit choice about
 // each configuration mechanism: it must carry a flag and an env tag (a real name or "-"),
-// and any field that is actually configurable must also document itself with usage and group.
-// This is the guard requested in the PR review so a newly added field cannot silently lack a
-// binding. See issue: https://github.com/open-telemetry/opentelemetry-operator/issues/3565.
+// and any field that is actually configurable must also document itself with usage and
+// group, and use a type the walker can bind so it cannot silently lack a binding.
 func TestEveryFieldDeclaresConfigTags(t *testing.T) {
 	forEachLeafField(reflect.TypeFor[Config](), func(sf reflect.StructField) {
 		flag, hasFlag := sf.Tag.Lookup("flag")
@@ -228,6 +245,8 @@ func TestEveryFieldDeclaresConfigTags(t *testing.T) {
 		if configurable {
 			require.NotEmptyf(t, sf.Tag.Get("usage"), "configurable field %s must have a usage tag", sf.Name)
 			require.NotEmptyf(t, sf.Tag.Get("group"), "configurable field %s must have a group tag", sf.Name)
+			require.Truef(t, supportedKind(reflect.New(sf.Type).Elem()),
+				"configurable field %s has type %s that the walker cannot bind to a flag or env var", sf.Name, sf.Type)
 		}
 	})
 }
@@ -257,8 +276,8 @@ func changedFields(a, b Config) []string {
 	return changed
 }
 
-// sentinelArg returns a string value guaranteed to differ from the field's default, for
-// the field's kind, plus whether the kind is supported.
+// sentinelArg returns a string value guaranteed to differ from the field's default,
+// for the field's kind, plus whether the kind is supported.
 func sentinelArg(fs fieldSpec) (string, bool) {
 	switch fs.value.Kind() {
 	case reflect.String:
@@ -271,19 +290,26 @@ func sentinelArg(fs fieldSpec) (string, bool) {
 	case reflect.Int, reflect.Int32:
 		return strconv.FormatInt(fs.value.Int()+1, 10), true
 	case reflect.Slice:
-		if _, ok := reflect.TypeAssert[[]string](fs.value); ok {
+		switch fs.value.Type().Elem().Kind() {
+		case reflect.String:
 			return "zzsentinel", true
+		case reflect.Int32:
+			def, _ := reflect.TypeAssert[[]int32](fs.value)
+			if len(def) == 0 {
+				return "1", true
+			}
+			return strconv.FormatInt(int64(def[0])+1, 10), true
+		default:
+			return "", false
 		}
-		return "", false
 	default:
 		return "", false
 	}
 }
 
 // TestEachFlagBindsToItsOwnField sets every generically-registered flag, one at a time, and
-// asserts it changes exactly its own field and nothing else. This is the before/after
-// binding coverage requested in the PR review: it proves each flag is wired to the right
-// field, catching any cross-wiring the old hand-written switch could have hidden.
+// asserts it changes exactly its own field and nothing else, proving each flag is wired to
+// the right field.
 func TestEachFlagBindsToItsOwnField(t *testing.T) {
 	type target struct {
 		key, flag, value string
@@ -335,7 +361,7 @@ func TestEachEnvBindsToItsOwnField(t *testing.T) {
 			t.Setenv(tg.env, tg.value)
 
 			c := New()
-			ApplyEnvVars(&c)
+			require.NoError(t, ApplyEnvVars(&c))
 			require.Equal(t, []string{tg.key}, changedFields(New(), c),
 				"env %s must change only the %q field", tg.env, tg.key)
 		})

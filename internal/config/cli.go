@@ -11,19 +11,22 @@ import (
 
 var args = os.Args[1:]
 
-func CreateCLIParser(cfg Config) *pflag.FlagSet {
+func CreateCLIParser(cfg Config) (*pflag.FlagSet, error) {
 	f := pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 	f.ParseErrorsAllowlist.UnknownFlags = true
-	registerFlags(f, cfg)
-	return f
+	if err := registerFlags(f, cfg); err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 
 func ApplyCLI(cfg *Config) error {
-	f := CreateCLIParser(*cfg)
+	f, err := CreateCLIParser(*cfg)
+	if err != nil {
+		return err
+	}
 	if err := f.Parse(args); err != nil {
 		return err
 	}
-	applyFlags(cfg, f)
-
-	return nil
+	return applyFlags(cfg, f)
 }
