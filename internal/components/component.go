@@ -5,7 +5,8 @@ package components
 
 import (
 	"errors"
-	"regexp"
+	"net"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -81,27 +82,40 @@ func ComponentType(name string) string {
 	return name
 }
 
-// PortFromEndpoint extracts the port number from a host:port endpoint string (e.g. "0.0.0.0:9090" → 9090).
+// PortFromEndpoint extracts the port number from a host:port endpoint string.
 func PortFromEndpoint(endpoint string) (int32, error) {
-	var err error
-	var port int64
+	var portStr string
 
-	r := regexp.MustCompile(`:\d+`)
-
-	if r.MatchString(endpoint) {
-		portStr := r.FindString(endpoint)
-		cleanedPortStr := strings.ReplaceAll(portStr, ":", "")
-		port, err = strconv.ParseInt(cleanedPortStr, 10, 32)
+	// IPv6 addresses contain colons, so extract the port from the endpoint
+	// rather than matching the first colon followed by digits.
+	if strings.Contains(endpoint, "://") {
+		parsedURL, err := url.Parse(endpoint)
 		if err != nil {
 			return UnsetPort, err
 		}
+		portStr = parsedURL.Port()
+	} else {
+		_, port, err := net.SplitHostPort(endpoint)
+		if err != nil {
+			return UnsetPort, PortNotFoundErr
+		}
+		portStr = port
+	}
+
+	if portStr == "" {
+		return UnsetPort, PortNotFoundErr
+	}
+
+	port, err := strconv.ParseInt(portStr, 10, 32)
+	if err != nil {
+		return UnsetPort, err
 	}
 
 	if port == 0 {
 		return UnsetPort, PortNotFoundErr
 	}
 
-	return int32(port), err
+	return int32(port), nil
 }
 
 type ParserRetriever func(string) Parser
