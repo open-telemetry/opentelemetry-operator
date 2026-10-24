@@ -101,19 +101,19 @@ type Config struct {
 	// OpenshiftCreateDashboard creates an OpenShift dashboard for monitoring the OpenTelemetryCollector instances
 	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard" flag:"openshift-create-dashboard" env:"OPENSHIFT_CREATE_DASHBOARD" usage:"Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances" group:"OpenShift and FIPS"`
 	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
-	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
+	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability" flag:"-" env:"-"`
 	// GatewayAPIsAvailability represents the availability of the Gateway APIs.
-	GatewayAPIsAvailability gatewayapi.ApiAvailability `yaml:"gateway-apis-availability"`
+	GatewayAPIsAvailability gatewayapi.ApiAvailability `yaml:"gateway-apis-availability" flag:"-" env:"-"`
 	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
-	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability"`
+	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability" flag:"-" env:"-"`
 	// CertManagerAvailability represents the availability of the Cert-Manager.
-	CertManagerAvailability certmanager.Availability `yaml:"cert-manager-availability"`
+	CertManagerAvailability certmanager.Availability `yaml:"cert-manager-availability" flag:"-" env:"-"`
 	// TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
-	TargetAllocatorAvailability targetallocator.Availability `yaml:"target-allocator-availability"`
+	TargetAllocatorAvailability targetallocator.Availability `yaml:"target-allocator-availability" flag:"-" env:"-"`
 	// CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
-	CollectorAvailability collector.Availability `yaml:"collector-availability"`
+	CollectorAvailability collector.Availability `yaml:"collector-availability" flag:"-" env:"-"`
 	// OpAmpBridgeAvailability represents the availability of the OpAmpBridge CRD.
-	OpAmpBridgeAvailability opampbridge.Availability `yaml:"opampbridge-availability"`
+	OpAmpBridgeAvailability opampbridge.Availability `yaml:"opampbridge-availability" flag:"-" env:"-"`
 	// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
 	IgnoreMissingCollectorCRDs bool `yaml:"ignore-missing-collector-crds" flag:"ignore-missing-collector-crds" env:"IGNORE_MISSING_COLLECTOR_CRDS" usage:"Ignore missing OpenTelemetryCollector CRDs presence in the cluster" group:"General"`
 	// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
@@ -156,15 +156,15 @@ type Config struct {
 	// The --feature-gates CLI flag is registered separately in cmd/operator via featuregate.Flags; the generic walker skips it.
 	FeatureGates string `yaml:"feature-gates" flag:"feature-gates" flagtype:"manual" env:"FEATURE_GATES" usage:"Comma-separated list of feature gates to enable/disable. Format: gate1,gate2,-gate3 where the - prefix disables the gate. The --feature-gates CLI flag is registered separately in cmd/operator." group:"Feature gates"`
 	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
-	Internal Internal `yaml:"-"`
+	Internal Internal `yaml:"-" flag:"-" env:"-"`
 	// Instrumentation is the set of instrumentations to use if CRDs are not present
-	Instrumentation v1alpha1.Instrumentation `yaml:"instrumentations"`
+	Instrumentation v1alpha1.Instrumentation `yaml:"instrumentations" flag:"-" env:"-"`
 	// EnableInstrumentationCRDs enables looking for instrumentation CRDs.
 	EnableInstrumentationCRDs bool `yaml:"enable-instrumentation-crds" flag:"-" env:"-" usage:"When false, use the embedded default instrumentation instead of looking for Instrumentation CRDs." group:"File-only keys"`
 	// ProxyEnvVars holds the proxy environment variables (HTTP_PROXY, HTTPS_PROXY,
 	// NO_PROXY — upper and lower case) captured from the operator's environment at
 	// startup and propagated to all managed containers.
-	ProxyEnvVars []corev1.EnvVar `yaml:"-"`
+	ProxyEnvVars []corev1.EnvVar `yaml:"-" flag:"-" env:"-"`
 	// OpenShiftWebhookReplicas is the desired number of replicas for the standalone pod webhook deployment.
 	// Only used on OpenShift with OLM where the pod webhook is deployed separately.
 	// Set to 0 to disable the standalone webhook (webhook runs in operator pod instead).
