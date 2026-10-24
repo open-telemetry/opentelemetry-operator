@@ -60,7 +60,7 @@ type CollectorWebhook struct {
 	recorder events.EventRecorder
 }
 
-func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTelemetryCollector) error {
+func (c CollectorWebhook) Default(ctx context.Context, otelcol *v1beta1.OpenTelemetryCollector) error {
 	if len(otelcol.Spec.Mode) == 0 {
 		otelcol.Spec.Mode = v1beta1.ModeDeployment
 	}
@@ -116,9 +116,15 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	if err != nil {
 		return err
 	}
-	for _, event := range events {
-		if c.recorder != nil {
-			c.recorder.Eventf(otelcol, nil, event.Type, event.Reason, event.Reason, event.Message)
+	if c.recorder != nil {
+		var isDryRun bool
+		if req, err := admission.RequestFromContext(ctx); err == nil && req.DryRun != nil {
+			isDryRun = *req.DryRun
+		}
+		if !isDryRun {
+			for _, event := range events {
+				c.recorder.Eventf(otelcol, nil, event.Type, event.Reason, event.Reason, event.Message)
+			}
 		}
 	}
 	return nil
