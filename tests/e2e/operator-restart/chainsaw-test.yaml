@@ -47,8 +47,18 @@ spec:
         file: 00-assert-operator-pod.yaml
     - assert:
         file: 00-assert-operator-network-policy.yaml
+    # the operator NetworkPolicy follows changes to the API server's endpoints
     - apply:
-#        check if the operator is able to talk to the API server and create collector resources
+        file: 02-install-endpointslice.yaml
+    - assert:
+        file: 02-assert-endpointslice.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/name=opentelemetry-operator
+        namespace: opentelemetry-operator-system
+  - name: Verify operator can create collector resources
+    try:
+    - apply:
         file: 01-install-collector.yaml
     - assert:
         file: 01-assert-collector.yaml
