@@ -120,8 +120,8 @@
     {
       "matchManagers": ["npm"],
       "matchFileNames": ["autoinstrumentation/nodejs/package.json"],
-      "matchPackageNames": ["@opentelemetry/auto-instrumentations-node"],
-      "commitMessageTopic": "OpenTelemetry nodejs agent version"
+      "matchPackageNames": ["@opentelemetry/api", "@opentelemetry/auto-instrumentations-node"],
+      "groupName": "OpenTelemetry nodejs packages"
     },
     {
       "matchManagers": ["pip_requirements"],
