@@ -159,6 +159,12 @@ var testCases = []testCase{
 			Kind:           ptrace.SpanKindServer,
 			StatusNotError: true,
 		},
+		metric: &e2e.MetricMatch{
+			NamesAnyOf: []string{"http.server.duration", "http.server.request.duration"},
+			Resource:   map[string]string{"telemetry.sdk.language": "nodejs"},
+			Type:       pmetric.MetricTypeHistogram,
+			NonZero:    true,
+		},
 	},
 	{
 		name:            "python",
@@ -192,6 +198,12 @@ var testCases = []testCase{
 		instrumentation: "instrumentation-python-musl.yaml",
 		app:             "app-python-musl.yaml",
 		initContainers:  []string{"opentelemetry-auto-instrumentation-python"},
+		span: &e2e.SpanMatch{
+			Resource:       map[string]string{"telemetry.sdk.language": "python"},
+			Attrs:          []e2e.AttrMatch{httpMethodGet, httpStatus200, urlPath("/")},
+			Kind:           ptrace.SpanKindServer,
+			StatusNotError: true,
+		},
 		// system_metrics is experimental in python (and implements this semconv
 		// UpDownCounter as a gauge), so per the stability policy only the unit and
 		// a non-zero value are asserted, not the type.
