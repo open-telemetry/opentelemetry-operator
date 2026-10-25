@@ -71,7 +71,7 @@ each namespace has its own collector and sink. Use `go test -parallel N` (or
 ## Running
 
 ```bash
-make prepare-e2e            # kind cluster + operator + images
+make add-instrumentation-params prepare-e2e # kind cluster + operator + images
 make e2e-instrumentation-go
 ```
 

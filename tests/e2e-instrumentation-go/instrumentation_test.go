@@ -203,6 +203,30 @@ var testCases = []testCase{
 		},
 	},
 	{
+		name:            "php",
+		instrumentation: "instrumentation-php.yaml",
+		app:             "app-php.yaml",
+		initContainers:  []string{"opentelemetry-auto-instrumentation-php"},
+		span: &e2e.SpanMatch{
+			Resource:       map[string]string{"telemetry.sdk.language": "php"},
+			Attrs:          []e2e.AttrMatch{httpMethodGet, httpStatus200, urlPath("/")},
+			Kind:           ptrace.SpanKindServer,
+			StatusNotError: true,
+		},
+	},
+	{
+		name:            "ruby",
+		instrumentation: "instrumentation-ruby.yaml",
+		app:             "app-ruby.yaml",
+		initContainers:  []string{"opentelemetry-auto-instrumentation-ruby"},
+		span: &e2e.SpanMatch{
+			Resource:       map[string]string{"telemetry.sdk.language": "ruby"},
+			Attrs:          []e2e.AttrMatch{httpMethodGet, httpStatus200, urlPath("/rolldice")},
+			Kind:           ptrace.SpanKindServer,
+			StatusNotError: true,
+		},
+	},
+	{
 		name:              "apache-httpd",
 		instrumentation:   "instrumentation-apache-httpd.yaml",
 		app:               "app-apache-httpd.yaml",

@@ -20,7 +20,7 @@ spec:
         fsGroup: 3000
       containers:
         - name: myapp
-          image: ($appImage)
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-ruby:main
           ports:
             - containerPort: 8080
           readinessProbe:

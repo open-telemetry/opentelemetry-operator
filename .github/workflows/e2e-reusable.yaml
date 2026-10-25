@@ -108,6 +108,8 @@ jobs:
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation
           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+        - group: e2e-instrumentation-go
+          setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-multi-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-multi-instrumentation
