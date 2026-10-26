@@ -1,5 +1,5 @@
 # Stage 1: Use an official Node.js image as a base.
-FROM docker.io/library/node:lts-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
+FROM docker.io/library/node:lts-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
