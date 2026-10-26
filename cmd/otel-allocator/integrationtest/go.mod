@@ -15,7 +15,7 @@ require (
 	github.com/go-logr/logr v1.4.4
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.72.1
-	github.com/prometheus/prometheus v0.315.0
+	github.com/prometheus/prometheus v0.315.1
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/component/componenttest v0.163.0
 	go.opentelemetry.io/collector/confmap v1.69.0
