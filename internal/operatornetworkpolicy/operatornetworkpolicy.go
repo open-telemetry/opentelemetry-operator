@@ -165,10 +165,26 @@ func (n *networkPolicy) watchEndpointSlices(ctx context.Context, ownerRef []meta
 		return err
 	}
 
+	isAPIServer := func(obj any) bool {
+		slice, ok := obj.(*discoveryv1.EndpointSlice)
+		return ok && slice.Namespace == apiserverendpoints.Namespace && slice.Labels[discoveryv1.LabelServiceName] == apiserverendpoints.ServiceName
+	}
 	handler := toolscache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ any) { n.handleEndpointSliceEvent(ctx, ownerRef) },
-		UpdateFunc: func(_, _ any) { n.handleEndpointSliceEvent(ctx, ownerRef) },
-		DeleteFunc: func(_ any) { n.handleEndpointSliceEvent(ctx, ownerRef) },
+		AddFunc: func(obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
+		UpdateFunc: func(_, obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
+		DeleteFunc: func(obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
 	}
 
 	if _, err := informer.AddEventHandler(handler); err != nil {
