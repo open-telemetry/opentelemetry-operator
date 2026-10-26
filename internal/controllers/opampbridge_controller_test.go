@@ -38,8 +38,8 @@ var (
 		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
 			return openshift.RoutesAvailable, nil
 		},
-		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
-			return prometheus.Available, nil
+		PrometheusCRsAvailabilityFunc: func() (prometheus.AvailableCRDs, error) {
+			return prometheus.AvailableCRDs{"servicemonitors", "podmonitors"}, nil
 		},
 		RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
 			return rbac.Available, nil

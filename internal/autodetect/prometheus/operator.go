@@ -3,17 +3,20 @@
 
 package prometheus
 
-// Availability represents what CRDs are available from the prometheus operator.
-type Availability int
+import "slices"
 
-const (
-	// NotAvailable represents the monitoring.coreos.com is not available.
-	NotAvailable Availability = iota
+// AvailableCRDs represents the list of monitoring.coreos.com CRD resource names
+// available in the cluster (e.g. "servicemonitors", "podmonitors", "probes", "scrapeconfigs").
+type AvailableCRDs []string
 
-	// Available represents the monitoring.coreos.com is available.
-	Available
-)
+func (a AvailableCRDs) Available() bool {
+	return len(a) > 0
+}
 
-func (p Availability) String() string {
-	return [...]string{"NotAvailable", "Available"}[p]
+func (a AvailableCRDs) AvailableServiceMonitor() bool {
+	return slices.Contains(a, "servicemonitors")
+}
+
+func (a AvailableCRDs) AvailablePodMonitor() bool {
+	return slices.Contains(a, "podmonitors")
 }

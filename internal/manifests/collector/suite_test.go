@@ -50,7 +50,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	cfg2 := config.Config{
 		CollectorImage:           defaultCollectorImage,
 		TargetAllocatorImage:     defaultTaAllocationImage,
-		PrometheusCRAvailability: prometheus.Available,
+		PrometheusCRAvailability: prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 	}
 
 	return manifests.Params{
@@ -117,7 +117,7 @@ func newParams(taContainerImage, file string, cfg *config.Config) (manifests.Par
 			CollectorImage:              defaultCollectorImage,
 			TargetAllocatorImage:        defaultTaAllocationImage,
 			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-			PrometheusCRAvailability:    prometheus.Available,
+			PrometheusCRAvailability:    prometheus.AvailableCRDs{"servicemonitors", "podmonitors"},
 		}
 	}
 
