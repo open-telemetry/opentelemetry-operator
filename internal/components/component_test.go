@@ -40,6 +40,7 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 		{"ipv6 loopback", "[::1]:4317", 4317, false},
 		{"ipv6 global address", "[2001:db8::1]:4317", 4317, false},
 		{"ipv6 private address", "[fd00:10:244::5]:4318", 4318, false},
+		{"ipv6 regression - port inside address", "[fd00:10:244::5]:4317", 4317, false},
 		{"just port", ":1234", 1234, false},
 		{"no port at all", "http://localhost", 0, true},
 		{"overflow", "0.0.0.0:2147483648", 0, true},
