@@ -111,7 +111,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 		return UnsetPort, err
 	}
 
-	if port == 0 {
+	if port <= 0 {
 		return UnsetPort, PortNotFoundErr
 	}
 

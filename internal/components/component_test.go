@@ -49,6 +49,7 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 		{"ipv6 without port", "[::1]", 0, true},
 		{"empty port", "localhost:", 0, true},
 		{"zero port", "localhost:0", 0, true},
+		{"negative port", "0.0.0.0:-1", 0, true},
 		{"invalid port", "localhost:abc", 0, true},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
