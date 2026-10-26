@@ -41,7 +41,7 @@ var (
 		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 			return prometheus.Available, nil
 		},
-		RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
+		ClusterRBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
 			return rbac.Available, nil
 		},
 	}

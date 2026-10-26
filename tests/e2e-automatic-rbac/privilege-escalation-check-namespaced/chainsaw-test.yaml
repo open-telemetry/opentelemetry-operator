@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: privilege-escalation-check-namespaced
+spec:
+  # This test verifies that the OpenTelemetryCollector admission webhook rejects requests
+  # where the auto-RBAC feature would grant the collector's ServiceAccount namespace-scoped
+  # permissions that the requesting user does not already hold (privilege escalation
+  # prevention for namespaced RBAC).
+  #
+  # Two scenarios are exercised using kubectl impersonation (--as):
+  #   1. limited-user-ns  — can create OTCs but lacks the namespace-scoped permissions
+  #                         in the target namespace that k8sattributes with filter.namespace
+  #                         requires. Request must be rejected.
+  #   2. permitted-user-ns — can create OTCs and already holds those permissions in the
+  #                          target namespace. Request must be accepted.
+  #
+  # Both scenarios use --dry-run=server so the admission webhook fires without persisting
+  # the OTC.
+  steps:
+  - name: setup-test-subjects
+    try:
+    - apply:
+        file: 01-install.yaml
+  - name: wait-for-rbac-propagation
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          TARGET_NS="${NAMESPACE}-k8sattr-target"
+          for i in $(seq 1 30); do
+            if kubectl auth can-i get pods --as=permitted-user-ns -n "$TARGET_NS" 2>/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "RBAC propagation timed out"
+          exit 1
+  - name: limited-user-request-is-rejected
+    try:
+    - script:
+        content: |
+          TARGET_NS="${NAMESPACE}-k8sattr-target"
+          sed "s/__TARGET_NS__/$TARGET_NS/" 02-collector.yaml | \
+          kubectl apply \
+            --namespace $NAMESPACE \
+            --dry-run=server \
+            --as=limited-user-ns \
+            -f -
+        check:
+          ($error != null): true
+          (contains($stderr, 'is not allowed to create a collector whose config would grant permissions they do not hold')): true
+  - name: permitted-user-request-is-accepted
+    try:
+    - script:
+        content: |
+          TARGET_NS="${NAMESPACE}-k8sattr-target"
+          sed "s/__TARGET_NS__/$TARGET_NS/" 02-collector.yaml | \
+          kubectl apply \
+            --namespace $NAMESPACE \
+            --dry-run=server \
+            --as=permitted-user-ns \
+            -f -
+        check:
+          ($error != null): false
