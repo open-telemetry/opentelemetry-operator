@@ -58,6 +58,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("tls-configure-operands", false, "Configures TLS version and cyphers in operands.")
 	f.String("tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	f.StringSlice("tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
+	f.Int32Slice("tls-curve-preferences", nil, "Comma-separated list of numeric Go crypto/tls CurveID values for TLS. See https://pkg.go.dev/crypto/tls#CurveID for supported values. If omitted, the default Go curves will be used")
 	f.String("zap-message-key", "message", "The message key to be used in the customized Log Encoder")
 	f.String("zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	f.String("zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
@@ -163,6 +164,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.TLS.MinVersion, _ = f.GetString("tls-min-version")
 			case "tls-cipher-suites":
 				cfg.TLS.CipherSuites, _ = f.GetStringSlice("tls-cipher-suites")
+			case "tls-curve-preferences":
+				cfg.TLS.CurvePreferences, _ = f.GetInt32Slice("tls-curve-preferences")
 			case "zap-message-key":
 				cfg.Zap.MessageKey, _ = f.GetString("zap-message-key")
 			case "zap-level-key":
