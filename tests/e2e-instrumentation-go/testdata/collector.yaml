@@ -18,14 +18,14 @@ spec:
     processors: {}
 
     exporters:
-      otlphttp:
-        endpoint: http://otlp-sink:4318
+      otlphttp/{{ .SinkServiceName }}:
+        endpoint: {{ .SinkEndpoint }}
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [otlphttp]
+          exporters: [otlphttp/{{ .SinkServiceName }}]
         metrics:
           receivers: [otlp]
-          exporters: [otlphttp]
+          exporters: [otlphttp/{{ .SinkServiceName }}]

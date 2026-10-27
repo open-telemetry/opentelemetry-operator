@@ -4,20 +4,17 @@
 package e2e
 
 import (
-	"encoding/json"
 	"net/http"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -68,7 +65,7 @@ func TestOTLPSinkSpans(t *testing.T) {
 		Attrs:          []AttrMatch{{Keys: []string{"http.response.status_code"}, Value: "200"}},
 		Kind:           ptrace.SpanKindServer,
 		StatusNotError: true,
-	}))
+	}), time.Second, 10*time.Millisecond)
 }
 
 func TestOTLPSinkMetrics(t *testing.T) {
@@ -103,7 +100,7 @@ func TestOTLPSinkMetrics(t *testing.T) {
 		Type:       pmetric.MetricTypeHistogram,
 		Unit:       "s",
 		NonZero:    true,
-	}))
+	}), time.Second, 10*time.Millisecond)
 }
 
 func TestOTLPSinkResponses(t *testing.T) {
@@ -174,9 +171,9 @@ func TestOTLPSinkEventually(t *testing.T) {
 			})
 			sink := &OTLPSink{Namespace: "test-ns"}
 			if tt.signal == "traces" {
-				sink.EventuallySpans(t.Context(), t, cfg, HasSpan(SpanMatch{}))
+				sink.EventuallySpans(t.Context(), t, cfg, HasSpan(SpanMatch{}), 5*time.Second, 10*time.Millisecond)
 			} else {
-				sink.EventuallyMetrics(t.Context(), t, cfg, HasMetric(MetricMatch{}))
+				sink.EventuallyMetrics(t.Context(), t, cfg, HasMetric(MetricMatch{}), 5*time.Second, 10*time.Millisecond)
 			}
 			assert.Equal(t, int32(4), attempts.Load())
 		})
@@ -361,60 +358,8 @@ func TestBoundedList(t *testing.T) {
 	assert.Equal(t, "[a b] (and 1 more)", boundedList(map[string]bool{"c": true, "a": true, "b": true}, 2))
 }
 
-func TestDeployOTLPSink(t *testing.T) {
-	created := make(chan runtime.Object, 2)
-	cfg := proxyTestConfig(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		var response any
-		switch r.URL.Path {
-		case "/api":
-			response = metav1.APIVersions{Versions: []string{"v1"}}
-		case "/apis":
-			version := metav1.GroupVersionForDiscovery{GroupVersion: "apps/v1", Version: "v1"}
-			response = metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "apps", Versions: []metav1.GroupVersionForDiscovery{version}, PreferredVersion: version}}}
-		case "/api/v1":
-			response = metav1.APIResourceList{GroupVersion: "v1", APIResources: []metav1.APIResource{{Name: "services", Kind: "Service", Namespaced: true}}}
-		case "/apis/apps/v1":
-			response = metav1.APIResourceList{GroupVersion: "apps/v1", APIResources: []metav1.APIResource{{Name: "deployments", Kind: "Deployment", Namespaced: true}}}
-		case "/apis/apps/v1/namespaces/test-ns/deployments":
-			assert.Equal(t, http.MethodPost, r.Method)
-			deployment := &appsv1.Deployment{}
-			if !assert.NoError(t, json.NewDecoder(r.Body).Decode(deployment)) {
-				http.Error(w, "invalid deployment", http.StatusBadRequest)
-				return
-			}
-			created <- deployment
-			response = deployment
-		case "/api/v1/namespaces/test-ns/services":
-			assert.Equal(t, http.MethodPost, r.Method)
-			service := &corev1.Service{}
-			if !assert.NoError(t, json.NewDecoder(r.Body).Decode(service)) {
-				http.Error(w, "invalid service", http.StatusBadRequest)
-				return
-			}
-			created <- service
-			response = service
-		case "/apis/apps/v1/namespaces/test-ns/deployments/otlp-sink":
-			assert.Equal(t, http.MethodGet, r.Method)
-			response = &appsv1.Deployment{
-				TypeMeta:   metav1.TypeMeta{APIVersion: "apps/v1", Kind: "Deployment"},
-				ObjectMeta: metav1.ObjectMeta{Name: "otlp-sink", Namespace: "test-ns"},
-				Status:     appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue}}},
-			}
-		default:
-			t.Errorf("unexpected request: %s", r.URL)
-			http.NotFound(w, r)
-			return
-		}
-		assert.NoError(t, json.NewEncoder(w).Encode(response))
-	})
-	sink := DeployOTLPSink(t.Context(), t, cfg, "test-ns", "test-sink:latest")
-	assert.Equal(t, "test-ns", sink.Namespace)
-	require.Len(t, created, 2)
-	deployment, ok := (<-created).(*appsv1.Deployment)
-	require.True(t, ok)
-	service, ok := (<-created).(*corev1.Service)
-	require.True(t, ok)
+func TestOTLPSinkObjects(t *testing.T) {
+	deployment, service := otlpSinkObjects("test-ns", "test-sink:latest")
 	require.NotNil(t, deployment.Spec.Selector)
 	assert.Equal(t, map[string]string{"app": "otlp-sink"}, deployment.Spec.Selector.MatchLabels)
 	assert.Equal(t, deployment.Spec.Selector.MatchLabels, deployment.Spec.Template.Labels)
@@ -432,4 +377,6 @@ func TestDeployOTLPSink(t *testing.T) {
 	assert.Equal(t, resource.MustParse("10m"), container.Resources.Requests[corev1.ResourceCPU])
 	assert.Equal(t, resource.MustParse("32Mi"), container.Resources.Requests[corev1.ResourceMemory])
 	assert.Equal(t, []corev1.ServicePort{{Name: "otlp-grpc", Port: 4317, AppProtocol: new("grpc")}, {Name: "otlp-http", Port: 4318}, {Name: "query", Port: 4319}}, service.Spec.Ports)
+	assert.Equal(t, "http://otlp-sink:4318", OTLPSinkHTTPEndpoint)
+	assert.Equal(t, "http://otlp-sink:4317", OTLPSinkGRPCEndpoint)
 }

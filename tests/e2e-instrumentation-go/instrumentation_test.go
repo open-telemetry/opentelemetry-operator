@@ -337,7 +337,10 @@ func instrumentationFeature(tc testCase, appData func(context.Context, *testing.
 			if !tc.externalInstrumentation {
 				e2e.Apply(ctx, t, cfg, ns, render(tc.instrumentation, nil))
 			}
-			e2e.Apply(ctx, t, cfg, ns, render("collector.yaml", nil))
+			e2e.Apply(ctx, t, cfg, ns, render("collector.yaml", map[string]string{
+				"SinkServiceName": e2e.OTLPSinkServiceName,
+				"SinkEndpoint":    e2e.OTLPSinkHTTPEndpoint,
+			}))
 			// Waiting for the collector is also the barrier that guarantees the webhook
 			// has seen the Instrumentation CR before the app pod is created.
 			e2e.WaitForDeployment(ctx, t, cfg, ns, "deployment-collector", 3*time.Minute)
@@ -434,6 +437,15 @@ func parseAppInfo(t *testing.T, manifest string) appInfo {
 // appRequestInterval is how often driveApp requests the instrumented app.
 const appRequestInterval = time.Second
 
+const (
+	// telemetryTimeout bounds how long assertTelemetry waits for the sink to receive
+	// the expected telemetry. An instrumented workload has to start its runtime and
+	// agent before the first export.
+	telemetryTimeout = 3 * time.Minute
+	// telemetryPollInterval is how often assertTelemetry queries the sink.
+	telemetryPollInterval = 2 * time.Second
+)
+
 // driveApp requests the instrumented app over the API server's pod proxy until the
 // test ends, so request-scoped telemetry keeps being produced while the assertions
 // poll. Some agents only emit a server span per request, and the python
@@ -477,12 +489,12 @@ func assertTelemetry(ctx context.Context, t *testing.T, cfg *envconf.Config, ns 
 	if tc.span != nil {
 		want := *tc.span
 		want.Resource = mergeResource(identity, want.Resource)
-		sink.EventuallySpans(ctx, t, cfg, e2e.HasSpan(want))
+		sink.EventuallySpans(ctx, t, cfg, e2e.HasSpan(want), telemetryTimeout, telemetryPollInterval)
 	}
 	if tc.metric != nil {
 		want := *tc.metric
 		want.Resource = mergeResource(identity, want.Resource)
-		sink.EventuallyMetrics(ctx, t, cfg, e2e.HasMetric(want))
+		sink.EventuallyMetrics(ctx, t, cfg, e2e.HasMetric(want), telemetryTimeout, telemetryPollInterval)
 	}
 }
 

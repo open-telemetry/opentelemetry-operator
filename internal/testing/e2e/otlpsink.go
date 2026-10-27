@@ -36,18 +36,16 @@ const (
 	otlpSinkHTTPPort  = 4318
 	otlpSinkQueryPort = 4319
 
-	// defaultSinkTimeout bounds how long the retrying sink helpers wait for a check
-	// to pass. It is longer than the Prometheus equivalent because an auto-instrumented
-	// workload has to start its runtime and agent before the first export.
-	defaultSinkTimeout = 3 * time.Minute
-	// defaultSinkInterval is the delay between attempts of the retrying sink helpers.
-	defaultSinkInterval = 2 * time.Second
+	// OTLPSinkServiceName is the name of the sink's Service.
+	OTLPSinkServiceName = otlpSinkName
+)
 
+var (
 	// OTLPSinkHTTPEndpoint is the sink's in-namespace OTLP/HTTP endpoint, for use in
 	// collector exporter configs deployed to the sink's namespace.
-	OTLPSinkHTTPEndpoint = "http://otlp-sink:4318"
+	OTLPSinkHTTPEndpoint = fmt.Sprintf("http://%s:%d", OTLPSinkServiceName, otlpSinkHTTPPort)
 	// OTLPSinkGRPCEndpoint is the sink's in-namespace OTLP/gRPC endpoint.
-	OTLPSinkGRPCEndpoint = "http://otlp-sink:4317"
+	OTLPSinkGRPCEndpoint = fmt.Sprintf("http://%s:%d", OTLPSinkServiceName, otlpSinkGRPCPort)
 )
 
 // OTLPSink is a handle to a deployed OTLP sink in one namespace.
@@ -60,6 +58,15 @@ type OTLPSink struct {
 func DeployOTLPSink(ctx context.Context, t *testing.T, cfg *envconf.Config, ns, image string) *OTLPSink {
 	t.Helper()
 	c := CRClient(t, cfg)
+	dep, svc := otlpSinkObjects(ns, image)
+	require.NoError(t, c.Create(ctx, dep), "create otlp-sink deployment")
+	require.NoError(t, c.Create(ctx, svc), "create otlp-sink service")
+	WaitForDeployment(ctx, t, cfg, ns, otlpSinkName, 2*time.Minute)
+	return &OTLPSink{Namespace: ns}
+}
+
+// otlpSinkObjects returns the OTLP sink's Deployment and Service in ns.
+func otlpSinkObjects(ns, image string) (*appsv1.Deployment, *corev1.Service) {
 	labels := map[string]string{"app": otlpSinkName}
 
 	dep := &appsv1.Deployment{
@@ -93,10 +100,8 @@ func DeployOTLPSink(ctx context.Context, t *testing.T, cfg *envconf.Config, ns, 
 			},
 		},
 	}
-	require.NoError(t, c.Create(ctx, dep), "create otlp-sink deployment")
-
 	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{Name: otlpSinkName, Namespace: ns},
+		ObjectMeta: metav1.ObjectMeta{Name: OTLPSinkServiceName, Namespace: ns},
 		Spec: corev1.ServiceSpec{
 			Selector: labels,
 			Ports: []corev1.ServicePort{
@@ -106,10 +111,7 @@ func DeployOTLPSink(ctx context.Context, t *testing.T, cfg *envconf.Config, ns, 
 			},
 		},
 	}
-	require.NoError(t, c.Create(ctx, svc), "create otlp-sink service")
-
-	WaitForDeployment(ctx, t, cfg, ns, otlpSinkName, 2*time.Minute)
-	return &OTLPSink{Namespace: ns}
+	return dep, svc
 }
 
 // Span is one received span with its resource and scope flattened for assertions.
@@ -134,7 +136,7 @@ type received struct {
 }
 
 func (s *OTLPSink) fetch(ctx context.Context, cfg *envconf.Config, signal string, each func(raw []byte) error) error {
-	body, err := ServiceHTTPGet(ctx, cfg, s.Namespace, otlpSinkName, otlpSinkQueryPort, "/received/"+signal)
+	body, err := ServiceHTTPGet(ctx, cfg, s.Namespace, OTLPSinkServiceName, otlpSinkQueryPort, "/received/"+signal)
 	if err != nil {
 		return err
 	}
@@ -210,10 +212,10 @@ func attributesMap(attrs pcommon.Map) map[string]string {
 	return m
 }
 
-// EventuallySpans polls the sink until check accepts the received spans. On
-// timeout the test fails with the last fetch or check error. Keeping the workload
-// producing telemetry while this polls is the caller's business.
-func (s *OTLPSink) EventuallySpans(ctx context.Context, t *testing.T, cfg *envconf.Config, check func([]Span) error) {
+// EventuallySpans polls the sink every tick until check accepts the received spans.
+// If waitFor elapses first, the test fails with the last fetch or check error.
+// Keeping the workload producing telemetry while this polls is the caller's business.
+func (s *OTLPSink) EventuallySpans(ctx context.Context, t *testing.T, cfg *envconf.Config, check func([]Span) error, waitFor, tick time.Duration) {
 	t.Helper()
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		spans, err := s.Spans(ctx, cfg)
@@ -224,12 +226,12 @@ func (s *OTLPSink) EventuallySpans(ctx context.Context, t *testing.T, cfg *envco
 		if err := check(spans); err != nil {
 			c.Errorf("spans in otlp-sink: %v", err)
 		}
-	}, defaultSinkTimeout, defaultSinkInterval)
+	}, waitFor, tick)
 }
 
 // EventuallyMetrics polls the sink until check accepts the received metrics. See
 // EventuallySpans.
-func (s *OTLPSink) EventuallyMetrics(ctx context.Context, t *testing.T, cfg *envconf.Config, check func([]Metric) error) {
+func (s *OTLPSink) EventuallyMetrics(ctx context.Context, t *testing.T, cfg *envconf.Config, check func([]Metric) error, waitFor, tick time.Duration) {
 	t.Helper()
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		metrics, err := s.Metrics(ctx, cfg)
@@ -240,7 +242,7 @@ func (s *OTLPSink) EventuallyMetrics(ctx context.Context, t *testing.T, cfg *env
 		if err := check(metrics); err != nil {
 			c.Errorf("metrics in otlp-sink: %v", err)
 		}
-	}, defaultSinkTimeout, defaultSinkInterval)
+	}, waitFor, tick)
 }
 
 // AttrMatch is one expected attribute: at least one of Keys must be present
