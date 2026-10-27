@@ -167,7 +167,7 @@ func (n *networkPolicy) watchEndpointSlices(ctx context.Context, ownerRef []meta
 
 	isAPIServer := func(obj any) bool {
 		slice, ok := obj.(*discoveryv1.EndpointSlice)
-		return ok && slice.Namespace == apiserverendpoints.Namespace && slice.Labels[discoveryv1.LabelServiceName] == apiserverendpoints.ServiceName
+		return ok && apiserverendpoints.IsAPIServerEndpointSlice(slice)
 	}
 	handler := toolscache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {

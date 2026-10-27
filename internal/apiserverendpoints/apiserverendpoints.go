@@ -62,7 +62,8 @@ func CacheByObject() (client.Object, cache.ByObject) {
 	}
 }
 
-func isAPIServerEndpointSlice(obj client.Object) bool {
+// IsAPIServerEndpointSlice returns true if the object is an EndpointSlice backing the API server Service.
+func IsAPIServerEndpointSlice(obj client.Object) bool {
 	return obj.GetNamespace() == Namespace && obj.GetLabels()[discoveryv1.LabelServiceName] == ServiceName
 }
 
