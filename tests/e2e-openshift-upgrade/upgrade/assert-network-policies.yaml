@@ -5,9 +5,23 @@ metadata:
   namespace: openshift-opentelemetry-operator
 spec:
   egress:
+    # API server endpoints: one ipBlock per control plane node, the addresses depend on the cluster
     - ports:
         - port: 6443
           protocol: TCP
+      (length(to) > `0`): true
+      (length(to[?ipBlock == null]) == `0`): true
+    # API server pods
+    - ports:
+        - port: 6443
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+          podSelector:
+            matchLabels:
+              apiserver: "true"
   ingress:
     - ports:
         - port: 9443
