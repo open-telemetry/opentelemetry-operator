@@ -784,6 +784,19 @@ func TestLoadFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadFromFile_HTTPSTLSProfile(t *testing.T) {
+	cfg := CreateDefaultConfig()
+	err := LoadFromFile(filepath.Join("testdata", "https_tls_profile_test.yaml"), &cfg)
+	require.NoError(t, err)
+
+	assert.Equal(t, "VersionTLS12", cfg.HTTPS.MinVersion)
+	assert.Equal(t, []string{
+		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+	}, cfg.HTTPS.CipherSuites)
+	assert.Equal(t, []int32{29, 23}, cfg.HTTPS.CurvePreferences)
+}
+
 func TestLoadFromEnv(t *testing.T) {
 	namespace := "default"
 	t.Setenv("OTELCOL_NAMESPACE", namespace)
@@ -1221,6 +1234,38 @@ kube_config_file_path: "/config/kube.config"
 		assert.Equal(t, cliCertPath, config.HTTPS.TLSCertFilePath, "CLI should override config file for TLS cert file path")
 		assert.Equal(t, cliKeyPath, config.HTTPS.TLSKeyFilePath, "CLI should override config file for TLS key file path")
 		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "CLI should override config file for kube config path")
+	})
+
+	t.Run("command-line has priority over config file for TLS profile", func(t *testing.T) {
+		tempDir := t.TempDir()
+		configContent := `
+https:
+  min_version: VersionTLS12
+  cipher_suites:
+    - TLS_AES_128_GCM_SHA256
+  curve_preferences:
+    - 23
+`
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+			"--" + httpsMinVersionFlagName + "=VersionTLS13",
+			"--" + httpsCipherSuitesFlagName + "=TLS_AES_256_GCM_SHA384",
+			"--" + httpsCurvePreferencesFlagName + "=29,23",
+		}
+
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		assert.Equal(t, "VersionTLS13", config.HTTPS.MinVersion, "CLI should override config file for TLS min version")
+		assert.Equal(t, []string{"TLS_AES_256_GCM_SHA384"}, config.HTTPS.CipherSuites, "CLI should override config file for cipher suites")
+		assert.Equal(t, []int32{29, 23}, config.HTTPS.CurvePreferences, "CLI should override config file for curve preferences")
 	})
 
 	t.Run("config file overrides defaults when CLI not specified", func(t *testing.T) {
