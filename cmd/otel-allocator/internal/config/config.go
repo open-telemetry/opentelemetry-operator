@@ -691,11 +691,8 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 		}
 	})
 
-	minVersion := c.MinVersion
-	if minVersion == "" {
-		minVersion = "VersionTLS12"
-	}
-	tlsVersion, err := k8sapiflag.TLSVersion(minVersion)
+	// An empty MinVersion is resolved by k8sapiflag.TLSVersion to its default, tls.VersionTLS12.
+	tlsVersion, err := k8sapiflag.TLSVersion(c.MinVersion)
 	if err != nil {
 		return nil, nil, fmt.Errorf("TLS version invalid: %w", err)
 	}
