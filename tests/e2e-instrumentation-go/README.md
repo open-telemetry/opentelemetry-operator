@@ -94,8 +94,9 @@ requires setting it.
 `INSTRUMENTATION_DOTNET_IMG` and `INSTRUMENTATION_APACHE_HTTPD_IMG` (also used for
 nginx) to the tests, which set them as the image in the Instrumentation CRs.
 `make e2e-instrumentation-go-default` leaves them unset, so the operator's
-default images are used. PHP, Ruby and Go images are not built in this
-repository and always use the operator's defaults.
+default images are used. CI runs both, so an agent update is tested before the
+default changes. PHP, Ruby and Go images are not built in this repository and
+always use the operator's defaults.
 
 The built images are in the CI image archive. Locally, build and load them with
 `make load-images-instrumentation`, or the cluster pulls them from the registry.
