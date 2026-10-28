@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-apache
+spec:
+  selector:
+    matchLabels:
+      app: my-apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-apache
+      annotations:
+        instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        # following to test lifecycle removal in cloned init container
+        lifecycle:
+          postStart:
+            exec:
+              command: [ "/bin/sh", "-c", "echo Hello from the postStart handler" ]
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "1"
+            memory: 500Mi
+          requests:
+            cpu: 250m
+            memory: 100Mi
