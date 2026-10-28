@@ -64,6 +64,15 @@ spec:
       name: opentelemetry-auto-instrumentation-nodejs
   containers:
   - name: main-app
+  (volumes[?name == 'opentelemetry-auto-instrumentation-nodejs']):
+  - name: opentelemetry-auto-instrumentation-nodejs
+    ephemeral:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
 status:
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-nodejs
