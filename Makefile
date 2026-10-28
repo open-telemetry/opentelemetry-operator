@@ -256,7 +256,7 @@ ci: generate fmt vet test ensure-update-is-noop
 
 # Update manifests
 .PHONY: update
-update: generate manifests bundle api-docs update-example-images reset
+update: generate manifests set-related-images bundle api-docs update-example-images reset
 
 # Build manager binary
 .PHONY: manager
@@ -299,6 +299,12 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
+
+# Update RELATED_IMAGE env vars in deployment manifests from versions.txt
+.PHONY: set-related-images
+set-related-images:
+	$(SED_INPLACE) 's|opentelemetry-collector:[0-9][0-9a-zA-Z.\-]*|opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))|' config/manager/manager.yaml config/overlays/openshift/webhook-deployment.yaml
+	$(SED_INPLACE) 's|target-allocator:[0-9][0-9a-zA-Z.\-]*|target-allocator:$(TARGETALLOCATOR_VERSION)|' config/manager/manager.yaml config/overlays/openshift/webhook-deployment.yaml
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -1078,6 +1084,7 @@ bundle:
 .PHONY: reset
 reset: kustomize operator-sdk manifests
 	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
+	$(MAKE) set-related-images
 	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/community --output-dir config/manifests/community
 	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/openshift --output-dir config/manifests/openshift
 
