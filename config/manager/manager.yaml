@@ -70,4 +70,4 @@ spec:
           - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
             value: "true"
       serviceAccountName: controller-manager
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 30

@@ -531,6 +531,14 @@ cert-manager provisions the CA, server, and client certificates automatically.
   - If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
   - `useCertManager` defaults to `true`, so cert-manager provisions the serving and client certificates unless you explicitly disable it.
 
+The operator rechecks cert-manager API availability and its service account permissions after startup. When the result changes, it requests a rollout of its Deployment. If the webhook runs in a separate Deployment, it requests its own rollout. The check runs approximately every minute. When the cert-manager API is present, each check sends 21 SubjectAccessReviews per replica. Rollouts follow each Deployment's configured update strategy and can interrupt requests, even with multiple replicas. A single-replica Deployment can be unavailable during the rollout.
+
+On termination, webhook-serving processes continue serving requests for five seconds before shutting down, allowing time for terminating endpoints to be removed. Configure a termination grace period long enough for this delay and shutdown to complete.
+
+The operator service account must be able to get its Pod and ReplicaSet and get and patch its Deployment. These permissions are included in the standard operator RBAC. The rollout updates the `opentelemetry.io/cert-manager-availability-restart` annotation on the Deployment's pod template. Deployment management tools must allow this annotation to persist.
+
+To disable automatic rollouts, disable the beta feature gate `operator.certmanager.availabilitywatcher` in every operator and standalone webhook Deployment, for example with `FEATURE_GATES=-operator.certmanager.availabilitywatcher`. If other gates are configured, include them in the same comma-separated value. Restart the Deployments manually after installing cert-manager or changing its permissions when this gate is disabled.
+
 #### Without cert-manager (user-provided certificates)
 
 Set `useCertManager: false` and reference your own certificates through the `mtls.tls` block. cert-manager is not required; the operator mounts the referenced Secrets and ConfigMaps into the target allocator and collector pods.

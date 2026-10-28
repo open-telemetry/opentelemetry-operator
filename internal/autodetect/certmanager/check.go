@@ -35,9 +35,16 @@ func CheckCertManagerPermissions(ctx context.Context, reviewer *rbac.Reviewer) (
 		},
 	}
 
-	if subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...); err != nil {
+	subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...)
+	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "unable to check rbac rules", err)
-	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+	}
+	for _, review := range subjectAccessReviews {
+		if !review.Status.Allowed && review.Status.EvaluationError != "" {
+			return nil, fmt.Errorf("unable to evaluate cert-manager permissions: %s", review.Status.EvaluationError)
+		}
+	}
+	if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
 		return rbac.WarningsGroupedByResource(deniedReviews), nil
 	}
 	return nil, nil
