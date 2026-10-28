@@ -1,0 +1,13 @@
+change_type: bug_fix
+
+component: target allocator
+
+note: Remove the redundant CRD schema default on `spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.configMap.key`. The operator already applies `ca.crt` when the key is omitted.
+
+issues: [5852]
+
+subtext: |
+  The default sat next to the required `name` field, which has no default. Tools that build a resource
+  from the CRD schema created the `configMap` block only to hold it, producing a resource the API server
+  rejected. The sibling `secret` selector never had a schema default; both now resolve their key in the
+  manifest builder.

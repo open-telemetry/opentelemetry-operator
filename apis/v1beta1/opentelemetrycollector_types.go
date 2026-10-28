@@ -329,7 +329,6 @@ type ConfigMapKeySelector struct {
 	Name string `json:"name"`
 	// Key within the ConfigMap's data. Defaults to ca.crt when omitted.
 	// +kubebuilder:validation:Type=string
-	// +kubebuilder:default="ca.crt"
 	// +optional
 	Key string `json:"key,omitempty"`
 }
