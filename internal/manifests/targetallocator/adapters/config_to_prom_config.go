@@ -99,19 +99,32 @@ func namedPrometheusReceivers(receivers map[any]any) []string {
 	return named
 }
 
-// ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
+// DefaultPrometheusReceiverID is the ID of the Prometheus receiver the target allocator manages when none is set.
+const DefaultPrometheusReceiverID = "prometheus"
+
+// PrometheusReceiverID returns the given receiver ID, or DefaultPrometheusReceiverID if it is empty.
+func PrometheusReceiverID(receiverID string) string {
+	if receiverID == "" {
+		return DefaultPrometheusReceiverID
+	}
+	return receiverID
+}
+
+// ConfigToPromConfig converts the incoming configuration object into the config of the default Prometheus receiver.
 func ConfigToPromConfig(cfg string) (map[any]any, error) {
 	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return PromReceiverConfig(config)
+	return PromReceiverConfig(config, "")
 }
 
-// PromReceiverConfig extracts the Prometheus receiver config from a generic collector config map, as produced by
-// adapters.ConfigFromString or adapters.ConfigFromStruct. The returned map is the one held by the config, so
-// modifying it modifies the config.
-func PromReceiverConfig(config map[any]any) (map[any]any, error) {
+// PromReceiverConfig extracts the config of the Prometheus receiver with the given ID from a generic collector config
+// map, as produced by adapters.ConfigFromString or adapters.ConfigFromStruct. An empty ID selects
+// DefaultPrometheusReceiverID. The returned map is the one held by the config, so modifying it modifies the config.
+func PromReceiverConfig(config map[any]any, receiverID string) (map[any]any, error) {
+	receiverID = PrometheusReceiverID(receiverID)
+
 	receiversProperty, ok := config["receivers"]
 	if !ok {
 		return nil, errorNoComponent("receivers")
@@ -122,17 +135,19 @@ func PromReceiverConfig(config map[any]any) (map[any]any, error) {
 		return nil, errorNotAMap("receivers")
 	}
 
-	prometheusProperty, ok := receivers["prometheus"]
+	prometheusProperty, ok := receivers[receiverID]
 	if !ok {
-		if named := namedPrometheusReceivers(receivers); len(named) > 0 {
-			return nil, fmt.Errorf("the target allocator requires a receiver named exactly \"prometheus\", but only named instances were found: %s; rename one of them to \"prometheus\"", strings.Join(named, ", "))
+		if receiverID == DefaultPrometheusReceiverID {
+			if named := namedPrometheusReceivers(receivers); len(named) > 0 {
+				return nil, fmt.Errorf("the target allocator requires a receiver named exactly \"prometheus\" unless prometheusReceiverID is set, but only named instances were found: %s; rename one of them to \"prometheus\" or set prometheusReceiverID to one of them", strings.Join(named, ", "))
+			}
 		}
-		return nil, errorNoComponent("prometheus")
+		return nil, errorNoComponent(receiverID)
 	}
 
 	prometheus, ok := prometheusProperty.(map[any]any)
 	if !ok {
-		return nil, errorNotAMap("prometheus")
+		return nil, errorNotAMap(receiverID)
 	}
 
 	return prometheus, nil
