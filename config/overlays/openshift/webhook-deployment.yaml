@@ -51,6 +51,10 @@ spec:
           value: "true"
         - name: FEATURE_GATES
           value: "operand.networkpolicy"
+        - name: RELATED_IMAGE_COLLECTOR
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.162.0
+        - name: RELATED_IMAGE_TARGET_ALLOCATOR
+          value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0
         ports:
         - containerPort: 9443
           name: webhook-server

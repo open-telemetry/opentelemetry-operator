@@ -239,6 +239,7 @@ func New() Config {
 			ConfigureOperands: false,
 			MinVersion:        "VersionTLS12",
 			CipherSuites:      nil,
+			CurvePreferences:  nil,
 		},
 		Zap: ZapConfig{
 			MessageKey:  "message",
