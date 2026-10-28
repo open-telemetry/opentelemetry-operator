@@ -6,31 +6,46 @@ package operatornetworkpolicy
 import (
 	"context"
 	"fmt"
+	"slices"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
+	toolscache "k8s.io/client-go/tools/cache"
+	runtimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
+)
+
+const (
+	networkPolicyName = "opentelemetry-operator"
 )
 
 type networkPolicy struct {
 	clientset kubernetes.Interface
 	scheme    *runtime.Scheme
+	logger    logr.Logger
+	tracker   *apiserverendpoints.Tracker
+	mgrCache  runtimecache.Cache
 
 	operatorNamespace          string
 	operatorPodName            string
-	apiServerPort              int32
-	apiServerIPs               []string
 	webhookPort                int32
 	metricsPort                int32
 	apiServerPodSelector       *metav1.LabelSelector
 	apiServerNamespaceSelector *metav1.LabelSelector
+
+	podSelector        metav1.LabelSelector
+	apiServerEndpoints []apiserverendpoints.Endpoint
 }
 
 var (
@@ -42,6 +57,7 @@ func NewOperatorNetworkPolicy(clientset kubernetes.Interface, scheme *runtime.Sc
 	n := &networkPolicy{
 		clientset: clientset,
 		scheme:    scheme,
+		logger:    logr.Discard(),
 	}
 
 	for _, opt := range options {
@@ -51,6 +67,13 @@ func NewOperatorNetworkPolicy(clientset kubernetes.Interface, scheme *runtime.Sc
 }
 
 type Option func(policy *networkPolicy)
+
+// WithLogger sets the logger for the network policy reconciler.
+func WithLogger(logger logr.Logger) Option {
+	return func(s *networkPolicy) {
+		s.logger = logger
+	}
+}
 
 // WithOperatorNamespace sets the namespace of the operator and enables it in the network policy.
 func WithOperatorNamespace(operatorNamespace string) Option {
@@ -68,17 +91,17 @@ func WithOperatorPodName(podName string) Option {
 	}
 }
 
-// WithAPIServerPort sets the port of the API server and enables it in the network policy.
-func WithAPIServerPort(apiServerPort int32) Option {
+// WithTracker sets the API server endpoint tracker.
+func WithTracker(tracker *apiserverendpoints.Tracker) Option {
 	return func(s *networkPolicy) {
-		s.apiServerPort = apiServerPort
+		s.tracker = tracker
 	}
 }
 
-// WithAPIServerIPs sets the IPs of the API server for use in network policy IPBlock rules.
-func WithAPIServerIPs(ips []string) Option {
+// WithCache sets the controller-runtime cache used to watch EndpointSlice changes.
+func WithCache(c runtimecache.Cache) Option {
 	return func(s *networkPolicy) {
-		s.apiServerIPs = ips
+		s.mgrCache = c
 	}
 }
 
@@ -111,62 +134,142 @@ func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
 }
 
 func (n *networkPolicy) Start(ctx context.Context) error {
-	operatorDep, err := n.operatorDeployment(ctx)
+	ownerRef, err := n.getOwnerReference(ctx)
 	if err != nil {
 		return err
 	}
 
-	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(n.apiServerPort)
-
-	var apiSeverIPs []networkingv1.NetworkPolicyPeer
-	// Add IPBlock rules for API server IPs
-	for _, ip := range n.apiServerIPs {
-		cidr := ip + "/32"
-		apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
-			IPBlock: &networkingv1.IPBlock{
-				CIDR: cidr,
-			},
-		})
+	endpoints, _, err := n.tracker.WaitForEndpoints(ctx)
+	if err != nil {
+		return err
 	}
+	n.apiServerEndpoints = endpoints
+
+	if err := n.createOrUpdateNetworkPolicy(ctx, ownerRef, endpoints); err != nil {
+		return err
+	}
+
+	n.logger.Info("Starting EndpointSlice watcher for API server IP changes")
+	return n.watchEndpointSlices(ctx, ownerRef)
+}
+
+// watchEndpointSlices registers a handler on the manager cache's EndpointSlice informer.
+// When the API server EndpointSlices change, it re-reads endpoints from the tracker
+// and updates the NetworkPolicy if they differ.
+func (n *networkPolicy) watchEndpointSlices(ctx context.Context, ownerRef []metav1.OwnerReference) error {
+	informer, err := n.mgrCache.GetInformer(ctx, &discoveryv1.EndpointSlice{})
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return err
+	}
+
+	isAPIServer := func(obj any) bool {
+		slice, ok := obj.(*discoveryv1.EndpointSlice)
+		return ok && apiserverendpoints.IsAPIServerEndpointSlice(slice)
+	}
+	handler := toolscache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
+		UpdateFunc: func(_, obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
+		DeleteFunc: func(obj any) {
+			if isAPIServer(obj) {
+				n.handleEndpointSliceEvent(ctx, ownerRef)
+			}
+		},
+	}
+
+	if _, err := informer.AddEventHandler(handler); err != nil {
+		return err
+	}
+
+	<-ctx.Done()
+	return nil
+}
+
+// handleEndpointSliceEvent re-reads the live API server endpoints from the tracker
+// and updates the NetworkPolicy if they changed.
+func (n *networkPolicy) handleEndpointSliceEvent(ctx context.Context, ownerRef []metav1.OwnerReference) {
+	newEndpoints, _, err := n.tracker.Endpoints(ctx)
+	if err != nil {
+		n.logger.Error(err, "Failed to get API server endpoints")
+		return
+	}
+
+	if slices.Equal(n.apiServerEndpoints, newEndpoints) {
+		return
+	}
+
+	n.logger.Info("API server endpoints changed, updating NetworkPolicy")
+
+	oldEndpoints := n.apiServerEndpoints
+	n.apiServerEndpoints = newEndpoints
+
+	if err := n.createOrUpdateNetworkPolicy(ctx, ownerRef, newEndpoints); err != nil {
+		n.logger.Error(err, "Failed to update NetworkPolicy after endpoint change")
+		n.apiServerEndpoints = oldEndpoints
+	}
+}
+
+// getOwnerReference resolves the operator deployment, caches its pod selector,
+// and returns the owner reference for the NetworkPolicy.
+func (n *networkPolicy) getOwnerReference(ctx context.Context) ([]metav1.OwnerReference, error) {
+	operatorDep, err := n.operatorDeployment(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n.podSelector = *operatorDep.Spec.Selector
 
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "opentelemetry-operator",
+			Name:      networkPolicyName,
 			Namespace: n.operatorNamespace,
 		},
+	}
+	if err := controllerutil.SetControllerReference(operatorDep, np, n.scheme); err != nil {
+		return nil, err
+	}
+	return np.OwnerReferences, nil
+}
+
+// buildNetworkPolicy constructs the desired NetworkPolicy object from the current state.
+func (n *networkPolicy) buildNetworkPolicy(ownerRef []metav1.OwnerReference, endpoints []apiserverendpoints.Endpoint) *networkingv1.NetworkPolicy {
+	tcp := corev1.ProtocolTCP
+
+	np := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            networkPolicyName,
+			Namespace:       n.operatorNamespace,
+			OwnerReferences: ownerRef,
+		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: *operatorDep.Spec.Selector,
+			PodSelector: n.podSelector,
 			Ingress:     []networkingv1.NetworkPolicyIngressRule{{}},
-			Egress: []networkingv1.NetworkPolicyEgressRule{
-				{
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcp,
-							Port:     &apiServerPort,
-						},
-					},
-					To: apiSeverIPs,
-				},
-			},
+			Egress:      apiServerEgressRules(endpoints),
 			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
 		},
 	}
 
 	if n.apiServerPodSelector != nil || n.apiServerNamespaceSelector != nil {
-		peer := networkingv1.NetworkPolicyPeer{
-			PodSelector:       n.apiServerPodSelector,
-			NamespaceSelector: n.apiServerNamespaceSelector,
-		}
-		np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
-			Ports: []networkingv1.NetworkPolicyPort{
-				{
-					Protocol: &tcp,
-					Port:     &apiServerPort,
+		if len(endpoints) > 0 {
+			port := intstr.FromInt32(endpoints[0].Port)
+			np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
+				Ports: []networkingv1.NetworkPolicyPort{
+					{Protocol: &tcp, Port: &port},
 				},
-			},
-			To: []networkingv1.NetworkPolicyPeer{peer},
-		})
+				To: []networkingv1.NetworkPolicyPeer{
+					{PodSelector: n.apiServerPodSelector, NamespaceSelector: n.apiServerNamespaceSelector},
+				},
+			})
+		}
 	}
 
 	if n.webhookPort != 0 {
@@ -184,18 +287,54 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		})
 	}
 
-	// set owner reference to the operator deployment
-	err = controllerutil.SetControllerReference(operatorDep, np, n.scheme)
+	return np
+}
+
+// apiServerEgressRules returns egress rules allowing traffic to the API server, one per distinct port.
+// The endpoints are expected to be sorted by port, as returned by the apiserverendpoints Tracker.
+func apiServerEgressRules(endpoints []apiserverendpoints.Endpoint) []networkingv1.NetworkPolicyEgressRule {
+	tcp := corev1.ProtocolTCP
+	var rules []networkingv1.NetworkPolicyEgressRule
+	for i, endpoint := range endpoints {
+		if i == 0 || endpoint.Port != endpoints[i-1].Port { //nolint:gosec // G602: i-1 is only evaluated when i > 0 due to short-circuit.
+			port := intstr.FromInt32(endpoint.Port)
+			rules = append(rules, networkingv1.NetworkPolicyEgressRule{
+				Ports: []networkingv1.NetworkPolicyPort{{Protocol: &tcp, Port: &port}},
+			})
+		}
+		rule := &rules[len(rules)-1]
+		rule.To = append(rule.To, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{CIDR: endpoint.CIDR()},
+		})
+	}
+	return rules
+}
+
+// createOrUpdateNetworkPolicy creates the NetworkPolicy if it doesn't exist, or updates it if it does.
+func (n *networkPolicy) createOrUpdateNetworkPolicy(ctx context.Context, ownerRef []metav1.OwnerReference, endpoints []apiserverendpoints.Endpoint) error {
+	desired := n.buildNetworkPolicy(ownerRef, endpoints)
+
+	_, err := n.clientset.NetworkingV1().NetworkPolicies(n.operatorNamespace).Create(ctx, desired, metav1.CreateOptions{})
+	if err == nil {
+		n.logger.Info("Created NetworkPolicy", "name", networkPolicyName, "namespace", n.operatorNamespace)
+		return nil
+	}
+	if !apierrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	existing, err := n.clientset.NetworkingV1().NetworkPolicies(n.operatorNamespace).Get(ctx, networkPolicyName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	_, err = n.clientset.NetworkingV1().NetworkPolicies(n.operatorNamespace).Create(ctx, np, metav1.CreateOptions{})
-	if err != nil && !apierrors.IsAlreadyExists(err) {
+	existing.Spec = desired.Spec
+	existing.OwnerReferences = desired.OwnerReferences
+	_, err = n.clientset.NetworkingV1().NetworkPolicies(n.operatorNamespace).Update(ctx, existing, metav1.UpdateOptions{})
+	if err != nil {
 		return err
 	}
-
-	<-ctx.Done()
+	n.logger.Info("Updated NetworkPolicy", "name", networkPolicyName, "namespace", n.operatorNamespace)
 	return nil
 }
 

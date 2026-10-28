@@ -88,9 +88,6 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	logger.Info("Feature gates", "feature-gates", featureGates.Lookup(featuregate.FeatureGatesFlag).Value.String())
 
 	result.Config.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(result.Manager.GetCache(), apiserverendpoints.DefaultTTL)
-	if err := discoverKubeAPIServer(context.Background(), result.Clientset, &result.Config); err != nil {
-		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
-	}
 
 	signalCtx := ctrl.SetupSignalHandler()
 	ctx, cancel := context.WithCancel(signalCtx)
@@ -307,62 +304,6 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	operatorsetup.StartManager(ctx, mgr)
 }
 
-func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, cfg *config.Config) error {
-	// Try EndpointSlice discovery first
-	endpointSlices, err := clientset.DiscoveryV1().EndpointSlices("default").List(ctx, metav1.ListOptions{
-		LabelSelector: "kubernetes.io/service-name=kubernetes",
-	})
-
-	if err != nil || len(endpointSlices.Items) == 0 {
-		setupLog.Info("EndpointSlice discovery failed, falling back to environment variables", "error", err)
-		return fallbackToEnvVars(cfg)
-	}
-
-	for _, endpointSlice := range endpointSlices.Items {
-		for _, p := range endpointSlice.Ports {
-			if p.Port != nil && p.Name != nil && *p.Name == "https" {
-				cfg.Internal.KubeAPIServerPort = *p.Port
-				break
-			}
-		}
-		for _, endpoint := range endpointSlice.Endpoints {
-			cfg.Internal.KubeAPIServerIPs = append(cfg.Internal.KubeAPIServerIPs, endpoint.Addresses...)
-		}
-	}
-
-	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		setupLog.Info("EndpointSlice incomplete, falling back to environment variables")
-		return fallbackToEnvVars(cfg)
-	}
-
-	setupLog.Info("Discovered Kubernetes API server from EndpointSlice",
-		"port", cfg.Internal.KubeAPIServerPort,
-		"ips", cfg.Internal.KubeAPIServerIPs)
-	return nil
-}
-
-func fallbackToEnvVars(cfg *config.Config) error {
-	host := os.Getenv("KUBERNETES_SERVICE_HOST")
-	portStr := os.Getenv("KUBERNETES_SERVICE_PORT")
-
-	if host == "" || portStr == "" {
-		return errors.New("KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT not available")
-	}
-
-	port, err := strconv.ParseInt(portStr, 10, 32)
-	if err != nil {
-		return fmt.Errorf("invalid KUBERNETES_SERVICE_PORT: %w", err)
-	}
-
-	cfg.Internal.KubeAPIServerPort = int32(port)
-	cfg.Internal.KubeAPIServerIPs = []string{host}
-
-	setupLog.Info("Discovered Kubernetes API server from environment variables",
-		"port", cfg.Internal.KubeAPIServerPort,
-		"ips", cfg.Internal.KubeAPIServerIPs)
-	return nil
-}
-
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
@@ -376,15 +317,17 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 		return fmt.Errorf("failed to determine the operator pod name from the hostname: %w", err)
 	}
 
-	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return errors.New("Kubernetes API server info not discovered from EndpointSlice") //nolint:staticcheck // ST1005
+	tracker := cfg.Internal.APIServerEndpoints
+	if tracker == nil {
+		return errors.New("the Kubernetes API server endpoints aren't tracked")
 	}
 
 	var policyOpts []operatornetworkpolicy.Option
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithLogger(ctrl.Log.WithName("operator-networkpolicy")))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorPodName(operatorPodName))
-	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerPort(cfg.Internal.KubeAPIServerPort))
-	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerIPs(cfg.Internal.KubeAPIServerIPs))
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithTracker(tracker))
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithCache(mgr.GetCache()))
 
 	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererPodLabelSelector(&metav1.LabelSelector{
