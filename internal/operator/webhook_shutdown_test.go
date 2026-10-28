@@ -33,3 +33,12 @@ func TestDelayWebhookShutdownCanBeCanceled(t *testing.T) {
 	cancel()
 	require.ErrorIs(t, delayed.Err(), context.Canceled)
 }
+
+func TestDelayWebhookShutdownPublic(t *testing.T) {
+	parent, cancel := context.WithCancel(context.Background())
+	delayed, stop := DelayWebhookShutdown(parent)
+	cancel()
+	require.NoError(t, delayed.Err())
+	stop()
+	require.ErrorIs(t, delayed.Err(), context.Canceled)
+}

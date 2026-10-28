@@ -111,3 +111,29 @@ func TestCertManagerRolloutPatchFailure(t *testing.T) {
 	rollout := certManagerRollout{clientset: clientset}
 	require.ErrorContains(t, rollout.rolloutDeployment(context.Background(), pod.Namespace, pod.Name), "patch denied")
 }
+
+func TestCertManagerRolloutLookupFailures(t *testing.T) {
+	for _, test := range []struct {
+		resource string
+		message  string
+	}{
+		{resource: "pods", message: "failed to get operator pod"},
+		{resource: "replicasets", message: "failed to get operator ReplicaSet"},
+		{resource: "deployments", message: "failed to get operator Deployment"},
+	} {
+		t.Run(test.resource, func(t *testing.T) {
+			pod, rs, deployment := certManagerRolloutObjects()
+			clientset := fake.NewClientset(pod, rs, deployment)
+			clientset.PrependReactor("get", test.resource, func(kubeTesting.Action) (bool, runtime.Object, error) {
+				return true, nil, errors.New("API unavailable")
+			})
+			rollout := certManagerRollout{clientset: clientset}
+			err := rollout.rolloutDeployment(context.Background(), pod.Namespace, pod.Name)
+			require.ErrorContains(t, err, test.message)
+			require.ErrorContains(t, err, "API unavailable")
+			for _, action := range clientset.Actions() {
+				require.NotEqual(t, "patch", action.GetVerb())
+			}
+		})
+	}
+}
