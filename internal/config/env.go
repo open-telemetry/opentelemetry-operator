@@ -100,6 +100,16 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("TLS_CIPHER_SUITES"); ok {
 		cfg.TLS.CipherSuites = strings.Split(v, ",")
 	}
+	if v, ok := os.LookupEnv("TLS_CURVE_PREFERENCES"); ok {
+		var curves []int32
+		for s := range strings.SplitSeq(v, ",") {
+			s = strings.TrimSpace(s)
+			if i, err := strconv.ParseInt(s, 10, 32); err == nil {
+				curves = append(curves, int32(i))
+			}
+		}
+		cfg.TLS.CurvePreferences = curves
+	}
 	if v, ok := os.LookupEnv("LABELS_FILTER"); ok {
 		cfg.LabelsFilter = strings.Split(v, ",")
 	}
