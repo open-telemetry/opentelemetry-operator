@@ -1641,11 +1641,6 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.WaitForCRDs != nil {
-		in, out := &in.WaitForCRDs, &out.WaitForCRDs
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	if in.ScrapeInterval != nil {
 		in, out := &in.ScrapeInterval, &out.ScrapeInterval
 		*out = new(metav1.Duration)

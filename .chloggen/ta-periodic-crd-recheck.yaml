@@ -5,7 +5,7 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add periodic re-check for Prometheus CRDs absent at startup
+note: Watch Prometheus CRDs that are installed after the target allocator starts.
 
 # One or more tracking issues related to the change
 issues: [5577]
@@ -14,13 +14,6 @@ issues: [5577]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  The Target Allocator previously checked Prometheus CRD availability (ServiceMonitor, PodMonitor,
-  Probe, ScrapeConfig) once at startup. Missing CRDs caused the TA to silently ignore all CRs of
-  those types forever, requiring a pod restart to recover.
-
-  Two new fields under `prometheusCR` enable opt-in periodic retry:
-
-  - `retryMissingCRDs` (bool, default false): when true, the TA re-checks absent CRDs every
-    5 minutes and starts their informers as soon as the CRDs appear.
-  - `waitForCRDs` ([]string, default []): scopes which absent CRDs are retried. Empty means all
-    absent CRDs. Valid values: servicemonitors, podmonitors, probes, scrapeconfigs.
+  Every 5 minutes, the target allocator checks whether the ServiceMonitor, PodMonitor, Probe, or
+  ScrapeConfig CRDs that were absent at startup have been installed. If any have, the Prometheus CR
+  watcher is recreated so that their resources are picked up without a pod restart.
