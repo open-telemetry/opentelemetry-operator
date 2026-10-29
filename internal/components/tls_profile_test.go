@@ -52,6 +52,46 @@ func TestTLSVersionToCollectorFormat(t *testing.T) {
 	}
 }
 
+func TestTLSVersionToComponentBaseFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		version  uint16
+		expected string
+	}{
+		{
+			name:     "TLS 1.0",
+			version:  tls.VersionTLS10,
+			expected: "VersionTLS10",
+		},
+		{
+			name:     "TLS 1.1",
+			version:  tls.VersionTLS11,
+			expected: "VersionTLS11",
+		},
+		{
+			name:     "TLS 1.2",
+			version:  tls.VersionTLS12,
+			expected: "VersionTLS12",
+		},
+		{
+			name:     "TLS 1.3",
+			version:  tls.VersionTLS13,
+			expected: "VersionTLS13",
+		},
+		{
+			name:     "Default fallback for unmapped version",
+			version:  0x0300, // SSL 3.0 or any non-standard constant
+			expected: "VersionTLS12",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, TLSVersionToComponentBaseFormat(tt.version))
+		})
+	}
+}
+
 func TestStaticTLSProfile(t *testing.T) {
 	tests := []struct {
 		name                string
