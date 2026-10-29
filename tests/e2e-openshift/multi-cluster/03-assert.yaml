@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
   name: otel-sender-collector
   namespace: chainsaw-multi-cluster-send
 status:
@@ -25,7 +24,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
   name: otel-sender-collector
   namespace: chainsaw-multi-cluster-send
 spec:
@@ -57,7 +55,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
     operator.opentelemetry.io/collector-service-type: headless
     operator.opentelemetry.io/collector-headless-service: Exists
   name: otel-sender-collector-headless
@@ -91,7 +88,6 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
   name: otel-sender-collector-monitoring
   namespace: chainsaw-multi-cluster-send
 spec:

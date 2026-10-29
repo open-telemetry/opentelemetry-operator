@@ -8,6 +8,6 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/version: latest
+        app.kubernetes.io/name: simplest-collector
 status:
   readyReplicas: 1
