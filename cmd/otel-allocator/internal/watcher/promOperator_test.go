@@ -1880,3 +1880,63 @@ func TestCRDAvailabilityChecks(t *testing.T) {
 		})
 	}
 }
+
+func TestMissingCRDsAvailable(t *testing.T) {
+	tests := []struct {
+		name          string
+		missingCRDs   []string
+		availableCRDs []string
+		expected      bool
+	}{
+		{
+			name:          "no missing CRDs",
+			missingCRDs:   nil,
+			availableCRDs: []string{"servicemonitors"},
+			expected:      false,
+		},
+		{
+			name:          "missing CRD still absent",
+			missingCRDs:   []string{"podmonitors"},
+			availableCRDs: []string{"servicemonitors"},
+			expected:      false,
+		},
+		{
+			name:          "missing CRD installed",
+			missingCRDs:   []string{"podmonitors", "probes"},
+			availableCRDs: []string{"servicemonitors", "probes"},
+			expected:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeDiscovery := &fakediscovery.FakeDiscovery{
+				Fake: &fake.NewClientset().Fake,
+			}
+			v1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1",
+			}
+			for _, crd := range tt.availableCRDs {
+				v1Resources.APIResources = append(v1Resources.APIResources, metav1.APIResource{Name: crd})
+			}
+			fakeDiscovery.Resources = []*metav1.APIResourceList{v1Resources}
+
+			w := &PrometheusCRWatcher{
+				missingCRDs:     tt.missingCRDs,
+				discoveryClient: fakeDiscovery,
+			}
+			available, err := w.MissingCRDsAvailable()
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, available)
+		})
+	}
+}
+
+func TestGetMissingCRDs(t *testing.T) {
+	informersMap := map[string]*informers.ForResource{
+		monitoringv1.ServiceMonitorName: nil,
+		promv1alpha1.ScrapeConfigName:   nil,
+		"secrets":                       nil,
+	}
+	assert.Equal(t, []string{monitoringv1.PodMonitorName, monitoringv1.ProbeName}, getMissingCRDs(informersMap))
+}

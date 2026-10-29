@@ -75,6 +75,11 @@ func NewPrometheusCRWatcher(
 		return nil, err
 	}
 
+	dcl, err := discovery.NewDiscoveryClientForConfig(cfg.ClusterConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
 	// we want to use endpointslices by default
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
@@ -138,6 +143,8 @@ func NewPrometheusCRWatcher(
 		kubeMonitoringClient:            monitoringclient,
 		k8sClient:                       client,
 		informers:                       monitoringInformers,
+		missingCRDs:                     getMissingCRDs(monitoringInformers),
+		discoveryClient:                 dcl,
 		nsInformer:                      nsMonInf,
 		stopChannel:                     make(chan struct{}),
 		eventInterval:                   minEventInterval,
@@ -159,6 +166,8 @@ type PrometheusCRWatcher struct {
 	kubeMonitoringClient            monitoringclient.Interface
 	k8sClient                       kubernetes.Interface
 	informers                       map[string]*informers.ForResource
+	missingCRDs                     []string
+	discoveryClient                 discovery.DiscoveryInterface
 	nsInformer                      cache.SharedIndexInformer
 	eventInterval                   time.Duration
 	stopChannel                     chan struct{}
@@ -333,6 +342,37 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	return informersMap, nil
+}
+
+// getMissingCRDs returns the names of the Prometheus CRD resources that have no informer.
+func getMissingCRDs(informersMap map[string]*informers.ForResource) []string {
+	var missing []string
+	for _, name := range []string{
+		monitoringv1.ServiceMonitorName,
+		monitoringv1.PodMonitorName,
+		monitoringv1.ProbeName,
+		promv1alpha1.ScrapeConfigName,
+	} {
+		if _, ok := informersMap[name]; !ok {
+			missing = append(missing, name)
+		}
+	}
+	return missing
+}
+
+// MissingCRDsAvailable reports whether any Prometheus CRD that was absent when the watcher was
+// created is now served by the API server. The watcher has to be recreated to watch such CRDs.
+func (w *PrometheusCRWatcher) MissingCRDsAvailable() (bool, error) {
+	for _, name := range w.missingCRDs {
+		available, err := checkCRDAvailability(w.discoveryClient, name)
+		if err != nil {
+			return false, err
+		}
+		if available {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // Watch wrapped informers and wait for an initial sync.
