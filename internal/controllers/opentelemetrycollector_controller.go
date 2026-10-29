@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"slices"
 	"time"
@@ -42,6 +43,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
@@ -154,6 +156,17 @@ func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1
 func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		r.defaultFSGroupOnOpenShift(ctx, &instance)
+	}
+
+	// Merge the operator-provided default collector config, when configured, so every generated resource
+	// reflects the merged config. The collector's own config takes precedence.
+	// MergeDefaults works on copies, so neither the default nor the cached object is mutated.
+	if r.config.Internal.DefaultCollectorConfig != nil {
+		merged, err := adapters.MergeDefaults(r.config.Internal.DefaultCollectorConfig, &instance.Spec.Config)
+		if err != nil {
+			return manifests.Params{}, fmt.Errorf("failed to merge default collector config: %w", err)
+		}
+		instance.Spec.Config = *merged
 	}
 
 	p := manifests.Params{
