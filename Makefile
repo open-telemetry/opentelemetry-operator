@@ -511,6 +511,14 @@ tidy:
 		(cd $$dir && go mod tidy); \
 	done
 
+# Download the dependencies of every Go module in the repository
+.PHONY: mod-download
+mod-download:
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "go mod download: $$dir"; \
+		(cd $$dir && go mod download); \
+	done
+
 # Generate code
 # apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
 # for the API types (the "./..." pattern does not descend into nested modules).
@@ -925,7 +933,7 @@ CMCTL = $(shell pwd)/bin/cmctl
 cmctl:
 	@{ \
 	set -e ;\
-	if (`pwd`/bin/cmctl version | grep ${CERTMANAGER_VERSION}) > /dev/null 2>&1 ; then \
+	if (`pwd`/bin/cmctl version --client | grep ${CERTMANAGER_VERSION}) > /dev/null 2>&1 ; then \
 		exit 0; \
 	fi ;\
 	TMP_DIR=$$(mktemp -d) ;\

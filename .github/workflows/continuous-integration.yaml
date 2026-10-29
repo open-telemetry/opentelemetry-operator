@@ -28,6 +28,28 @@ jobs:
       id: setup-go
       with:
         go-version: "~1.27.4"
+        cache: false
+
+    # This job is the only one that saves the Go caches. Other jobs that use Go,
+    # here and in the e2e workflow, only restore the module cache, so its
+    # contents do not depend on which job happens to finish first.
+    - name: Restore Go module cache
+      id: go-mod
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-mod-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Restore Go build cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/go-build
+        key: go-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
+        restore-keys: |
+          go-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('**/go.sum') }}-
+          go-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-go.outputs.go-version }}-
 
     - name: Cache tools
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -62,6 +84,29 @@ jobs:
         files: ./coverage-integration.out
         flags: integration
 
+    # The module cache is saved when no entry matches the go.sum files, that is
+    # on main after a dependency change and on pull requests that change
+    # dependencies. The build cache is also saved after every push to main.
+    # mod-download adds the modules that the unit tests do not load, such as
+    # those needed only by e2e tests.
+    - name: Download Go modules
+      if: ${{ !cancelled() && steps.go-mod.outputs.cache-hit != 'true' }}
+      run: make mod-download
+
+    - name: Save Go module cache
+      if: ${{ !cancelled() && steps.go-mod.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Save Go build cache
+      if: ${{ !cancelled() && (github.event_name == 'push' || steps.go-mod.outputs.cache-hit != 'true') }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/go-build
+        key: go-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('**/go.sum') }}-${{ github.sha }}
+
   lint:
     name: Code standards (linting)
     runs-on: ubuntu-latest
@@ -76,6 +121,15 @@ jobs:
       id: setup-go
       with:
         go-version: "~1.27.4"
+        cache: false
+
+    - name: Restore Go module cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-mod-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Cache tools
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -115,6 +169,15 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: "~1.27.4"
+        cache: false
+
+    - name: Restore Go module cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-mod-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
@@ -141,6 +204,15 @@ jobs:
       id: setup-go
       with:
         go-version: "~1.27.4"
+        cache: false
+
+    - name: Restore Go module cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-mod-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Cache tools
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
