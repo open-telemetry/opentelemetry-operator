@@ -4,7 +4,7 @@
 #  - Grant the necessary access to the jar. `chmod -R go+r /javaagent.jar`
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
-FROM busybox@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
 
 ARG version
 
