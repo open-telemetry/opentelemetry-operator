@@ -26,6 +26,10 @@ func TestInstrumentationConvertTo(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef: &v1alpha1.InstrumentationReference{
+				Name:      "shared",
+				Namespace: "platform",
+			},
 			Exporter: v1alpha1.Exporter{
 				Endpoint: "http://collector:4317",
 				TLS: &v1alpha1.TLS{
@@ -88,6 +92,10 @@ func TestInstrumentationConvertTo(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.InstrumentationSpec{
+			BaseRef: &v1beta1.InstrumentationReference{
+				Name:      "shared",
+				Namespace: "platform",
+			},
 			EnvConfig: &v1beta1.EnvConfig{
 				Exporter: v1beta1.Exporter{
 					Endpoint: "http://collector:4317",
@@ -352,6 +360,9 @@ func TestInstrumentationRoundTrip(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef: &v1alpha1.InstrumentationReference{
+				Name: "shared",
+			},
 			Exporter: v1alpha1.Exporter{
 				Endpoint: "https://collector:4317",
 				TLS: &v1alpha1.TLS{
