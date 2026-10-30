@@ -243,6 +243,7 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/reference/collector-components.md || (echo "Build failed: the collector component parsers have been changed but docs/reference/collector-components.md isn't up to date. Run 'make component-docs' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code tests docs/auto-instrumentation || (echo "Build failed: Instrumentation example images are out of date. Run 'make update-example-images' and update your PR." && git diff && exit 1)
 
 # Build manager binary
@@ -256,7 +257,7 @@ ci: generate fmt vet test ensure-update-is-noop
 
 # Update manifests
 .PHONY: update
-update: generate manifests set-related-images bundle api-docs update-example-images reset
+update: generate manifests set-related-images bundle api-docs update-example-images component-docs reset
 
 # Build manager binary
 .PHONY: manager
@@ -581,6 +582,12 @@ check-autoinstrumentation-revision:
 .PHONY: bump-autoinstrumentation-revision
 bump-autoinstrumentation-revision:
 	go run ./hack/autoinstrumentation-revision apply
+
+# Write the list of collector components the operator has specific support for,
+# taken from the parsers in internal/components. Enforced by ensure-update-is-noop.
+.PHONY: component-docs
+component-docs:
+	go run ./hack/gen-component-docs
 
 # Pin the auto-instrumentation image on every Instrumentation CR example to the
 # canonical <sdk-version>-<revision> reference. Enforced by ensure-update-is-noop.
