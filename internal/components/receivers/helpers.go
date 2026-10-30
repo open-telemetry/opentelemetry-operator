@@ -110,6 +110,7 @@ var componentParsers = []components.Parser{
 		WithProtocol(corev1.ProtocolUDP).
 		WithTargetPort(8125).
 		MustBuild(),
+	newSyslogParser(),
 	// tcp_log, formerly tcplog
 	// (open-telemetry/opentelemetry-collector-contrib#47369).
 	components.NewSinglePortParserBuilder("tcp_log", components.UnsetPort).

@@ -181,6 +181,73 @@ func TestDownstreamParsers(t *testing.T) {
 	}
 }
 
+func TestSyslogReceiverPorts(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		config    map[string]any
+		port      int32
+		protocol  corev1.Protocol
+		wantEmpty bool
+		wantError bool
+	}{
+		{
+			name: "tcp",
+			config: map[string]any{
+				"tcp": map[string]any{"listen_address": "[::]:5142"},
+			},
+			port:     5142,
+			protocol: corev1.ProtocolTCP,
+		},
+		{
+			name: "udp",
+			config: map[string]any{
+				"udp": map[string]any{"listen_address": "127.0.0.1:1514"},
+			},
+			port:     1514,
+			protocol: corev1.ProtocolUDP,
+		},
+		{
+			name:      "nil config",
+			config:    nil,
+			wantEmpty: true,
+		},
+		{
+			name:      "no transport",
+			config:    map[string]any{},
+			wantEmpty: true,
+		},
+		{
+			name: "missing listen address",
+			config: map[string]any{
+				"tcp": map[string]any{},
+			},
+			wantEmpty: true,
+			wantError: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := receivers.ReceiverFor("syslog")
+			ports, err := parser.Ports(logger, "syslog/test", tt.config)
+			if tt.wantError {
+				assert.ErrorIs(t, err, components.PortNotFoundErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			if tt.wantEmpty {
+				assert.Empty(t, ports)
+				return
+			}
+			if !assert.Len(t, ports, 1) {
+				return
+			}
+
+			assert.EqualValues(t, tt.port, ports[0].Port)
+			assert.Equal(t, tt.protocol, ports[0].Protocol)
+			assert.Equal(t, naming.PortName("syslog/test", tt.port), ports[0].Name)
+		})
+	}
+}
+
 // The webhook_event receiver has no default port, so the operator must not invent one. Leaving out endpoint
 // has to be an error, not a port that can clash with another receiver such as splunk_hec (8088).
 func TestWebhookEventHasNoDefaultPort(t *testing.T) {
