@@ -2,6 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "labels": ["dependencies"],
   "enabledManagers": ["regex", "npm", "pip_requirements", "gomod", "github-actions", "dockerfile"],
+  "gitIgnoredAuthors": [
+    "197425009+otelbot@users.noreply.github.com"
+  ],
   "customManagers": [
     {
       "customType": "regex",
