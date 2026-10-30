@@ -8,6 +8,10 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 0.82.0-2
+
+- Rebuild Node.js auto-instrumentation image (base image or dependency update). (#5770)
+
 ## 0.82.0-1
 
 - Update Node.js auto-instrumentation from 0.81.2 to 0.82.0. (#5798)
