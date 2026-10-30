@@ -3,6 +3,11 @@
 
 package certmanager
 
+import "errors"
+
+// ErrMissingPermissions indicates that the operator lacks cert-manager permissions.
+var ErrMissingPermissions = errors.New("missing permissions")
+
 // Availability represents that the Cert Manager CRDs are installed and the operator's service account has permissions to manage cert-manager resources.
 type Availability int
 

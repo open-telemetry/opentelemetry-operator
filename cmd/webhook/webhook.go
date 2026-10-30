@@ -83,8 +83,17 @@ func runWebhookServer(cfg config.Config, configFile string, opts zap.Options, sc
 	}
 
 	signalCtx := ctrl.SetupSignalHandler()
+	signalCtx, stopDrain := operatorsetup.DelayWebhookShutdown(signalCtx)
+	defer stopDrain()
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
+	if featuregate.EnableCertManagerAvailabilityWatcher.IsEnabled() {
+		done := operatorsetup.StartCertManagerAvailabilityWatcher(ctx, result.Autodetector, result.Config.CertManagerAvailability, result.Clientset)
+		defer func() {
+			cancel()
+			<-done
+		}()
+	}
 
 	bv := operatorsetup.NewStandaloneBuildValidator(mgr, result.Config, result.Reviewer)
 	if err := operatorsetup.SetupWebhooks(ctx, mgr, result.Config, result.Reviewer, result.Autodetector, bv); err != nil {

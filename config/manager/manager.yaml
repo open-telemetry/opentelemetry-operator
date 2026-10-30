@@ -74,4 +74,4 @@ spec:
           - name: RELATED_IMAGE_TARGET_ALLOCATOR
             value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0
       serviceAccountName: controller-manager
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 30

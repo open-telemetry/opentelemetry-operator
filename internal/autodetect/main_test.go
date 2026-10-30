@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -348,6 +349,28 @@ func TestDetectClusterRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) 
 	}
 }
 
+func TestCertManagerAvailabilityDiscoveryCancellation(t *testing.T) {
+	started := make(chan struct{}, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		started <- struct{}{}
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	detector, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, checkErr := detector.CertManagerAvailability(ctx)
+		done <- checkErr
+	}()
+	<-started
+	cancel()
+	require.ErrorIs(t, <-done, context.Canceled)
+}
+
 func TestCertManagerAvailability(t *testing.T) {
 	// test data
 	for _, tt := range []struct {
@@ -431,12 +454,57 @@ func TestCertManagerAvailability(t *testing.T) {
 			// verify
 			assert.Equal(t, tt.expectedAvailability, cma)
 			if tt.shouldError {
-				require.Error(t, err)
+				require.ErrorIs(t, err, certmanager.ErrMissingPermissions)
 			} else {
 				assert.NoError(t, err)
 			}
 		})
 	}
+}
+
+func TestCertManagerAvailabilityReviewEvaluationError(t *testing.T) {
+	t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, "default")
+	t.Setenv(autodetectutils.SA_ENV_VAR, "operator")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "cert-manager.io"}}})
+	}))
+	defer server.Close()
+	reviewer := rbac.NewReviewer(reactorFactory(v1.SubjectAccessReviewStatus{EvaluationError: "authorizer unavailable"})())
+	detector, err := autodetect.New(&rest.Config{Host: server.URL}, reviewer)
+	require.NoError(t, err)
+	_, err = detector.CertManagerAvailability(context.Background())
+	require.ErrorContains(t, err, "authorizer unavailable")
+	require.NotErrorIs(t, err, certmanager.ErrMissingPermissions)
+}
+
+func TestCertManagerAvailabilityAPIAppears(t *testing.T) {
+	t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, "default")
+	t.Setenv(autodetectutils.SA_ENV_VAR, "operator")
+	var installed atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		groups := metav1.APIGroupList{}
+		if installed.Load() {
+			groups.Groups = []metav1.APIGroup{{Name: "cert-manager.io"}}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(groups)
+	}))
+	defer server.Close()
+	reviewer := rbac.NewReviewer(reactorFactory(v1.SubjectAccessReviewStatus{Allowed: true})())
+	detector, err := autodetect.New(&rest.Config{Host: server.URL}, reviewer)
+	require.NoError(t, err)
+	availability, err := detector.CertManagerAvailability(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, certmanager.NotAvailable, availability)
+	installed.Store(true)
+	availability, err = detector.CertManagerAvailability(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, certmanager.Available, availability)
+	installed.Store(false)
+	availability, err = detector.CertManagerAvailability(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, certmanager.NotAvailable, availability)
 }
 
 func TestConfigChangesOnAutoDetect(t *testing.T) {

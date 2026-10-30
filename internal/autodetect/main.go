@@ -152,7 +152,7 @@ func (a *autoDetect) NamespacedRBACPermissions(ctx context.Context) (autoRBAC.Av
 }
 
 func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
-	apiList, err := a.dcl.ServerGroups()
+	apiList, err := discovery.ToServerGroupsInterfaceWithContext(a.dcl).ServerGroupsWithContext(ctx)
 	if err != nil {
 		return certmanager.NotAvailable, err
 	}
@@ -175,7 +175,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 		return certmanager.NotAvailable, err
 	}
 	if w != nil {
-		return certmanager.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+		return certmanager.NotAvailable, fmt.Errorf("%w: %s", certmanager.ErrMissingPermissions, w)
 	}
 
 	return certmanager.Available, nil
