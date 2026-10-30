@@ -710,6 +710,32 @@ func TestProcessTargetGroupsNoRelabelConfig(t *testing.T) {
 	}
 }
 
+// TestProcessTargetGroupsNamespace verifies that the item namespace comes from the
+// __meta_kubernetes_namespace label, with target labels overriding group labels.
+func TestProcessTargetGroupsNamespace(t *testing.T) {
+	d := newTestDiscoverer(t, config.FilterStrategyRelabelConfig, nil)
+	groups := []*targetgroup.Group{
+		{
+			Labels: model.LabelSet{"__meta_kubernetes_namespace": "group-ns"},
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.1:9090"},
+				{model.AddressLabel: "10.0.0.2:9090", "__meta_kubernetes_namespace": "target-ns"},
+			},
+		},
+		{
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "10.0.0.3:9090"},
+			},
+		},
+	}
+
+	got := d.processTargetGroups("test", groups, nil, nil)
+	require.Len(t, got, 3)
+	assert.Equal(t, "group-ns", got[0].Namespace)
+	assert.Equal(t, "target-ns", got[1].Namespace)
+	assert.Empty(t, got[2].Namespace)
+}
+
 // TestProcessTargetGroupsDeduplicatesByHash verifies that targets which become identical after
 // relabeling share the same hash, so the allocator deduplicates them.
 func TestProcessTargetGroupsDeduplicatesByHash(t *testing.T) {

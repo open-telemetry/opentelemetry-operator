@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/featuregate"
@@ -47,10 +48,6 @@ func newAllocator(log logr.Logger, strategy Strategy) (Allocator, error) {
 	if err != nil {
 		return nil, err
 	}
-	targetsRemaining, err := meter.Int64Gauge("opentelemetry_allocator_targets_remaining", metric.WithDescription("Number of targets kept after filtering."))
-	if err != nil {
-		return nil, err
-	}
 	targetsUnassigned, err := meter.Int64Gauge("opentelemetry_allocator_targets_unassigned", metric.WithDescription("Number of targets that could not be assigned due to missing node label."))
 	if err != nil {
 		return nil, err
@@ -65,8 +62,11 @@ func newAllocator(log logr.Logger, strategy Strategy) (Allocator, error) {
 		targetsPerCollector:           targetsPerCollector,
 		collectorsAllocatable:         collectorsAllocatable,
 		timeToAssign:                  timeToAssign,
-		targetsRemaining:              targetsRemaining,
 		targetsUnassigned:             targetsUnassigned,
+	}
+	_, err = meter.Int64ObservableGauge("opentelemetry_allocator_targets_remaining", metric.WithDescription("Number of targets kept after filtering."), metric.WithInt64Callback(chAllocator.observeTargetsRemaining))
+	if err != nil {
+		return nil, err
 	}
 
 	return chAllocator, nil
@@ -94,11 +94,12 @@ type allocator struct {
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
-	targetsRemaining      metric.Int64Gauge
 	targetsUnassigned     metric.Int64Gauge
 
-	// targetsRemainingPerJob holds the counts last recorded for targetsRemaining when the
-	// targetallocator.targetsremainingattributes feature gate is enabled.
+	// targetsRemainingMu protects targetsRemaining and targetsRemainingPerJob, which hold the values
+	// observed for opentelemetry_allocator_targets_remaining.
+	targetsRemainingMu     sync.Mutex
+	targetsRemaining       int64
 	targetsRemainingPerJob map[jobNamespace]int64
 }
 
@@ -109,11 +110,12 @@ type jobNamespace struct {
 }
 
 func (k jobNamespace) attributes() metric.MeasurementOption {
+	attrs := []attribute.KeyValue{attribute.String("job.name", k.job)}
 	// Targets without a __meta_kubernetes_namespace label, such as static targets, have no namespace.
-	if k.namespace == "" {
-		return metric.WithAttributes(attribute.String("job.name", k.job))
+	if k.namespace != "" {
+		attrs = append(attrs, semconv.K8SNamespaceName(k.namespace))
 	}
-	return metric.WithAttributes(attribute.String("job.name", k.job), attribute.String("k8s.namespace.name", k.namespace))
+	return metric.WithAttributes(attrs...)
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -125,13 +127,12 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("method", "SetTargets"), attribute.String("strategy", a.strategy.GetName())))
 	}()
 
+	a.setTargetsRemaining(targets)
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 
 	a.m.Lock()
 	defer a.m.Unlock()
-
-	a.recordTargetsRemaining(targets)
 
 	// Check for target changes
 	targetsDiff := diff.Maps(a.targetItems, targetMap)
@@ -142,29 +143,37 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 	a.refreshExistingTargetLabels(targetMap)
 }
 
-// recordTargetsRemaining records the number of targets kept after filtering. With the
-// targetallocator.targetsremainingattributes feature gate enabled, it records one value per job and
-// namespace, and records zero for a job and namespace that no longer have targets so that their
-// last value is not reported indefinitely.
-// See open-telemetry/opentelemetry-operator#4637.
-func (a *allocator) recordTargetsRemaining(targets []*target.Item) {
-	if !featuregate.TargetsRemainingAttributes.IsEnabled() {
-		a.targetsRemaining.Record(context.Background(), int64(len(targets)))
-		return
-	}
-	counts := make(map[jobNamespace]int64)
-	for _, item := range targets {
-		counts[jobNamespace{job: item.JobName, namespace: item.Labels.Get("__meta_kubernetes_namespace")}]++
-	}
-	for key := range a.targetsRemainingPerJob {
-		if _, ok := counts[key]; !ok {
-			a.targetsRemaining.Record(context.Background(), 0, key.attributes())
+// setTargetsRemaining saves the number of targets kept after filtering for observeTargetsRemaining.
+func (a *allocator) setTargetsRemaining(targets []*target.Item) {
+	var perJob map[jobNamespace]int64
+	if featuregate.TargetsRemainingAttributes.IsEnabled() {
+		perJob = make(map[jobNamespace]int64)
+		for _, item := range targets {
+			perJob[jobNamespace{job: item.JobName, namespace: item.Namespace}]++
 		}
 	}
-	for key, count := range counts {
-		a.targetsRemaining.Record(context.Background(), count, key.attributes())
+	a.targetsRemainingMu.Lock()
+	defer a.targetsRemainingMu.Unlock()
+	a.targetsRemaining = int64(len(targets))
+	a.targetsRemainingPerJob = perJob
+}
+
+// observeTargetsRemaining reports the number of targets kept after filtering. With the
+// targetallocator.targetsremainingattributes feature gate enabled, it reports one value per job and
+// namespace. The SDK exports only the values from the latest callback, so a job and namespace
+// without targets is no longer reported.
+// See open-telemetry/opentelemetry-operator#4637.
+func (a *allocator) observeTargetsRemaining(_ context.Context, o metric.Int64Observer) error {
+	a.targetsRemainingMu.Lock()
+	defer a.targetsRemainingMu.Unlock()
+	if !featuregate.TargetsRemainingAttributes.IsEnabled() {
+		o.Observe(a.targetsRemaining)
+		return nil
 	}
-	a.targetsRemainingPerJob = counts
+	for key, count := range a.targetsRemainingPerJob {
+		o.Observe(count, key.attributes())
+	}
+	return nil
 }
 
 // refreshExistingTargetLabels replaces the stored Item of every target that is present

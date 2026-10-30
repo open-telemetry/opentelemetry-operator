@@ -398,12 +398,14 @@ func TestMultiJobAllocation(t *testing.T) {
 
 func TestTargetsRemainingMetric(t *testing.T) {
 	newTarget := func(job, namespace, address string) *target.Item {
-		ls := labels.New(
-			labels.Label{Name: "__address__", Value: address},
-			labels.Label{Name: "__meta_kubernetes_namespace", Value: namespace},
-		)
-		return target.NewItem(job, address, ls, "", target.HashLabels(ls, job))
+		ls := labels.New(labels.Label{Name: "__address__", Value: address})
+		item := target.NewItem(job, address, ls, "", target.HashLabels(ls, job))
+		item.Namespace = namespace
+		return item
 	}
+	// The global meter provider delegates to the first provider that is set, so allocators created by
+	// earlier tests would also report to the first reader below.
+	otel.SetMeterProvider(sdkmetric.NewMeterProvider())
 	newAllocatorWithReader := func(t *testing.T) (Allocator, *sdkmetric.ManualReader) {
 		reader := sdkmetric.NewManualReader()
 		otel.SetMeterProvider(sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)))
@@ -464,7 +466,7 @@ func TestTargetsRemainingMetric(t *testing.T) {
 			},
 		}, collect(t, reader), metricdatatest.IgnoreTimestamp())
 
-		// Series for a job and namespace without targets drop to zero.
+		// A job and namespace without targets is no longer reported.
 		allocator.SetTargets([]*target.Item{
 			newTarget("job-a", "ns-1", "10.0.0.1:8080"),
 		})
@@ -472,8 +474,6 @@ func TestTargetsRemainingMetric(t *testing.T) {
 		metricdatatest.AssertEqual(t, metricdata.Gauge[int64]{
 			DataPoints: []metricdata.DataPoint[int64]{
 				point(1, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-1")),
-				point(0, attribute.String("job.name", "job-a"), attribute.String("k8s.namespace.name", "ns-2")),
-				point(0, attribute.String("job.name", "job-b")),
 			},
 		}, collect(t, reader), metricdatatest.IgnoreTimestamp())
 	})

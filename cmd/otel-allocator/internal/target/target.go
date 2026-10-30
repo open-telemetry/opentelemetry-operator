@@ -52,6 +52,8 @@ type Item struct {
 	Labels        labels.Labels
 	CollectorName string
 	hash          ItemHash
+	// Namespace is the value of the __meta_kubernetes_namespace label, or empty if the target does not have it.
+	Namespace string
 }
 
 func (t *Item) Hash() ItemHash {
