@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM eclipse-temurin:19-jdk-focal@sha256:6804cd56a346f7e899e872a06823634e55c32ac3eb2e157b06cffe743b0e1e72 AS builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:19.0.2_7-jdk-focal@sha256:6804cd56a346f7e899e872a06823634e55c32ac3eb2e157b06cffe743b0e1e72 AS builder
 
 RUN apt update
 RUN apt install zip unzip -y
