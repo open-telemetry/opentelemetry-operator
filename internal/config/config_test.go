@@ -35,6 +35,7 @@ func TestToStringMap(t *testing.T) {
 		"collector-configmap-entry":               "",
 		"collector-image":                         "myexample:1.0",
 		"create-service-monitor-operator-metrics": "false",
+		"default-collector-config":                "",
 		"enable-apache-httpd-instrumentation":     "false",
 		"enable-cr-metrics":                       "false",
 		"enable-dot-net-auto-instrumentation":     "false",
