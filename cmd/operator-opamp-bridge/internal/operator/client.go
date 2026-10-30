@@ -197,12 +197,37 @@ func (c Client) create(ctx context.Context, name, namespace string, collector *v
 	return c.k8sClient.Create(ctx, collector)
 }
 
-func (c Client) update(ctx context.Context, o, n *v1beta1.OpenTelemetryCollector) error {
-	n.ObjectMeta = o.ObjectMeta
-	n.TypeMeta = o.TypeMeta
+func (c Client) update(ctx context.Context, o, updated *v1beta1.OpenTelemetryCollector) error {
+	// Start from the current instance so the CR we submit is identical to the
+	// one in the cluster except for the fields the remote configuration
+	// manages. Operator-owned fields (mode, image, ingress, targetAllocator,
+	// ...) are preserved by construction, which also keeps mode-specific
+	// webhook validation satisfied (e.g. DaemonSet pools).
+	if updated.Spec.Replicas == nil && isEmptyConfig(updated.Spec.Config) {
+		return errors.NewBadRequest("remote configuration carries no config or replicas to apply")
+	}
 
-	c.log.Info("Updating collector")
-	return c.k8sClient.Update(ctx, n)
+	desired := o.DeepCopy()
+	desired.Spec.Config = updated.Spec.Config
+	if updated.Spec.Replicas != nil {
+		desired.Spec.Replicas = updated.Spec.Replicas
+	}
+
+	// Let controller-runtime compute and apply the merge patch between the
+	// current and desired objects; only the managed fields appear in it.
+	c.log.Info("Updating collector", "name", o.Name, "namespace", o.Namespace)
+	return c.k8sClient.Patch(ctx, desired, client.MergeFrom(o))
+}
+
+// isEmptyConfig reports whether the configuration carries no receivers,
+// exporters, processors or pipelines.
+func isEmptyConfig(config v1beta1.Config) bool {
+	return len(config.Receivers.Object) == 0 &&
+		len(config.Exporters.Object) == 0 &&
+		(config.Processors == nil || len(config.Processors.Object) == 0) &&
+		(config.Connectors == nil || len(config.Connectors.Object) == 0) &&
+		(config.Extensions == nil || len(config.Extensions.Object) == 0) &&
+		len(config.Service.Pipelines) == 0
 }
 
 func (c Client) Delete(key string) error {
