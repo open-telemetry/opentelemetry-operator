@@ -243,7 +243,7 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
-	@git diff -s --exit-code docs/reference/collector-components.md || (echo "Build failed: the collector component parsers have been changed but docs/reference/collector-components.md isn't up to date. Run 'make component-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/collector/supported-components.md || (echo "Build failed: the collector component parsers have been changed but docs/collector/supported-components.md isn't up to date. Run 'make component-docs' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code tests docs/auto-instrumentation || (echo "Build failed: Instrumentation example images are out of date. Run 'make update-example-images' and update your PR." && git diff && exit 1)
 
 # Build manager binary

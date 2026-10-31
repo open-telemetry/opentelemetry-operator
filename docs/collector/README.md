@@ -7,5 +7,6 @@ Documentation for the `OpenTelemetryCollector` Custom Resource.
 - [Using imagePullSecrets](image-pull-secrets.md)
 - [ClusterObservability controller](cluster-observability.md)
 - [Security and RBAC](security.md)
+- [Supported components](supported-components.md)
 
 See also the [API reference](../api/opentelemetrycollectors.md).

@@ -18,7 +18,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
-const outputPath = "docs/reference/collector-components.md"
+const outputPath = "docs/collector/supported-components.md"
 
 const header = `# Collector components
 
