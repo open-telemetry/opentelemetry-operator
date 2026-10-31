@@ -36,6 +36,7 @@ var (
 	endpointSliceTargetKindLabel = "__meta_kubernetes_endpointslice_address_target_kind"
 	endpointSliceTargetNameLabel = "__meta_kubernetes_endpointslice_address_target_name"
 	endpointSliceName            = "__meta_kubernetes_endpointslice_name"
+	namespaceLabel               = "__meta_kubernetes_namespace"
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
@@ -52,8 +53,6 @@ type Item struct {
 	Labels        labels.Labels
 	CollectorName string
 	hash          ItemHash
-	// Namespace is the value of the __meta_kubernetes_namespace label, or empty if the target does not have it.
-	Namespace string
 }
 
 func (t *Item) Hash() ItemHash {
@@ -110,6 +109,12 @@ func (t *Item) GetNodeName() string {
 // If the target is not part of an EndpointSlice, it returns an empty string.
 func (t *Item) GetEndpointSliceName() string {
 	return t.Labels.Get(endpointSliceName)
+}
+
+// GetNamespace returns the namespace of the target.
+// If the target does not have the __meta_kubernetes_namespace label, it returns an empty string.
+func (t *Item) GetNamespace() string {
+	return t.Labels.Get(namespaceLabel)
 }
 
 // NewItem Creates a new target item.

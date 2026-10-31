@@ -398,10 +398,8 @@ func TestMultiJobAllocation(t *testing.T) {
 
 func TestTargetsRemainingMetric(t *testing.T) {
 	newTarget := func(job, namespace, address string) *target.Item {
-		ls := labels.New(labels.Label{Name: "__address__", Value: address})
-		item := target.NewItem(job, address, ls, "", target.HashLabels(ls, job))
-		item.Namespace = namespace
-		return item
+		ls := labels.FromStrings("__address__", address, "__meta_kubernetes_namespace", namespace)
+		return target.NewItem(job, address, ls, "", target.HashLabels(ls, job))
 	}
 	// The global meter provider delegates to the first provider that is set, so allocators created by
 	// earlier tests would also report to the first reader below.

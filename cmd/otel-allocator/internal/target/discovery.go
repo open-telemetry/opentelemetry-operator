@@ -327,15 +327,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			}
 			hash := HashFromBuilder(relabelBuilder, jobName)
 
-			item := NewItem(jobName, string(t[model.AddressLabel]), itemLabels, "", hash)
-			// Read from the label sets rather than itemLabels, where Get scans all meta labels.
-			// Target labels override group labels, as in mergeLabels.
-			if namespace, ok := t[namespaceLabel]; ok {
-				item.Namespace = string(namespace)
-			} else {
-				item.Namespace = string(tg.Labels[namespaceLabel])
-			}
-			targets = append(targets, item)
+			targets = append(targets, NewItem(jobName, string(t[model.AddressLabel]), itemLabels, "", hash))
 		}
 	}
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
@@ -343,8 +335,6 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 }
 
 const disableShardingLabelName = "__tmp_disable_sharding"
-
-const namespaceLabel = "__meta_kubernetes_namespace"
 
 // scrapeConfigSeeds returns the labels Prometheus's scrape layer sets on every
 // target before relabeling (see PopulateDiscoveredLabels): the scrape config's

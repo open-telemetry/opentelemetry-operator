@@ -149,7 +149,7 @@ func (a *allocator) setTargetsRemaining(targets []*target.Item) {
 	if featuregate.TargetsRemainingAttributes.IsEnabled() {
 		perJob = make(map[jobNamespace]int64)
 		for _, item := range targets {
-			perJob[jobNamespace{job: item.JobName, namespace: item.Namespace}]++
+			perJob[jobNamespace{job: item.JobName, namespace: item.GetNamespace()}]++
 		}
 	}
 	a.targetsRemainingMu.Lock()
