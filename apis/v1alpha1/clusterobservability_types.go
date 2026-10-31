@@ -246,6 +246,7 @@ type ComponentStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:metadata:labels="app.kubernetes.io/name=opentelemetry-operator"
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.exporter.endpoint",description="OTLP exporter endpoint"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Current phase"
