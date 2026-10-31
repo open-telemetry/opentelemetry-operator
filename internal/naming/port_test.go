@@ -41,6 +41,24 @@ func Test(t *testing.T) {
 			expected:     "port-4318",
 		},
 		{
+			testName:     "uppercase",
+			receiverName: "otlp/A-grpc",
+			port:         4317,
+			expected:     "port-4317",
+		},
+		{
+			testName:     "with dot",
+			receiverName: "statsd/v1.2",
+			port:         8125,
+			expected:     "port-8125",
+		},
+		{
+			testName:     "consecutive hyphens",
+			receiverName: "otlp/-grpc",
+			port:         4317,
+			expected:     "port-4317",
+		},
+		{
 			testName:     "ok",
 			receiverName: "otlphttp",
 			port:         4318,
