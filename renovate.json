@@ -4,6 +4,7 @@
     "config:best-practices",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  "ignorePaths": [],
   "labels": ["dependencies"],
   "enabledManagers": ["regex", "npm", "pip_requirements", "gomod", "github-actions", "dockerfile"],
   "customManagers": [
