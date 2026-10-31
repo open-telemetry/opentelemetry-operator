@@ -84,7 +84,7 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 // getAPIServerEndpoints returns the Kubernetes API server endpoints if the TargetAllocator's NetworkPolicy needs
 // them, and the time after which they need to be checked again.
 func (r *TargetAllocatorReconciler) getAPIServerEndpoints(ctx context.Context, instance *v1alpha1.TargetAllocator) ([]apiserverendpoints.Endpoint, time.Duration, error) {
-	if !networkPolicyEnabled(instance) {
+	if !networkPolicyEnabled(instance) || len(instance.Spec.NetworkPolicy.APIServerCIDRs) > 0 {
 		return nil, 0, nil
 	}
 	tracker := r.config.Internal.APIServerEndpoints

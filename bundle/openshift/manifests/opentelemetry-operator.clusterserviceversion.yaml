@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-10-26T16:19:46Z"
+    createdAt: "2026-10-31T02:35:05Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -257,6 +257,15 @@ spec:
         name: ""
         version: v1
       specDescriptors:
+      - description: APIServerCIDRs are the CIDRs through which the pods reach the
+          Kubernetes API server. When set, the NetworkPolicy allows egress to these
+          CIDRs on all ports instead of to the API server addresses detected from
+          the `default/kubernetes` EndpointSlices. Use it when the pods reach the
+          API server through other addresses, for example in managed or NAT setups.
+          Only the TargetAllocator NetworkPolicy restricts egress. For an OpenTelemetryCollector,
+          the value is passed to the TargetAllocator it creates.
+        displayName: API Server CIDRs
+        path: networkPolicy.apiServerCIDRs
       - description: Enable enables the NetworkPolicy. The default value is taken
           from the operator feature-gate `--feature-gates=+operand.networkpolicy`.
         displayName: Enable NetworkPolicy
