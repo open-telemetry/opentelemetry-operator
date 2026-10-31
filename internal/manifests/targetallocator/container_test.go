@@ -4,10 +4,12 @@
 package targetallocator
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -19,6 +21,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -488,6 +491,50 @@ func TestArgs(t *testing.T) {
 	// verify
 	expected := []string{"--akey=avalue", "--key=value"}
 	assert.Equal(t, expected, c.Args)
+}
+
+func TestArgsWithTargetsRemainingAttributesFeatureGate(t *testing.T) {
+	require.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableTargetAllocatorTargetsRemainingAttributes.ID(), true))
+	t.Cleanup(func() {
+		assert.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableTargetAllocatorTargetsRemainingAttributes.ID(), false))
+	})
+
+	for _, tt := range []struct {
+		name     string
+		args     map[string]string
+		expected []string
+	}{
+		{
+			name:     "no args",
+			expected: []string{"--feature-gates=targetallocator.targetsremainingattributes"},
+		},
+		{
+			name: "user feature gates come last",
+			args: map[string]string{
+				"feature-gates": "-targetallocator.targetsremainingattributes",
+				"key":           "value",
+			},
+			expected: []string{
+				"--feature-gates=targetallocator.targetsremainingattributes,-targetallocator.targetsremainingattributes",
+				"--key=value",
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			targetAllocator := v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args: maps.Clone(tt.args),
+					},
+				},
+			}
+
+			c := Container(config.New(), logger, targetAllocator)
+
+			assert.Equal(t, tt.expected, c.Args)
+			assert.Equal(t, tt.args, targetAllocator.Spec.Args)
+		})
+	}
 }
 
 func TestContainerWithCertManagerAvailable(t *testing.T) {

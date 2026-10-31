@@ -5,6 +5,7 @@ package targetallocator
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/go-logr/logr"
@@ -92,9 +93,17 @@ func Container(cfg config.Config, _ logr.Logger, ta v1alpha1.TargetAllocator) co
 
 	var args []string
 	// ensure that the args are ordered when moved to container.Args, so the output doesn't depend on map iteration
-	argsMap := ta.Spec.Args
+	argsMap := maps.Clone(ta.Spec.Args)
 	if argsMap == nil {
 		argsMap = map[string]string{}
+	}
+	if featuregate.EnableTargetAllocatorTargetsRemainingAttributes.IsEnabled() {
+		// Gates later in the list take precedence, so the user's own feature-gates arg can still disable this one.
+		gates := "targetallocator.targetsremainingattributes"
+		if userGates := argsMap[featuregate.FeatureGatesFlag]; userGates != "" {
+			gates += "," + userGates
+		}
+		argsMap[featuregate.FeatureGatesFlag] = gates
 	}
 	for k, v := range argsMap {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
