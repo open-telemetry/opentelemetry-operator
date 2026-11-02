@@ -339,6 +339,7 @@ var scalarCases = []struct {
 	{"anchor", "&a", "&a"},
 	{"alias", "*a", "*a"},
 	{"tag", "!a", "!a"},
+	{"merge key", "<<", "<<"},
 	{"literal indicator", "|", "|"},
 	{"folded indicator", ">", ">"},
 	{"single quote", "'", "'"},
@@ -404,13 +405,12 @@ func scalarConfig(value any) *v1beta1.Config {
 	return cfg
 }
 
-// renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for "<<", which its
-// decoder treats as a merge key even when quoted (https://github.com/go-yaml/yaml/issues/245), nor for a
-// multi-line key whose first line starts with a tab, which it writes as a literal block its own parser rejects
+// renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for a multi-line key
+// whose first line starts with a tab, which it writes as a literal block its own parser rejects
 // (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; RenderYAML reports an error
 // for them instead of producing a document the collector would misread.
 func renderableAsKey(s string) bool {
-	return s != "<<" && (!strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n"))
+	return !strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n")
 }
 
 // assertCollectorReads checks that the collector reads want at every position scalarConfig put the value.
@@ -1968,24 +1968,6 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-}
-
-func TestRenderYAMLRejectsMergeKey(t *testing.T) {
-	cfg := &v1beta1.Config{
-		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
-		Processors: &v1beta1.AnyConfig{Object: map[string]any{
-			"<<": "merge",
-		}},
-		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
-		Service: v1beta1.Service{
-			Pipelines: map[string]*v1beta1.Pipeline{
-				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"<<"}, Exporters: []string{"debug"}},
-			},
-		},
-	}
-	_, err := RenderYAML(cfg)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "decode rendered YAML")
 }
 
 func TestRenderYAMLRejectsTabLedMultilineKey(t *testing.T) {

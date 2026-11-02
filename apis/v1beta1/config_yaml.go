@@ -18,8 +18,9 @@ import (
 // ("0e12", "true", ".inf", "2001-12-14", ...), which is what keeps a value's type intact from the CR through the
 // ConfigMap to the collector.
 //
-// Known limitation: a map key "<<" does not render faithfully, because the decoder treats it as a YAML 1.1
-// merge key even when it is quoted (https://github.com/go-yaml/yaml/issues/245).
+// Known limitation: a multi-line map key whose first line starts with a tab does not render faithfully,
+// because the encoder writes it as a literal block its own parser rejects
+// (https://github.com/yaml/go-yaml/issues/383). The same bug is worked around for values, see renderableValue.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
