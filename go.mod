@@ -33,7 +33,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.2
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.2
 	github.com/prometheus/client_golang v1.25.0
-	github.com/prometheus/common v0.72.1
+	github.com/prometheus/common v0.73.1
 	github.com/prometheus/prometheus v0.315.1
 	github.com/shirou/gopsutil/v4 v4.26.10
 	github.com/spf13/pflag v1.0.10
@@ -277,6 +277,7 @@ require (
 	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.124.1 // indirect
 	github.com/outscale/osc-sdk-go/v2 v2.35.0 // indirect
+	github.com/pandatix/go-abnf v0.5.3 // indirect
 	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
 	github.com/prometheus/client_golang/exp v0.0.0-20260907100614-57bb367da472 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
