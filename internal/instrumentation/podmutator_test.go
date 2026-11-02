@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -6955,7 +6954,7 @@ func TestMutatePodRecordsEventWhenNoInstrumentationIsAvailable(t *testing.T) {
 		recorder := events.NewFakeRecorder(10)
 		mutator := NewMutator(logr.Discard(), k8sClient, recorder, config.New())
 		ctx := admission.NewContextWithRequest(t.Context(), admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{DryRun: ptr.To(true)},
+			AdmissionRequest: admissionv1.AdmissionRequest{DryRun: new(true)},
 		})
 
 		_, err := mutator.Mutate(ctx, ns, pod)
