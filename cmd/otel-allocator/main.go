@@ -35,10 +35,6 @@ import (
 
 var setupLog = ctrl.Log.WithName("setup")
 
-// crdRecheckInterval is how often the target allocator checks whether Prometheus CRDs absent at
-// startup have been installed. See open-telemetry/opentelemetry-operator#5577.
-const crdRecheckInterval = 5 * time.Minute
-
 // promCRWatcher is the subset of the Prometheus CR watcher used by runPromWatcher.
 type promCRWatcher interface {
 	Watch(upstreamEvents chan allocatorWatcher.Event, upstreamErrors chan error) error
@@ -46,61 +42,66 @@ type promCRWatcher interface {
 	MissingCRDsAvailable() (bool, error)
 }
 
-// runPromWatcher runs the Prometheus CR watcher until stop is closed or the watcher returns.
-// On every recheck tick, if a Prometheus CRD absent when the watcher was created has been installed,
-// the watcher is replaced by one created with newWatcher, so that the new CRD is watched.
+// runPromWatcher creates a Prometheus CR watcher with newWatcher and runs it until stop is closed
+// or the watcher returns. On every recheck tick, if a Prometheus CRD absent when the watcher was
+// created has been installed, the watcher is replaced by a new one so that the CRD is watched.
 func runPromWatcher(
-	watcher promCRWatcher,
 	newWatcher func() (promCRWatcher, error),
 	recheck <-chan time.Time,
 	eventChan chan allocatorWatcher.Event,
 	errChan chan error,
 	stop <-chan struct{},
 ) error {
+	watcher, err := newWatcher()
+	if err != nil {
+		return err
+	}
+	watchErr := startPromWatcher(watcher, eventChan, errChan)
 	for {
-		watchErr := make(chan error, 1)
-		go func(w promCRWatcher) {
-			watchErr <- w.Watch(eventChan, errChan)
-		}(watcher)
-
-	wait:
-		for {
-			select {
-			case err := <-watchErr:
-				return err
-			case <-stop:
-				if err := watcher.Close(); err != nil {
-					setupLog.Error(err, "prometheus watcher failed to close")
-				}
-				if err := <-watchErr; err != nil {
-					setupLog.Error(err, "prometheus watcher exited with an error")
-				}
-				return nil
-			case <-recheck:
-				available, err := watcher.MissingCRDsAvailable()
-				if err != nil {
-					setupLog.Error(err, "Unable to check availability of Prometheus CRDs")
-					continue
-				}
-				if !available {
-					continue
-				}
-				setupLog.Info("Prometheus CRDs absent at startup are now available, recreating the prometheus watcher")
-				replacement, err := newWatcher()
-				if err != nil {
-					setupLog.Error(err, "Unable to recreate the prometheus watcher")
-					continue
-				}
-				if err := watcher.Close(); err != nil {
-					setupLog.Error(err, "prometheus watcher failed to close")
-				}
-				if err := <-watchErr; err != nil {
-					setupLog.Error(err, "prometheus watcher exited with an error")
-				}
-				watcher = replacement
-				break wait
+		select {
+		case err := <-watchErr:
+			return err
+		case <-stop:
+			stopPromWatcher(watcher, watchErr)
+			return nil
+		case <-recheck:
+			available, err := watcher.MissingCRDsAvailable()
+			if err != nil {
+				setupLog.Error(err, "Unable to check availability of Prometheus CRDs")
+				continue
 			}
+			if !available {
+				continue
+			}
+			setupLog.Info("Prometheus CRDs absent at startup are now available, recreating the prometheus watcher")
+			replacement, err := newWatcher()
+			if err != nil {
+				setupLog.Error(err, "Unable to recreate the prometheus watcher")
+				continue
+			}
+			stopPromWatcher(watcher, watchErr)
+			watcher = replacement
+			watchErr = startPromWatcher(watcher, eventChan, errChan)
 		}
+	}
+}
+
+// startPromWatcher runs Watch in a goroutine and returns a channel that receives its result.
+func startPromWatcher(watcher promCRWatcher, eventChan chan allocatorWatcher.Event, errChan chan error) <-chan error {
+	watchErr := make(chan error, 1)
+	go func() {
+		watchErr <- watcher.Watch(eventChan, errChan)
+	}()
+	return watchErr
+}
+
+// stopPromWatcher closes the watcher and waits for its Watch call to return.
+func stopPromWatcher(watcher promCRWatcher, watchErr <-chan error) {
+	if err := watcher.Close(); err != nil {
+		setupLog.Error(err, "prometheus watcher failed to close")
+	}
+	if err := <-watchErr; err != nil {
+		setupLog.Error(err, "prometheus watcher exited with an error")
 	}
 }
 
@@ -238,17 +239,17 @@ func main() {
 			}
 			return promWatcher, nil
 		}
-		promWatcher, promWatcherErr := newPromWatcher()
-		if promWatcherErr != nil {
-			setupLog.Error(promWatcherErr, "Can't start the prometheus watcher")
-			os.Exit(1)
-		}
 		promWatcherStop := make(chan struct{})
 		runGroup.Add(
 			func() error {
-				ticker := time.NewTicker(crdRecheckInterval)
-				defer ticker.Stop()
-				runErr := runPromWatcher(promWatcher, newPromWatcher, ticker.C, eventChan, errChan, promWatcherStop)
+				// A nil channel never receives, so a zero interval disables the recheck.
+				var recheck <-chan time.Time
+				if cfg.PrometheusCR.CRDRecheckInterval > 0 {
+					ticker := time.NewTicker(cfg.PrometheusCR.CRDRecheckInterval)
+					defer ticker.Stop()
+					recheck = ticker.C
+				}
+				runErr := runPromWatcher(newPromWatcher, recheck, eventChan, errChan, promWatcherStop)
 				setupLog.Info("Prometheus watcher exited")
 				return runErr
 			},

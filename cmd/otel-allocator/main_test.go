@@ -39,6 +39,14 @@ func (w *fakePromWatcher) MissingCRDsAvailable() (bool, error) {
 	return w.available, nil
 }
 
+func TestRunPromWatcherInitialError(t *testing.T) {
+	newWatcher := func() (promCRWatcher, error) {
+		return nil, errors.New("failed")
+	}
+	err := runPromWatcher(newWatcher, nil, nil, nil, make(chan struct{}))
+	require.Error(t, err)
+}
+
 func TestRunPromWatcher(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -63,10 +71,15 @@ func TestRunPromWatcher(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			first := newFakePromWatcher(tt.available)
 			second := newFakePromWatcher(false)
 			created := make(chan struct{}, 2)
+			first := newFakePromWatcher(tt.available)
+			initialCreated := false
 			newWatcher := func() (promCRWatcher, error) {
+				if !initialCreated {
+					initialCreated = true
+					return first, nil
+				}
 				created <- struct{}{}
 				if tt.newWatcherErr != nil {
 					return nil, tt.newWatcherErr
@@ -77,7 +90,7 @@ func TestRunPromWatcher(t *testing.T) {
 			stop := make(chan struct{})
 			done := make(chan error, 1)
 			go func() {
-				done <- runPromWatcher(first, newWatcher, recheck, nil, nil, stop)
+				done <- runPromWatcher(newWatcher, recheck, nil, nil, stop)
 			}()
 
 			recheck <- time.Now()
