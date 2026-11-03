@@ -1,4 +1,4 @@
-FROM docker.io/library/ruby:4.0-slim@sha256:3251898a6b7ff1275a0dc279d401889c6c743c1fb3292fa3ce1a2e12fc2cd31d
+FROM docker.io/library/ruby:4.0-slim@sha256:e41d40671d359ccc3431371e0af7c6430bd1b3886b47ac0667443525b7dcec1a
 
 WORKDIR /app
 
