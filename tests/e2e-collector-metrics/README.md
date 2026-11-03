@@ -16,12 +16,14 @@ The tests are plain Go tests built on the helpers in
 
 The focus is target labeling, end to end — a target discovered and relabeled by the
 allocator must end up with the labels Prometheus would give it — not metric values or
-sample structure. The two tests cover the allocator's two discovery paths:
+sample structure. The first two tests cover the allocator's two discovery paths, and the
+third covers ServiceMonitor targets of dual-stack Services:
 
 | Test | Path | Key assertion |
 |---|---|---|
 | `TestServiceMonitorDifferential` | `prometheusCR` (ServiceMonitor) | live differential vs prometheus-operator (see below): the allocator must label a ServiceMonitor target *identically* to prometheus-operator scraping it natively. |
 | `TestRawScrapeConfigMetrics` | raw `scrape_configs` (`static_configs`) | the static target carries *exactly* `job`/`instance` and no service-discovery labels. |
+| `TestServiceMonitorDualStack` | `prometheusCR` (ServiceMonitor), dual-stack Service | one target per pod, at the pod's address in the Service's primary IP family, labeled identically to prometheus-operator. Runs a PreferDualStack and an IPv6-primary RequireDualStack Service; needs a dual-stack cluster, which the `kind-*.yaml` configs provide. |
 
 ### The ServiceMonitor differential
 
