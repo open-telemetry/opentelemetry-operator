@@ -34,11 +34,14 @@ Nested blocks use lowercase keys matching the struct tags in `internal/config/co
 |----------|----------|----------------------|---------|-------------|
 | — | `--config-file` | — | — | Path to YAML configuration file (Cobra flag, not part of `Config`) |
 | `watch-namespace` | `--watch-namespace` | `WATCH_NAMESPACE` | `""` | Comma-separated namespaces to watch; empty watches all |
+| `watch-label-selector` | `--watch-label-selector` | `WATCH_LABEL_SELECTOR` | `""` | Kubernetes label selector for managed custom resources; empty selects all |
 | `enable-leader-election` | `--enable-leader-election` | `ENABLE_LEADER_ELECTION` | `false` | Enable controller-manager leader election |
 | `enable-webhooks` | `--enable-webhooks` | `ENABLE_WEBHOOKS` | `true` | Enable admission webhooks |
 | `webhook-port` | `--webhook-port` | `WEBHOOK_PORT` | `9443` | Webhook server port |
 | `ignore-missing-collector-crds` | `--ignore-missing-collector-crds` | `IGNORE_MISSING_COLLECTOR_CRDS` | `false` | Continue if OpenTelemetryCollector CRD is missing |
 | `openshift-webhook-replicas` | `--openshift-webhook-replicas` | `OPENSHIFT_WEBHOOK_REPLICAS` | `2` | Standalone webhook replicas on OpenShift OLM (`0` disables) |
+
+For example, `--watch-label-selector=operator.example.com/instance=blue` limits the operator's custom resource cache to CRs with that label. The selector applies to OpenTelemetryCollector, TargetAllocator, OpAMPBridge, Instrumentation, and ClusterObservability. Removing the label stops reconciliation but does not delete resources already created for the CR. Admission webhooks are unaffected and need separate object selectors when installations coexist. The CRD conversion webhook remains cluster-wide.
 
 ## Metrics, health, and profiling
 
