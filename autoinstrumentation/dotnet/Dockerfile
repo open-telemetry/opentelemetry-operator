@@ -23,7 +23,7 @@
 # prebuilt, TARGETARCH-selected zips via RUN, so it never needs to run as TARGETPLATFORM.
 # Without this, cross-building (e.g. arm64 output on an amd64 runner) would run wget/unzip
 # under QEMU emulation instead of natively.
-FROM --platform=$BUILDPLATFORM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e AS downloader
+FROM --platform=$BUILDPLATFORM busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4 AS downloader
 
 ARG TARGETARCH
 ARG version
@@ -47,7 +47,7 @@ RUN ln -s linux-musl "linux-musl-$(cat /tmp/dotnet_arch)"
 RUN rm glibc.zip musl.zip
 RUN chmod -R go+r .
 
-FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+FROM busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
 
 
 COPY --from=downloader /autoinstrumentation /autoinstrumentation
