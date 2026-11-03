@@ -218,7 +218,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.66.0
 	go.opentelemetry.io/contrib/bridges/prometheus v0.72.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.47.0
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v3 v3.0.6
 	sigs.k8s.io/e2e-framework v0.7.0
 )
 
