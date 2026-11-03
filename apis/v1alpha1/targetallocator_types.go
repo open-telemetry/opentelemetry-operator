@@ -58,6 +58,10 @@ type TargetAllocatorSpec struct {
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy v1beta1.TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	// AllocationStrategyConfig holds additional per-strategy configuration for the allocation strategies,
+	// keyed by strategy. For example, it can set the fallback strategy used by the per-node strategy.
+	// +optional
+	AllocationStrategyConfig v1beta1.TargetAllocatorAllocationStrategyConfig `json:"allocationStrategyConfig,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The current options are relabel-config (drops targets based on Prometheus relabel_config)
 	// and none (disables filtering).
