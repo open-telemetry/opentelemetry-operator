@@ -46,6 +46,7 @@ const (
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
 	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
+	DefaultCRDRecheckInterval                          = 30 * time.Second
 )
 
 // FilterStrategy determines whether, and how, the Target Allocator filters targets before
@@ -184,6 +185,10 @@ type PrometheusCRConfig struct {
 	// Prometheus Operator.
 	// +optional
 	DenyFSAccessThroughSMs bool `yaml:"deny_fs_access_through_sms,omitempty"`
+	// CRDRecheckInterval is how often the Target Allocator checks whether Prometheus CRDs
+	// absent at startup have been installed. Zero disables the check.
+	// See open-telemetry/opentelemetry-operator#5577.
+	CRDRecheckInterval time.Duration `yaml:"crd_recheck_interval,omitempty"`
 }
 
 type HTTPSServerConfig struct {
@@ -569,6 +574,7 @@ func CreateDefaultConfig() Config {
 			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 			ProbeNamespaceSelector:          &metav1.LabelSelector{},
 			ScrapeProtocols:                 defaultScrapeProtocolsCR,
+			CRDRecheckInterval:              DefaultCRDRecheckInterval,
 		},
 		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}

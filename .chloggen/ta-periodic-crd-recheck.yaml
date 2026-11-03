@@ -14,6 +14,8 @@ issues: [5577]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Every 5 minutes, the target allocator checks whether the ServiceMonitor, PodMonitor, Probe, or
+  The target allocator periodically checks whether the ServiceMonitor, PodMonitor, Probe, or
   ScrapeConfig CRDs that were absent at startup have been installed. If any have, the Prometheus CR
-  watcher is recreated so that their resources are picked up without a pod restart.
+  watcher is recreated so that their resources are picked up without a pod restart. The interval is
+  set with `prometheus_cr.crd_recheck_interval` in the target allocator configuration (default `30s`,
+  `0` disables the check).
