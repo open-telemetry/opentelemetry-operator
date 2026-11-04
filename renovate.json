@@ -74,6 +74,18 @@
     },
     {
       "customType": "regex",
+      "description": "Update OpenTelemetry PHP autoinstrumentation-php version",
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/opentelemetry-php/autoinstrumentation-php",
+      "managerFilePatterns": [
+        "/(^|/)versions\\.txt$/"
+      ],
+      "matchStrings": [
+        "(?m)^autoinstrumentation-php=(?<currentValue>[^\\s]+)\\s*$"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Update kind node images in kind config files",
       "datasourceTemplate": "docker",
       "depNameTemplate": "kindest/node",
@@ -124,6 +136,12 @@
       "matchManagers": ["custom.regex"],
       "matchFileNames": ["autoinstrumentation/dotnet/version.txt"],
       "commitMessageTopic": "OpenTelemetry dotnet agent version"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["versions.txt"],
+      "matchPackageNames": ["ghcr.io/opentelemetry-php/autoinstrumentation-php"],
+      "commitMessageTopic": "OpenTelemetry PHP autoinstrumentation-php version"
     },
     {
       "matchManagers": ["npm"],
