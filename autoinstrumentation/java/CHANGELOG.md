@@ -8,6 +8,10 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 2.33.1-3
+
+- Rebuild Java auto-instrumentation image (base image or dependency update).
+
 ## 2.33.1-2
 
 - Rebuild Java auto-instrumentation image (base image or dependency update). (#5770)
