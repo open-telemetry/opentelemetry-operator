@@ -68,6 +68,7 @@ func TestToStringMap(t *testing.T) {
 		"target-allocator-configmap-entry":        "",
 		"targetallocator-image":                   "",
 		"watch-namespace":                         "",
+		"watch-label-selector":                    "",
 		"webhook-port":                            "0",
 		"enable-webhooks":                         "false",
 		"gateway-apis-availability":               "0",
@@ -125,8 +126,10 @@ func TestApply(t *testing.T) {
 
 func TestApplyEnvVars(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_CLUSTER_OBSERVABILITY_COLLECTOR", "custom-clusterobservability-collector:1.0")
+	t.Setenv("WATCH_LABEL_SELECTOR", "operator.example.com/instance=blue")
 	cfg := New()
 	err := cfg.Apply("")
 	require.NoError(t, err)
 	assert.Equal(t, "custom-clusterobservability-collector:1.0", cfg.ClusterObservabilityCollectorImage)
+	assert.Equal(t, "operator.example.com/instance=blue", cfg.WatchLabelSelector)
 }
