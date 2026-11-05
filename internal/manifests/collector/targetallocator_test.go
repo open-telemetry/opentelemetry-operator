@@ -416,3 +416,29 @@ func TestTargetAllocatorMtlsForwardedWhenDisabled(t *testing.T) {
 	assert.NotNil(t, ta.Spec.Mtls)
 	assert.False(t, ta.Spec.Mtls.Enabled)
 }
+
+func TestTargetAllocatorNetworkPolicyForwarded(t *testing.T) {
+	enabled := true
+	params := manifests.Params{
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				NetworkPolicy: v1beta1.NetworkPolicy{
+					Enabled:        &enabled,
+					APIServerCIDRs: []string{"192.0.2.0/24"},
+				},
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+					Enabled: true,
+				},
+			},
+		},
+	}
+
+	ta, err := TargetAllocator(params)
+	assert.NoError(t, err)
+	assert.NotNil(t, ta)
+	assert.Equal(t, params.OtelCol.Spec.NetworkPolicy, ta.Spec.NetworkPolicy)
+}

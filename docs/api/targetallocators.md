@@ -10323,6 +10323,18 @@ NetworkPolicy defines the network policy to be applied to the Target Allocator p
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>apiServerCIDRs</b></td>
+        <td>[]string</td>
+        <td>
+          APIServerCIDRs are the CIDRs through which the pods reach the Kubernetes API server.
+When set, the NetworkPolicy allows egress to these CIDRs on all ports instead of to the API server
+addresses detected from the `default/kubernetes` EndpointSlices. Use it when the pods reach the API server
+through other addresses, for example in managed or NAT setups.
+Only the TargetAllocator NetworkPolicy restricts egress. For an OpenTelemetryCollector, the value is passed
+to the TargetAllocator it creates.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>

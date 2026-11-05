@@ -1,0 +1,20 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add the `networkPolicy.apiServerCIDRs` field to set the Kubernetes API server addresses allowed by the target allocator NetworkPolicy.
+
+# One or more tracking issues related to the change
+issues: [5654]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  When set, the target allocator NetworkPolicy allows egress to these CIDRs on all ports instead of to the
+  API server addresses detected from the `default/kubernetes` EndpointSlices.
+  Use it when pods reach the API server through other addresses, for example in managed or NAT setups.
+  The field is available on both `TargetAllocator` and `OpenTelemetryCollector`; for an `OpenTelemetryCollector`, it is passed to the target allocator it creates.

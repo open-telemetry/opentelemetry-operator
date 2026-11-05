@@ -269,4 +269,29 @@ func TestNetworkPolicyAPIServerEgress(t *testing.T) {
 		_, err := NetworkPolicy(Params{TargetAllocator: ta})
 		require.ErrorContains(t, err, "Kubernetes API server endpoints are unknown")
 	})
+
+	t.Run("override CIDRs", func(t *testing.T) {
+		withCIDRs := *ta.DeepCopy()
+		withCIDRs.Spec.NetworkPolicy.APIServerCIDRs = []string{"192.0.2.0/24", "2001:db8::/32"}
+		expected := []networkingv1.NetworkPolicyEgressRule{
+			{
+				To: []networkingv1.NetworkPolicyPeer{
+					{IPBlock: &networkingv1.IPBlock{CIDR: "192.0.2.0/24"}},
+					{IPBlock: &networkingv1.IPBlock{CIDR: "2001:db8::/32"}},
+				},
+			},
+		}
+		for name, endpoints := range map[string][]apiserverendpoints.Endpoint{
+			"detected endpoints": {{IP: "172.18.0.2", Port: 6443}},
+			"unknown endpoints":  nil,
+		} {
+			t.Run(name, func(t *testing.T) {
+				actual, err := NetworkPolicy(Params{TargetAllocator: withCIDRs, APIServerEndpoints: endpoints})
+				require.NoError(t, err)
+				require.NotNil(t, actual)
+				assert.Equal(t, expected, actual.Spec.Egress)
+				assert.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, actual.Spec.PolicyTypes)
+			})
+		}
+	})
 }

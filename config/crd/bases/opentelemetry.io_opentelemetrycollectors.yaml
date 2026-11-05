@@ -7460,6 +7460,11 @@ spec:
                 type: string
               networkPolicy:
                 properties:
+                  apiServerCIDRs:
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
                   enabled:
                     type: boolean
                 type: object

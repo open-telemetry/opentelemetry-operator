@@ -42,11 +42,14 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	policyTypes := []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}
 	var egress []networkingv1.NetworkPolicyEgressRule
 	if !hasSelfTelemetryExporter(params.TargetAllocator) {
-		if len(params.APIServerEndpoints) == 0 {
+		policyTypes = append(policyTypes, networkingv1.PolicyTypeEgress)
+		if cidrs := params.TargetAllocator.Spec.NetworkPolicy.APIServerCIDRs; len(cidrs) > 0 {
+			egress = cidrEgressRules(cidrs)
+		} else if len(params.APIServerEndpoints) > 0 {
+			egress = apiServerEgressRules(params.APIServerEndpoints)
+		} else {
 			return nil, errors.New("cannot restrict the target allocator's egress: the Kubernetes API server endpoints are unknown")
 		}
-		policyTypes = append(policyTypes, networkingv1.PolicyTypeEgress)
-		egress = apiServerEgressRules(params.APIServerEndpoints)
 	}
 
 	np := &networkingv1.NetworkPolicy{
@@ -92,6 +95,16 @@ func apiServerEgressRules(endpoints []apiserverendpoints.Endpoint) []networkingv
 		})
 	}
 	return rules
+}
+
+// cidrEgressRules returns an egress rule allowing traffic to the given CIDRs on all ports.
+// The ports pods use to reach the API server through these CIDRs may differ from the detected ones.
+func cidrEgressRules(cidrs []string) []networkingv1.NetworkPolicyEgressRule {
+	rule := networkingv1.NetworkPolicyEgressRule{}
+	for _, cidr := range cidrs {
+		rule.To = append(rule.To, networkingv1.NetworkPolicyPeer{IPBlock: &networkingv1.IPBlock{CIDR: cidr}})
+	}
+	return []networkingv1.NetworkPolicyEgressRule{rule}
 }
 
 func hasSelfTelemetryExporter(ta v1alpha1.TargetAllocator) bool {

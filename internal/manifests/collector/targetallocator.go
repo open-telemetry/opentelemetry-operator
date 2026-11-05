@@ -40,7 +40,8 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
 			NetworkPolicy: v1beta1.NetworkPolicy{
-				Enabled: params.OtelCol.Spec.NetworkPolicy.Enabled,
+				Enabled:        params.OtelCol.Spec.NetworkPolicy.Enabled,
+				APIServerCIDRs: params.OtelCol.Spec.NetworkPolicy.APIServerCIDRs,
 			},
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Replicas:                  taSpec.Replicas,
