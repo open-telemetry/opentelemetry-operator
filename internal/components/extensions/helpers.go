@@ -29,6 +29,24 @@ var componentParsers = []components.Parser{
 			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 		}).
 		MustBuild(),
+	components.NewBuilder[healthcheckV2Config]().
+		WithName("healthcheckv2").
+		WithPort(defaultHealthcheckV2Port).
+		WithDefaultsApplier(healthCheckV2AddressDefaulter).
+		WithDefaultRecAddress(components.DefaultRecAddress).
+		WithReadinessGen(healthCheckV2Probe).
+		WithLivenessGen(healthCheckV2Probe).
+		WithStartupGen(healthCheckV2Probe).
+		WithPortParser(func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config healthcheckV2Config) ([]corev1.ServicePort, error) {
+			if config.UseV2 {
+				if config.HTTP == nil {
+					return nil, nil
+				}
+				return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.HTTP.SingleEndpointConfig)
+			}
+			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
+		}).
+		MustBuild(),
 	NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
 	components.NewBuilder[any]().
