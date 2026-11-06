@@ -16,6 +16,7 @@ import (
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	apimachineryVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
@@ -242,6 +243,374 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsGatewayAPI(t *testing.T) {
 			// verify
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, avl)
+		})
+	}
+}
+
+func TestTargetAllocatorAvailability(t *testing.T) {
+	otelGroup := func(versions ...string) *metav1.APIGroupList {
+		var gv []metav1.GroupVersionForDiscovery
+		for _, v := range versions {
+			gv = append(gv, metav1.GroupVersionForDiscovery{GroupVersion: "opentelemetry.io/" + v})
+		}
+		return &metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "opentelemetry.io", Versions: gv}}}
+	}
+
+	testCases := []struct {
+		name         string
+		apiGroupList *metav1.APIGroupList
+		resources    map[string]*metav1.APIResourceList
+		serverError  bool
+		expected     targetallocator.Availability
+		expectErr    bool
+	}{
+		{
+			name:         "no opentelemetry group",
+			apiGroupList: &metav1.APIGroupList{},
+			resources:    map[string]*metav1.APIResourceList{},
+			expected:     targetallocator.NotAvailable,
+			expectErr:    false,
+		},
+		{
+			name:         "group served but TargetAllocator not present",
+			apiGroupList: otelGroup("v1beta1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "OpenTelemetryCollector"}}},
+			},
+			expected:  targetallocator.NotAvailable,
+			expectErr: false,
+		},
+		{
+			name:         "TargetAllocator is available",
+			apiGroupList: otelGroup("v1beta1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "TargetAllocator"}}},
+			},
+			expected:  targetallocator.Available,
+			expectErr: false,
+		},
+		{
+			name:        "server error on discovery",
+			serverError: true,
+			expected:    targetallocator.NotAvailable,
+			expectErr:   true,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if tt.serverError {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				var output []byte
+				var err error
+				if req.URL.Path == "/apis" {
+					output, err = json.Marshal(tt.apiGroupList)
+				} else if res, ok := tt.resources[req.URL.Path]; ok {
+					output, err = json.Marshal(res)
+				} else {
+					output, err = json.Marshal(&metav1.APIResourceList{})
+				}
+				require.NoError(t, err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(output)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+			require.NoError(t, err)
+
+			actual, err := autoDetect.TargetAllocatorAvailability()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestCollectorAvailability(t *testing.T) {
+	otelGroup := func(versions ...string) *metav1.APIGroupList {
+		var gv []metav1.GroupVersionForDiscovery
+		for _, v := range versions {
+			gv = append(gv, metav1.GroupVersionForDiscovery{GroupVersion: "opentelemetry.io/" + v})
+		}
+		return &metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "opentelemetry.io", Versions: gv}}}
+	}
+
+	testCases := []struct {
+		name         string
+		apiGroupList *metav1.APIGroupList
+		resources    map[string]*metav1.APIResourceList
+		serverError  bool
+		expected     collector.Availability
+		expectErr    bool
+	}{
+		{
+			name:         "no opentelemetry group",
+			apiGroupList: &metav1.APIGroupList{},
+			resources:    map[string]*metav1.APIResourceList{},
+			expected:     collector.NotAvailable,
+			expectErr:    false,
+		},
+		{
+			name:         "group served but OpenTelemetryCollector not present",
+			apiGroupList: otelGroup("v1beta1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "TargetAllocator"}}},
+			},
+			expected:  collector.NotAvailable,
+			expectErr: false,
+		},
+		{
+			name:         "OpenTelemetryCollector is available",
+			apiGroupList: otelGroup("v1beta1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1beta1": {APIResources: []metav1.APIResource{{Kind: "OpenTelemetryCollector"}}},
+			},
+			expected:  collector.Available,
+			expectErr: false,
+		},
+		{
+			name:        "server error on discovery",
+			serverError: true,
+			expected:    collector.NotAvailable,
+			expectErr:   true,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if tt.serverError {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				var output []byte
+				var err error
+				if req.URL.Path == "/apis" {
+					output, err = json.Marshal(tt.apiGroupList)
+				} else if res, ok := tt.resources[req.URL.Path]; ok {
+					output, err = json.Marshal(res)
+				} else {
+					output, err = json.Marshal(&metav1.APIResourceList{})
+				}
+				require.NoError(t, err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(output)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+			require.NoError(t, err)
+
+			actual, err := autoDetect.CollectorAvailability()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestOpAmpBridgeAvailability(t *testing.T) {
+	otelGroup := func(versions ...string) *metav1.APIGroupList {
+		var gv []metav1.GroupVersionForDiscovery
+		for _, v := range versions {
+			gv = append(gv, metav1.GroupVersionForDiscovery{GroupVersion: "opentelemetry.io/" + v})
+		}
+		return &metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "opentelemetry.io", Versions: gv}}}
+	}
+
+	testCases := []struct {
+		name         string
+		apiGroupList *metav1.APIGroupList
+		resources    map[string]*metav1.APIResourceList
+		serverError  bool
+		expected     opampbridge.Availability
+		expectErr    bool
+	}{
+		{
+			name:         "no opentelemetry group",
+			apiGroupList: &metav1.APIGroupList{},
+			resources:    map[string]*metav1.APIResourceList{},
+			expected:     opampbridge.NotAvailable,
+			expectErr:    false,
+		},
+		{
+			name:         "group served but OpAMPBridge not present",
+			apiGroupList: otelGroup("v1alpha1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1alpha1": {APIResources: []metav1.APIResource{{Kind: "OpenTelemetryCollector"}}},
+			},
+			expected:  opampbridge.NotAvailable,
+			expectErr: false,
+		},
+		{
+			name:         "OpAMPBridge is available",
+			apiGroupList: otelGroup("v1alpha1"),
+			resources: map[string]*metav1.APIResourceList{
+				"/apis/opentelemetry.io/v1alpha1": {APIResources: []metav1.APIResource{{Kind: "OpAMPBridge"}}},
+			},
+			expected:  opampbridge.Available,
+			expectErr: false,
+		},
+		{
+			name:        "server error on discovery",
+			serverError: true,
+			expected:    opampbridge.NotAvailable,
+			expectErr:   true,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if tt.serverError {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				var output []byte
+				var err error
+				if req.URL.Path == "/apis" {
+					output, err = json.Marshal(tt.apiGroupList)
+				} else if res, ok := tt.resources[req.URL.Path]; ok {
+					output, err = json.Marshal(res)
+				} else {
+					output, err = json.Marshal(&metav1.APIResourceList{})
+				}
+				require.NoError(t, err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(output)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+			require.NoError(t, err)
+
+			actual, err := autoDetect.OpAmpBridgeAvailablity()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestNativeSidecarSupport(t *testing.T) {
+	testCases := []struct {
+		name        string
+		versionInfo *apimachineryVersion.Info
+		serverError bool
+		expected    bool
+		expectErr   bool
+	}{
+		{
+			name: "Kubernetes version below 1.29.0",
+			versionInfo: &apimachineryVersion.Info{
+				Major:      "1",
+				Minor:      "28",
+				GitVersion: "v1.28.5",
+			},
+			expected:  false,
+			expectErr: false,
+		},
+		{
+			name: "Kubernetes version exactly 1.29.0",
+			versionInfo: &apimachineryVersion.Info{
+				Major:      "1",
+				Minor:      "29",
+				GitVersion: "v1.29.0",
+			},
+			expected:  true,
+			expectErr: false,
+		},
+		{
+			name: "Kubernetes version above 1.29.0",
+			versionInfo: &apimachineryVersion.Info{
+				Major:      "1",
+				Minor:      "30",
+				GitVersion: "v1.30.2",
+			},
+			expected:  true,
+			expectErr: false,
+		},
+		{
+			name: "Kubernetes version with build metadata",
+			versionInfo: &apimachineryVersion.Info{
+				Major:      "1",
+				Minor:      "29",
+				GitVersion: "v1.29.4+k3s1",
+			},
+			expected:  true,
+			expectErr: false,
+		},
+		{
+			name: "invalid version string returns parse error",
+			versionInfo: &apimachineryVersion.Info{
+				Major:      "1",
+				Minor:      "xx",
+				GitVersion: "invalid-version",
+			},
+			expected:  false,
+			expectErr: true,
+		},
+		{
+			name:        "server error on version discovery",
+			serverError: true,
+			expected:    false,
+			expectErr:   true,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if tt.serverError {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				if req.URL.Path == "/version" {
+					output, err := json.Marshal(tt.versionInfo)
+					require.NoError(t, err)
+
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err = w.Write(output)
+					require.NoError(t, err)
+					return
+				}
+				w.WriteHeader(http.StatusNotFound)
+			}))
+			defer server.Close()
+
+			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
+			require.NoError(t, err)
+
+			actual, err := autoDetect.NativeSidecarSupport()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
