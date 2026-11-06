@@ -126,6 +126,7 @@ func tov1beta1Instrumentation(in v1alpha1.Instrumentation) v1beta1.Instrumentati
 			UpgradeBlockedVersions: c.Status.UpgradeBlockedVersions,
 		},
 		Spec: v1beta1.InstrumentationSpec{
+			BaseRef:                      convertBaseRefToV1beta1(c.Spec.BaseRef),
 			EnvConfig:                    envConfig,
 			Resource:                     resource,
 			Env:                          c.Spec.Env,
@@ -376,6 +377,7 @@ func tov1alpha1Instrumentation(in v1beta1.Instrumentation) v1alpha1.Instrumentat
 			UpgradeBlockedVersions: c.Status.UpgradeBlockedVersions,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
+			BaseRef:     convertBaseRefToV1alpha1(c.Spec.BaseRef),
 			Exporter:    exporter,
 			Resource:    resource,
 			Propagators: propagators,
@@ -398,6 +400,20 @@ func tov1alpha1Instrumentation(in v1beta1.Instrumentation) v1alpha1.Instrumentat
 	restoreV1alpha1Fields(&result)
 
 	return result
+}
+
+func convertBaseRefToV1beta1(in *v1alpha1.InstrumentationReference) *v1beta1.InstrumentationReference {
+	if in == nil {
+		return nil
+	}
+	return &v1beta1.InstrumentationReference{Name: in.Name, Namespace: in.Namespace}
+}
+
+func convertBaseRefToV1alpha1(in *v1beta1.InstrumentationReference) *v1alpha1.InstrumentationReference {
+	if in == nil {
+		return nil
+	}
+	return &v1alpha1.InstrumentationReference{Name: in.Name, Namespace: in.Namespace}
 }
 
 func restoreV1alpha1Fields(inst *v1alpha1.Instrumentation) {

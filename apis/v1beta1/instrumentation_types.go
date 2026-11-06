@@ -10,6 +10,11 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// BaseRef references an Instrumentation whose settings are overridden by this resource.
+	// The referenced Instrumentation must not set BaseRef.
+	// +optional
+	BaseRef *InstrumentationReference `json:"baseRef,omitempty"`
+
 	// EnvConfig defines the SDK configuration via environment variables.
 	// This is the same configuration model as v1alpha1 (exporter, sampler, propagators).
 	// +optional
@@ -60,6 +65,18 @@ type InstrumentationSpec struct {
 	// InitContainerSecurityContext applied to auto-instrumentation init containers.
 	// +optional
 	InitContainerSecurityContext *corev1.SecurityContext `json:"initContainerSecurityContext,omitempty"`
+}
+
+// InstrumentationReference identifies an Instrumentation in the same cluster.
+type InstrumentationReference struct {
+	// Name is the name of the referenced Instrumentation.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// Namespace is the namespace of the referenced Instrumentation.
+	// If omitted, the namespace of this Instrumentation is used.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // EnvConfig defines the env-var-based SDK configuration.

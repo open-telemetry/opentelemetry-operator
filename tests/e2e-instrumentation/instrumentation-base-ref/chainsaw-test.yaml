@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-base-ref
+spec:
+  bindings:
+  - name: commonNamespace
+    value: (join('-', [$namespace, 'common']))
+  - name: secondNamespace
+    value: (join('-', [$namespace, 'second']))
+  steps:
+  - name: Create the common and second namespaces
+    try:
+    - apply:
+        file: 00-install-namespaces.yaml
+  - name: Create the common Instrumentation and two local Instrumentations
+    try:
+    - apply:
+        file: 01-install-instrumentations.yaml
+  - name: Create a Pod in each local namespace
+    try:
+    - apply:
+        file: 02-install-pods.yaml
+    - script:
+        env:
+        - name: POD_NAMESPACE
+          value: ($namespace)
+        - name: POD_NAME
+          value: base-ref-first-before
+        - name: EXPECTED_JAVA_IMAGE
+          value: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.29.0
+        - name: POD_PRIORITY_VALUE
+          value: pod
+        timeout: 2m
+        content: ./04-wait-for-updated-image.sh
+        check:
+          ($error != null): false
+    - script:
+        env:
+        - name: POD_NAMESPACE
+          value: ($secondNamespace)
+        - name: POD_NAME
+          value: base-ref-second-before
+        - name: EXPECTED_JAVA_IMAGE
+          value: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.29.0
+        timeout: 2m
+        content: ./04-wait-for-updated-image.sh
+        check:
+          ($error != null): false
+    - assert:
+        file: 02-assert-pods.yaml
+  - name: Update the common Java agent image
+    try:
+    - apply:
+        file: 03-update-common-instrumentation.yaml
+  - name: Create new Pods and check that existing Pods keep their original image
+    try:
+    - apply:
+        file: 04-install-new-pods.yaml
+    - script:
+        env:
+        - name: POD_NAMESPACE
+          value: ($namespace)
+        - name: POD_NAME
+          value: base-ref-first-after
+        - name: EXPECTED_JAVA_IMAGE
+          value: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1-1
+        timeout: 2m
+        content: ./04-wait-for-updated-image.sh
+        check:
+          ($error != null): false
+    - script:
+        env:
+        - name: POD_NAMESPACE
+          value: ($secondNamespace)
+        - name: POD_NAME
+          value: base-ref-second-after
+        - name: EXPECTED_JAVA_IMAGE
+          value: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1-1
+        timeout: 2m
+        content: ./04-wait-for-updated-image.sh
+        check:
+          ($error != null): false
+    - assert:
+        file: 04-assert-pods.yaml

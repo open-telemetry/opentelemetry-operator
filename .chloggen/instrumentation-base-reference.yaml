@@ -1,0 +1,6 @@
+change_type: enhancement
+component: auto-instrumentation
+note: Allow Instrumentation resources to reference a shared base Instrumentation and override its configuration for newly created Pods.
+issues: [5653]
+subtext: |
+  The base resource may be in another namespace. A selected Instrumentation can reference one base resource; inherited values are resolved when a Pod is admitted.
