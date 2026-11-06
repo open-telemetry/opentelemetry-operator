@@ -4,12 +4,20 @@
 package exporters
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
 // registry holds a record of all known receiver parsers.
 var registry = map[string]components.Parser{
 	"prometheus": components.NewSinglePortParserBuilder("prometheus", 8888).MustBuild(),
+}
+
+// Parsers returns the exporter parsers known to the operator.
+func Parsers() []components.Parser {
+	return slices.Collect(maps.Values(registry))
 }
 
 // ParserFor returns a parser builder for the given exporter name.
