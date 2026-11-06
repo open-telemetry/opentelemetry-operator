@@ -201,6 +201,38 @@ func TestGetEndpointSliceName(t *testing.T) {
 	}
 }
 
+func TestGetNamespace(t *testing.T) {
+	tests := []struct {
+		name     string
+		labels   labels.Labels
+		expected string
+	}{
+		{
+			name: "has namespace",
+			labels: labels.New(
+				labels.Label{Name: "__meta_kubernetes_namespace", Value: "my-ns"},
+			),
+			expected: "my-ns",
+		},
+		{
+			name:     "no namespace",
+			labels:   labels.New(labels.Label{Name: "app", Value: "test"}),
+			expected: "",
+		},
+		{
+			name:     "empty labels",
+			labels:   labels.EmptyLabels(),
+			expected: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			item := NewItem("job", "http://10.0.0.1:8080", tt.labels, "", HashLabels(tt.labels, "job"))
+			assert.Equal(t, tt.expected, item.GetNamespace())
+		})
+	}
+}
+
 func TestHashLabels(t *testing.T) {
 	ls := labels.New(
 		labels.Label{Name: "app", Value: "test"},
