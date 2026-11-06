@@ -20,6 +20,9 @@ const (
 
 // Build creates the manifest for the collector resource.
 func Build(params manifests.Params) ([]client.Object, error) {
+	if params.OtelCol.Spec.Image == "" {
+		params.OtelCol.Spec.Image = params.Config.CollectorImage
+	}
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory[manifests.Params]
 	switch params.OtelCol.Spec.Mode {

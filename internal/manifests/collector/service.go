@@ -63,7 +63,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := Labels(params.OtelCol, name, params.Config, []string{})
 	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
@@ -102,7 +102,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.ExtensionService(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := Labels(params.OtelCol, name, params.Config, []string{})
 	labels[serviceTypeLabel] = ExtensionServiceType.String()
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
@@ -138,7 +138,7 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := Labels(params.OtelCol, name, params.Config, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
