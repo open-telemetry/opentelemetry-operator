@@ -5,12 +5,10 @@ package naming
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
-)
 
-// DNS_LABEL constraints: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-var dnsLabelValidation = regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+	"k8s.io/apimachinery/pkg/util/validation"
+)
 
 // PortName defines the port name used in services, ingresses and routes.
 // The port name in pod and ingress spec has to be maximum 15 characters long.
@@ -22,7 +20,7 @@ func PortName(receiverName string, port int32) string {
 	candidate := strings.ReplaceAll(receiverName, "/", "-")
 	candidate = strings.ReplaceAll(candidate, "_", "-")
 
-	if !dnsLabelValidation.MatchString(candidate) {
+	if len(validation.IsValidPortName(candidate)) > 0 {
 		return fmt.Sprintf("port-%d", port)
 	}
 
