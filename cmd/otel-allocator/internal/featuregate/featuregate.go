@@ -15,7 +15,7 @@ var TargetsRemainingAttributes = featuregate.GlobalRegistry().MustRegister(
 	"targetallocator.targetsremainingattributes",
 	featuregate.StageAlpha,
 	featuregate.WithRegisterDescription("records the opentelemetry_allocator_targets_remaining metric with job.name and k8s.namespace.name attributes"),
-	featuregate.WithRegisterFromVersion("v0.161.0"),
+	featuregate.WithRegisterFromVersion("v0.163.0"),
 	featuregate.WithRegisterReferenceURL("https://github.com/open-telemetry/opentelemetry-operator/issues/4637"),
 )
 
