@@ -25,13 +25,11 @@ const (
 	ManagementStateUnmanaged ManagementStateType = "unmanaged"
 )
 
-// MetricSpec defines a subset of metrics to be defined for the HPA's metric array
-// more metric type can be supported as needed.
+// MetricSpec is a type alias of MetricSpec in the autoscaling/v2 API.
 // See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
-type MetricSpec struct {
-	Type autoscalingv2.MetricSourceType  `json:"type"`
-	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
-}
+// This type alias maintains backward compatibility in the Go API and will be replaced with
+// MetricSpec in the autoscaling/v2 API directly in a future API version.
+type MetricSpec = autoscalingv2.MetricSpec
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
