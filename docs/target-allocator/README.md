@@ -254,6 +254,38 @@ config:
 
 Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
+### Choosing the Prometheus receiver
+
+By default, the target allocator manages the receiver named exactly `prometheus`. To use a named receiver instead, set
+`spec.targetAllocator.prometheusReceiverID` on the OpenTelemetryCollector CR, or `spec.prometheusReceiverID` on the
+TargetAllocator CR. Only that receiver is rewritten to use the target allocator. Other Prometheus receivers keep their
+scrape configs, so every collector pod scrapes their targets itself. For example, this keeps the collector's scrape of
+its own metrics on each pod:
+
+```yaml
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    prometheusReceiverID: prometheus/ta
+  config:
+    receivers:
+      prometheus/ta:
+        config:
+          scrape_configs:
+          - job_name: 'app'
+            static_configs:
+            - targets: [ 'app:9090' ]
+      prometheus/self:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
+```
+
+The target allocator manages a single receiver. Distributing targets across several Prometheus receivers is not supported.
+
 ## TargetAllocator CRD
 
 The `spec.targetAllocator` attribute allows very limited control over the target allocator resources. More customization is possible by using

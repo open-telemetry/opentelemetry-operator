@@ -2876,6 +2876,9 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              prometheusReceiverID:
+                pattern: ^prometheus(/.+)?$
+                type: string
               readinessProbe:
                 properties:
                   exec:

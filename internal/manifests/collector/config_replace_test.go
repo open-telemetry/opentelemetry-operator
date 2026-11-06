@@ -189,6 +189,62 @@ func TestReplaceConfigPreservesScalarTypes(t *testing.T) {
 	assert.NotContains(t, otelcol.Spec.Config.Receivers.Object["prometheus"].(map[string]any), "target_allocator")
 }
 
+// TestReplaceConfigWithPrometheusReceiverID checks that only the receiver set by prometheusReceiverID is rewritten
+// to use the target allocator, and that other Prometheus receivers keep their own scrape configs.
+func TestReplaceConfigWithPrometheusReceiverID(t *testing.T) {
+	selfScrape := map[string]any{
+		"config": map[string]any{
+			"scrape_configs": []any{map[string]any{
+				"job_name":       "self",
+				"static_configs": []any{map[string]any{"targets": []any{"0.0.0.0:8888"}}},
+			}},
+		},
+	}
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]any{
+					"prometheus": selfScrape,
+					"prometheus/ta": map[string]any{
+						"config": map[string]any{
+							"scrape_configs": []any{map[string]any{
+								"job_name":       "app",
+								"static_configs": []any{map[string]any{"targets": []any{"app:9090"}}},
+							}},
+						},
+					},
+				}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {Receivers: []string{"prometheus", "prometheus/ta"}, Exporters: []string{"debug"}},
+					},
+				},
+			},
+		},
+	}
+	targetAllocator := &v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec:       v1alpha1.TargetAllocatorSpec{PrometheusReceiverID: "prometheus/ta"},
+	}
+
+	doc, err := ReplaceConfig(otelcol, targetAllocator)
+	require.NoError(t, err)
+
+	var decoded map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(doc), &decoded))
+	receivers := decoded["receivers"].(map[string]any)
+
+	assert.Equal(t, selfScrape, receivers["prometheus"], "receivers the target allocator does not manage are kept as is")
+	managed := receivers["prometheus/ta"].(map[string]any)
+	assert.Equal(t, map[string]any{}, managed["config"], "scrape_configs are removed from the managed receiver")
+	assert.Equal(t, map[string]any{
+		"endpoint":     "http://test-targetallocator.default.svc:80",
+		"interval":     "30s",
+		"collector_id": "${POD_NAME}",
+	}, managed["target_allocator"])
+}
+
 func TestReplaceConfigRejectsMissingReceivers(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
