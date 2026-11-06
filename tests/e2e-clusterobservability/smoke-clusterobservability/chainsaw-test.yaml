@@ -74,6 +74,33 @@ spec:
   - name: Audit Collector and Target Allocator health
     use:
       template: 04-assert-component-health.yaml
+  - name: Report a second ClusterObservability as conflicted
+    try:
+    - apply:
+        file: 06-install-conflicting-clusterobservability.yaml
+    - assert:
+        file: 06-assert-conflicting-clusterobservability.yaml
+    - script:
+        content: |
+          set -eu
+          for resource in \
+            opentelemetrycollector/cluster-obs-conflict-agent \
+            opentelemetrycollector/cluster-obs-conflict-cluster \
+            instrumentation/cluster-obs-conflict; do
+            if kubectl get "$resource" -n "$NAMESPACE" >/dev/null 2>&1; then
+              echo "ERROR: conflicted ClusterObservability created $resource"
+              exit 1
+            fi
+          done
+  - name: Remove the conflict without affecting the active resource
+    try:
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1alpha1
+          kind: ClusterObservability
+          name: cluster-obs-conflict
+    - assert:
+        file: 00-assert.yaml
   - name: Cleanup
     try:
     - delete:
@@ -81,11 +108,32 @@ spec:
           apiVersion: apps/v1
           kind: Deployment
           name: traces-demo
-    - delete:
-        ref:
-          apiVersion: opentelemetry.io/v1alpha1
-          kind: ClusterObservability
-          name: cluster-obs
+    - script:
+        timeout: 3m
+        content: |
+          set -eu
+          has_scc=false
+          if kubectl api-resources --api-group=security.openshift.io -o name \
+            | grep -q '^securitycontextconstraints'; then
+            has_scc=true
+            kubectl get securitycontextconstraints.security.openshift.io \
+              cluster-obs-agent-hostaccess >/dev/null
+          fi
+
+          kubectl delete clusterobservability cluster-obs -n "$NAMESPACE" --wait=false
+          for resource in \
+            clusterobservability/cluster-obs \
+            opentelemetrycollector/cluster-obs-agent \
+            opentelemetrycollector/cluster-obs-cluster \
+            instrumentation/cluster-obs; do
+            kubectl wait --for=delete "$resource" -n "$NAMESPACE" --timeout=2m
+          done
+
+          if [ "$has_scc" = true ]; then
+            kubectl wait --for=delete \
+              securitycontextconstraints.security.openshift.io/cluster-obs-agent-hostaccess \
+              --timeout=2m
+          fi
     - delete:
         ref:
           apiVersion: opentelemetry.io/v1beta1
