@@ -161,6 +161,32 @@ func TestDesiredService(t *testing.T) {
 		assert.Nil(t, actual)
 		assert.NoError(t, err)
 	})
+	t.Run("should infer syslog receiver port", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.Config = mustUnmarshalToConfig(t, `receivers:
+  syslog/test:
+    tcp:
+      listen_address: "[::]:5142"
+exporters:
+  debug:
+service:
+  pipelines:
+    logs:
+      receivers: [syslog/test]
+      exporters: [debug]
+`)
+
+		actual, err := Service(params)
+
+		assert.NoError(t, err)
+		if assert.NotNil(t, actual) {
+			assert.Contains(t, actual.Spec.Ports, v1.ServicePort{
+				Name:     "syslog-test",
+				Port:     5142,
+				Protocol: v1.ProtocolTCP,
+			})
+		}
+	})
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 		grpc := "grpc"
 		jaegerPorts := v1beta1.PortsSpec{
