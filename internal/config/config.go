@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
@@ -57,6 +58,10 @@ type Config struct {
 	ClusterObservabilityCollectorImage string `yaml:"clusterobservability-collector-image"`
 	// CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 	CollectorConfigMapEntry string `yaml:"collector-configmap-entry"`
+	// DefaultCollectorConfigFile is the path to a collector configuration file whose contents are merged
+	// as defaults into every OpenTelemetryCollector. Each collector's own configuration takes precedence.
+	// Empty (the default) disables the merge. See open-telemetry/opentelemetry-operator#2942.
+	DefaultCollectorConfigFile string `yaml:"default-collector-config"`
 	// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
 	EnableMultiInstrumentation bool `yaml:"enable-multi-instrumentation"`
 	// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
@@ -186,6 +191,9 @@ type Internal struct {
 	// APIServerEndpoints tracks the endpoints of the Kubernetes API server. It's set at operator startup, and is
 	// used to restrict egress to the API server in NetworkPolicies.
 	APIServerEndpoints *apiserverendpoints.Tracker `yaml:"-"`
+	// DefaultCollectorConfig is the parsed contents of DefaultCollectorConfigFile, loaded once at operator
+	// startup. It's nil when no default config file is configured.
+	DefaultCollectorConfig *v1beta1.Config `yaml:"-"`
 }
 
 // New constructs a new configuration.
@@ -280,6 +288,10 @@ func (c *Config) Apply(configFile string) error {
 	ApplyEnvVars(c)
 	if err := ApplyCLI(c); err != nil {
 		return fmt.Errorf("failed to apply cli config: %w", err)
+	}
+
+	if err := c.loadDefaultCollectorConfig(); err != nil {
+		return fmt.Errorf("failed to load default collector config: %w", err)
 	}
 
 	return nil
