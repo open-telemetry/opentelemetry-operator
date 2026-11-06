@@ -3,14 +3,13 @@ kind: NetworkPolicy
 metadata:
   name: opentelemetry-operator
   namespace: opentelemetry-operator-system
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: opentelemetry-operator-controller-manager
 spec:
-  egress:
-    - ports:
-        - port: 6443
-          protocol: TCP
-    - ports:
-        - port: 6443
-          protocol: TCP
   ingress:
     - ports:
         - port: 9443
@@ -20,6 +19,20 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: opentelemetry-operator
+      control-plane: controller-manager
   policyTypes:
     - Ingress
     - Egress
+  # The operator builds the egress rules from the API server endpoints (internal/operatornetworkpolicy), sorted by port:
+  # the Service ClusterIP on 443, the API server addresses on 6443 and, on OpenShift, the kube-apiserver pods.
+  # The addresses depend on the cluster and change while the test runs (tests/e2e/operator-restart adds one), so only
+  # the shape of the rules is asserted.
+  (length(egress)): 3
+  (egress[0].ports[0].port): 443
+  (length(egress[0].to)): 1
+  (ends_with(egress[0].to[0].ipBlock.cidr, '/32')): true
+  (egress[1].ports[0].port): 6443
+  (length(egress[1].to) > `0`): true
+  (egress[2].ports[0].port): 443
+  (egress[2].to[0].namespaceSelector.matchLabels."kubernetes.io/metadata.name"): openshift-kube-apiserver
+  (egress[2].to[0].podSelector.matchLabels.apiserver): "true"

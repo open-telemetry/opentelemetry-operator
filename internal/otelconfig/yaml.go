@@ -21,8 +21,8 @@ import (
 // is decoded again and compared with the config's JSON representation, the form the CR is stored in. A rendering
 // the collector would read differently from the config is reported as an error instead of being returned,
 // whatever its cause - an encoder regression, or a config no rendering can represent faithfully (for example a
-// "<<" map key, which the decoder treats as a YAML 1.1 merge key even when it is quoted,
-// https://github.com/go-yaml/yaml/issues/245).
+// multi-line map key whose first line starts with a tab, which the encoder writes as a literal block its own
+// parser rejects, https://github.com/yaml/go-yaml/issues/383).
 //
 // Every operator code path that writes out a rendered collector config must go through this function instead of
 // calling Config.Yaml directly.

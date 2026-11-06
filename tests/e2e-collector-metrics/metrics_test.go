@@ -65,6 +65,8 @@ const (
 var (
 	//go:embed testdata/sample-app.yaml
 	sampleAppManifest string
+	//go:embed testdata/sample-app-dual-stack.yaml
+	dualStackAppManifest string
 	//go:embed testdata/oracle-prometheus.yaml
 	oraclePrometheusManifest string
 	//go:embed testdata/collector-sm.yaml
@@ -118,7 +120,7 @@ func prom(t *testing.T, ctx context.Context, cfg *envconf.Config) *e2e.Prom {
 // setup ensures prometheus-operator is installed, then deploys the sample app, the
 // oracle Prometheus (+ RBAC), any extra objects (e.g. ServiceMonitors), the collector
 // CR (+ RBAC), waits for readiness, and stashes the namespace in the context.
-func setup(collectorManifest string, extra ...crclient.Object) features.Func {
+func setup(appManifest, collectorManifest string, extra ...crclient.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		e2e.EnsurePrometheusOperator(ctx, t, cfg)
 
@@ -126,7 +128,7 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 		namespace := e2e.Namespace(t, ctx)
 		e2e.DumpNamespaceOnFailure(ctx, t, cfg, namespace)
 
-		e2e.Apply(ctx, t, cfg, namespace, sampleAppManifest)
+		e2e.Apply(ctx, t, cfg, namespace, appManifest)
 		e2e.Apply(ctx, t, cfg, namespace, oraclePrometheusManifest)
 		e2e.BindTargetAllocatorClusterRole(ctx, t, cfg, namespace, oracleName)
 		e2e.ApplyObjects(ctx, t, cfg, namespace, extra...)
@@ -148,7 +150,7 @@ func setup(collectorManifest string, extra ...crclient.Object) features.Func {
 // label, so any divergence in target labeling fails the differential.
 func TestServiceMonitorDifferential(t *testing.T) {
 	feat := features.New("ServiceMonitor targets labeled identically to prometheus-operator").
-		Setup(setup(smCollectorManifest, serviceMonitor(pipelineTA), serviceMonitor(pipelineProm))).
+		Setup(setup(sampleAppManifest, smCollectorManifest, serviceMonitor(pipelineTA), serviceMonitor(pipelineProm))).
 		Assess("the allocator path really went through ServiceMonitor relabeling", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			ns := e2e.Namespace(t, ctx)
 			// Guards the differential against a vacuous pass: the TA series must carry
@@ -179,7 +181,7 @@ func TestServiceMonitorDifferential(t *testing.T) {
 // service-discovery labels.
 func TestRawScrapeConfigMetrics(t *testing.T) {
 	feat := features.New("raw scrape_configs carry exactly the static identity").
-		Setup(setup(rawCollectorManifest)).
+		Setup(setup(sampleAppManifest, rawCollectorManifest)).
 		Assess("the static target carries exactly job/instance and no service-discovery labels", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			prom(t, ctx, cfg).Eventually(ctx, t, fmt.Sprintf(`up{job=%q}`, sampleApp),
 				e2e.HasSeries(e2e.Series{

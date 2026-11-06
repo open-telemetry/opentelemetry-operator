@@ -101,11 +101,154 @@ func TestNewTLSConfig_LoadsCertificates(t *testing.T) {
 	assert.Equal(t, uint16(tls.VersionTLS12), tlsConfig.MinVersion)
 	assert.NotNil(t, tlsConfig.GetCertificate)
 	assert.NotNil(t, tlsConfig.VerifyConnection)
+	assert.Nil(t, tlsConfig.CipherSuites)
+	assert.Nil(t, tlsConfig.CurvePreferences)
 
 	// Verify GetCertificate returns the loaded certificate
 	cert, err := tlsConfig.GetCertificate(nil)
 	require.NoError(t, err)
 	require.NotNil(t, cert)
+}
+
+func TestNewTLSConfig_TLSProfile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath:  certPath,
+		TLSKeyFilePath:   keyPath,
+		CAFilePath:       caPath,
+		MinVersion:       "VersionTLS13",
+		CurvePreferences: []int32{int32(tls.X25519), int32(tls.CurveP256)},
+	}
+
+	logger := ctrl.Log.WithName("test")
+	tlsConfig, _, err := config.NewTLSConfig(logger)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint16(tls.VersionTLS13), tlsConfig.MinVersion)
+	assert.Equal(t, []tls.CurveID{tls.X25519, tls.CurveP256}, tlsConfig.CurvePreferences)
+}
+
+func TestNewTLSConfig_CipherSuites(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath: certPath,
+		TLSKeyFilePath:  keyPath,
+		CAFilePath:      caPath,
+		MinVersion:      "VersionTLS12",
+		CipherSuites:    []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+	}
+
+	logger := ctrl.Log.WithName("test")
+	tlsConfig, _, err := config.NewTLSConfig(logger)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint16(tls.VersionTLS12), tlsConfig.MinVersion)
+	assert.Equal(t, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, tlsConfig.CipherSuites)
+}
+
+func TestNewTLSConfig_InvalidMinVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath: certPath,
+		TLSKeyFilePath:  keyPath,
+		CAFilePath:      caPath,
+		MinVersion:      "InvalidVersion",
+	}
+
+	logger := ctrl.Log.WithName("test")
+	_, _, err := config.NewTLSConfig(logger)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "TLS version invalid")
+}
+
+func TestNewTLSConfig_InvalidCipherSuite(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath: certPath,
+		TLSKeyFilePath:  keyPath,
+		CAFilePath:      caPath,
+		CipherSuites:    []string{"INVALID_CIPHER"},
+	}
+
+	logger := ctrl.Log.WithName("test")
+	_, _, err := config.NewTLSConfig(logger)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to convert TLS cipher suite name to ID")
+}
+
+func TestNewTLSConfig_InvalidCurvePreference(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath:  certPath,
+		TLSKeyFilePath:   keyPath,
+		CAFilePath:       caPath,
+		CurvePreferences: []int32{0},
+	}
+
+	logger := ctrl.Log.WithName("test")
+	_, _, err := config.NewTLSConfig(logger)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to convert TLS curve preference to ID")
 }
 
 func TestNewTLSConfig_InvalidCertificate(t *testing.T) {
