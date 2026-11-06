@@ -143,6 +143,8 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: test-collector-tls
   labels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: test.test
