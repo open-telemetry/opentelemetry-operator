@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
   name: clusterobservabilities.opentelemetry.io
 spec:
   group: opentelemetry.io
