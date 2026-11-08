@@ -8,7 +8,7 @@ component: target allocator
 note: Carry over the target allocator `prometheusCR.denyFSAccessThroughSMs` setting when converting OpenTelemetryCollector between v1alpha1 and v1beta1.
 
 # One or more tracking issues related to the change
-issues: []
+issues: [5904]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
