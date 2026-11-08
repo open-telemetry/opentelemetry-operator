@@ -180,7 +180,7 @@
     {
       "matchManagers": ["gomod"],
       "schedule": ["on monday"],
-      "postUpdateOptions": ["gomodTidy"]
+      "postUpdateOptions": ["gomodTidyAll", "gomodUpdateImportPaths"]
     },
     {
       "matchManagers": ["gomod"],
