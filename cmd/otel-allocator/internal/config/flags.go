@@ -22,6 +22,9 @@ const (
 	httpsCAFilePathFlagName          = "https-ca-file"
 	httpsTLSCertFilePathFlagName     = "https-tls-cert-file"
 	httpsTLSKeyFilePathFlagName      = "https-tls-key-file"
+	httpsMinVersionFlagName          = "https-min-version"
+	httpsCipherSuitesFlagName        = "https-cipher-suites"
+	httpsCurvePreferencesFlagName    = "https-curve-preferences"
 	allowInsecureAuthSecretsFlagName = "allow-insecure-auth-secrets"
 )
 
@@ -39,6 +42,9 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(httpsCAFilePathFlagName, "", "The path to the HTTPS server TLS CA file.")
 	flagSet.String(httpsTLSCertFilePathFlagName, "", "The path to the HTTPS server TLS certificate file.")
 	flagSet.String(httpsTLSKeyFilePathFlagName, "", "The path to the HTTPS server TLS key file.")
+	flagSet.String(httpsMinVersionFlagName, "", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
+	flagSet.StringSlice(httpsCipherSuitesFlagName, nil, "Comma-separated list of cipher suites for the HTTPS server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants).")
+	flagSet.Int32Slice(httpsCurvePreferencesFlagName, nil, "Comma-separated list of IANA numeric TLS curve IDs for the HTTPS server. See https://pkg.go.dev/crypto/tls#CurveID for supported values.")
 	flagSet.Bool(allowInsecureAuthSecretsFlagName, false, "Serve scrape configs with secret values over plain HTTP without mTLS. Only enable when transport is secured by a service mesh or equivalent.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
@@ -80,6 +86,26 @@ func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (value string, changed bool
 
 func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
 	return getFlagValueAndChangedString(flagSet, httpsTLSKeyFilePathFlagName)
+}
+
+func getHttpsMinVersion(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChangedString(flagSet, httpsMinVersionFlagName)
+}
+
+func getHttpsCipherSuites(flagSet *pflag.FlagSet) (value []string, changed bool, err error) {
+	if changed = flagSet.Changed(httpsCipherSuitesFlagName); !changed {
+		return nil, false, nil
+	}
+	value, err = flagSet.GetStringSlice(httpsCipherSuitesFlagName)
+	return value, changed, err
+}
+
+func getHttpsCurvePreferences(flagSet *pflag.FlagSet) (value []int32, changed bool, err error) {
+	if changed = flagSet.Changed(httpsCurvePreferencesFlagName); !changed {
+		return nil, false, nil
+	}
+	value, err = flagSet.GetInt32Slice(httpsCurvePreferencesFlagName)
+	return value, changed, err
 }
 
 func getAllowInsecureAuthSecrets(flagSet *pflag.FlagSet) (value, changed bool, err error) {

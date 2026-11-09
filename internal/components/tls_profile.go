@@ -80,6 +80,23 @@ func TLSVersionToCollectorFormat(version uint16) string {
 	}
 }
 
+// TLSVersionToComponentBaseFormat converts a TLS version constant to the
+// k8s.io/component-base/cli/flag spelling (e.g., "VersionTLS12"). The target
+// allocator and the operator's own flags parse this vocabulary with
+// k8sapiflag.TLSVersion; tls.VersionName's "TLS 1.2" output is not accepted.
+func TLSVersionToComponentBaseFormat(version uint16) string {
+	switch version {
+	case tls.VersionTLS10:
+		return "VersionTLS10"
+	case tls.VersionTLS11:
+		return "VersionTLS11"
+	case tls.VersionTLS13:
+		return "VersionTLS13"
+	default:
+		return "VersionTLS12"
+	}
+}
+
 var _ TLSProfileProvider = (*StaticTLSProfileProvider)(nil)
 
 type StaticTLSProfileProvider struct {
