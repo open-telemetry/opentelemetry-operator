@@ -4,6 +4,6 @@ component: target allocator
 
 note: Remove the redundant CRD schema default on `spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.configMap.key`. The operator already applies `ca.crt` when the key is omitted.
 
-issues: [5852]
+issues: [5841]
 
 subtext:
