@@ -6,8 +6,4 @@ note: Remove the redundant CRD schema default on `spec.targetAllocator.mtls.tls.
 
 issues: [5852]
 
-subtext: |
-  The default sat next to the required `name` field, which has no default. Tools that build a resource
-  from the CRD schema created the `configMap` block only to hold it, producing a resource the API server
-  rejected. The sibling `secret` selector never had a schema default; both now resolve their key in the
-  manifest builder.
+subtext:
