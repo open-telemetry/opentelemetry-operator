@@ -68,12 +68,12 @@ func generateK8SAttrPolicyRules(config K8sAttributeConfig) []rbacv1.PolicyRule {
 		prs = append(prs, replicasetPolicy)
 	}
 
-	addedResourcs := map[string]bool{}
+	addedResources := map[string]bool{}
 	addPolicyRule := func(rule rbacv1.PolicyRule) {
 		key := rule.Resources[0]
-		if !addedResourcs[key] {
+		if !addedResources[key] {
 			prs = append(prs, rule)
-			addedResourcs[key] = true
+			addedResources[key] = true
 		}
 	}
 
