@@ -62,14 +62,21 @@ func Test0_111_0Upgrade(t *testing.T) {
 		},
 	}
 
-	defaultCollectorWithUnparseableTelemetry := defaultCollector.DeepCopy()
-	defaultCollectorWithUnparseableTelemetry.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
+	defaultCollectorWithDeclarativeResource := defaultCollector.DeepCopy()
+	defaultCollectorWithDeclarativeResource.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
 		Object: map[string]any{
 			"resource": map[string]any{
 				"attributes": []any{
 					map[string]any{"name": "deployment.environment.name", "value": "prod"},
 				},
 			},
+		},
+	}
+
+	defaultCollectorWithUnparseableTelemetry := defaultCollector.DeepCopy()
+	defaultCollectorWithUnparseableTelemetry.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
+		Object: map[string]any{
+			"metrics": "x",
 		},
 	}
 
@@ -108,6 +115,28 @@ func Test0_111_0Upgrade(t *testing.T) {
 			name:     "telemetry readers already configured",
 			input:    *defaultCollectorWithReaders,
 			expected: *defaultCollectorWithReaders,
+		},
+		{
+			// The declarative resource.attributes format is passed through and the
+			// default metrics address is applied on top. See open-telemetry/opentelemetry-operator#5207.
+			name:  "telemetry with declarative resource attributes",
+			input: *defaultCollectorWithDeclarativeResource,
+			expected: func() v1beta1.OpenTelemetryCollector {
+				col := defaultCollectorWithDeclarativeResource.DeepCopy()
+				col.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{
+							"address": "0.0.0.0:8888",
+						},
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "prod"},
+							},
+						},
+					},
+				}
+				return *col
+			}(),
 		},
 		{
 			// See https://github.com/open-telemetry/opentelemetry-operator/issues/5734.
