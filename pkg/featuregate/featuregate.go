@@ -15,6 +15,13 @@ const (
 )
 
 var (
+	// EnableCertManagerAvailabilityWatcher enables automatic rollouts when cert-manager availability changes.
+	EnableCertManagerAvailabilityWatcher = featuregate.GlobalRegistry().MustRegister(
+		"operator.certmanager.availabilitywatcher",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("rolls out operator deployments when cert-manager availability changes"),
+		featuregate.WithRegisterFromVersion("v0.163.0"),
+	)
 	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(

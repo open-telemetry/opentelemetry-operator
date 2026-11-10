@@ -90,6 +90,11 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 	result.Config.Internal.APIServerEndpoints = apiserverendpoints.NewTracker(result.Manager.GetCache(), apiserverendpoints.DefaultTTL)
 
 	signalCtx := ctrl.SetupSignalHandler()
+	if result.Config.EnableWebhooks {
+		var stopDrain context.CancelFunc
+		signalCtx, stopDrain = operatorsetup.DelayWebhookShutdown(signalCtx)
+		defer stopDrain()
+	}
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
 
@@ -104,6 +109,13 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 			setupLog.Error(err, "failed to apply feature gate overrides")
 			os.Exit(1)
 		}
+	}
+	if featuregate.EnableCertManagerAvailabilityWatcher.IsEnabled() {
+		done := operatorsetup.StartCertManagerAvailabilityWatcher(ctx, result.Autodetector, result.Config.CertManagerAvailability, result.Clientset)
+		defer func() {
+			cancel()
+			<-done
+		}()
 	}
 
 	mgr := result.Manager
