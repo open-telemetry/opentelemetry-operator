@@ -53,6 +53,7 @@ description:
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
+name: my-instance
 proxy:
   url: http://proxy.example.com:8080
   headers:
@@ -166,6 +167,7 @@ func TestDesiredConfigMapWithSOCKSProxy(t *testing.T) {
 		"remoteconfiguration.yaml": `capabilities:
   ReportsHealth: true
 endpoint: ws://opamp-server:4320/v1/opamp
+name: my-instance
 proxy:
   url: socks5://user:pass@proxy.example.com:1080
 `,
