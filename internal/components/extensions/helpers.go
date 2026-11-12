@@ -4,6 +4,8 @@
 package extensions
 
 import (
+	"slices"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
@@ -48,6 +50,11 @@ func init() {
 			registry[alias] = parser
 		}
 	}
+}
+
+// Parsers returns the extension parsers known to the operator.
+func Parsers() []components.Parser {
+	return slices.Clone(componentParsers)
 }
 
 // ParserFor returns a parser builder for the given exporter name.
