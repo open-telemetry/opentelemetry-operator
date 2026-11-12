@@ -8,6 +8,14 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 0.66b2-4
+
+- Rebuild Python auto-instrumentation image (base image or dependency update). (#5914)
+
+## 0.66b2-3
+
+- Rebuild Python auto-instrumentation image (base image or dependency update).
+
 ## 0.66b2-2
 
 - Rebuild Python auto-instrumentation image (base image or dependency update). (#5770)

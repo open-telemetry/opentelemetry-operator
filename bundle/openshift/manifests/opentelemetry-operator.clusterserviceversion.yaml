@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-10-26T16:19:46Z"
+    createdAt: "2026-11-10T10:25:04Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.162.0
+  name: opentelemetry-operator.v0.163.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -588,9 +588,9 @@ spec:
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
                 - name: RELATED_IMAGE_COLLECTOR
-                  value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.162.0
+                  value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.163.2
                 - name: RELATED_IMAGE_TARGET_ALLOCATOR
-                  value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0
+                  value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.163.0
                 - name: METRICS_TLS_CERT_FILE
                   value: /var/run/tls/server/tls.crt
                 - name: METRICS_TLS_KEY_FILE
@@ -611,7 +611,7 @@ spec:
                   value: "true"
                 - name: TLS_CONFIGURE_OPERANDS
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.162.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.163.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -695,10 +695,10 @@ spec:
                 - name: FEATURE_GATES
                   value: operand.networkpolicy
                 - name: RELATED_IMAGE_COLLECTOR
-                  value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.162.0
+                  value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.163.2
                 - name: RELATED_IMAGE_TARGET_ALLOCATOR
-                  value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.162.0
+                  value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.163.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.163.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -780,11 +780,11 @@ spec:
   provider:
     name: OpenTelemetry Community
   relatedImages:
-  - image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.162.0
+  - image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.163.2
     name: collector
-  - image: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0
+  - image: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.163.0
     name: target-allocator
-  version: 0.162.0
+  version: 0.163.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

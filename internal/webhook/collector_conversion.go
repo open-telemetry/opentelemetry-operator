@@ -184,9 +184,10 @@ func tov1beta1TA(in v1alpha1.OpenTelemetryTargetAllocator) v1beta1.TargetAllocat
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-			Enabled:        in.PrometheusCR.Enabled,
-			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
-			ScrapeClasses:  in.PrometheusCR.ScrapeClasses,
+			Enabled:                in.PrometheusCR.Enabled,
+			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
+			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
+			DenyFSAccessThroughSMs: in.PrometheusCR.DenyFSAccessThroughSMs,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
 			PodMonitorSelector: &metav1.LabelSelector{
 				MatchLabels: in.PrometheusCR.PodMonitorSelector,
@@ -459,6 +460,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) v1alpha1.OpenTelemetryTarg
 			Enabled:                in.PrometheusCR.Enabled,
 			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
 			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
+			DenyFSAccessThroughSMs: in.PrometheusCR.DenyFSAccessThroughSMs,
 			PodMonitorSelector:     podMonitorSelector,
 			ServiceMonitorSelector: serviceMonitorSelector,
 		},

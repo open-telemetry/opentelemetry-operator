@@ -9,6 +9,14 @@ too. See [../README.md](../README.md) for the tagging scheme.
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 1.0.4-5
+
+- Rebuild Apache HTTPD / Nginx auto-instrumentation image (base image or dependency update). (#5914)
+
+## 1.0.4-4
+
+- Rebuild Apache HTTPD / Nginx auto-instrumentation image (base image or dependency update).
+
 ## 1.0.4-3
 
 - Rebuild Apache HTTPD / Nginx auto-instrumentation image (base image or dependency update). (#5770)

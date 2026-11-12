@@ -28,7 +28,7 @@ const (
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating opampbridge status")
 	if err != nil {
-		params.Recorder.Eventf(&params.OpAMPBridge, nil, eventTypeWarning, reasonError, reasonError, err.Error())
+		params.Recorder.Eventf(&params.OpAMPBridge, nil, eventTypeWarning, reasonError, reasonError, "%s", err.Error())
 		return ctrl.Result{}, err
 	}
 	changed := params.OpAMPBridge.DeepCopy()

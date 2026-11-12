@@ -339,6 +339,7 @@ var scalarCases = []struct {
 	{"anchor", "&a", "&a"},
 	{"alias", "*a", "*a"},
 	{"tag", "!a", "!a"},
+	{"merge key", "<<", "<<"},
 	{"literal indicator", "|", "|"},
 	{"folded indicator", ">", ">"},
 	{"single quote", "'", "'"},
@@ -404,13 +405,12 @@ func scalarConfig(value any) *v1beta1.Config {
 	return cfg
 }
 
-// renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for "<<", which its
-// decoder treats as a merge key even when quoted (https://github.com/go-yaml/yaml/issues/245), nor for a
-// multi-line key whose first line starts with a tab, which it writes as a literal block its own parser rejects
+// renderableAsKey reports whether go.yaml.in/yaml/v3 can render s as a map key. It cannot for a multi-line key
+// whose first line starts with a tab, which it writes as a literal block its own parser rejects
 // (https://github.com/yaml/go-yaml/issues/383). No collector config has such keys; RenderYAML reports an error
 // for them instead of producing a document the collector would misread.
 func renderableAsKey(s string) bool {
-	return s != "<<" && (!strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n"))
+	return !strings.HasPrefix(s, "\t") || !strings.Contains(s, "\n")
 }
 
 // assertCollectorReads checks that the collector reads want at every position scalarConfig put the value.
@@ -1878,14 +1878,6 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 // See open-telemetry/opentelemetry-operator#5734.
 func TestServiceApplyDefaultsKeepsTelemetryItCannotParse(t *testing.T) {
 	for name, telemetry := range map[string]map[string]any{
-		"declarative resource attributes": {
-			"logs": map[string]any{"level": "debug"},
-			"resource": map[string]any{
-				"attributes": []any{
-					map[string]any{"name": "deployment.environment.name", "value": "prod"},
-				},
-			},
-		},
 		"metrics is not an object": {
 			"metrics": "x",
 		},
@@ -1968,24 +1960,6 @@ func TestAddPrometheusMetricsEndpointUsesCollectorDefaultsByDefault(t *testing.T
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutTypeSuffix)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutUnits)
 	require.Nil(t, reader.Pull.Exporter.Prometheus.WithoutScopeInfo)
-}
-
-func TestRenderYAMLRejectsMergeKey(t *testing.T) {
-	cfg := &v1beta1.Config{
-		Receivers: v1beta1.AnyConfig{Object: map[string]any{"otlp": nil}},
-		Processors: &v1beta1.AnyConfig{Object: map[string]any{
-			"<<": "merge",
-		}},
-		Exporters: v1beta1.AnyConfig{Object: map[string]any{"debug": nil}},
-		Service: v1beta1.Service{
-			Pipelines: map[string]*v1beta1.Pipeline{
-				"metrics": {Receivers: []string{"otlp"}, Processors: []string{"<<"}, Exporters: []string{"debug"}},
-			},
-		},
-	}
-	_, err := RenderYAML(cfg)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "decode rendered YAML")
 }
 
 func TestRenderYAMLRejectsTabLedMultilineKey(t *testing.T) {
@@ -2269,6 +2243,217 @@ func TestConfig_GetSuppressedEnvVars(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetTelemetryResourceFormats(t *testing.T) {
+	tests := []struct {
+		name             string
+		service          v1beta1.Service
+		expectedResource string // JSON; empty means nil
+	}{
+		{
+			name: "no resource field",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "basic"},
+					},
+				},
+			},
+		},
+		{
+			name: "legacy key-value resource",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics":  map[string]any{"level": "detailed"},
+						"resource": map[string]any{"service.name": "my-collector"},
+					},
+				},
+			},
+			expectedResource: `{"service.name":"my-collector"}`,
+		},
+		{
+			name: "declarative attributes resource",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "detailed"},
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "service.name", "value": "my-collector"},
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedResource: `{"attributes":[{"name":"service.name","value":"my-collector"},{"name":"deployment.environment.name","value":"production"}]}`,
+		},
+		{
+			// This mix is invalid as far as the collector is concerned — it fails at startup
+			// with "resource::attributes cannot be used together with legacy inline resource
+			// attributes". The operator doesn't interpret the resource block, so it's passed
+			// through verbatim and the collector reports the error.
+			name: "legacy and declarative resource combined (invalid, passed through verbatim)",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"metrics": map[string]any{"level": "detailed"},
+						"resource": map[string]any{
+							"service.name": "my-collector",
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedResource: `{"service.name":"my-collector","attributes":[{"name":"deployment.environment.name","value":"production"}]}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tel, err := GetTelemetry(&tt.service, logr.Discard())
+			require.NoError(t, err)
+			require.NotNil(t, tel)
+
+			if tt.expectedResource == "" {
+				assert.Nil(t, tel.Resource)
+			} else {
+				assert.JSONEq(t, tt.expectedResource, string(tel.Resource))
+			}
+
+			ac, err := TelemetryToAnyConfig(tel)
+			require.NoError(t, err)
+			if tt.expectedResource == "" {
+				assert.Nil(t, ac.Object["resource"])
+			} else {
+				roundTripped, err := json.Marshal(ac.Object["resource"])
+				require.NoError(t, err)
+				assert.JSONEq(t, tt.expectedResource, string(roundTripped))
+			}
+		})
+	}
+}
+
+func TestServiceApplyDefaultsPreservesResourceFormats(t *testing.T) {
+	otlpPeriodicReader := map[string]any{"periodic": map[string]any{
+		"interval": 60000,
+		"exporter": map[string]any{"otlp": map[string]any{
+			"protocol": "grpc", "endpoint": "otel-collector:4317", "insecure": true,
+		}},
+	}}
+
+	tests := []struct {
+		name string
+		// expectedTelemetry is the full service::telemetry block after defaulting, as JSON.
+		// Asserting on the whole object (not just the resource) also covers metrics::level
+		// and metrics::readers being preserved rather than clobbered by the defaults.
+		expectedTelemetry string
+		service           v1beta1.Service
+	}{
+		{
+			name: "legacy resource gets default Prometheus reader",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{"service.name": "my-collector"},
+					},
+				},
+			},
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"service.name":"my-collector"}}`,
+		},
+		{
+			name: "declarative resource gets default Prometheus reader",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
+		},
+		{
+			// The collector itself rejects this mix at startup ("resource::attributes cannot be
+			// used together with legacy inline resource attributes"). The operator does not try
+			// to interpret or reconcile the two forms; it passes the block through verbatim so
+			// the collector can report the error.
+			name: "combined legacy and declarative resource is passed through verbatim",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"service.name": "my-collector",
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+					},
+				},
+			},
+			expectedTelemetry: `{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888},"AdditionalProperties":null}}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}],"service.name":"my-collector"}}`,
+		},
+		{
+			name: "existing readers not replaced with default",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+						"metrics": map[string]any{
+							"readers": []any{otlpPeriodicReader},
+						},
+					},
+				},
+			},
+			expectedTelemetry: `{"metrics":{"readers":[{"periodic":{"exporter":{"otlp":{"endpoint":"otel-collector:4317","insecure":true,"protocol":"grpc"},"AdditionalProperties":null},"interval":60000}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
+		},
+		{
+			name: "existing readers and level not clobbered",
+			service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]any{
+						"resource": map[string]any{
+							"attributes": []any{
+								map[string]any{"name": "deployment.environment.name", "value": "production"},
+							},
+						},
+						"metrics": map[string]any{
+							"level":   "detailed",
+							"readers": []any{otlpPeriodicReader},
+						},
+					},
+				},
+			},
+			expectedTelemetry: `{"metrics":{"level":"detailed","readers":[{"periodic":{"exporter":{"otlp":{"endpoint":"otel-collector:4317","insecure":true,"protocol":"grpc"},"AdditionalProperties":null},"interval":60000}}]},"resource":{"attributes":[{"name":"deployment.environment.name","value":"production"}]}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &v1beta1.Config{Service: tt.service}
+			_, err := ServiceApplyDefaults(&cfg.Service, logr.Discard())
+			require.NoError(t, err)
+
+			tel, err := GetTelemetry(&cfg.Service, logr.Discard())
+			require.NoError(t, err)
+			require.NotNil(t, tel)
+
+			actual, err := json.Marshal(tel)
+			require.NoError(t, err)
+			assert.JSONEq(t, tt.expectedTelemetry, string(actual))
 		})
 	}
 }

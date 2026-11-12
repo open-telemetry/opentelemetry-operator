@@ -13,7 +13,7 @@ metadata:
   name: my-instrumentation
 spec:
   apacheHttpd:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-3
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4-5
     version: "2.2"
     configPath: /your-custom-config-path
     attrs:
