@@ -1,18 +1,15 @@
 module github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/integrationtest
 
-go 1.26.3
+go 1.27.0
 
 // This is a separate module so the collector + prometheus receiver dependency
 // graph stays out of the target allocator binary's module. It imports the target
 // allocator's internal packages directly (permitted because it lives under
 // cmd/otel-allocator/) and a real prometheus receiver, and wires them in-process.
 require (
+	github.com/go-logr/logr v1.4.4
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.163.0
 	github.com/open-telemetry/opentelemetry-operator v0.0.0-00010101000000-000000000000
-)
-
-require (
-	github.com/go-logr/logr v1.4.4
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.73.1
 	github.com/prometheus/prometheus v0.315.1
@@ -308,11 +305,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.37.1 // indirect
-	k8s.io/apiextensions-apiserver v0.37.1 // indirect
-	k8s.io/apimachinery v0.37.1 // indirect
-	k8s.io/client-go v0.37.1 // indirect
-	k8s.io/component-base v0.37.1 // indirect
+	k8s.io/api v0.37.2 // indirect
+	k8s.io/apiextensions-apiserver v0.37.2 // indirect
+	k8s.io/apimachinery v0.37.2 // indirect
+	k8s.io/client-go v0.37.2 // indirect
+	k8s.io/component-base v0.37.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // indirect
 	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab // indirect
