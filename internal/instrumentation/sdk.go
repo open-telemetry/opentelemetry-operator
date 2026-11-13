@@ -173,6 +173,10 @@ func (i *sdkInjector) injectPython(ctx context.Context, inst instrumentationWith
 	i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 	platform := inst.AdditionalAnnotations[annotationPythonPlatform]
+	if _, err := pythonPlatformSrc(platform); err != nil {
+		i.logger.Info("Skipping Python SDK injection", "reason", err.Error())
+		return pod
+	}
 	containers := containersToInstrument(&inst, &pod)
 
 	if len(containers) > 0 {
