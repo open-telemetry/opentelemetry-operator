@@ -2653,6 +2653,33 @@ func TestMutateIngress(t *testing.T) {
 	assert.Equal(t, "new.example.com", existing.Spec.Rules[0].Host)
 }
 
+func TestMutateIngressClassName(t *testing.T) {
+	existing := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+		},
+		Spec: networkingv1.IngressSpec{
+			IngressClassName: new("nginx"),
+		},
+	}
+
+	desired := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+		},
+		Spec: networkingv1.IngressSpec{
+			IngressClassName: new("traefik"),
+		},
+	}
+
+	mutateFn := MutateFuncFor(existing, desired)
+	err := mutateFn()
+	require.NoError(t, err)
+
+	require.NotNil(t, existing.Spec.IngressClassName)
+	assert.Equal(t, "traefik", *existing.Spec.IngressClassName)
+}
+
 func TestGetMutateFunc_MutateNetworkPolicy(t *testing.T) {
 	got := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
