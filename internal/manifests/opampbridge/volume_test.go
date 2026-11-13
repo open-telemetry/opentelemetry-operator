@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -29,4 +30,25 @@ func TestVolumeNewDefault(t *testing.T) {
 
 	// check that it's the opamp-bridge-internal volume, with the config map
 	assert.Equal(t, naming.OpAMPBridgeConfigMapVolume(), volumes[0].Name)
+}
+
+func TestUserDefinedVolume(t *testing.T) {
+	opampBridge := v1alpha1.OpAMPBridge{
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: "custom-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	volumes := Volumes(cfg, opampBridge)
+
+	assert.Len(t, volumes, 2)
+	assert.Contains(t, volumes, opampBridge.Spec.Volumes[0])
 }
