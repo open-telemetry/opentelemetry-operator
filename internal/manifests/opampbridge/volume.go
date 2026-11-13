@@ -28,5 +28,7 @@ func Volumes(cfg config.Config, opampBridge v1alpha1.OpAMPBridge) []corev1.Volum
 		},
 	}}
 
+	volumes = append(volumes, opampBridge.Spec.Volumes...)
+
 	return volumes
 }
