@@ -66,7 +66,8 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
 				},
 			},
-			UpdateStrategy: params.OtelCol.Spec.DaemonSetUpdateStrategy,
+			UpdateStrategy:       params.OtelCol.Spec.DaemonSetUpdateStrategy,
+			RevisionHistoryLimit: params.OtelCol.Spec.RevisionHistoryLimit,
 		},
 	}, nil
 }
