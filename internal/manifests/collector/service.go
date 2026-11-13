@@ -129,6 +129,8 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 		Spec: corev1.ServiceSpec{
 			Ports:                 ports,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			IPFamilies:            params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
 			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
 			SessionAffinity:       sessionAffinity(params),
 			SessionAffinityConfig: params.OtelCol.Spec.SessionAffinityConfig,
