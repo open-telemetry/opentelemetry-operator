@@ -52,6 +52,7 @@ func main() {
 	if cfg.IsStandaloneMode() {
 		options = append(options, standaloneManagerOptions(l, cfg, kubeClient, clusterID)...)
 	} else {
+		cfg.SetOperatorInstanceID(clusterID, os.Getenv("OPAMP_BRIDGE_RESOURCE_UID"))
 		options = append(options, operatorManagerOptions(l, cfg, kubeClient)...)
 	}
 	manager, err := bridgemanager.New(options...)

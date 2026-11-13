@@ -762,6 +762,28 @@ func TestNewStandaloneAgentConfigMergesAgentDescription(t *testing.T) {
 	}})
 }
 
+func TestSetOperatorInstanceID(t *testing.T) {
+	instanceID := func(clusterID, bridgeUID string) uuid.UUID {
+		cfg := NewConfig(logr.Discard())
+		cfg.SetOperatorInstanceID(clusterID, bridgeUID)
+		return cfg.GetInstanceId()
+	}
+
+	initial := instanceID("cluster-a", "bridge-a")
+	assert.Equal(t, uuid.NewSHA1(uuid.NameSpaceURL, []byte("cluster-a/OpAMPBridge/bridge-a")), initial)
+	assert.NotEqual(t, initial, instanceID("cluster-b", "bridge-a"))
+	assert.NotEqual(t, initial, instanceID("cluster-a", "bridge-b"))
+}
+
+func TestSetOperatorInstanceIDWithoutBridgeUID(t *testing.T) {
+	cfg := NewConfig(logr.Discard())
+	initial := cfg.GetInstanceId()
+
+	cfg.SetOperatorInstanceID("cluster-a", "")
+
+	assert.Equal(t, initial, cfg.GetInstanceId())
+}
+
 func TestNewStandaloneAgentConfigGeneratesInstanceIDFromAgentIdentity(t *testing.T) {
 	cfg := NewConfig(logr.Discard())
 	agent := StandaloneAgentConfig{

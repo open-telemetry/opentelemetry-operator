@@ -227,6 +227,13 @@ func (c *Config) GetInstanceId() uuid.UUID {
 	return c.instanceId
 }
 
+// SetOperatorInstanceID derives the startup UID from the cluster and OpAMPBridge UIDs.
+func (c *Config) SetOperatorInstanceID(clusterID, bridgeUID string) {
+	if bridgeUID != "" {
+		c.instanceId = uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/OpAMPBridge/%s", clusterID, bridgeUID))
+	}
+}
+
 func (c *Config) GetDescription() *protobufs.AgentDescription {
 	return &protobufs.AgentDescription{
 		IdentifyingAttributes: []*protobufs.KeyValue{

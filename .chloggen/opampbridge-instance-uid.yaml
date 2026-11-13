@@ -1,0 +1,7 @@
+change_type: enhancement
+component: opamp
+note: Preserve the OpAMP Bridge instance UID across pod replacements.
+issues: [5902]
+subtext: |
+  The startup UID is derived from the Kubernetes cluster and OpAMPBridge resource UIDs.
+  Existing operator-mode bridges report a new instance UID on their first startup after upgrading.
