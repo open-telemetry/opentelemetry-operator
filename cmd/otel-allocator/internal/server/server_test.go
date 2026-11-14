@@ -1277,6 +1277,12 @@ func TestServer_TargetHTMLHandlerInvalidHash(t *testing.T) {
 	result := w.Result()
 
 	assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+
+	bodyBytes, err := io.ReadAll(result.Body)
+	require.NoError(t, err)
+
+	assert.Contains(t, string(bodyBytes), "Bad Request")
+	assert.NotContains(t, string(bodyBytes), "Unknown Target")
 }
 
 func TestServer_TargetHTMLHandlerMissingHash(t *testing.T) {
