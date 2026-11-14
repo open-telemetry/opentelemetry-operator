@@ -448,6 +448,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 			Error:   "Expected target_hash to be a number",
 			Example: "/debug/target?target_hash=42",
 		})
+		return
 	}
 	target, found := s.allocator.TargetItems()[target.ItemHash(targetHash)]
 	if !found {
