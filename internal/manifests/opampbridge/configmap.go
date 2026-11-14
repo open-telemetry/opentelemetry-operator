@@ -67,7 +67,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Name:        name,
 			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: params.OpAMPBridge.Annotations,
+			Annotations: Annotations(params.OpAMPBridge, params.Config.AnnotationsFilter),
 		},
 		Data: map[string]string{
 			OpAMPBridgeFilename: string(configYAML),
