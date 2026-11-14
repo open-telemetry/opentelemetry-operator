@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -77,6 +78,23 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
+}
+
+func TestContainerUsesOpAMPBridgeUID(t *testing.T) {
+	// prepare
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{UID: "bridge-uid"},
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			Env: []corev1.EnvVar{{Name: "OPAMP_BRIDGE_RESOURCE_UID", Value: "user-value"}},
+		},
+	}
+
+	// test
+	c := Container(config.New(), logger, opampBridge)
+
+	// verify
+	assert.Contains(t, c.Env, corev1.EnvVar{Name: "OPAMP_BRIDGE_RESOURCE_UID", Value: "bridge-uid"})
+	assert.NotContains(t, c.Env, opampBridge.Spec.Env[0])
 }
 
 func TestContainerVolumes(t *testing.T) {

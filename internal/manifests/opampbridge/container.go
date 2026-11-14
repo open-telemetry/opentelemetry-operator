@@ -78,6 +78,12 @@ func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridg
 
 	envVars = append(envVars, cfg.ProxyEnvVars...)
 
+	const resourceUIDEnv = "OPAMP_BRIDGE_RESOURCE_UID"
+	envVars = slices.DeleteFunc(envVars, func(env corev1.EnvVar) bool {
+		return env.Name == resourceUIDEnv
+	})
+	envVars = append(envVars, corev1.EnvVar{Name: resourceUIDEnv, Value: string(opampBridge.UID)})
+
 	return corev1.Container{
 		Name:            naming.OpAMPBridgeContainer(),
 		Image:           image,

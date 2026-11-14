@@ -49,6 +49,8 @@ spec:
               containerName: opamp-bridge-container
               divisor: "0"
               resource: limits.cpu
+        - name: OPAMP_BRIDGE_RESOURCE_UID
+          value: 0cf40c70-7602-4412-81d5-f61b8ddb4a41
         image: test
         livenessProbe:
           httpGet:

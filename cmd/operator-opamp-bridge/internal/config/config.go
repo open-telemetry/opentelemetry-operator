@@ -88,6 +88,7 @@ type Config struct {
 	ClusterConfig      *rest.Config `yaml:"-"`
 	RootLogger         logr.Logger  `yaml:"-"`
 	instanceId         uuid.UUID    `yaml:"-"`
+	bridgeUID          string
 
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string            `yaml:"componentsAllowed,omitempty"`
@@ -225,6 +226,11 @@ func (*Config) GetAgentVersion() string {
 
 func (c *Config) GetInstanceId() uuid.UUID {
 	return c.instanceId
+}
+
+// SetOperatorInstanceID derives the startup UID from the cluster and OpAMPBridge UIDs.
+func (c *Config) SetOperatorInstanceID(clusterID string) {
+	c.instanceId = uuid.NewSHA1(uuid.NameSpaceURL, fmt.Appendf(nil, "%s/OpAMPBridge/%s", clusterID, c.bridgeUID))
 }
 
 func (c *Config) GetDescription() *protobufs.AgentDescription {
@@ -493,6 +499,10 @@ func (c *Config) GetRestConfig() *rest.Config {
 	return c.ClusterConfig
 }
 
+const bridgeUIDEnv = "OPAMP_BRIDGE_RESOURCE_UID"
+
+var errMissingBridgeUID = errors.New(bridgeUIDEnv + " is required in operator mode")
+
 func Load(logger logr.Logger, args []string) (*Config, error) {
 	flagSet := GetFlagSet(pflag.ExitOnError)
 	err := flagSet.Parse(args)
@@ -520,6 +530,12 @@ func Load(logger logr.Logger, args []string) (*Config, error) {
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
+	}
+	if !cfg.IsStandaloneMode() {
+		cfg.bridgeUID = os.Getenv(bridgeUIDEnv)
+		if cfg.bridgeUID == "" {
+			return nil, errMissingBridgeUID
+		}
 	}
 
 	return cfg, nil
