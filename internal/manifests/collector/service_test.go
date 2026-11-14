@@ -602,6 +602,32 @@ func TestServiceWithIpFamily(t *testing.T) {
 	})
 }
 
+func TestExtensionServiceWithIpFamily(t *testing.T) {
+	params := deploymentParams()
+	params.OtelCol.Spec.Config.Service.Extensions = []string{"jaeger_query"}
+	params.OtelCol.Spec.Config.Extensions = &v1beta1.AnyConfig{
+		Object: map[string]any{
+			"jaeger_query": map[string]any{
+				"http": map[string]any{
+					"endpoint": "0.0.0.0:16686",
+				},
+			},
+		},
+	}
+	params.OtelCol.Spec.IpFamilies = []v1.IPFamily{
+		"IPv6",
+		"IPv4",
+	}
+	ipFamilyPolicy := v1.IPFamilyPolicyPreferDualStack
+	params.OtelCol.Spec.IpFamilyPolicy = &ipFamilyPolicy
+
+	actual, err := ExtensionService(params)
+	require.NoError(t, err)
+	require.NotNil(t, actual)
+	assert.Equal(t, params.OtelCol.Spec.IpFamilies, actual.Spec.IPFamilies)
+	assert.Equal(t, params.OtelCol.Spec.IpFamilyPolicy, actual.Spec.IPFamilyPolicy)
+}
+
 func TestServiceWithSessionAffinity(t *testing.T) {
 	t.Run("should set SessionAffinity when specified", func(t *testing.T) {
 		params := deploymentParams()
