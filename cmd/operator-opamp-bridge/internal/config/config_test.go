@@ -21,6 +21,7 @@ import (
 )
 
 func TestConfigLoadPriority(t *testing.T) {
+	t.Setenv(bridgeUIDEnv, "bridge-uid")
 	t.Run("default values when nothing is set except config yaml", func(t *testing.T) {
 		args := []string{
 			"--" + configFilePathFlagName + "=./testdata/agent.yaml",
@@ -68,6 +69,7 @@ func TestConfigLoadPriority(t *testing.T) {
 }
 
 func TestLoadValidatesProxyConfig(t *testing.T) {
+	t.Setenv(bridgeUIDEnv, "bridge-uid")
 	tests := []struct {
 		name          string
 		proxyConfig   string
@@ -765,7 +767,8 @@ func TestNewStandaloneAgentConfigMergesAgentDescription(t *testing.T) {
 func TestSetOperatorInstanceID(t *testing.T) {
 	instanceID := func(clusterID, bridgeUID string) uuid.UUID {
 		cfg := NewConfig(logr.Discard())
-		cfg.SetOperatorInstanceID(clusterID, bridgeUID)
+		cfg.bridgeUID = bridgeUID
+		cfg.SetOperatorInstanceID(clusterID)
 		return cfg.GetInstanceId()
 	}
 
@@ -775,13 +778,13 @@ func TestSetOperatorInstanceID(t *testing.T) {
 	assert.NotEqual(t, initial, instanceID("cluster-a", "bridge-b"))
 }
 
-func TestSetOperatorInstanceIDWithoutBridgeUID(t *testing.T) {
-	cfg := NewConfig(logr.Discard())
-	initial := cfg.GetInstanceId()
-
-	cfg.SetOperatorInstanceID("cluster-a", "")
-
-	assert.Equal(t, initial, cfg.GetInstanceId())
+func TestLoadRequiresOperatorBridgeUID(t *testing.T) {
+	t.Setenv(bridgeUIDEnv, "")
+	_, err := Load(GetLogger(), []string{
+		"--" + configFilePathFlagName + "=./testdata/agent.yaml",
+		"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
+	})
+	require.ErrorIs(t, err, errMissingBridgeUID)
 }
 
 func TestNewStandaloneAgentConfigGeneratesInstanceIDFromAgentIdentity(t *testing.T) {
