@@ -71,3 +71,13 @@ func TestWatchNamespaceFlag(t *testing.T) {
 	require.NoError(t, ApplyCLI(&c))
 	require.Equal(t, "foo,bar", c.WatchNamespace)
 }
+
+func TestWatchLabelSelectorFlag(t *testing.T) {
+	oldArgs := args
+	args = []string{"--watch-label-selector=operator.example.com/instance=blue"}
+	t.Cleanup(func() { args = oldArgs })
+	c := New()
+	require.Empty(t, c.WatchLabelSelector)
+	require.NoError(t, ApplyCLI(&c))
+	require.Equal(t, "operator.example.com/instance=blue", c.WatchLabelSelector)
+}
