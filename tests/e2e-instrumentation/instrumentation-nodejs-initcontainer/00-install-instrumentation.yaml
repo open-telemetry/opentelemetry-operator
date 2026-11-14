@@ -24,3 +24,9 @@ spec:
     env:
       - name: OTEL_NODEJS_DEBUG
         value: "true"
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
