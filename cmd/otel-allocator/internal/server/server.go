@@ -780,7 +780,7 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 	for _, col := range allocator.Collectors() {
 		targets := GetAllTargetsByCollectorAndJob(allocator, col.Name, job)
 		displayData[col.Name] = collectorJSON{
-			Link: fmt.Sprintf("/debug/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
+			Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
 			Jobs: targets,
 		}
 	}
