@@ -13,6 +13,7 @@ spec:
   imagePullSecrets:
     - name: my-registry-secret
   terminationGracePeriodSeconds: 600
+  revisionHistoryLimit: 3
   daemonSetUpdateStrategy:
     type: RollingUpdate
     rollingUpdate:
