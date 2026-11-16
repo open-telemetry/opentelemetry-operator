@@ -20,3 +20,6 @@ subtext: |
   On Kubernetes 1.30+, the built-in StorageVersionMigration feature handles this automatically.
   On older Kubernetes versions, manually trigger migration by reading and re-writing each object,
   for example: `kubectl get otelcol -A -o json | kubectl apply -f -`.
+  As a temporary workaround, v1alpha1 can be re-enabled by editing the CRD directly:
+  `kubectl patch crd opentelemetrycollectors.opentelemetry.io --type=json -p='[{"op":"replace","path":"/spec/versions/0/served","value":true}]'`.
+  This change will be reverted on the next operator upgrade.
