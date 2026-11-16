@@ -10,6 +10,7 @@
   "gitIgnoredAuthors": [
     "197425009+otelbot@users.noreply.github.com"
   ],
+  "prHourlyLimit": 5,
   "customManagers": [
     {
       "customType": "regex",
