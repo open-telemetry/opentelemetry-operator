@@ -301,8 +301,8 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *v1beta1.OpenTelemetry
 		)
 	}
 
-	if r.Spec.Ingress.Type == v1beta1.IngressTypeIngress && r.Spec.Mode == v1beta1.ModeSidecar {
-		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+	if r.Spec.Ingress.Type == v1beta1.IngressTypeRoute && r.Spec.Mode == v1beta1.ModeSidecar {
+		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Routes can only be used in combination with the modes: %s, %s, %s",
 			v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet,
 		)
 	}

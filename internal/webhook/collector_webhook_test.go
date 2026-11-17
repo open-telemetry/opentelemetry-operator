@@ -1278,6 +1278,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: fmt.Sprintf("Ingress can only be used in combination with the modes: %s, %s, %s", v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet),
 		},
 		{
+			name: "invalid deployment mode incompatible with route settings",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeSidecar,
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeRoute,
+					},
+				},
+			},
+			expectedErr: fmt.Sprintf("Routes can only be used in combination with the modes: %s, %s, %s", v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet),
+		},
+		{
 			name: "invalid mode with priorityClassName",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
