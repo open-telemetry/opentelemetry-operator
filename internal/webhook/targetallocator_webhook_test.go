@@ -81,6 +81,31 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "per-node strategy",
+			targetallocator: v1alpha1.TargetAllocator{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyPerNode,
+				},
+			},
+			expected: v1alpha1.TargetAllocator{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+				},
+				Spec: v1alpha1.TargetAllocatorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: &one,
+						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyPerNode,
+				},
+			},
+		},
+		{
 			name: "provided values in spec",
 			targetallocator: v1alpha1.TargetAllocator{
 				Spec: v1alpha1.TargetAllocatorSpec{
