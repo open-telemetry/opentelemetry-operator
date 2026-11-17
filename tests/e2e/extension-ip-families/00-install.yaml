@@ -1,0 +1,26 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: extension-ip-families
+spec:
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ipFamilyPolicy: RequireDualStack
+  config:
+    extensions:
+      health_check: {}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      debug: {}
+    service:
+      extensions:
+        - health_check
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
