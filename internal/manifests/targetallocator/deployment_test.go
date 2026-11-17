@@ -706,6 +706,37 @@ func TestDeploymentDNSConfig(t *testing.T) {
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }
 
+func TestDeploymentDNSPolicy(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, v1.DNSClusterFirst, d1.Spec.Template.Spec.DNSPolicy)
+
+	// Test dnsPolicy=Default
+	dnsPolicy := v1.DNSDefault
+	params.TargetAllocator.Spec.DNSPolicy = &dnsPolicy
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, v1.DNSDefault, d2.Spec.Template.Spec.DNSPolicy)
+
+	// Test dnsPolicy takes precedence over hostNetwork
+	params.TargetAllocator.Spec.HostNetwork = true
+
+	d3, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, v1.DNSDefault, d3.Spec.Template.Spec.DNSPolicy)
+}
+
 func TestDeploymentRevisionHistoryLimit(t *testing.T) {
 	// Test default (nil)
 	targetAllocator := targetAllocatorInstance()
