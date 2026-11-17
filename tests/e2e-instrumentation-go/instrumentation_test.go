@@ -332,6 +332,7 @@ func instrumentationFeature(tc testCase, appData func(context.Context, *testing.
 			ctx = e2e.SetupNamespace(ctx, t, cfg)
 			ns := e2e.Namespace(t, ctx)
 			e2e.DumpNamespaceOnFailure(ctx, t, cfg, ns)
+			e2e.AllowSampleAppIDsOnOpenShift(ctx, t, cfg, ns)
 
 			sink = e2e.DeployOTLPSink(ctx, t, cfg, ns, sinkImage)
 			if !tc.externalInstrumentation {
