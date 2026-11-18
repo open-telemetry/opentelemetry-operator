@@ -52,6 +52,10 @@ spec:
         file: 02-install-endpointslice.yaml
     - assert:
         file: 02-assert-endpointslice.yaml
+    # kube-proxy sends connections to the kubernetes Service to every endpoint in its EndpointSlices, and chainsaw only
+    # deletes a step's resources at the end of the test. See open-telemetry/opentelemetry-operator#5910.
+    - delete:
+        file: 02-install-endpointslice.yaml
     catch:
     - podLogs:
         selector: app.kubernetes.io/name=opentelemetry-operator
@@ -62,3 +66,12 @@ spec:
         file: 01-install-collector.yaml
     - assert:
         file: 01-assert-collector.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
+        # kubectl only returns the last 10 lines per container for a selector by default
+        tail: -1
+    # a crash-looping container's current logs may be empty, so also collect the previous container's logs
+    - script:
+        content: |
+          kubectl logs -n $NAMESPACE -l app.kubernetes.io/component=opentelemetry-targetallocator --all-containers --prefix --tail=-1 --previous || true
