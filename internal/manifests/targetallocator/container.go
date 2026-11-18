@@ -155,6 +155,7 @@ func Container(cfg config.Config, _ logr.Logger, ta v1alpha1.TargetAllocator) co
 		Env:             envVars,
 		EnvFrom:         ta.Spec.EnvFrom,
 		Resources:       ta.Spec.Resources,
+		ResizePolicy:    ta.Spec.ResizePolicy,
 		SecurityContext: ta.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
