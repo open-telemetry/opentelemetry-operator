@@ -24,6 +24,8 @@ spec:
             path: remoteconfiguration.yaml
           name: test-opamp-bridge
         name: opamp-bridge-internal
+      - name: custom-volume
+        emptyDir: {}
 status:
   readyReplicas: 1
   replicas: 1

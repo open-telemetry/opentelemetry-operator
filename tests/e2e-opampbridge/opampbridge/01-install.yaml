@@ -59,6 +59,9 @@ metadata:
   name: test
 spec:
   serviceAccount: "opamp-bridge"
+  volumes:
+    - name: custom-volume
+      emptyDir: {}
   capabilities:
     AcceptsOpAMPConnectionSettings: true
     AcceptsOtherConnectionSettings: true
