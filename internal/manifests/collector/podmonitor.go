@@ -20,6 +20,8 @@ import (
 
 var monitoringPortName = "monitoring"
 
+const sidecarInjectedLabel = "sidecar.opentelemetry.io/injected"
+
 // PodMonitor returns the pod monitor for the given instance.
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if !shouldCreatePodMonitor(params) {
@@ -28,12 +30,22 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 
 	name := naming.PodMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, nil)
-	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
+	manifestutils.AddExtraLabels(&params.Log, labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
+
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	selectorLabels := map[string]string{
+		sidecarInjectedLabel: naming.Truncate("%s.%s", 63, params.OtelCol.Namespace, params.OtelCol.Name),
+	}
 	pm := monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: params.OtelCol.Namespace,
-			Name:      name,
-			Labels:    labels,
+			Namespace:   params.OtelCol.Namespace,
+			Name:        name,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: monitoringv1.PodMonitorSpec{
 			JobLabel:        "app.kubernetes.io/instance",
