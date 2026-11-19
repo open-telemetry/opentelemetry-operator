@@ -72,9 +72,8 @@ func SetupWebhooks(ctx context.Context, mgr ctrl.Manager, cfg config.Config, rev
 		return err
 	}
 
-	decoder := admission.NewDecoder(mgr.GetScheme())
 	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-		Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
+		Handler: podmutation.NewWebhookHandler(ctrl.Log.WithName("pod-webhook"), mgr.GetScheme(), mgr.GetClient(),
 			[]podmutation.PodMutator{
 				sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 				instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorder("opentelemetry-operator"), cfg),
