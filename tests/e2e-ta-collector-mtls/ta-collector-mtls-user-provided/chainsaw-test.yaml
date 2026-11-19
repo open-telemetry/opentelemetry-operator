@@ -32,7 +32,7 @@ spec:
                 openssl req -new -key server.key -subj "/CN=prometheus-cr-targetallocator" -out server.csr
                 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
                   -out server.crt -days 1 \
-                  -extfile <(printf "subjectAltName=DNS:prometheus-cr-targetallocator")
+                  -extfile <(printf "subjectAltName=DNS:prometheus-cr-targetallocator,DNS:prometheus-cr-targetallocator.$NAMESPACE.svc,DNS:prometheus-cr-targetallocator.$NAMESPACE.svc.cluster.local")
 
                 # Client
                 openssl genrsa -out client.key 2048
@@ -54,6 +54,16 @@ spec:
             file: 00-install.yaml
         - assert:
             file: 00-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: step-01
+      try:
+        - apply:
+            template: true
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
       catch:
         - podLogs:
             selector: app.kubernetes.io/managed-by=opentelemetry-operator
