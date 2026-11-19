@@ -126,7 +126,7 @@ func WithAPISererPodLabelSelector(selector *metav1.LabelSelector) Option {
 	}
 }
 
-// WithAPISererNamespaceLabelSelector sets the label selector for tbe namespace of the API server.
+// WithAPISererNamespaceLabelSelector sets the label selector for the namespace of the API server.
 func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
 	return func(s *networkPolicy) {
 		s.apiServerNamespaceSelector = selector
