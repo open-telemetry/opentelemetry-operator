@@ -8,6 +8,10 @@ recorded here, one entry per published `<sdk-version>-<revision>` image tag. See
 Entries are added automatically by the autoinstrumentation-revision tooling when
 the image's SDK version or contents change; see [../README.md](../README.md).
 
+## 2.34.0-1
+
+- Update Java auto-instrumentation from 2.33.1 to 2.34.0. See [release notes](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.34.0). (#5959)
+
 ## 2.33.1-3
 
 - Rebuild Java auto-instrumentation image (base image or dependency update).
