@@ -47,3 +47,60 @@ func TestConfigMapHash(t *testing.T) {
 	cmHash := annotations[configMapHashAnnotationKey]
 	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
 }
+
+func TestConfigMapFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+		"opampbridge": "true",
+	}
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
+	params := manifests.Params{
+		OpAMPBridge: opampBridge,
+		Config: config.Config{
+			AnnotationsFilter: []string{"foo*", "app.*.bar"},
+		},
+		Log: logr.Discard(),
+	}
+
+	cm, err := ConfigMap(params)
+	require.NoError(t, err)
+
+	assert.Len(t, cm.Annotations, 1)
+	assert.NotContains(t, cm.Annotations, "foo")
+	assert.NotContains(t, cm.Annotations, "app.foo.bar")
+}
+
+func TestServiceAccountFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+		"opampbridge": "true",
+	}
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
+	params := manifests.Params{
+		OpAMPBridge: opampBridge,
+		Config: config.Config{
+			AnnotationsFilter: []string{"foo*", "app.*.bar"},
+		},
+		Log: logr.Discard(),
+	}
+
+	sa := ServiceAccount(params)
+
+	assert.Len(t, sa.Annotations, 1)
+	assert.NotContains(t, sa.Annotations, "foo")
+	assert.NotContains(t, sa.Annotations, "app.foo.bar")
+}
