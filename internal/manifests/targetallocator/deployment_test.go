@@ -498,6 +498,29 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
+func TestDeploymentHostPID(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test hostPID=true
+	params.TargetAllocator.Spec.HostPID = true
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.True(t, d2.Spec.Template.Spec.HostPID)
+}
+
 func TestDeploymentHostUsers(t *testing.T) {
 	// Test default (unset)
 	targetAllocator := targetAllocatorInstance()

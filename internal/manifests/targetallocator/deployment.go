@@ -50,6 +50,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.TargetAllocator.Spec.HostNetwork, params.TargetAllocator.Spec.PodDNSConfig, params.TargetAllocator.Spec.DNSPolicy),
 					DNSConfig:                     &params.TargetAllocator.Spec.PodDNSConfig,
 					HostNetwork:                   params.TargetAllocator.Spec.HostNetwork,
+					HostPID:                       params.TargetAllocator.Spec.HostPID,
 					HostUsers:                     params.TargetAllocator.Spec.HostUsers,
 					HostAliases:                   params.TargetAllocator.Spec.HostAliases,
 					ShareProcessNamespace:         &params.TargetAllocator.Spec.ShareProcessNamespace,
