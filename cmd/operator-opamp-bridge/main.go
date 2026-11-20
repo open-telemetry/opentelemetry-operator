@@ -52,6 +52,7 @@ func main() {
 	if cfg.IsStandaloneMode() {
 		options = append(options, standaloneManagerOptions(l, cfg, kubeClient, clusterID)...)
 	} else {
+		cfg.SetOperatorInstanceID(clusterID)
 		options = append(options, operatorManagerOptions(l, cfg, kubeClient)...)
 	}
 	manager, err := bridgemanager.New(options...)

@@ -13,6 +13,7 @@ spec:
               fieldPath: metadata.namespace
         - name: GOMEMLIMIT
         - name: GOMAXPROCS
+        - name: OPAMP_BRIDGE_RESOURCE_UID
         name: opamp-bridge-container
         volumeMounts:
         - mountPath: /conf
