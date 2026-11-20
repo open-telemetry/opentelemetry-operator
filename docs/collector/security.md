@@ -46,6 +46,53 @@ processes outside its own namespace.
 Rejecting these by default would break the operator's primary use case. Running a collector with them
 set is normal.
 
+### Running with a restricted security context
+
+Collectors that do not need host access can run with a restricted security context. Add these fields to
+the OpenTelemetryCollector `spec`; the collector `config` does not need to change.
+
+For a collector running as a Deployment:
+
+```yaml
+mode: deployment
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+```
+
+For sidecar mode, apply the same container security context to the injected collector:
+
+```yaml
+mode: sidecar
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+```
+
+Pod-level settings belong to the application workload in sidecar mode. Set them in the application
+pod's `spec.securityContext` (`spec.template.spec.securityContext` for a Deployment) when required.
+
+Omit `runAsUser` and `runAsGroup` on OpenShift so that its SecurityContextConstraints can assign an
+appropriate UID. On other platforms, set a non-zero `runAsUser` if the collector image does not already
+use a non-root numeric user. Components that write to the filesystem need a writable volume when
+`readOnlyRootFilesystem` is enabled.
+
 ### Restricting the fields
 
 If unprivileged users need to create `OpenTelemetryCollector` resources, block the fields at admission.
