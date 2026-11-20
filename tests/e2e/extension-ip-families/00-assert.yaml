@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extension-ip-families-collector
+status:
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extension-ip-families-collector
+spec:
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extension-ip-families-collector-extension
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+    operator.opentelemetry.io/collector-service-type: extension
+spec:
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  (length(clusterIPs)): 2
+  ports:
+    - name: health-check
+      port: 13133
+      targetPort: 13133
