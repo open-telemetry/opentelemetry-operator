@@ -42,6 +42,5 @@ spec:
       - create-pm-prometheus
   selector:
     matchLabels:
-      app.kubernetes.io/managed-by: opentelemetry-operator
-      app.kubernetes.io/instance: create-pm-prometheus.simplest
+      sidecar.opentelemetry.io/injected: create-pm-prometheus.simplest
 
