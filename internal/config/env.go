@@ -170,6 +170,9 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("WATCH_NAMESPACE"); ok {
 		cfg.WatchNamespace = v
 	}
+	if v, ok := os.LookupEnv("WATCH_LABEL_SELECTOR"); ok {
+		cfg.WatchLabelSelector = v
+	}
 	if v, ok := os.LookupEnv("OPENSHIFT_WEBHOOK_REPLICAS"); ok {
 		if i, err := strconv.ParseInt(v, 10, 32); err == nil {
 			cfg.OpenShiftWebhookReplicas = int32(i)

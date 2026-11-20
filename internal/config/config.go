@@ -142,6 +142,9 @@ type Config struct {
 	// WatchNamespace is a comma-separated list of namespaces the operator should watch for
 	// CustomResources. Empty string (the default) means watch all namespaces.
 	WatchNamespace string `yaml:"watch-namespace"`
+	// WatchLabelSelector selects the custom resources managed by the operator.
+	// Empty string (the default) selects all custom resources.
+	WatchLabelSelector string `yaml:"watch-label-selector"`
 	// TLS holds the TLS configuration of the controllers.
 	TLS TLSConfig `yaml:"tls"`
 	// ZapConfig holds the advanced Zap logging config
