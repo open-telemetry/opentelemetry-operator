@@ -124,6 +124,44 @@ func TestContainerResourceRequirements(t *testing.T) {
 	assert.Equal(t, resourceTest, resourcesValues)
 }
 
+func TestContainerResizePolicy(t *testing.T) {
+	resizePolicy := []corev1.ContainerResizePolicy{
+		{
+			ResourceName:  corev1.ResourceCPU,
+			RestartPolicy: corev1.NotRequired,
+		},
+		{
+			ResourceName:  corev1.ResourceMemory,
+			RestartPolicy: corev1.RestartContainer,
+		},
+	}
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ResizePolicy: resizePolicy,
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, resizePolicy, c.ResizePolicy)
+}
+
+func TestContainerDefaultResizePolicy(t *testing.T) {
+	targetAllocator := v1alpha1.TargetAllocator{}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Empty(t, c.ResizePolicy)
+}
+
 func TestContainerHasEnvVars(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
