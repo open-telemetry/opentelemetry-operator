@@ -472,6 +472,7 @@ type OpenTelemetryCollectorStatus struct {
 }
 
 // +kubebuilder:deprecatedversion:warning="OpenTelemetryCollector v1alpha1 is deprecated. Migrate to v1beta1."
+// +kubebuilder:unservedversion
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
