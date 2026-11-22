@@ -63,3 +63,36 @@ func TestServicePortsWithTargetAllocatorMTLS(t *testing.T) {
 	assert.Equal(t, ports[1].Port, s.Spec.Ports[1].Port)
 	assert.Equal(t, ports[1].TargetPort, s.Spec.Ports[1].TargetPort)
 }
+
+func TestServiceWithSessionAffinity(t *testing.T) {
+	t.Run("should set SessionAffinity when specified", func(t *testing.T) {
+		affinity := v1.ServiceAffinityClientIP
+		timeoutSeconds := int32(10800)
+		affinityConfig := &v1.SessionAffinityConfig{
+			ClientIP: &v1.ClientIPConfig{TimeoutSeconds: &timeoutSeconds},
+		}
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.SessionAffinity = &affinity
+		targetAllocator.Spec.SessionAffinityConfig = affinityConfig
+
+		s := Service(Params{
+			TargetAllocator: targetAllocator,
+			Config:          config.New(),
+			Log:             logger,
+		})
+
+		assert.Equal(t, affinity, s.Spec.SessionAffinity)
+		assert.Equal(t, affinityConfig, s.Spec.SessionAffinityConfig)
+	})
+
+	t.Run("should not set SessionAffinity when not specified", func(t *testing.T) {
+		s := Service(Params{
+			TargetAllocator: targetAllocatorInstance(),
+			Config:          config.New(),
+			Log:             logger,
+		})
+
+		assert.Empty(t, s.Spec.SessionAffinity)
+		assert.Nil(t, s.Spec.SessionAffinityConfig)
+	})
+}
