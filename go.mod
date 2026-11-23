@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/common v0.74.0
 	github.com/prometheus/prometheus v0.315.1
 	github.com/shirou/gopsutil/v4 v4.26.10
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/featuregate v1.70.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
