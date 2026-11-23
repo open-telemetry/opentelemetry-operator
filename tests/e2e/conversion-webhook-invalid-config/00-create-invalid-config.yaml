@@ -1,7 +1,0 @@
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
-metadata:
-  name: invalid-config-collector
-spec:
-  mode: deployment
-  config: "null"
