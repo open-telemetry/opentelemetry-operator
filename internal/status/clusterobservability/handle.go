@@ -232,6 +232,13 @@ func checkAgentCollectorStatus(ctx context.Context, cli client.Client, co *v1alp
 		}
 	}
 
+	if !isControlledBy(&agentCollector, co) {
+		return componentStatus{
+			ready:   false,
+			message: "Agent collector OpenTelemetryCollector is not owned by this ClusterObservability",
+		}
+	}
+
 	// Check underlying DaemonSet status
 	var daemonSet appsv1.DaemonSet
 	dsKey := types.NamespacedName{Name: agentCollectorName + "-collector", Namespace: co.Namespace}
@@ -293,6 +300,13 @@ func checkClusterCollectorStatus(ctx context.Context, cli client.Client, co *v1a
 		}
 	}
 
+	if !isControlledBy(&clusterCollector, co) {
+		return componentStatus{
+			ready:   false,
+			message: "Cluster collector OpenTelemetryCollector is not owned by this ClusterObservability",
+		}
+	}
+
 	var sts appsv1.StatefulSet
 	stsKey := types.NamespacedName{Name: clusterCollectorName + "-collector", Namespace: co.Namespace}
 	if err := cli.Get(ctx, stsKey, &sts); err != nil {
@@ -349,6 +363,14 @@ func checkInstrumentationStatus(ctx context.Context, cli client.Client, co *v1al
 		ready:   true,
 		message: fmt.Sprintf("Instrumentation CR ready: %s/%s", co.Namespace, instrumentationName),
 	}
+}
+
+// isControlledBy checks that the controller owner reference of obj points at the given
+// ClusterObservability. A resource left over from a deleted instance with the same name
+// has a different owner UID. See open-telemetry/opentelemetry-operator#5964.
+func isControlledBy(obj client.Object, instance *v1alpha1.ClusterObservability) bool {
+	owner := metav1.GetControllerOf(obj)
+	return owner != nil && owner.UID == instance.UID
 }
 
 // isOwnedByClusterObservability checks if an instrumentation is managed by the given ClusterObservability instance.

@@ -223,7 +223,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 	switch existingCRD := existing.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		desiredCRD := desired.(*v1beta1.OpenTelemetryCollector)
-		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) {
+		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) || !ownerReferencesEqual(existingCRD, desiredCRD) {
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				latest := &v1beta1.OpenTelemetryCollector{}
 				if err := r.Get(ctx, key, latest); err != nil {
@@ -231,7 +231,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 				}
 
 				// Only update if still different (another controller might have updated it)
-				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) {
+				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) && ownerReferencesEqual(latest, desiredCRD) {
 					log.Info("OpenTelemetryCollector already matches desired state", "name", key.Name, "namespace", key.Namespace)
 					return nil
 				}
@@ -240,6 +240,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 				latest.Spec = desiredCRD.Spec
 				latest.Labels = desiredCRD.Labels
 				latest.Annotations = desiredCRD.Annotations
+				latest.OwnerReferences = desiredCRD.OwnerReferences
 
 				return r.Update(ctx, latest)
 			})
@@ -252,7 +253,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 
 	case *v1alpha1.Instrumentation:
 		desiredCRD := desired.(*v1alpha1.Instrumentation)
-		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) {
+		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) || !ownerReferencesEqual(existingCRD, desiredCRD) {
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				latest := &v1alpha1.Instrumentation{}
 				if err := r.Get(ctx, key, latest); err != nil {
@@ -260,7 +261,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 				}
 
 				// Only update if still different (another controller might have updated it)
-				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) {
+				if apiequality.Semantic.DeepEqual(latest.Spec, desiredCRD.Spec) && ownerReferencesEqual(latest, desiredCRD) {
 					log.Info("Instrumentation already matches desired state", "name", key.Name, "namespace", key.Namespace)
 					return nil
 				}
@@ -269,6 +270,7 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 				latest.Spec = desiredCRD.Spec
 				latest.Labels = desiredCRD.Labels
 				latest.Annotations = desiredCRD.Annotations
+				latest.OwnerReferences = desiredCRD.OwnerReferences
 
 				return r.Update(ctx, latest)
 			})
@@ -284,6 +286,13 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 	}
 
 	return nil
+}
+
+// ownerReferencesEqual reports whether both objects have the same owner references.
+// A recreated ClusterObservability has a new UID, so the references of an existing
+// resource must follow it. See open-telemetry/opentelemetry-operator#5964.
+func ownerReferencesEqual(a, b client.Object) bool {
+	return apiequality.Semantic.DeepEqual(a.GetOwnerReferences(), b.GetOwnerReferences())
 }
 
 // reconcileUnstructuredResource handles Unstructured objects (like OpenShift SCCs)
