@@ -45,6 +45,14 @@ const (
 	minEventInterval = time.Second * 5
 )
 
+// promCRDResources are the Prometheus CRD resources the watcher creates informers for when they are served.
+var promCRDResources = []schema.GroupVersionResource{
+	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
+	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
+	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
+	promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
+}
+
 func NewPrometheusCRWatcher(
 	ctx context.Context,
 	logger logr.Logger,
@@ -300,14 +308,6 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	return informersMap, nil
-}
-
-// promCRDResources are the Prometheus CRD resources the watcher creates informers for when they are served.
-var promCRDResources = []schema.GroupVersionResource{
-	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
-	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
-	monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
-	promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
 }
 
 // getMissingCRDs returns the names of the Prometheus CRD resources that have no informer.
