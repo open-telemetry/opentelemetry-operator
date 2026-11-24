@@ -106,6 +106,10 @@ func (*mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	return false, nil
 }
 
+func (*mockAutoDetect) InstrumentationImageVolumeSupport() (bool, error) {
+	return false, nil
+}
+
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
 	if m.OpenShiftRoutesAvailabilityFunc != nil {
 		return m.OpenShiftRoutesAvailabilityFunc()

@@ -27,6 +27,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
@@ -43,6 +44,7 @@ type AutoDetect interface {
 	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 	NativeSidecarSupport() (bool, error)
+	InstrumentationImageVolumeSupport() (bool, error)
 	GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error)
 }
 
@@ -293,6 +295,18 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 	return currentVersion.AtLeast(minimumVersion), nil
 }
 
+// InstrumentationImageVolumeSupport checks if image volumes are available.
+// This requires Kubernetes version >= 1.36.
+func (a *autoDetect) InstrumentationImageVolumeSupport() (bool, error) {
+	currentVersion, err := a.k8sDetector.GetKubernetesVersion()
+	if err != nil {
+		return false, err
+	}
+
+	minimumVersion := version.MustParseGeneric("1.36.0")
+	return currentVersion.AtLeast(minimumVersion), nil
+}
+
 // GatewayAPIsAvailability checks if the Gateway API resources the operator
 // uses are available. The group being served is not enough: a cluster may
 // carry a partial bundle (for example only GatewayClass), and the operator
@@ -394,6 +408,14 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	}
 	c.Internal.NativeSidecarSupport = nativeSidecarSupport
 	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
+
+	instrumentationImageVolumeSupport, err := autoDetect.InstrumentationImageVolumeSupport()
+	if err != nil {
+		logger.V(2).Info("failed to detect instrumentation image volume support", "reason", err)
+		return err
+	}
+	c.Internal.InstrumentationImageVolumeSupport = featuregate.EnableInstrumentationImageVolumes.IsEnabled() && instrumentationImageVolumeSupport
+	logger.V(2).Info("determined instrumentation image volume support", "availability", c.Internal.InstrumentationImageVolumeSupport)
 
 	gapiAvl, err := autoDetect.GatewayAPIsAvailability()
 	if err != nil {

@@ -139,6 +139,33 @@ func instrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, name 
 	}
 }
 
+func instrImageVolume(image, name string, pullPolicy corev1.PullPolicy) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			Image: &corev1.ImageVolumeSource{
+				Reference:  image,
+				PullPolicy: pullPolicy,
+			},
+		},
+	}
+}
+
+func useInstrImageVolume(enabled bool, volumeClaimTemplate corev1.PersistentVolumeClaimTemplate) bool {
+	return enabled && reflect.ValueOf(volumeClaimTemplate).IsZero()
+}
+
+func instrImageVolumeSubPath(path string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(path, "/."), "/")
+}
+
+func imageVolumeSubPath(enabled bool, path string) string {
+	if !enabled {
+		return ""
+	}
+	return instrImageVolumeSubPath(path)
+}
+
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {
 	if quantity == nil {
 		return &defaultSize

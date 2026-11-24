@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
@@ -466,6 +468,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		NativeSidecarSupportFunc: func() (bool, error) {
 			return true, nil
 		},
+		InstrumentationImageVolumeSupportFunc: func() (bool, error) {
+			return true, nil
+		},
 	}
 	cfg := config.New()
 
@@ -492,21 +497,61 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
 	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
+	require.Equal(t, false, cfg.Internal.InstrumentationImageVolumeSupport)
+}
+
+func TestInstrumentationImageVolumeSupport(t *testing.T) {
+	registry := colfeaturegate.GlobalRegistry()
+	original := featuregate.EnableInstrumentationImageVolumes.IsEnabled()
+	require.NoError(t, registry.Set(featuregate.EnableInstrumentationImageVolumes.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, registry.Set(featuregate.EnableInstrumentationImageVolumes.ID(), original))
+	})
+
+	for _, tt := range []struct {
+		name      string
+		available bool
+		expected  bool
+	}{
+		{
+			name:      "available",
+			available: true,
+			expected:  true,
+		},
+		{
+			name:      "not available",
+			available: false,
+			expected:  false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.New()
+			mock := &mockAutoDetect{
+				InstrumentationImageVolumeSupportFunc: func() (bool, error) {
+					return tt.available, nil
+				},
+			}
+
+			require.NoError(t, autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test")))
+			assert.Equal(t, tt.expected, cfg.Internal.InstrumentationImageVolumeSupport)
+		})
+	}
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	ClusterRBACPermissionsFunc      func(ctx context.Context) (autoRBAC.Availability, error)
-	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
-	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
-	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
-	CollectorAvailabilityFunc       func() (collector.Availability, error)
-	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
-	NativeSidecarSupportFunc        func() (bool, error)
-	GatewayAPIsAvailabilityFunc     func() (gatewayapi.ApiAvailability, error)
+	OpenShiftRoutesAvailabilityFunc       func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc         func() (prometheus.Availability, error)
+	ClusterRBACPermissionsFunc            func(ctx context.Context) (autoRBAC.Availability, error)
+	NamespacedRBACPermissionsFunc         func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc           func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc       func() (targetallocator.Availability, error)
+	CollectorAvailabilityFunc             func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc           func() (opampbridge.Availability, error)
+	NativeSidecarSupportFunc              func() (bool, error)
+	InstrumentationImageVolumeSupportFunc func() (bool, error)
+	GatewayAPIsAvailabilityFunc           func() (gatewayapi.ApiAvailability, error)
 }
 
 func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
@@ -572,6 +617,13 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	if m.NativeSidecarSupportFunc != nil {
 		return m.NativeSidecarSupportFunc()
+	}
+	return false, nil
+}
+
+func (m *mockAutoDetect) InstrumentationImageVolumeSupport() (bool, error) {
+	if m.InstrumentationImageVolumeSupportFunc != nil {
+		return m.InstrumentationImageVolumeSupportFunc()
 	}
 	return false, nil
 }

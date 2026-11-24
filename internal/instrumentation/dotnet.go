@@ -39,7 +39,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Container, runtime string) error {
+func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Container, runtime string, useImageVolume bool) error {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
@@ -68,16 +68,24 @@ func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Co
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: dotnetInstrMountPath,
+		SubPath:   imageVolumeSubPath(useInstrImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate), "autoinstrumentation"),
 	})
 	return nil
 }
 
-func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
+	useImageVolume = useInstrImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate)
+	if useImageVolume {
+		volume = instrImageVolume(dotNetSpec.Image, dotnetVolumeName, instSpec.ImagePullPolicy)
+	}
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, dotnetInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		if useImageVolume {
+			return pod
+		}
 
 		initContainer := corev1.Container{
 			Name:      dotnetInitContainerName,
@@ -98,14 +106,15 @@ func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstConta
 
 // injectDotNetSDK injects .NET instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod *corev1.Pod, containers []*corev1.Container, runtime string, instSpec v1alpha1.InstrumentationSpec) error {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod *corev1.Pod, containers []*corev1.Container, runtime string, instSpec v1alpha1.InstrumentationSpec, imageVolumeEnabled ...bool) error {
+	useImageVolume := len(imageVolumeEnabled) > 0 && imageVolumeEnabled[0]
 	for _, container := range containers {
-		if err := injectDotNetSDKToContainer(dotNetSpec, container, runtime); err != nil {
+		if err := injectDotNetSDKToContainer(dotNetSpec, container, runtime, useImageVolume); err != nil {
 			return err
 		}
 	}
 	if len(containers) > 0 {
-		*pod = injectDotNetSDKToPod(dotNetSpec, *pod, containers[0].Name, instSpec)
+		*pod = injectDotNetSDKToPod(dotNetSpec, *pod, containers[0].Name, instSpec, useImageVolume)
 	}
 	return nil
 }

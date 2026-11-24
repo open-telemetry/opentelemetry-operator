@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -19,8 +20,11 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Container) error {
+func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Container, pullPolicy corev1.PullPolicy, useImageVolume bool) error {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
+	if useInstrImageVolume(useImageVolume, javaSpec.VolumeClaimTemplate) {
+		volume = instrImageVolume(javaSpec.Image, javaVolumeName, pullPolicy)
+	}
 
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
 	if err != nil {
@@ -37,15 +41,38 @@ func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Contai
 		Name:      volume.Name,
 		MountPath: containerMountPath,
 	})
+	if useImageVolume && useInstrImageVolume(useImageVolume, javaSpec.VolumeClaimTemplate) {
+		for i, extension := range javaSpec.Extensions {
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      fmt.Sprintf("%s-extension-%d", javaVolumeName, i),
+				MountPath: containerMountPath + "/extensions",
+				SubPath:   strings.TrimPrefix(extension.Dir, "/"),
+			})
+		}
+	}
 	return nil
 }
 
-func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, sc *corev1.SecurityContext) corev1.Pod {
+func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool, sc *corev1.SecurityContext) corev1.Pod {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
+	useImageVolume = useImageVolume && useInstrImageVolume(useImageVolume, javaSpec.VolumeClaimTemplate)
+	if useImageVolume {
+		volume = instrImageVolume(javaSpec.Image, javaVolumeName, instSpec.ImagePullPolicy)
+	}
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, javaInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		if useImageVolume {
+			for i, extension := range javaSpec.Extensions {
+				pod.Spec.Volumes = append(pod.Spec.Volumes, instrImageVolume(
+					extension.Image,
+					fmt.Sprintf("%s-extension-%d", javaVolumeName, i),
+					instSpec.ImagePullPolicy,
+				))
+			}
+			return pod
+		}
 
 		initContainer := corev1.Container{
 			Name:            javaInitContainerName,
@@ -83,15 +110,16 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 
 // injectJavaagent injects Java instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec, useImageVolume ...bool) error {
+	useImageVolumes := len(useImageVolume) > 0 && useImageVolume[0]
 	for _, container := range containers {
-		if err := injectJavaagentToContainer(javaSpec, container); err != nil {
+		if err := injectJavaagentToContainer(javaSpec, container, instSpec.ImagePullPolicy, useImageVolumes); err != nil {
 			return err
 		}
 	}
 	if len(containers) > 0 {
 		sc := resolveInitContainerSecurityContext(instSpec.InitContainerSecurityContext, containers[0].SecurityContext)
-		*pod = injectJavaagentToPod(javaSpec, *pod, containers[0].Name, instSpec, sc)
+		*pod = injectJavaagentToPod(javaSpec, *pod, containers[0].Name, instSpec, useImageVolumes, sc)
 	}
 	return nil
 }
