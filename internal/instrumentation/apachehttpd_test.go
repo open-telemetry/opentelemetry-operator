@@ -631,6 +631,29 @@ func TestInjectApacheHttpdagentVolumemountAliasing(t *testing.T) {
 	assert.Equal(t, apacheAgentConfDirFull, lastMount.MountPath)
 }
 
+func TestInjectApacheHttpdagentKeepsUnrelatedVolumeMounts(t *testing.T) {
+	mounts := []corev1.VolumeMount{
+		{Name: "app-conf", MountPath: "/opt/usr/local/apache2/conf/extra"},
+		{Name: "sibling", MountPath: "/usr/local/apache2/conf-extra"},
+		{Name: "conf", MountPath: "/usr/local/apache2/conf"},
+		{Name: "data", MountPath: "/data"},
+	}
+
+	pod := corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{VolumeMounts: mounts}}}}
+	result := injectApacheHttpdagent(logr.Discard(), v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+		pod, false, &pod.Spec.Containers[0], "http://otlp:4317",
+		map[string]string{string(semconv.K8SDeploymentNameKey): "svc"}, v1alpha1.InstrumentationSpec{})
+
+	var names []string
+	for _, m := range result.Spec.Containers[0].VolumeMounts {
+		names = append(names, m.Name)
+	}
+	assert.Equal(t, []string{"app-conf", "sibling", "data", apacheAgentVolume, apacheAgentConfigVolume}, names)
+
+	clone := result.Spec.InitContainers[0]
+	assert.Contains(t, clone.VolumeMounts, mounts[2], "the clone container still needs the original config mount")
+}
+
 func TestApacheInitContainerMissing(t *testing.T) {
 	tests := []struct {
 		name     string

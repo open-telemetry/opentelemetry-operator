@@ -91,18 +91,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 
 		// drop volume mount with volume-provided Apache config from original container
 		// since it could over-write configuration provided by the injection
-		idxFound := -1
-		for idx, volume := range container.VolumeMounts {
-			if strings.Contains(volume.MountPath, apacheConfDir) { // potentially passes config, which we want to pass to init copy only
-				idxFound = idx
-				break
-			}
-		}
-		if idxFound >= 0 {
-			volumeMounts := container.VolumeMounts
-			volumeMounts = append(volumeMounts[:idxFound], volumeMounts[idxFound+1:]...)
-			container.VolumeMounts = volumeMounts
-		}
+		// A mount that only shares a substring with the config directory, such as
+		// /opt/app/etc/nginx/conf.d, is not part of the config and must stay.
+		container.VolumeMounts = withoutMountsUnder(container.VolumeMounts, apacheConfDir)
 
 		// Inject volumes info instrumented container - Apache config dir + Apache agent
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
