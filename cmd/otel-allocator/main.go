@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/oklog/run"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus/client_golang/prometheus"
@@ -43,65 +44,91 @@ type promCRWatcher interface {
 }
 
 // runPromWatcher creates a Prometheus CR watcher with newWatcher and runs it until stop is closed
-// or the watcher returns. On every recheck tick, if a Prometheus CRD absent when the watcher was
-// created has been installed, the watcher is replaced by a new one so that the CRD is watched.
+// or the watcher's Watch returns. On every recheck tick, if a Prometheus CRD absent when the current
+// watcher was created has since been installed, a replacement watcher is created and the current one
+// is stopped, so that the new CRD is watched. A nil recheck channel disables the recheck.
+//
+// Behavior in each case:
+//   - newWatcher fails initially: the error is returned.
+//   - stop is closed: the current watcher is closed, its Watch result is awaited, nil is returned.
+//   - Watch returns on its own: the watcher is closed to release its informers, the Watch result
+//     is returned.
+//   - checking CRD availability fails, or no missing CRD is available: the current watcher is kept.
+//   - creating the replacement fails: the current watcher is kept and the next tick retries.
+//   - the replacement is created: it is started and the previous watcher is stopped.
 func runPromWatcher(
+	logger logr.Logger,
 	newWatcher func() (promCRWatcher, error),
 	recheck <-chan time.Time,
 	eventChan chan allocatorWatcher.Event,
 	errChan chan error,
 	stop <-chan struct{},
 ) error {
-	watcher, err := newWatcher()
+	current, err := newWatcher()
 	if err != nil {
 		return err
 	}
-	watchErr := startPromWatcher(watcher, eventChan, errChan)
+	watchDone := startPromWatcher(current, eventChan, errChan)
 	for {
 		select {
-		case err := <-watchErr:
-			return err
 		case <-stop:
-			stopPromWatcher(watcher, watchErr)
+			stopPromWatcher(logger, current, watchDone)
 			return nil
+		case watchErr := <-watchDone:
+			if closeErr := current.Close(); closeErr != nil {
+				logger.Error(closeErr, "Prometheus watcher failed to close")
+			}
+			return watchErr
 		case <-recheck:
-			available, err := watcher.MissingCRDsAvailable()
-			if err != nil {
-				setupLog.Error(err, "Unable to check availability of Prometheus CRDs")
+			replacement := recreatePromWatcher(logger, current, newWatcher)
+			if replacement == nil {
 				continue
 			}
-			if !available {
-				continue
-			}
-			setupLog.Info("Prometheus CRDs absent at startup are now available, recreating the prometheus watcher")
-			replacement, err := newWatcher()
-			if err != nil {
-				setupLog.Error(err, "Unable to recreate the prometheus watcher")
-				continue
-			}
-			stopPromWatcher(watcher, watchErr)
-			watcher = replacement
-			watchErr = startPromWatcher(watcher, eventChan, errChan)
+			// The replacement already applied its initial configuration in newWatcher, so the
+			// previous watcher is stopped only after the replacement is in place.
+			stopPromWatcher(logger, current, watchDone)
+			current = replacement
+			watchDone = startPromWatcher(current, eventChan, errChan)
 		}
 	}
 }
 
+// recreatePromWatcher returns a new watcher if a Prometheus CRD missing for current has been
+// installed, or nil if current should be kept.
+func recreatePromWatcher(logger logr.Logger, current promCRWatcher, newWatcher func() (promCRWatcher, error)) promCRWatcher {
+	available, err := current.MissingCRDsAvailable()
+	if err != nil {
+		logger.Error(err, "Unable to check availability of Prometheus CRDs")
+		return nil
+	}
+	if !available {
+		return nil
+	}
+	logger.Info("Prometheus CRDs absent at startup are now available, recreating the Prometheus watcher")
+	replacement, err := newWatcher()
+	if err != nil {
+		logger.Error(err, "Unable to recreate the Prometheus watcher, keeping the current one")
+		return nil
+	}
+	return replacement
+}
+
 // startPromWatcher runs Watch in a goroutine and returns a channel that receives its result.
 func startPromWatcher(watcher promCRWatcher, eventChan chan allocatorWatcher.Event, errChan chan error) <-chan error {
-	watchErr := make(chan error, 1)
+	watchDone := make(chan error, 1)
 	go func() {
-		watchErr <- watcher.Watch(eventChan, errChan)
+		watchDone <- watcher.Watch(eventChan, errChan)
 	}()
-	return watchErr
+	return watchDone
 }
 
 // stopPromWatcher closes the watcher and waits for its Watch call to return.
-func stopPromWatcher(watcher promCRWatcher, watchErr <-chan error) {
+func stopPromWatcher(logger logr.Logger, watcher promCRWatcher, watchDone <-chan error) {
 	if err := watcher.Close(); err != nil {
-		setupLog.Error(err, "prometheus watcher failed to close")
+		logger.Error(err, "Prometheus watcher failed to close")
 	}
-	if err := <-watchErr; err != nil {
-		setupLog.Error(err, "prometheus watcher exited with an error")
+	if err := <-watchDone; err != nil {
+		logger.Error(err, "Prometheus watcher exited with an error")
 	}
 }
 
@@ -231,10 +258,12 @@ func main() {
 			// apply the initial configuration
 			promConfig, watcherErr := promWatcher.LoadConfig(ctx)
 			if watcherErr != nil {
+				_ = promWatcher.Close()
 				return nil, fmt.Errorf("can't load initial Prometheus configuration from Prometheus CRs: %w", watcherErr)
 			}
 			watcherErr = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig.ScrapeConfigs)
 			if watcherErr != nil {
+				_ = promWatcher.Close()
 				return nil, fmt.Errorf("can't load initial scrape targets from Prometheus CRs: %w", watcherErr)
 			}
 			return promWatcher, nil
@@ -249,7 +278,7 @@ func main() {
 					defer ticker.Stop()
 					recheck = ticker.C
 				}
-				runErr := runPromWatcher(newPromWatcher, recheck, eventChan, errChan, promWatcherStop)
+				runErr := runPromWatcher(setupLog, newPromWatcher, recheck, eventChan, errChan, promWatcherStop)
 				setupLog.Info("Prometheus watcher exited")
 				return runErr
 			},
