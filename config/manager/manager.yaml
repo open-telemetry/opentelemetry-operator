@@ -70,8 +70,8 @@ spec:
           - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
             value: "true"
           - name: RELATED_IMAGE_COLLECTOR
-            value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.163.2
+            value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.164.0
           - name: RELATED_IMAGE_TARGET_ALLOCATOR
-            value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.163.0
+            value: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.164.0
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
