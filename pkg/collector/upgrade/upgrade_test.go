@@ -105,7 +105,8 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 		t.Run("spec.UpgradeStrategy = "+string(tt.strategy), func(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-			existing := makeOtelcol(nsn, v1alpha1.ManagementStateManaged)
+			// v1alpha1 is no longer served, so the fixture is converted and created as v1beta1.
+			existing := convertTov1beta1(t, makeOtelcol(nsn, v1alpha1.ManagementStateManaged))
 			err := k8sClient.Create(context.Background(), &existing)
 			require.NoError(t, err)
 

@@ -20,7 +20,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -29,12 +29,29 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
+var testConfig = v1beta1.Config{
+	Receivers: v1beta1.AnyConfig{
+		Object: map[string]any{"otlp": map[string]any{}},
+	},
+	Exporters: v1beta1.AnyConfig{
+		Object: map[string]any{"debug": map[string]any{}},
+	},
+	Service: v1beta1.Service{
+		Pipelines: map[string]*v1beta1.Pipeline{
+			"traces": {
+				Receivers: []string{"otlp"},
+				Exporters: []string{"debug"},
+			},
+		},
+	},
+}
+
 func TestShouldInjectSidecar(t *testing.T) {
 	for _, tt := range []struct {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1beta1.OpenTelemetryCollector
 	}{
 		{
 			// this is the simplest positive test: a pod is being created with an annotation
@@ -56,13 +73,14 @@ func TestShouldInjectSidecar(t *testing.T) {
 					},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-simplest-positive-case",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeSidecar,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -82,13 +100,14 @@ func TestShouldInjectSidecar(t *testing.T) {
 					},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-annotated-namespace",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeSidecar,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -108,14 +127,15 @@ func TestShouldInjectSidecar(t *testing.T) {
 					},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1beta1.OpenTelemetryCollector{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance",
 						Namespace: "my-namespace-with-autoselect",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Mode: v1alpha1.ModeSidecar,
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:   v1beta1.ModeSidecar,
+						Config: testConfig,
 					},
 				},
 				{
@@ -123,8 +143,9 @@ func TestShouldInjectSidecar(t *testing.T) {
 						Name:      "a-deployment-instance",
 						Namespace: "my-namespace-with-autoselect",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Mode: v1alpha1.ModeDeployment,
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:   v1beta1.ModeDeployment,
+						Config: testConfig,
 					},
 				},
 			},
@@ -197,7 +218,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1beta1.OpenTelemetryCollector
 	}{
 		{
 			name: "namespace has no annotations",
@@ -207,13 +228,14 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-annotations",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeSidecar,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -226,14 +248,15 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1beta1.OpenTelemetryCollector{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance-1",
 						Namespace: "my-namespace-multiple-otelcols",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Mode: v1alpha1.ModeSidecar,
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:   v1beta1.ModeSidecar,
+						Config: testConfig,
 					},
 				},
 				{
@@ -241,8 +264,9 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 						Name:      "my-instance-2",
 						Namespace: "my-namespace-multiple-otelcols",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Mode: v1alpha1.ModeSidecar,
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:   v1beta1.ModeSidecar,
+						Config: testConfig,
 					},
 				},
 			},
@@ -256,7 +280,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod:      corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{},
+			otelcols: []v1beta1.OpenTelemetryCollector{},
 		},
 		{
 			name: "otelcol is not a sidecar",
@@ -267,13 +291,14 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-sidecar-otelcol",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeDaemonSet,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeDaemonSet,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -286,13 +311,14 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-automatic-sidecar-otelcol",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeDaemonSet,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeDaemonSet,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -313,13 +339,14 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					}},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-pod-has-sidecar",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeSidecar,
+					Config: testConfig,
 				},
 			}},
 		},
@@ -335,13 +362,14 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "false"},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1beta1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-sidecar-not-desired",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:   v1beta1.ModeSidecar,
+					Config: testConfig,
 				},
 			}},
 		},
