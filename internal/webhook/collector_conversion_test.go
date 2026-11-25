@@ -411,6 +411,28 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 	})
 }
 
+func Test_tov1beta1AndBack_deny_fs_access_through_sms(t *testing.T) {
+	colalpha1 := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
+					DenyFSAccessThroughSMs: true,
+				},
+			},
+		},
+	}
+
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := OtelColConvertTo(&colalpha1, &colbeta1)
+	require.NoError(t, err)
+	assert.True(t, colbeta1.Spec.TargetAllocator.PrometheusCR.DenyFSAccessThroughSMs)
+
+	colalpha1Converted := v1alpha1.OpenTelemetryCollector{}
+	err = OtelColConvertFrom(&colalpha1Converted, &colbeta1)
+	require.NoError(t, err)
+	assert.True(t, colalpha1Converted.Spec.TargetAllocator.PrometheusCR.DenyFSAccessThroughSMs)
+}
+
 func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
 	one := int32(1)
 	two := int32(2)
@@ -480,6 +502,7 @@ func createConvertTestTA() v1alpha1.OpenTelemetryTargetAllocator {
 		PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                true,
 			ScrapeInterval:         &metav1.Duration{Duration: time.Second},
+			DenyFSAccessThroughSMs: true,
 			PodMonitorSelector:     map[string]string{"podmonitorkey": "podmonitorvalue"},
 			ServiceMonitorSelector: map[string]string{"servicemonitorkey": "servicemonitorkey"},
 		},

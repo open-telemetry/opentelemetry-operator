@@ -6,8 +6,8 @@ package manifestutils
 import (
 	"maps"
 	"regexp"
-	"strings"
 
+	"github.com/distribution/reference"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,7 +27,6 @@ func IsFilteredSet(sourceSet string, filterSet []string) bool {
 
 // Labels return the common labels to all objects that are part of a managed CR.
 func Labels(instance metav1.ObjectMeta, name, image, component string, filterLabels []string) map[string]string {
-	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if instance.Labels != nil {
@@ -40,26 +39,29 @@ func Labels(instance metav1.ObjectMeta, name, image, component string, filterLab
 
 	maps.Copy(base, SelectorLabels(instance, component))
 
-	version := strings.Split(image, ":")
-	for _, v := range version {
-		if before, ok := strings.CutSuffix(v, "@sha256"); ok {
-			versionLabel = before
-		}
-	}
-	switch lenVersion := len(version); lenVersion {
-	case 3:
-		base["app.kubernetes.io/version"] = versionLabel
-	case 2:
-		base["app.kubernetes.io/version"] = naming.Truncate("%s", 63, version[len(version)-1])
-	default:
-		base["app.kubernetes.io/version"] = "latest"
-	}
+	base["app.kubernetes.io/version"] = imageVersionLabel(image)
 
 	// Don't override the app name if it already exists
 	if _, ok := base["app.kubernetes.io/name"]; !ok {
 		base["app.kubernetes.io/name"] = name
 	}
 	return base
+}
+
+// imageVersionLabel returns the value for the app.kubernetes.io/version label:
+// the image tag if there is one, otherwise the digest, otherwise "latest".
+func imageVersionLabel(image string) string {
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return "latest"
+	}
+	if tagged, ok := ref.(reference.Tagged); ok {
+		return naming.Truncate("%s", 63, tagged.Tag())
+	}
+	if digested, ok := ref.(reference.Digested); ok {
+		return naming.Truncate("%s", 63, digested.Digest().Encoded())
+	}
+	return "latest"
 }
 
 // SelectorLabels return the common labels to all objects that are part of a managed CR to use as selector.

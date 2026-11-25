@@ -4,6 +4,8 @@
 package receivers
 
 import (
+	"slices"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
@@ -21,6 +23,11 @@ func Register(name string, p components.Parser) {
 func IsRegistered(name string) bool {
 	_, ok := registry[components.ComponentType(name)]
 	return ok
+}
+
+// Parsers returns the receiver parsers known to the operator.
+func Parsers() []components.Parser {
+	return slices.Clone(componentParsers)
 }
 
 // ReceiverFor returns a parser builder for the given exporter name.

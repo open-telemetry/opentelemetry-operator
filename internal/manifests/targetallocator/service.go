@@ -40,11 +40,20 @@ func Service(params Params) *corev1.Service {
 			Annotations: ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter),
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:            selector,
-			Ports:               ports,
-			IPFamilies:          params.TargetAllocator.Spec.IpFamilies,
-			IPFamilyPolicy:      params.TargetAllocator.Spec.IpFamilyPolicy,
-			TrafficDistribution: params.TargetAllocator.Spec.TrafficDistribution,
+			Selector:              selector,
+			Ports:                 ports,
+			IPFamilies:            params.TargetAllocator.Spec.IpFamilies,
+			IPFamilyPolicy:        params.TargetAllocator.Spec.IpFamilyPolicy,
+			TrafficDistribution:   params.TargetAllocator.Spec.TrafficDistribution,
+			SessionAffinity:       sessionAffinity(params),
+			SessionAffinityConfig: params.TargetAllocator.Spec.SessionAffinityConfig,
 		},
 	}
+}
+
+func sessionAffinity(params Params) corev1.ServiceAffinity {
+	if params.TargetAllocator.Spec.SessionAffinity != nil {
+		return *params.TargetAllocator.Spec.SessionAffinity
+	}
+	return ""
 }

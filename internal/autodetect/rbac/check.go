@@ -14,9 +14,33 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
-// CheckRBACPermissions checks if the operator has the needed permissions to create RBAC resources automatically.
-// If the RBAC is there, no errors nor warnings are returned.
-func CheckRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
+// CheckClusterRBACPermissions checks if the operator has the needed permissions to
+// create cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
+func CheckClusterRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
+	rules := []*rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"rbac.authorization.k8s.io"},
+			Resources: []string{"clusterrolebindings", "clusterroles"},
+			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
+		},
+	}
+	return checkPermissions(ctx, reviewer, rules)
+}
+
+// CheckNamespacedRBACPermissions checks if the operator has the needed
+// permissions to create namespace-scoped RBAC resources (Role, RoleBinding).
+func CheckNamespacedRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
+	rules := []*rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"rbac.authorization.k8s.io"},
+			Resources: []string{"rolebindings", "roles"},
+			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
+		},
+	}
+	return checkPermissions(ctx, reviewer, rules)
+}
+
+func checkPermissions(ctx context.Context, reviewer *rbac.Reviewer, rules []*rbacv1.PolicyRule) (admission.Warnings, error) {
 	namespace, err := autodetectutils.GetOperatorNamespace()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
@@ -25,14 +49,6 @@ func CheckRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admissi
 	serviceAccount, err := autodetectutils.GetOperatorServiceAccount()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
-	}
-
-	rules := []*rbacv1.PolicyRule{
-		{
-			APIGroups: []string{"rbac.authorization.k8s.io"},
-			Resources: []string{"clusterrolebindings", "clusterroles"},
-			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
-		},
 	}
 
 	if subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...); err != nil {

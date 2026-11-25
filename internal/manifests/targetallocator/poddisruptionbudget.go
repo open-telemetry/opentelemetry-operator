@@ -18,12 +18,12 @@ import (
 func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
 	pdbSpec := params.TargetAllocator.Spec.PodDisruptionBudget.DeepCopy()
 	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
-	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
+	// if PodDisruptionBudget != nil and strategy isn't correct, users have set
 	// it wrongly
 	if pdbSpec != nil && params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing &&
 		params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyPerNode {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
-		return nil, errors.New("target allocator pdb has been configured but the allocation strategy isn't not compatible")
+		return nil, errors.New("target allocator pdb has been configured but the allocation strategy is not compatible")
 	} else if pdbSpec == nil && params.TargetAllocator.Spec.AllocationStrategy == v1beta1.TargetAllocatorAllocationStrategyLeastWeighted {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, nil

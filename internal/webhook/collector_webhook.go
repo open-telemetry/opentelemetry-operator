@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,7 +61,7 @@ type CollectorWebhook struct {
 	recorder events.EventRecorder
 }
 
-func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTelemetryCollector) error {
+func (c CollectorWebhook) Default(ctx context.Context, otelcol *v1beta1.OpenTelemetryCollector) error {
 	if len(otelcol.Spec.Mode) == 0 {
 		otelcol.Spec.Mode = v1beta1.ModeDeployment
 	}
@@ -116,9 +117,15 @@ func (c CollectorWebhook) Default(_ context.Context, otelcol *v1beta1.OpenTeleme
 	if err != nil {
 		return err
 	}
-	for _, event := range events {
-		if c.recorder != nil {
-			c.recorder.Eventf(otelcol, nil, event.Type, event.Reason, event.Reason, event.Message)
+	if c.recorder != nil {
+		var isDryRun bool
+		if req, err := admission.RequestFromContext(ctx); err == nil && req.DryRun != nil {
+			isDryRun = *req.DryRun
+		}
+		if !isDryRun {
+			for _, event := range events {
+				c.recorder.Eventf(otelcol, nil, event.Type, event.Reason, event.Reason, event.Message)
+			}
 		}
 	}
 	return nil
@@ -399,19 +406,11 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 // occur and the check passes regardless of the requesting user's permissions.
 //
 // The check is skipped when:
-//   - Internal.CreateRBACPermissions is not Available (the auto-RBAC feature is disabled), or
+//   - Internal.CreateClusterRBACPermissions is not Available (the auto-RBAC feature is disabled), or
 //   - the collector config requires no extra RBAC rules, or
 //   - no admission.Request is present in the context (direct calls from tests / internal code).
 func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r *v1beta1.OpenTelemetryCollector) error {
-	if c.cfg.Internal.CreateRBACPermissions != autoRBAC.Available {
-		return nil
-	}
-
-	rules, err := otelconfig.GetAllRbacRules(&r.Spec.Config, c.logger)
-	if err != nil {
-		return fmt.Errorf("unable to determine RBAC rules for collector config: %w", err)
-	}
-	if len(rules) == 0 {
+	if c.cfg.Internal.CreateClusterRBACPermissions != autoRBAC.Available && c.cfg.Internal.CreateNamespacedRBACPermissions != autoRBAC.Available {
 		return nil
 	}
 
@@ -422,41 +421,93 @@ func (c CollectorWebhook) validateRBACPrivilegeEscalation(ctx context.Context, r
 		return nil
 	}
 
-	rulePtrs := make([]*rbacv1.PolicyRule, len(rules))
-	for i := range rules {
-		rulePtrs[i] = &rules[i]
-	}
-
 	// Determine the ServiceAccount name the operator will manage RBAC for.
 	saName := r.Spec.ServiceAccount
 	if saName == "" {
 		saName = naming.ServiceAccount(r.Name)
 	}
 
-	// Step 2: check what the SA already holds.
+	// Check cluster-scoped rules.
+	if c.cfg.Internal.CreateClusterRBACPermissions == autoRBAC.Available {
+		if err := c.checkClusterScopedRBAC(ctx, r, saName, req.UserInfo); err != nil {
+			return err
+		}
+	}
+
+	// Check namespace-scoped rules.
+	if c.cfg.Internal.CreateNamespacedRBACPermissions == autoRBAC.Available {
+		return c.checkNamespacedRBAC(ctx, r, saName, req.UserInfo)
+	}
+	return nil
+}
+
+func (c CollectorWebhook) checkClusterScopedRBAC(ctx context.Context, r *v1beta1.OpenTelemetryCollector, saName string, user authenticationv1.UserInfo) error {
+	rules, err := otelconfig.GetAllRbacRules(&r.Spec.Config, c.logger)
+	if err != nil {
+		return fmt.Errorf("unable to determine RBAC rules for collector config: %w", err)
+	}
+	if len(rules) == 0 {
+		return nil
+	}
+
+	rulePtrs := make([]*rbacv1.PolicyRule, len(rules))
+	for i := range rules {
+		rulePtrs[i] = &rules[i]
+	}
+
 	saSARs, err := c.reviewer.CheckPolicyRules(ctx, saName, r.Namespace, rulePtrs...)
 	if err != nil {
 		return fmt.Errorf("unable to check existing SA RBAC permissions: %w", err)
 	}
 
-	// Step 3: compute the delta — permissions the SA does not yet hold.
 	_, delta := rbac.AllSubjectAccessReviewsAllowed(saSARs)
 	if len(delta) == 0 {
-		// SA already holds all required permissions; reconciliation won't grant anything new.
 		return nil
 	}
 
-	// Step 4: check the requesting user against the delta only.
-	username := req.UserInfo.Username
-
-	userSARs, err := c.reviewer.CheckSARsForUser(ctx, req.UserInfo, delta)
+	userSARs, err := c.reviewer.CheckSARsForUser(ctx, user, delta)
 	if err != nil {
-		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", username, err)
+		return fmt.Errorf("unable to check RBAC privilege escalation for user %q: %w", user.Username, err)
 	}
 
 	if allowed, denied := rbac.AllSubjectAccessReviewsAllowed(userSARs); !allowed {
 		missing := strings.Join(rbac.WarningsGroupedByResource(denied), "; ")
-		return fmt.Errorf("user %q is not allowed to create a collector whose config would grant permissions they do not hold: %s", username, missing)
+		return fmt.Errorf("user %q is not allowed to create a collector whose config would grant permissions they do not hold: %s", user.Username, missing)
+	}
+	return nil
+}
+
+func (c CollectorWebhook) checkNamespacedRBAC(ctx context.Context, r *v1beta1.OpenTelemetryCollector, saName string, user authenticationv1.UserInfo) error {
+	nsRules, err := otelconfig.GetAllNamespacedRbacRules(&r.Spec.Config, c.logger)
+	if err != nil {
+		return fmt.Errorf("unable to determine namespaced RBAC rules for collector config: %w", err)
+	}
+
+	for ns, rules := range nsRules {
+		rulePtrs := make([]*rbacv1.PolicyRule, len(rules))
+		for i := range rules {
+			rulePtrs[i] = &rules[i]
+		}
+
+		saSARs, err := c.reviewer.CheckPolicyRulesInNamespace(ctx, saName, r.Namespace, ns, rulePtrs...)
+		if err != nil {
+			return fmt.Errorf("unable to check existing SA RBAC permissions in namespace %q: %w", ns, err)
+		}
+
+		_, delta := rbac.AllSubjectAccessReviewsAllowed(saSARs)
+		if len(delta) == 0 {
+			continue
+		}
+
+		userSARs, err := c.reviewer.CheckSARsForUser(ctx, user, delta)
+		if err != nil {
+			return fmt.Errorf("unable to check RBAC privilege escalation for user %q in namespace %q: %w", user.Username, ns, err)
+		}
+
+		if allowed, denied := rbac.AllSubjectAccessReviewsAllowed(userSARs); !allowed {
+			missing := strings.Join(rbac.WarningsGroupedByResource(denied), "; ")
+			return fmt.Errorf("user %q is not allowed to create a collector whose config would grant permissions they do not hold: %s", user.Username, missing)
+		}
 	}
 	return nil
 }

@@ -73,6 +73,7 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 					Name:      volume.Name,
 					MountPath: javaInstrMountPath,
 				}},
+				ImagePullPolicy: instSpec.ImagePullPolicy,
 			}
 			pod.Spec.InitContainers = insertInitContainer(&pod, extContainer, firstContainerName)
 		}

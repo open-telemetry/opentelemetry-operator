@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	collectoradapters "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -140,13 +141,29 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	}
 
 	if manifestutils.IsTAMTLSEnabled(params.TargetAllocator.Spec.Mtls) {
-		taConfig["https"] = map[string]any{
+		httpsConfig := map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
 			"ca_file_path":       filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+		if profile := params.Config.Internal.OperandTLSProfile; profile != nil {
+			httpsConfig["min_version"] = components.TLSVersionToComponentBaseFormat(profile.MinTLSVersion())
+			if cipherSuites := profile.CipherSuiteNames(); len(cipherSuites) > 0 {
+				httpsConfig["cipher_suites"] = cipherSuites
+			}
+			if curveIDs := profile.CurveIDs(); len(curveIDs) > 0 {
+				// component-base parses curve preferences as numeric IANA
+				// supported-group IDs; unlike cipher suites it has no name parser.
+				curves := make([]int32, 0, len(curveIDs))
+				for _, id := range curveIDs {
+					curves = append(curves, int32(id))
+				}
+				httpsConfig["curve_preferences"] = curves
+			}
+		}
+		taConfig["https"] = httpsConfig
 	}
 
 	if taSpec.AllowInsecureAuthSecrets {

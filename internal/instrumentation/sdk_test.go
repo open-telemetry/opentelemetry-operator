@@ -1553,6 +1553,51 @@ func TestInjectPython(t *testing.T) {
 	}, pod)
 }
 
+func TestInjectPythonUnsupportedPlatform(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Python: v1alpha1.Python{
+				Image: "img:1",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Python: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+			AdditionalAnnotations: map[string]string{
+				annotationPythonPlatform: "not-supported",
+			},
+		},
+	}
+
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
+		testNamespace,
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "app",
+						Image: "app:latest",
+					},
+				},
+			},
+		}, config.New())
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: "app:latest",
+				},
+			},
+		},
+	}, pod)
+}
+
 func TestInjectRuby(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{

@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       annotations:
-        opentelemetry-opampbridge-config/hash: 05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f
+        opentelemetry-opampbridge-config/hash: 8f6dd3e9c9172f69d5d4862699d8324d6e62c27cea34f51a556c91514efd823e
       labels:
         app.kubernetes.io/component: opentelemetry-opamp-bridge
         app.kubernetes.io/instance: test.test
@@ -104,6 +104,7 @@ data:
       receivers:
       - otlp
     endpoint: ws://opamp-server:4320/v1/opamp
+    name: test
 kind: ConfigMap
 metadata:
   labels:

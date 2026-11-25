@@ -46,7 +46,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	isConflicted := err != nil && isConflictError(err)
 
 	if err != nil && !isConflicted {
-		params.Recorder.Eventf(&params.ClusterObservability, nil, corev1.EventTypeWarning, reasonError, reasonError, err.Error())
+		params.Recorder.Eventf(&params.ClusterObservability, nil, corev1.EventTypeWarning, reasonError, reasonError, "%s", err.Error())
 		return ctrl.Result{}, err
 	}
 

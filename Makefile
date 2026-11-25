@@ -78,6 +78,10 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 # and published.
 TEST_E2E_APPS_IMG_PREFIX ?= ghcr.io/open-telemetry/opentelemetry-operator
 TEST_E2E_APPS ?= apache-httpd bridge-server dotnet golang java metrics-basic-auth nodejs otlp-sink php python ruby
+# The otlp-sink is deployed by the Go e2e helpers rather than by a manifest, so unlike
+# the other test apps its image is passed to the tests instead of being written into a
+# manifest. Derived from the prefix above so overriding it covers the sink too.
+OTLPSINK_IMG ?= $(TEST_E2E_APPS_IMG_PREFIX)/e2e-test-app-otlp-sink:main
 
 COLLECTOR_IMG ?= ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))
 
@@ -243,6 +247,7 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/collector/supported-components.md || (echo "Build failed: the collector component parsers have been changed but docs/collector/supported-components.md isn't up to date. Run 'make component-docs' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code tests docs/auto-instrumentation || (echo "Build failed: Instrumentation example images are out of date. Run 'make update-example-images' and update your PR." && git diff && exit 1)
 
 # Build manager binary
@@ -256,7 +261,7 @@ ci: generate fmt vet test ensure-update-is-noop
 
 # Update manifests
 .PHONY: update
-update: generate manifests bundle api-docs update-example-images reset
+update: generate manifests set-related-images bundle api-docs update-example-images component-docs reset
 
 # Build manager binary
 .PHONY: manager
@@ -299,6 +304,12 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	cd config/overlays/openshift && $(KUSTOMIZE) edit set image controller=${IMG}
+
+# Update RELATED_IMAGE env vars in deployment manifests from versions.txt
+.PHONY: set-related-images
+set-related-images:
+	$(SED_INPLACE) 's|opentelemetry-collector:[0-9][0-9a-zA-Z.\-]*|opentelemetry-collector:$(subst ",,$(OTELCOL_VERSION))|' config/manager/manager.yaml config/overlays/openshift/webhook-deployment.yaml
+	$(SED_INPLACE) 's|target-allocator:[0-9][0-9a-zA-Z.\-]*|target-allocator:$(TARGETALLOCATOR_VERSION)|' config/manager/manager.yaml config/overlays/openshift/webhook-deployment.yaml
 
 # Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
@@ -500,6 +511,14 @@ tidy:
 		(cd $$dir && go mod tidy); \
 	done
 
+# Download the dependencies of every Go module in the repository
+.PHONY: mod-download
+mod-download:
+	@set -e; for dir in $(GO_MODULE_DIRS); do \
+		echo "go mod download: $$dir"; \
+		(cd $$dir && go mod download); \
+	done
+
 # Generate code
 # apis/ is a nested Go module; pass it explicitly so DeepCopy methods are regenerated
 # for the API types (the "./..." pattern does not descend into nested modules).
@@ -575,6 +594,12 @@ check-autoinstrumentation-revision:
 .PHONY: bump-autoinstrumentation-revision
 bump-autoinstrumentation-revision:
 	go run ./hack/autoinstrumentation-revision apply
+
+# Write the list of collector components the operator has specific support for,
+# taken from the parsers in internal/components. Enforced by ensure-update-is-noop.
+.PHONY: component-docs
+component-docs:
+	go run ./hack/gen-component-docs
 
 # Pin the auto-instrumentation image on every Instrumentation CR example to the
 # canonical <sdk-version>-<revision> reference. Enforced by ensure-update-is-noop.
@@ -677,6 +702,23 @@ e2e-ta-standalone: kustomize gotestsum
 e2e-collector-metrics: gotestsum
 	@mkdir -p ./.testresults/e2e
 	$(GOTESTSUM) --junitfile ./.testresults/e2e/e2e-collector-metrics.xml -- -tags e2e -count=1 -timeout 15m ./tests/e2e-collector-metrics/...
+
+# Go-based auto-instrumentation e2e tests: the operator injects language agents into
+# sample apps, and the tests assert on the telemetry an in-cluster OTLP sink actually
+# receives. Deploys via the operator, so run `make prepare-e2e` first. The tests run
+# in parallel, each in its own namespace. e2e-instrumentation-go sets the agent images
+# built from autoinstrumentation/ in the Instrumentation CRs; e2e-instrumentation-go-default
+# leaves them unset, so the operator's default images are used.
+.PHONY: e2e-instrumentation-go e2e-instrumentation-go-default
+e2e-instrumentation-go: E2E_INSTRUMENTATION_IMAGES = \
+	INSTRUMENTATION_JAVA_IMG=$(INSTRUMENTATION_JAVA_IMG) \
+	INSTRUMENTATION_NODEJS_IMG=$(INSTRUMENTATION_NODEJS_IMG) \
+	INSTRUMENTATION_PYTHON_IMG=$(INSTRUMENTATION_PYTHON_IMG) \
+	INSTRUMENTATION_DOTNET_IMG=$(INSTRUMENTATION_DOTNET_IMG) \
+	INSTRUMENTATION_APACHE_HTTPD_IMG=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
+e2e-instrumentation-go e2e-instrumentation-go-default: gotestsum
+	@mkdir -p ./.testresults/e2e
+	$(E2E_INSTRUMENTATION_IMAGES) OTLPSINK_IMG=$(OTLPSINK_IMG) $(GOTESTSUM) --junitfile ./.testresults/e2e/$@.xml -- -tags e2e -count=1 -timeout 30m ./tests/e2e-instrumentation-go/...
 
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
@@ -891,7 +933,7 @@ CMCTL = $(shell pwd)/bin/cmctl
 cmctl:
 	@{ \
 	set -e ;\
-	if (`pwd`/bin/cmctl version | grep ${CERTMANAGER_VERSION}) > /dev/null 2>&1 ; then \
+	if (`pwd`/bin/cmctl version --client | grep ${CERTMANAGER_VERSION}) > /dev/null 2>&1 ; then \
 		exit 0; \
 	fi ;\
 	TMP_DIR=$$(mktemp -d) ;\
@@ -925,7 +967,7 @@ CHAINSAW_VERSION ?= v0.2.15
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 # renovate: datasource=go depName=golang.org/x/vuln/cmd/govulncheck
-GOVULNCHECK_VERSION ?= v1.9.0
+GOVULNCHECK_VERSION ?= v1.10.0
 PROMTOOL ?= $(LOCALBIN)/promtool
 # promtool is the golden source for the target-allocator conformance suite. It must match
 # the prometheus/prometheus library the operator links against, so derive the release version
@@ -1078,6 +1120,7 @@ bundle:
 .PHONY: reset
 reset: kustomize operator-sdk manifests
 	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
+	$(MAKE) set-related-images
 	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/community --output-dir config/manifests/community
 	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/openshift --output-dir config/manifests/openshift
 
@@ -1166,7 +1209,7 @@ chlog-insert-components:
 	@echo "* [OpenTelemetry Contrib - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v${OTELCOL_VERSION})" >>components.md
 	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}-${INSTRUMENTATION_JAVA_REVISION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
 	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}-${INSTRUMENTATION_DOTNET_REVISION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
-	@echo "* [Node.JS - v${INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${INSTRUMENTATION_NODEJS_VERSION})" >>components.md
+	@echo "* [Node.JS - v${INSTRUMENTATION_NODEJS_VERSION}-${INSTRUMENTATION_NODEJS_REVISION}](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v${INSTRUMENTATION_NODEJS_VERSION})" >>components.md
 	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}-${INSTRUMENTATION_PYTHON_REVISION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
 	@echo "* [Ruby - v${DEFAULT_INSTRUMENTATION_RUBY_VERSION}](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_RUBY_VERSION})" >>components.md
 	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md

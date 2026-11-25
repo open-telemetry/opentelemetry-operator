@@ -448,6 +448,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 			Error:   "Expected target_hash to be a number",
 			Example: "/debug/target?target_hash=42",
 		})
+		return
 	}
 	target, found := s.allocator.TargetItems()[target.ItemHash(targetHash)]
 	if !found {
@@ -780,7 +781,7 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 	for _, col := range allocator.Collectors() {
 		targets := GetAllTargetsByCollectorAndJob(allocator, col.Name, job)
 		displayData[col.Name] = collectorJSON{
-			Link: fmt.Sprintf("/debug/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
+			Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
 			Jobs: targets,
 		}
 	}

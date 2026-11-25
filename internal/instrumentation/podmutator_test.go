@@ -11,9 +11,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/events"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -6922,4 +6924,41 @@ func TestInitContainerInstrumentationNilSecurityContext(t *testing.T) {
 	injected := findContainerByName(pythonInitContainerName, &result)
 	require.NotNil(t, injected)
 	assert.Nil(t, injected.SecurityContext)
+}
+
+func TestMutatePodRecordsEventWhenNoInstrumentationIsAvailable(t *testing.T) {
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "no-instrumentation-event"}}
+	require.NoError(t, k8sClient.Create(t.Context(), &ns))
+	defer func() {
+		_ = k8sClient.Delete(t.Context(), &ns)
+	}()
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   ns.Name,
+			Annotations: map[string]string{annotationInjectJava: "true"},
+		},
+		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}}},
+	}
+
+	t.Run("an event is recorded", func(t *testing.T) {
+		recorder := events.NewFakeRecorder(10)
+		mutator := NewMutator(logr.Discard(), k8sClient, recorder, config.New())
+
+		_, err := mutator.Mutate(t.Context(), ns, pod)
+		require.ErrorContains(t, err, "no OpenTelemetry Instrumentation instances available")
+		require.Len(t, recorder.Events, 1)
+		assert.Contains(t, <-recorder.Events, "InstrumentationRequestRejected")
+	})
+
+	t.Run("no event is recorded for a dry-run request", func(t *testing.T) {
+		recorder := events.NewFakeRecorder(10)
+		mutator := NewMutator(logr.Discard(), k8sClient, recorder, config.New())
+		ctx := admission.NewContextWithRequest(t.Context(), admission.Request{
+			AdmissionRequest: admissionv1.AdmissionRequest{DryRun: new(true)},
+		})
+
+		_, err := mutator.Mutate(ctx, ns, pod)
+		require.ErrorContains(t, err, "no OpenTelemetry Instrumentation instances available")
+		assert.Empty(t, recorder.Events)
+	})
 }

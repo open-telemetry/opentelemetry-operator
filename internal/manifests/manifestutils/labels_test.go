@@ -102,6 +102,25 @@ func TestLabelsTagUnset(t *testing.T) {
 	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
 }
 
+func TestLabelsRegistryPort(t *testing.T) {
+	meta := metav1.ObjectMeta{
+		Name:      collectorName,
+		Namespace: collectorNamespace,
+	}
+
+	labels := Labels(meta, collectorName, "localhost:5000/otel/opentelemetry-collector:0.100.0", "opentelemetry-collector", []string{})
+	assert.Equal(t, "0.100.0", labels["app.kubernetes.io/version"])
+
+	labels = Labels(meta, collectorName, "localhost:5000/otel/opentelemetry-collector:0.100.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532", "opentelemetry-collector", []string{})
+	assert.Equal(t, "0.100.0", labels["app.kubernetes.io/version"])
+
+	labels = Labels(meta, collectorName, "localhost:5000/otel/opentelemetry-collector@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532", "opentelemetry-collector", []string{})
+	assert.Equal(t, "c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b53", labels["app.kubernetes.io/version"])
+
+	labels = Labels(meta, collectorName, "localhost:5000/otel/opentelemetry-collector", "opentelemetry-collector", []string{})
+	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
+}
+
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{

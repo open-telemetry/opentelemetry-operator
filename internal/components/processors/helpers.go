@@ -3,7 +3,11 @@
 
 package processors
 
-import "github.com/open-telemetry/opentelemetry-operator/internal/components"
+import (
+	"slices"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+)
 
 // registry holds a record of all known receiver parsers.
 var registry = make(map[string]components.Parser)
@@ -19,6 +23,11 @@ func IsRegistered(name string) bool {
 	return ok
 }
 
+// Parsers returns the processor parsers known to the operator.
+func Parsers() []components.Parser {
+	return slices.Clone(componentParsers)
+}
+
 // ProcessorFor returns a parser builder for the given exporter name.
 func ProcessorFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
@@ -30,7 +39,7 @@ func ProcessorFor(name string) components.Parser {
 var componentParsers = []components.Parser{
 	// k8s_attributes, formerly k8sattributes
 	// (open-telemetry/opentelemetry-collector-contrib#45901, see #4922).
-	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateK8SAttrRbacRules).WithAlias("k8sattributes").MustBuild(),
+	components.NewBuilder[K8sAttributeConfig]().WithName("k8s_attributes").WithRbacGen(GenerateClusterK8SAttrRbacRules).WithNamespacedRbacGen(GenerateK8SAttrNamespacedRbacRules).WithAlias("k8sattributes").MustBuild(),
 	// resource_detection, formerly resourcedetection
 	// (open-telemetry/opentelemetry-collector-contrib#48525).
 	components.NewBuilder[ResourceDetectionConfig]().WithName("resource_detection").WithRbacGen(GenerateResourceDetectionRbacRules).WithAlias("resourcedetection").MustBuild(),

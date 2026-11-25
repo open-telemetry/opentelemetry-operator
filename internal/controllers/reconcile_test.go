@@ -1216,7 +1216,7 @@ service:
 		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 		EnableInstrumentationCRDs:         true,
 		Internal: config.Internal{
-			CreateRBACPermissions: autoRBAC.Available,
+			CreateClusterRBACPermissions: autoRBAC.Available,
 		},
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)

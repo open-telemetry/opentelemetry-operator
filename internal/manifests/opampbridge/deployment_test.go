@@ -111,7 +111,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{
 		"annotation-key":                        "annotation-value",
-		"opentelemetry-opampbridge-config/hash": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+		"opentelemetry-opampbridge-config/hash": "d3559d1f5a496fb356903462b1620503446e1d6400865eec55ad4ca5acb31314",
 	}
 	opampBridge := v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{

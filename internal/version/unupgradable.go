@@ -4,9 +4,8 @@
 package version
 
 import (
-	"strings"
-
 	"github.com/Masterminds/semver/v3"
+	"github.com/distribution/reference"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -92,16 +91,22 @@ func IsInstrumentationVersionUnupgradable(language constants.InstrumentationLang
 	return false, ""
 }
 
-// splitImage splits a container image reference into repository and tag.
-// For "ghcr.io/org/image:v1.0.0" it returns ("ghcr.io/org/image", "v1.0.0").
+// splitImage splits a container image reference into repository and tag, ignoring any digest.
+// For "ghcr.io/org/image:v1.0.0" or "ghcr.io/org/image:v1.0.0@sha256:..." it returns ("ghcr.io/org/image", "v1.0.0").
 // For "ghcr.io/org/image" (no tag) it returns ("ghcr.io/org/image", "latest").
 func splitImage(image string) (repo, tag string) {
-	// Find the last colon; if there's a slash after it, it's a port separator, not a tag separator.
-	lastColon := strings.LastIndex(image, ":")
-	if lastColon != -1 && !strings.Contains(image[lastColon:], "/") {
-		return image[:lastColon], image[lastColon+1:]
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return image, "latest"
 	}
-	return image, "latest"
+	named, ok := ref.(reference.Named)
+	if !ok {
+		return image, "latest"
+	}
+	if tagged, ok := named.(reference.Tagged); ok {
+		return named.Name(), tagged.Tag()
+	}
+	return named.Name(), "latest"
 }
 
 // SetUnupgradableInstrumentationVersionsForTests allows tests to set custom unupgradable instrumentation versions.

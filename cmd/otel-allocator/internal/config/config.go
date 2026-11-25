@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	k8sapiflag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
@@ -186,11 +187,14 @@ type PrometheusCRConfig struct {
 }
 
 type HTTPSServerConfig struct {
-	Enabled         bool   `yaml:"enabled,omitempty"`
-	ListenAddr      string `yaml:"listen_addr,omitempty"`
-	CAFilePath      string `yaml:"ca_file_path,omitempty"`
-	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
-	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+	Enabled          bool     `yaml:"enabled,omitempty"`
+	ListenAddr       string   `yaml:"listen_addr,omitempty"`
+	CAFilePath       string   `yaml:"ca_file_path,omitempty"`
+	TLSCertFilePath  string   `yaml:"tls_cert_file_path,omitempty"`
+	TLSKeyFilePath   string   `yaml:"tls_key_file_path,omitempty"`
+	MinVersion       string   `yaml:"min_version,omitempty"`
+	CipherSuites     []string `yaml:"cipher_suites,omitempty"`
+	CurvePreferences []int32  `yaml:"curve_preferences,omitempty"`
 }
 
 // TelemetryConfig holds the self-telemetry settings for the Target Allocator.
@@ -475,6 +479,24 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
 	}
 
+	if minVersion, changed, err := getHttpsMinVersion(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.HTTPS.MinVersion = minVersion
+	}
+
+	if cipherSuites, changed, err := getHttpsCipherSuites(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.HTTPS.CipherSuites = cipherSuites
+	}
+
+	if curvePreferences, changed, err := getHttpsCurvePreferences(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.HTTPS.CurvePreferences = curvePreferences
+	}
+
 	if allowInsecureAuthSecrets, changed, err := getAllowInsecureAuthSecrets(flagSet); err != nil {
 		return err
 	} else if changed {
@@ -669,12 +691,30 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 		}
 	})
 
+	// An empty MinVersion is resolved by k8sapiflag.TLSVersion to its default, tls.VersionTLS12.
+	tlsVersion, err := k8sapiflag.TLSVersion(c.MinVersion)
+	if err != nil {
+		return nil, nil, fmt.Errorf("TLS version invalid: %w", err)
+	}
+
+	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(c.CipherSuites)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert TLS cipher suite name to ID: %w", err)
+	}
+
+	curveIDs, err := k8sapiflag.TLSCurvePreferences(c.CurvePreferences)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert TLS curve preference to ID: %w", err)
+	}
+
 	tlsConfig := &tls.Config{
 		GetCertificate: certWatcher.GetCertificate,
 		// Request client certificate but don't verify automatically
 		// We'll do custom verification in VerifyConnection with the dynamic CA pool
-		ClientAuth: tls.RequestClientCert,
-		MinVersion: tls.VersionTLS12,
+		ClientAuth:       tls.RequestClientCert,
+		MinVersion:       tlsVersion,
+		CipherSuites:     cipherSuiteIDs,
+		CurvePreferences: curveIDs,
 		// Use VerifyConnection for dynamic CA pool access
 		// This allows the CA pool to be reloaded at runtime
 		VerifyConnection: func(cs tls.ConnectionState) error {

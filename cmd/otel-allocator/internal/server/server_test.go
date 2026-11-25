@@ -1181,6 +1181,23 @@ func TestServer_TargetsHandlerNoCollectorID(t *testing.T) {
 	var resp map[string]collectorJSON
 	err = json.Unmarshal(bodyBytes, &resp)
 	assert.NoError(t, err)
+	require.Contains(t, resp, "test-collector")
+
+	// Following _link should return that collector's targets. See open-telemetry/opentelemetry-operator#5897.
+	request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, resp["test-collector"].Link, http.NoBody)
+	w = httptest.NewRecorder()
+
+	s.server.Handler.ServeHTTP(w, request)
+	result = w.Result()
+
+	require.Equal(t, http.StatusOK, result.StatusCode)
+	bodyBytes, err = io.ReadAll(result.Body)
+	require.NoError(t, err)
+
+	var items []*targetJSON
+	err = json.Unmarshal(bodyBytes, &items)
+	assert.NoError(t, err)
+	assert.Len(t, items, 1)
 }
 
 func TestServer_TargetsHandlerURLEncodedJob(t *testing.T) {
@@ -1260,6 +1277,12 @@ func TestServer_TargetHTMLHandlerInvalidHash(t *testing.T) {
 	result := w.Result()
 
 	assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+
+	bodyBytes, err := io.ReadAll(result.Body)
+	require.NoError(t, err)
+
+	assert.Contains(t, string(bodyBytes), "Bad Request")
+	assert.NotContains(t, string(bodyBytes), "Unknown Target")
 }
 
 func TestServer_TargetHTMLHandlerMissingHash(t *testing.T) {

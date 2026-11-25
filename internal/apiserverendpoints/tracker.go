@@ -67,7 +67,7 @@ func NewTracker(reader CacheReader, ttl time.Duration) *Tracker {
 // Predicate matches only the EndpointSlices backing the API server Service. Use it to filter watches on
 // EndpointSlices.
 func (*Tracker) Predicate() predicate.Predicate {
-	return predicate.NewPredicateFuncs(isAPIServerEndpointSlice)
+	return predicate.NewPredicateFuncs(IsAPIServerEndpointSlice)
 }
 
 // Endpoints returns the live API server endpoints, sorted by port and IP. It also returns the time until the

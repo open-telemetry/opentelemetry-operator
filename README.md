@@ -48,7 +48,7 @@ In addition to the [core responsibilities](https://github.com/open-telemetry/com
 ### Maintainers
 
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
-- [Jacob Aronoff](https://github.com/jaronoff97), Omlet
+- [Jacob Aronoff](https://github.com/jaronoff97), Cribl
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 

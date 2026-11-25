@@ -58,7 +58,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
 		}
-		params.Recorder.Eventf(&otelcol, nil, corev1.EventTypeWarning, reasonError, reasonError, reconcileErr.Error())
+		params.Recorder.Eventf(&otelcol, nil, corev1.EventTypeWarning, reasonError, reasonError, "%s", reconcileErr.Error())
 		return ctrl.Result{}, reconcileErr
 	}
 
@@ -74,7 +74,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 			Message:            fmt.Sprintf("Failed to update status fields: %v", statusErr),
 			LastTransitionTime: metav1.Now(),
 		})
-		params.Recorder.Eventf(changed, nil, corev1.EventTypeWarning, reasonStatusFailure, reasonStatusFailure, statusErr.Error())
+		params.Recorder.Eventf(changed, nil, corev1.EventTypeWarning, reasonStatusFailure, reasonStatusFailure, "%s", statusErr.Error())
 	} else {
 		meta.SetStatusCondition(&changed.Status.Conditions, metav1.Condition{
 			Type:               conditionTypeReady,

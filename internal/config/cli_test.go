@@ -48,6 +48,18 @@ func TestTLSMinVersionFlag(t *testing.T) {
 	require.Equal(t, "VersionTLS13", c.TLS.MinVersion)
 }
 
+func TestTLSCurvePreferencesFlag(t *testing.T) {
+	oldArgs := args
+	args = []string{"--tls-curve-preferences=29,23"}
+	t.Cleanup(func() {
+		args = oldArgs
+	})
+	c := New()
+	require.Nil(t, c.TLS.CurvePreferences)
+	require.NoError(t, ApplyCLI(&c))
+	require.Equal(t, []int32{29, 23}, c.TLS.CurvePreferences)
+}
+
 func TestWatchNamespaceFlag(t *testing.T) {
 	oldArgs := args
 	args = []string{"--watch-namespace=foo,bar"}

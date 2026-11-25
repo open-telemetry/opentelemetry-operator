@@ -64,7 +64,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.Config.Internal.CreateRBACPermissions == rbac.Available {
+	if params.Config.Internal.CreateClusterRBACPermissions == rbac.Available {
 		manifestFactories = append(manifestFactories,
 			manifests.Factory(ClusterRole),
 			manifests.Factory(ClusterRoleBinding),
@@ -77,6 +77,24 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			return nil, err
 		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
+		}
+	}
+
+	if params.Config.Internal.CreateNamespacedRBACPermissions == rbac.Available {
+		roles, err := Roles(params)
+		if err != nil {
+			return nil, err
+		}
+		for _, role := range roles {
+			resourceManifests = append(resourceManifests, role)
+		}
+
+		roleBindings, err := RoleBindings(params)
+		if err != nil {
+			return nil, err
+		}
+		for _, rb := range roleBindings {
+			resourceManifests = append(resourceManifests, rb)
 		}
 	}
 
@@ -115,7 +133,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 
 func needsCheckSaPermissions(params manifests.Params) bool {
 	return params.ErrorAsWarning &&
-		params.Config.Internal.CreateRBACPermissions == rbac.NotAvailable &&
+		params.Config.Internal.CreateClusterRBACPermissions == rbac.NotAvailable &&
 		params.Reviewer != nil &&
 		params.OtelCol.Spec.ServiceAccount != ""
 }

@@ -1,0 +1,79 @@
+# limited-user-ns: has permission to create OpenTelemetryCollectors but does NOT hold the
+# namespace-scoped get/list/watch on pods, namespaces, and replicasets in the target namespace
+# that the k8sattributes processor with filter.namespace requires.
+# permitted-user-ns: has permission to create OpenTelemetryCollectors AND already holds those
+# namespace-scoped permissions in the target namespace.
+#
+# Users are not Kubernetes objects; RBAC bindings reference them by name directly.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: (join('-', [$namespace, 'k8sattr-target']))
+---
+# Namespace-scoped role that allows managing OpenTelemetryCollectors.
+# Both test subjects share this role via separate RoleBindings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otc-creator
+rules:
+- apiGroups: ["opentelemetry.io"]
+  resources: ["opentelemetrycollectors"]
+  verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: limited-user-ns-otc-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otc-creator
+subjects:
+- kind: User
+  name: limited-user-ns
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: permitted-user-ns-otc-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otc-creator
+subjects:
+- kind: User
+  name: permitted-user-ns
+  apiGroup: rbac.authorization.k8s.io
+---
+# Namespace-scoped permissions in the target namespace that the k8sattributes
+# processor with filter.namespace requires. Granted ONLY to permitted-user-ns
+# so that limited-user-ns triggers the escalation check.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: (join('-', [$namespace, 'k8sattr-reader']))
+  namespace: (join('-', [$namespace, 'k8sattr-target']))
+rules:
+- apiGroups: [""]
+  resources: ["pods", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["replicasets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: (join('-', [$namespace, 'permitted-user-ns-k8sattr']))
+  namespace: (join('-', [$namespace, 'k8sattr-target']))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: (join('-', [$namespace, 'k8sattr-reader']))
+subjects:
+- kind: User
+  name: permitted-user-ns
+  apiGroup: rbac.authorization.k8s.io

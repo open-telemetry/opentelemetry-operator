@@ -1,0 +1,17 @@
+# The sample app for the dual-stack tests: the same node-exporter workload as
+# sample-app.yaml, with two replicas so that one target per pod can be told apart from
+# one target per address. The Service is built per test (see dualStackService) because
+# its IP family policy and families are what the tests vary.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: sample-app, labels: {app: sample-app}}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: sample-app}}
+  template:
+    metadata: {labels: {app: sample-app}}
+    spec:
+      containers:
+        - name: app
+          image: quay.io/prometheus/node-exporter:v1.10.2
+          ports: [{containerPort: 9100, name: metrics}]

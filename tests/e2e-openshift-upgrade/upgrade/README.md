@@ -18,6 +18,7 @@ The test validates that OpenTelemetry Collector and Target Allocator continue to
 - OpenShift cluster version >= 4.12
 - File based catalog image used for upgrading the operator.
 - Operator upgrade CSV and version info.
+- A cluster that can pull the images of the catalog (see [Cluster setup](#cluster-setup)).
 
 **Note**: The test automatically installs the OpenTelemetry Operator, creates operand instances (OpenTelemetry Collector, Target Allocator), deploys Tempo, and runs telemetrygen as part of the test execution.
 
@@ -32,6 +33,40 @@ The test requires the following values to be provided:
 - `upgrade_collector_version`: Expected OpenTelemetry Collector version after upgrade (from `opentelemetry-collector` in `versions.txt`)
 - `upgrade_ta_version`: Expected Target Allocator version after upgrade (from `targetallocator` in `versions.txt`)
 - `upgrade_operator_csv_name`: CSV name for the operator upgrade
+
+### Cluster setup
+
+The test creates only the `otel-registry` catalog source from `upgrade_fbc_image`. It does not create image mirrors or registry credentials, so the cluster must be able to pull the images the catalog references.
+
+- **Released operator:** the images are on `registry.redhat.io` and no setup is needed.
+- **Unreleased build (for example an ART build):** the catalog references `registry.redhat.io/rhosdt/*@sha256:...`, but the images exist only on `registry.stage.redhat.io/rhosdt` until the release is published. Prepare the cluster once, before the test:
+
+1. Add the stage registry credentials (`STAGE_AUTH` is the base64 encoded `user:password`) to the global pull secret:
+
+   ```bash
+   oc get secret/pull-secret -n openshift-config -o jsonpath='{.data.\.dockerconfigjson}' \
+     | base64 -d \
+     | jq --arg auth "$STAGE_AUTH" '.auths["registry.stage.redhat.io"] = {"auth": $auth}' \
+     | oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson=/dev/stdin
+   ```
+
+2. Mirror `registry.redhat.io/rhosdt` to the stage registry (OCP 4.12 has no `ImageDigestMirrorSet`, use an `ImageContentSourcePolicy` with `repositoryDigestMirrors` instead):
+
+   ```bash
+   oc apply -f - <<EOF
+   apiVersion: config.openshift.io/v1
+   kind: ImageDigestMirrorSet
+   metadata:
+     name: otel-art-stage
+   spec:
+     imageDigestMirrors:
+       - source: registry.redhat.io/rhosdt
+         mirrors:
+           - registry.stage.redhat.io/rhosdt
+   EOF
+   ```
+
+3. Wait until the nodes have applied the change: `oc wait mcp --all --for=condition=Updated --timeout=30m`.
 
 ### Running the Test
 

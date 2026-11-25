@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -581,6 +582,100 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			assert.NoError(t, err)
 			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
 				t.Errorf("v1beta1.OpenTelemetryCollector mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestCollectorDefaultingWebhook_DryRun(t *testing.T) {
+	dryRunTrue := true
+	dryRunFalse := false
+
+	tests := []struct {
+		name         string
+		dryRun       *bool
+		expectEvents bool
+	}{
+		{
+			name:         "no admission request context records events",
+			dryRun:       nil,
+			expectEvents: true,
+		},
+		{
+			name:         "dryRun=false records events",
+			dryRun:       &dryRunFalse,
+			expectEvents: true,
+		},
+		{
+			name:         "dryRun=true does not record events",
+			dryRun:       &dryRunTrue,
+			expectEvents: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := events.NewFakeRecorder(10)
+			cvw := webhook.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				config.Config{},
+				nil,
+				recorder,
+				nil,
+				nil,
+				nil,
+			)
+
+			ctx := context.Background()
+			if tt.dryRun != nil {
+				ctx = admission.NewContextWithRequest(ctx, admission.Request{
+					AdmissionRequest: admissionv1.AdmissionRequest{
+						DryRun: tt.dryRun,
+					},
+				})
+			}
+
+			col := v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"otlp": map[string]any{},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"debug": map[string]any{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			err := cvw.Default(ctx, &col)
+			require.NoError(t, err)
+
+			if tt.expectEvents {
+				select {
+				case <-recorder.Events:
+				default:
+					t.Fatal("expected events to be recorded, but none were")
+				}
+			} else {
+				select {
+				case event := <-recorder.Events:
+					t.Fatalf("expected no events for dry-run, but got: %s", event)
+				default:
+				}
 			}
 		})
 	}
@@ -2107,7 +2202,7 @@ func TestValidateRBACPrivilegeEscalation(t *testing.T) {
 				CollectorImage:       "default-collector",
 				TargetAllocatorImage: "default-ta-allocator",
 				Internal: config.Internal{
-					CreateRBACPermissions: tt.createRBACPerms,
+					CreateClusterRBACPermissions: tt.createRBACPerms,
 				},
 			}
 			cvw := webhook.NewCollectorWebhook(

@@ -469,6 +469,76 @@ func TestInjectJavaagent(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "image pull policy applied to java init container and extensions",
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+				{Image: "ex/ex:0", Dir: "/ex0"},
+			}},
+			instSpec: v1alpha1.InstrumentationSpec{
+				ImagePullPolicy: corev1.PullAlways,
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test-container"},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+							ImagePullPolicy: corev1.PullAlways,
+						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-extension-0",
+							Image:   "ex/ex:0",
+							Command: []string{"cp", "-r", "/ex0/.", "/otel-auto-instrumentation-java/extensions"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+							ImagePullPolicy: corev1.PullAlways,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
 			name: "security context inherited from app container when initContainerSecurityContext unset",
 			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
 				{Image: "ex/ex:0", Dir: "/ex0"},

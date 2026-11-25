@@ -1,0 +1,22 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: privilege-test-ns
+spec:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors:
+      k8sattributes:
+        filter:
+          namespace: __TARGET_NS__
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [k8sattributes]
+          exporters: [debug]

@@ -80,6 +80,85 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	}, nil
 }
 
+// Roles returns namespace-scoped Roles for components that require namespace-scoped
+// RBAC (e.g. k8sattributes processor with filter.namespace set).
+func Roles(params manifests.Params) ([]*rbacv1.Role, error) {
+	nsRules, err := otelconfig.GetAllNamespacedRbacRules(&params.OtelCol.Spec.Config, params.Log)
+	if err != nil {
+		return nil, err
+	}
+	if len(nsRules) == 0 {
+		return nil, nil
+	}
+
+	var roles []*rbacv1.Role
+	for ns, rules := range nsRules {
+		name := naming.Role(params.OtelCol.Name, ns)
+		labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+
+		annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
+		if err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        name,
+				Namespace:   ns,
+				Annotations: annotations,
+				Labels:      labels,
+			},
+			Rules: rules,
+		})
+	}
+	return roles, nil
+}
+
+// RoleBindings returns namespace-scoped RoleBindings for components that require
+// namespace-scoped RBAC.
+func RoleBindings(params manifests.Params) ([]*rbacv1.RoleBinding, error) {
+	nsRules, err := otelconfig.GetAllNamespacedRbacRules(&params.OtelCol.Spec.Config, params.Log)
+	if err != nil {
+		return nil, err
+	}
+	if len(nsRules) == 0 {
+		return nil, nil
+	}
+
+	var bindings []*rbacv1.RoleBinding
+	for ns := range nsRules {
+		name := naming.RoleBinding(params.OtelCol.Name, ns)
+		labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+
+		annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
+		if err != nil {
+			return nil, err
+		}
+
+		bindings = append(bindings, &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        name,
+				Namespace:   ns,
+				Annotations: annotations,
+				Labels:      labels,
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      ServiceAccountName(params.OtelCol),
+					Namespace: params.OtelCol.Namespace,
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				Kind:     "Role",
+				Name:     naming.Role(params.OtelCol.Name, ns),
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		})
+	}
+	return bindings, nil
+}
+
 func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
 	ctx := context.Background()
 

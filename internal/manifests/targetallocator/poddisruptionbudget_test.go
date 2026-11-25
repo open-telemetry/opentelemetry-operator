@@ -184,7 +184,7 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 
 			// verify that we error if the spec is set here
 			if test.spec.DeepCopy() != nil {
-				assert.Error(t, err)
+				assert.EqualError(t, err, "target allocator pdb has been configured but the allocation strategy is not compatible")
 			} else {
 				// Should be no error if no one is attempting to set a PDB here
 				assert.NoError(t, err)

@@ -21,6 +21,9 @@ func TestSplitImage(t *testing.T) {
 		{"localhost:5000/myimage:v2.0.0", "localhost:5000/myimage", "v2.0.0"},
 		{"ghcr.io/org/image", "ghcr.io/org/image", "latest"},
 		{"myimage:1.2.3", "myimage", "1.2.3"},
+		{"ghcr.io/org/image:v1.0.0@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "ghcr.io/org/image", "v1.0.0"},
+		{"localhost:5000/myimage:v2.0.0@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "localhost:5000/myimage", "v2.0.0"},
+		{"ghcr.io/org/image@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "ghcr.io/org/image", "latest"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.image, func(t *testing.T) {
@@ -65,6 +68,19 @@ func TestIsInstrumentationVersionUnupgradable(t *testing.T) {
 			},
 			wantBlocked: true,
 			wantMessage: "Breaking changes in Java agent.",
+		},
+		{
+			name:         "unupgradable version with digest returns true with message",
+			language:     constants.InstrumentationLanguageNodeJS,
+			image:        "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.76.0@sha256:ff253cd68f96e372c9925b1dc369ff6d0e1dcd94b8629ddbb47e5dc011b245ad",
+			defaultImage: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.82.0-1@sha256:924a4f85393da2d7ce4ef2f001f6dca6944eb4f93bdc2896dbfb5c870c741bfb",
+			unupgradableMap: map[constants.InstrumentationLanguage]map[string]string{
+				constants.InstrumentationLanguageNodeJS: {
+					"0.79.0-0": "Breaking changes in NodeJS agent.",
+				},
+			},
+			wantBlocked: true,
+			wantMessage: "Breaking changes in NodeJS agent.",
 		},
 		{
 			name:         "unupgradable version without v prefix returns true with message",

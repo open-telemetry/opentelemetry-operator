@@ -46,11 +46,11 @@ func newAllocator(log logr.Logger, strategy Strategy) (Allocator, error) {
 	if err != nil {
 		return nil, err
 	}
-	targetsRemaining, err := meter.Int64Gauge("opentelemetry_allocator_targets_remaining", metric.WithDescription("Number of targets kept after filtering."))
+	targetsUnassigned, err := meter.Int64Gauge("opentelemetry_allocator_targets_unassigned", metric.WithDescription("Number of targets that could not be assigned due to missing node label."))
 	if err != nil {
 		return nil, err
 	}
-	targetsUnassigned, err := meter.Int64Gauge("opentelemetry_allocator_targets_unassigned", metric.WithDescription("Number of targets that could not be assigned due to missing node label."))
+	targetsRemaining, err := newTargetsRemainingMetrics(meter)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +64,8 @@ func newAllocator(log logr.Logger, strategy Strategy) (Allocator, error) {
 		targetsPerCollector:           targetsPerCollector,
 		collectorsAllocatable:         collectorsAllocatable,
 		timeToAssign:                  timeToAssign,
-		targetsRemaining:              targetsRemaining,
 		targetsUnassigned:             targetsUnassigned,
+		targetsRemaining:              targetsRemaining,
 	}
 
 	return chAllocator, nil
@@ -93,8 +93,8 @@ type allocator struct {
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
-	targetsRemaining      metric.Int64Gauge
 	targetsUnassigned     metric.Int64Gauge
+	targetsRemaining      *targetsRemainingMetrics
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -106,7 +106,7 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("method", "SetTargets"), attribute.String("strategy", a.strategy.GetName())))
 	}()
 
-	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
+	a.targetsRemaining.set(targets)
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 

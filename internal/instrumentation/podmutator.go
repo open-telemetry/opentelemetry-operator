@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -411,7 +412,11 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		if !pm.config.EnableInstrumentationCRDs {
 			return &pm.config.Instrumentation, nil
 		}
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		inst, err := pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		if errors.Is(err, errNoInstancesAvailable) {
+			pm.recordNoInstrumentationAvailable(ctx, pod, instAnnotation)
+		}
+		return inst, err
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -428,6 +433,17 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	return otelInst, nil
+}
+
+// recordNoInstrumentationAvailable records an Event on the pod that asked for auto-instrumentation when there is no
+// Instrumentation resource to select, because the pod is admitted without it and the operator log is the only other
+// trace. Nothing is recorded for dry-run requests.
+func (pm *instPodMutator) recordNoInstrumentationAvailable(ctx context.Context, pod corev1.Pod, instAnnotation string) {
+	if req, err := admission.RequestFromContext(ctx); err == nil && req.DryRun != nil && *req.DryRun {
+		return
+	}
+	pm.Recorder.Eventf(pod.DeepCopy(), nil, corev1.EventTypeWarning, "InstrumentationRequestRejected", "InstrumentationRequestRejected",
+		"%s is set but there is no OpenTelemetry Instrumentation in the namespace to select", instAnnotation)
 }
 
 func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {

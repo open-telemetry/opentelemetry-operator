@@ -2,6 +2,132 @@
 
 <!-- next version -->
 
+## 0.164.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update the default .NET auto-instrumentation image to 1.20.0, which drops support for .NET 8 and .NET 9. (#5962)
+  Both frameworks reached end of support upstream.
+  Workloads that run on .NET 8 or .NET 9 can keep the previous version by setting
+  `spec.dotnet.image` in the Instrumentation resource to
+  `ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.19.1`.
+  
+- `collector`: The OpenTelemetryCollector v1alpha1 API version is no longer served. Use v1beta1 instead. (#5037)
+  Clients and tooling that explicitly use the v1alpha1 API version will receive a 404 error.
+  All manifests must be updated to use `apiVersion: opentelemetry.io/v1beta1`.
+  Existing objects that were stored in etcd as `v1alpha1` need to be migrated to `v1beta1`.
+  On Kubernetes 1.30+, the built-in StorageVersionMigration feature handles this automatically.
+  On older Kubernetes versions, manually trigger migration by reading and re-writing each object,
+  for example: `kubectl get otelcol -A -o json | kubectl apply -f -`.
+  As a temporary workaround, v1alpha1 can be re-enabled by editing the CRD directly:
+  `kubectl patch crd opentelemetrycollectors.opentelemetry.io --type=json -p='[{"op":"replace","path":"/spec/versions/0/served","value":true}]'`.
+  This change will be reverted on the next operator upgrade.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add the `operator.targetallocator.targetsremainingattributes` feature gate to record the `opentelemetry_allocator_targets_remaining` metric per job and namespace. (#4637)
+  When the gate is enabled, the operator passes `--feature-gates=targetallocator.targetsremainingattributes` to the target allocator,
+  which then records the metric with `job.name` and `k8s.namespace.name` attributes instead of a single total.
+  `k8s.namespace.name` is taken from the `__meta_kubernetes_namespace` label and is omitted for targets that do not have it.
+  The target allocator now accepts a `--feature-gates` flag.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Apply `spec.revisionHistoryLimit` to the collector DaemonSet in daemonset mode. (#5889)
+- `auto-instrumentation`: Skip Python injection, including the init container, when the `instrumentation.opentelemetry.io/otel-python-platform` annotation value is not supported. (#5892)
+  The operator added an init container that ran `cp -r "" /otel-auto-instrumentation-python`, which failed
+  and stopped the pod from starting.
+  
+- `target allocator`: Fix `/debug/target` writing both the Bad Request and Unknown Target pages when `target_hash` is not a number. (#5896)
+- `target allocator`: Apply `spec.dnsPolicy` of the TargetAllocator resource to the target allocator pod. (#5951)
+- `target allocator`: Apply `spec.hostPID` of the TargetAllocator resource to the target allocator pod. (#5961)
+- `target allocator`: Apply `spec.sessionAffinity` and `spec.sessionAffinityConfig` of the TargetAllocator resource to the target allocator Service. (#5965)
+- `collector`: Update an existing Ingress when `spec.ingress.ingressClassName` changes. (#5890)
+- `auto-instrumentation`: Apply `spec.imagePullPolicy` to the Java extension init containers. (#5893)
+- `opamp`: Add the volumes from `spec.volumes` of an OpAMPBridge to the bridge deployment. (#5895)
+- `target allocator`: Fix the `_link` value returned by `/jobs/{job}/targets`, which pointed to a `/debug` path that does not exist and returned 404. (#5897)
+
+### Components
+
+* [OpenTelemetry Collector - v0.164.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.164.0)
+* [OpenTelemetry Contrib - v0.164.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.164.0)
+* [Java auto-instrumentation - v2.34.0-1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.34.0)
+* [.NET auto-instrumentation - v1.20.0-1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0)
+* [Node.JS - v0.83.1-1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.83.1)
+* [Python - v0.66b2-6](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b2)
+* [Ruby - v0.1.0](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v0.1.0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [PHP - 1.4.2](https://packagist.org/packages/open-telemetry/ext-opentelemetry/#1.4.2)
+* [ApacheHTTPD - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.163.0
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation`: Record an `InstrumentationRequestRejected` Event on a Pod that requests auto-instrumentation when the namespace has no Instrumentation resource to select. (#5855)
+- `target allocator`: Add `min_version`, `cipher_suites` and `curve_preferences` to the Target Allocator HTTPS server configuration. (#5840)
+  Each field is also available as a CLI flag (`--https-min-version`, `--https-cipher-suites`,
+  `--https-curve-preferences`) that overrides the config file value. Curve preferences are IANA
+  numeric IDs, for example 23 for secp256r1 and 29 for X25519.
+  When the fields are unset the server keeps its current behaviour: TLS 1.2 with Go's default
+  cipher suites and curves.
+  
+- `operator`: Add --tls-curve-preferences flag and TLS_CURVE_PREFERENCES env var for configuring TLS supported groups. (#5830)
+- `collector`: Create namespace scoped Role/RoleBinding for k8sattributes processor when filter.namespace is set. (#5525)
+- `operator`: Add related images to the bundle. (#5823)
+  Related images in the bundle help to install the operator in disconnected environments.
+  
+- `target allocator`: Populate the Target Allocator `https` configuration from the operator's TLS profile when `--tls-configure-operands` is set. (#5844)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Skip recording Kubernetes Events for dry-run admission requests. (#5738)
+  Prevents spurious Events during `kubectl apply --dry-run=server` and `kubectl diff`.
+  
+- `collector`: Mutating webhook no longer overwrites service.telemetry when using declarative resource.attributes schema (#5207)
+- `target allocator`: Carry over the target allocator `prometheusCR.denyFSAccessThroughSMs` setting when converting OpenTelemetryCollector between v1alpha1 and v1beta1. (#5904)
+- `collector`: Write a collector configuration holding a literal `<<` map key to the ConfigMap instead of rejecting it. (#5866)
+  The YAML encoder wrote the key unquoted, so reading the document back resolved it as a YAML 1.1
+  merge key and the operator reported the configuration as unrenderable. Fixed upstream in
+  go.yaml.in/yaml/v3 v3.0.6.
+  
+- `auto-instrumentation`: Make nginx instrumentation injection idempotent (#5810)
+  Re-injecting instrumentation into the same Pod is now a no-op.
+  
+- `opamp`: Stop restarting and deleting collectors the bridge does not manage in operator mode. (#5616)
+  Previously, a restart command from the OpAMP server also restarted collectors labeled
+  `opentelemetry.io/opamp-reporting: "true"`, and adding that label to a managed collector did not
+  prevent the bridge from deleting it.
+  
+- `operator`: Reconcile operator NetworkPolicy when API server IPs change by watching EndpointSlices. (#5559)
+- `target allocator`: Remove the redundant CRD schema default on `spec.targetAllocator.mtls.tls.certificateAuthorityCertificate.configMap.key`. The operator already applies `ca.crt` when the key is omitted. (#5841)
+- `auto-instrumentation`: Block upgrades to breaking instrumentation versions when the images include a digest. (#5856)
+- `collector, target allocator, opamp`: Read the `app.kubernetes.io/version` label from the image tag when the image registry has a port. (#5801)
+  For an image such as `localhost:5000/otel/collector:0.100.0` the label was empty, and for
+  `localhost:5000/otel/collector` it was `5000/otel/collector`, which is not a valid label value.
+  
+- `opamp`: Set the OpAMP bridge's name from the OpAMPBridge resource name so bridges in one cluster can tell their collectors apart. (#5920)
+  The generated configuration now carries `name: <OpAMPBridge name>`, so collectors labeled with a bridge's name are managed by that bridge alone. Collectors labeled `true` keep today's behavior.
+  
+- `cluster observability`: Add RELATED_IMAGE_CLUSTER_OBSERVABILITY_COLLECTOR environment variable mapping to populate ClusterObservabilityCollectorImage. (#5803)
+
+### Components
+
+* [OpenTelemetry Collector - v0.163.2](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.163.2)
+* [OpenTelemetry Contrib - v0.163.2](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.163.2)
+* [Java auto-instrumentation - v2.33.1-3](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.33.1)
+* [.NET auto-instrumentation - v1.19.1-1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.1)
+* [Node.JS - v0.83.0-2](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.83.0)
+* [Python - v0.66b2-4](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b2)
+* [Ruby - v0.1.0](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v0.1.0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [PHP - 1.4.2](https://packagist.org/packages/open-telemetry/ext-opentelemetry/#1.4.2)
+* [ApacheHTTPD - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.162.0
 
 ### 🛑 Breaking changes 🛑
