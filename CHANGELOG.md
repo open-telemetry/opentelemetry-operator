@@ -6,6 +6,12 @@
 
 ### 🛑 Breaking changes 🛑
 
+- `auto-instrumentation`: Update the default .NET auto-instrumentation image to 1.20.0, which drops support for .NET 8 and .NET 9. (#5962)
+  Both frameworks reached end of support upstream.
+  Workloads that run on .NET 8 or .NET 9 can keep the previous version by setting
+  `spec.dotnet.image` in the Instrumentation resource to
+  `ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.19.1`.
+  
 - `collector`: The OpenTelemetryCollector v1alpha1 API version is no longer served. Use v1beta1 instead. (#5037)
   Clients and tooling that explicitly use the v1alpha1 API version will receive a 404 error.
   All manifests must be updated to use `apiVersion: opentelemetry.io/v1beta1`.
