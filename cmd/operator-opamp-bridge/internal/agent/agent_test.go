@@ -22,6 +22,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
@@ -352,7 +356,7 @@ func TestAgentApplyRemoteConfigRejectsEmptyRemoteName(t *testing.T) {
 	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
 	body := []byte("receivers: {}\n")
 
-	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
+	status, err := agent.applyRemoteConfig(t.Context(), &protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
 			ConfigMap: map[string]*protobufs.AgentConfigObject{
 				"": {
@@ -373,7 +377,7 @@ func TestAgentApplyRemoteConfigRejectsEmptyBody(t *testing.T) {
 	applier := &recordingConfigApplier{}
 	agent := NewAgent(logr.Discard(), applier, config.NewConfig(logr.Discard()), &mockOpampClient{}, newMockProxy(nil, nil, nil))
 
-	status, err := agent.applyRemoteConfig(&protobufs.AgentRemoteConfig{
+	status, err := agent.applyRemoteConfig(t.Context(), &protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
 			ConfigMap: map[string]*protobufs.AgentConfigObject{
 				"collector": {},
@@ -1678,4 +1682,208 @@ func TestAgent_Start_ProxyConfig(t *testing.T) {
 			agent.Shutdown()
 		})
 	}
+}
+
+// testReporterFactory replaces newMetricReporter with a factory that builds reporters backed by in-memory readers.
+type testReporterFactory struct {
+	mu       sync.Mutex
+	readers  []*sdkmetric.ManualReader
+	settings []*protobufs.TelemetryConnectionSettings
+	ids      []uuid.UUID
+}
+
+const invalidOwnMetricsEndpoint = "invalid-endpoint"
+
+func useTestMetricReporters(t *testing.T) *testReporterFactory {
+	t.Helper()
+	factory := &testReporterFactory{}
+	original := newMetricReporter
+	newMetricReporter = func(logger logr.Logger, settings *protobufs.TelemetryConnectionSettings, agentType, agentVersion string, instanceId uuid.UUID) (*metrics.MetricReporter, error) {
+		if settings.GetDestinationEndpoint() == invalidOwnMetricsEndpoint {
+			return nil, errors.New("invalid endpoint")
+		}
+		reader := sdkmetric.NewManualReader()
+		reporter, err := metrics.NewMetricReporterWithReader(logger, reader, agentType, agentVersion, instanceId)
+		if err != nil {
+			return nil, err
+		}
+		factory.mu.Lock()
+		defer factory.mu.Unlock()
+		factory.readers = append(factory.readers, reader)
+		factory.settings = append(factory.settings, settings)
+		factory.ids = append(factory.ids, instanceId)
+		return reporter, nil
+	}
+	t.Cleanup(func() { newMetricReporter = original })
+	return factory
+}
+
+func (f *testReporterFactory) created() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.readers)
+}
+
+func (f *testReporterFactory) latest(t *testing.T) metricdata.ResourceMetrics {
+	t.Helper()
+	f.mu.Lock()
+	reader := f.readers[len(f.readers)-1]
+	f.mu.Unlock()
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &rm))
+	return rm
+}
+
+// sumValue returns the value of the int64 counter data point with exactly the given attributes, or 0 if absent.
+func sumValue(rm metricdata.ResourceMetrics, name string, attrs ...attribute.KeyValue) int64 {
+	want := attribute.NewSet(attrs...)
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			var points []metricdata.DataPoint[int64]
+			switch data := m.Data.(type) {
+			case metricdata.Sum[int64]:
+				points = data.DataPoints
+			case metricdata.Gauge[int64]:
+				points = data.DataPoints
+			}
+			for _, dp := range points {
+				if dp.Attributes.Equals(&want) {
+					return dp.Value
+				}
+			}
+		}
+	}
+	return 0
+}
+
+func ownMetricsMessage(endpoint string) *types.MessageData {
+	return &types.MessageData{
+		OwnMetricsConnSettings: &protobufs.TelemetryConnectionSettings{DestinationEndpoint: endpoint},
+	}
+}
+
+func remoteConfigEnabledConfig() *config.Config {
+	cfg := config.NewConfig(logr.Discard())
+	cfg.Capabilities = map[config.Capability]bool{
+		config.AcceptsRemoteConfig: true,
+		config.ReportsOwnMetrics:   true,
+	}
+	return cfg
+}
+
+func TestAgent_OwnMetrics_ReportsBridgeWork(t *testing.T) {
+	factory := useTestMetricReporters(t)
+	applier := &recordingConfigApplier{}
+	agent := NewAgent(logr.Discard(), applier, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	require.NoError(t, agent.Start())
+	defer agent.Shutdown()
+
+	// The settings and a remote config arrive in the same message: the config apply must already be reported.
+	msg, err := getMessageDataFromConfigFile(map[string]string{testCollectorKey: collectorBasicFile})
+	require.NoError(t, err)
+	msg.OwnMetricsConnSettings = &protobufs.TelemetryConnectionSettings{DestinationEndpoint: "http://otlp.example.com:4318/v1/metrics"}
+	agent.onMessage(t.Context(), msg)
+	require.Equal(t, 1, factory.created())
+
+	require.NoError(t, agent.UpdateHealth())
+	// The restart capability is not enabled, so the command is rejected and counted as a failure below.
+	require.Error(t, agent.onCommand(t.Context(), &protobufs.ServerToAgentCommand{Type: protobufs.CommandType_CommandType_Restart}))
+
+	rm := factory.latest(t)
+	assert.Equal(t, int64(1), sumValue(rm, "opamp.bridge.remote_config.applies", attribute.String("result", metrics.ResultSuccess)))
+	assert.Equal(t, int64(1), sumValue(rm, "opamp.bridge.config.operations",
+		attribute.String("operation", metrics.OperationApply), attribute.String("result", metrics.ResultSuccess)))
+	assert.Equal(t, int64(1), sumValue(rm, "opamp.bridge.commands",
+		attribute.String("command.type", protobufs.CommandType_CommandType_Restart.String()), attribute.String("result", metrics.ResultFailure)))
+	assert.Equal(t, int64(0), sumValue(rm, "opamp.bridge.collectors", attribute.Bool("healthy", true)))
+	assert.Equal(t, int64(0), sumValue(rm, "opamp.bridge.proxy.agents"))
+}
+
+func TestAgent_OwnMetrics_RecordsFailedConfigOperations(t *testing.T) {
+	factory := useTestMetricReporters(t)
+	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	defer agent.Shutdown()
+	agent.onMessage(t.Context(), ownMetricsMessage("http://otlp.example.com:4318/v1/metrics"))
+
+	_, err := agent.applyRemoteConfig(t.Context(), &protobufs.AgentRemoteConfig{
+		Config: &protobufs.AgentConfigMap{
+			ConfigMap: map[string]*protobufs.AgentConfigObject{testCollectorKey: {}},
+		},
+	})
+	require.Error(t, err)
+
+	rm := factory.latest(t)
+	assert.Equal(t, int64(1), sumValue(rm, "opamp.bridge.config.operations",
+		attribute.String("operation", metrics.OperationApply), attribute.String("result", metrics.ResultFailure)))
+}
+
+func TestAgent_OwnMetrics_SettingsLifecycle(t *testing.T) {
+	factory := useTestMetricReporters(t)
+	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	defer agent.Shutdown()
+
+	first := "http://first.example.com:4318/v1/metrics"
+	agent.onMessage(t.Context(), ownMetricsMessage(first))
+	require.Equal(t, 1, factory.created())
+	firstReporter := agent.reporter()
+	require.NotNil(t, firstReporter)
+
+	// Repeating identical settings must not recreate the reporter (and reset its counters).
+	agent.onMessage(t.Context(), ownMetricsMessage(first))
+	assert.Equal(t, 1, factory.created())
+	assert.Same(t, firstReporter, agent.reporter())
+
+	// Invalid settings keep the current reporter running.
+	agent.onMessage(t.Context(), ownMetricsMessage(invalidOwnMetricsEndpoint))
+	assert.Same(t, firstReporter, agent.reporter())
+
+	// New settings replace the reporter.
+	agent.onMessage(t.Context(), ownMetricsMessage("http://second.example.com:4318/v1/metrics"))
+	assert.Equal(t, 2, factory.created())
+	assert.NotSame(t, firstReporter, agent.reporter())
+
+	// An empty destination stops reporting.
+	agent.onMessage(t.Context(), ownMetricsMessage(""))
+	assert.Nil(t, agent.reporter())
+	assert.Equal(t, 2, factory.created())
+}
+
+func TestAgent_OwnMetrics_RecreatedOnIdentityChange(t *testing.T) {
+	factory := useTestMetricReporters(t)
+	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	defer agent.Shutdown()
+
+	agent.onMessage(t.Context(), ownMetricsMessage("http://otlp.example.com:4318/v1/metrics"))
+	require.Equal(t, 1, factory.created())
+
+	newID, err := uuid.NewV7()
+	require.NoError(t, err)
+	marshalledID, err := newID.MarshalBinary()
+	require.NoError(t, err)
+	agent.onMessage(t.Context(), &types.MessageData{
+		AgentIdentification: &protobufs.AgentIdentification{NewInstanceUid: marshalledID},
+	})
+
+	require.Equal(t, 2, factory.created())
+	factory.mu.Lock()
+	defer factory.mu.Unlock()
+	assert.Equal(t, newID, factory.ids[1], "the new reporter should report the new instance ID")
+}
+
+func TestAgent_OwnMetrics_NoReporterIsSafe(t *testing.T) {
+	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	require.NoError(t, agent.Start())
+	defer agent.Shutdown()
+
+	assert.Nil(t, agent.reporter())
+	remoteConfig, err := getMessageDataFromConfigFile(map[string]string{testCollectorKey: collectorBasicFile})
+	require.NoError(t, err)
+	assert.NotPanics(t, func() {
+		agent.onMessage(t.Context(), remoteConfig)
+		_ = agent.UpdateHealth()
+		_ = agent.onCommand(t.Context(), &protobufs.ServerToAgentCommand{Type: protobufs.CommandType_CommandType_Restart})
+	})
 }

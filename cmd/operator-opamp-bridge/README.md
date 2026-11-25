@@ -213,6 +213,47 @@ spec:
 ...
 ```
 
+### Own telemetry
+
+When the `ReportsOwnMetrics` capability is enabled, the OpAMP server can send
+the bridge
+[`TelemetryConnectionSettings`](https://opentelemetry.io/docs/specs/opamp/#telemetryconnectionsettings)
+for its own metrics. The bridge then sets up an OpenTelemetry SDK and sends
+metrics to the offered OTLP/HTTP destination. It uses every field of the
+message:
+
+- `destination_endpoint`: the full URL of the OTLP/HTTP metrics endpoint. The
+  scheme (`http` or `https`) decides whether TLS is used. `/v1/metrics` is
+  used when the URL has no path.
+- `headers`: added to every export request.
+- `certificate` and `tls`: client certificate (mTLS), CA certificates, the
+  system CA pool, `insecure_skip_verify`, the minimum and maximum TLS versions,
+  and cipher suites.
+- `proxy`: the HTTP proxy URL and its `CONNECT` headers.
+
+If the server sends new settings, the bridge restarts reporting with them. If
+it sends settings with an empty `destination_endpoint`, the bridge stops
+reporting. If the new settings are invalid, the bridge logs an error and keeps
+its current reporting.
+
+The bridge reports these metrics. Each one has the resource attributes
+`service.name`, `service.version` and `service.instance.id`:
+
+| Metric | Type | Attributes | Description |
+| --- | --- | --- | --- |
+| `opamp.bridge.remote_config.applies` | Counter | `result` | Remote configurations the bridge tried to apply. |
+| `opamp.bridge.remote_config.apply.duration` | Histogram (s) | `result` | Time taken to apply a remote configuration. |
+| `opamp.bridge.config.operations` | Counter | `operation` (`apply`, `delete`), `result` | Apply and delete operations on managed collector configurations. |
+| `opamp.bridge.commands` | Counter | `command.type`, `result` | Commands received from the OpAMP server. |
+| `opamp.bridge.heartbeats` | Counter | `result` | Heartbeats sent to the OpAMP server. |
+| `opamp.bridge.connection.attempts` | Counter | `result` | Attempts to connect to the OpAMP server. |
+| `opamp.bridge.collectors` | Gauge | `healthy` | Collectors reported by the bridge, by health. |
+| `opamp.bridge.proxy.agents` | Gauge | | Agents connected directly to the bridge's OpAMP proxy. |
+| `process.cpu.time` | Counter (s) | `state` | CPU time used by the bridge process. |
+| `process.memory.physical_usage` | Gauge (By) | | Physical memory used by the bridge process. |
+
+`result` is either `success` or `failure`.
+
 ### RBAC
 
 For the OpAMP Bridge to be able to report and manage OpenTelemetryCollectors CRD
