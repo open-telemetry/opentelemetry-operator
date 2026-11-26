@@ -84,6 +84,7 @@ func TestApply(t *testing.T) {
 		description string
 		configFile  string
 		args        []string
+		env         map[string]string
 		config      Config
 		err         string
 	}{
@@ -102,10 +103,21 @@ func TestApply(t *testing.T) {
 			args:        []string{"--webhook-port=1foo"},
 			err:         `failed to apply cli config: invalid argument "1foo" for "--webhook-port" flag: strconv.ParseInt: parsing "1foo": invalid syntax`,
 		},
+		{
+			description: "bad env vars",
+			env:         map[string]string{"ENABLE_LEADER_ELECTION": "yes", "WEBHOOK_PORT": "1foo"},
+			config:      New(),
+			err: "failed to apply env vars config: " +
+				`invalid value "yes" for ENABLE_LEADER_ELECTION: strconv.ParseBool: parsing "yes": invalid syntax` + "\n" +
+				`invalid value "1foo" for WEBHOOK_PORT: strconv.Atoi: parsing "1foo": invalid syntax`,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+			for name, value := range test.env {
+				t.Setenv(name, value)
+			}
 			if len(test.args) > 0 {
 				oldArgs := args
 				args = test.args

@@ -277,7 +277,9 @@ func (c *Config) Apply(configFile string) error {
 		}
 	}
 
-	ApplyEnvVars(c)
+	if err := ApplyEnvVars(c); err != nil {
+		return fmt.Errorf("failed to apply env vars config: %w", err)
+	}
 	if err := ApplyCLI(c); err != nil {
 		return fmt.Errorf("failed to apply cli config: %w", err)
 	}
