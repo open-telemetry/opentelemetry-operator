@@ -38,6 +38,12 @@ func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.Horizontal
 	}
 
 	metrics := []autoscalingv2.MetricSpec{}
+	if params.OtelCol.Spec.Autoscaler.Metrics != nil {
+		// Deep-copy all metrics to ensure no pointers are retained elsewhere.
+		for _, metric := range params.OtelCol.Spec.Autoscaler.Metrics {
+			metrics = append(metrics, *metric.DeepCopy())
+		}
+	}
 
 	if params.OtelCol.Spec.Autoscaler.TargetMemoryUtilization != nil {
 		memoryTarget := autoscalingv2.MetricSpec{
@@ -89,16 +95,6 @@ func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.Horizontal
 		autoscaler.Spec.Behavior = params.OtelCol.Spec.Autoscaler.Behavior
 	}
 
-	// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
-	for _, metric := range params.OtelCol.Spec.Autoscaler.Metrics {
-		if metric.Type == autoscalingv2.PodsMetricSourceType {
-			v2metric := autoscalingv2.MetricSpec{
-				Type: metric.Type,
-				Pods: metric.Pods,
-			}
-			autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, v2metric)
-		} // pod metrics
-	}
 	result = &autoscaler
 
 	return result, nil
