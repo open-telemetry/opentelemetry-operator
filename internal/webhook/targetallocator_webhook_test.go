@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync/atomic"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	authv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -170,6 +172,25 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, test.targetallocator)
 		})
+	}
+}
+
+func TestTargetAllocatorMTLSAvailabilityChanges(t *testing.T) {
+	var current atomic.Int64
+	cfg := config.New()
+	cfg.Internal.CertManagerAvailability = func() certmanager.Availability { return certmanager.Availability(current.Load()) }
+	w := &TargetAllocatorWebhook{cfg: cfg}
+	ta := &v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{Mtls: &v1beta1.TargetAllocatorMTLS{Enabled: true}},
+	}
+	for _, availability := range []certmanager.Availability{certmanager.NotAvailable, certmanager.Available, certmanager.NotAvailable} {
+		current.Store(int64(availability))
+		_, err := w.ValidateCreate(t.Context(), ta)
+		if availability == certmanager.Available {
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, "cert-manager is not available")
+		}
 	}
 }
 

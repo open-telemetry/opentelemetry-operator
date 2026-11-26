@@ -531,6 +531,12 @@ cert-manager provisions the CA, server, and client certificates automatically.
   - If you create the allocator from an `OpenTelemetryCollector`, set `spec.targetAllocator.mtls.enabled: true` there instead; the operator forwards it into the generated `TargetAllocator` resource.
   - `useCertManager` defaults to `true`, so cert-manager provisions the serving and client certificates unless you explicitly disable it.
 
+The operator and standalone webhook recheck cert-manager API availability and their service account's permissions approximately every minute. Each check sends 21 SubjectAccessReviews per replica when the cert-manager API is present. Temporary discovery or authorization evaluation errors preserve the last confirmed result.
+
+Standalone webhooks update admission validation without restarting. Controller processes exit gracefully when availability changes so that Kubernetes restarts their containers with updated configuration and watches. Separate webhook replicas keep serving requests during the controller restart. When the controller and webhook share a process, admission is briefly unavailable during restart. Multiple controller replicas can restart at the same time. Admission may accept requests before the controller has restarted; reconciliation follows after restart.
+
+The beta feature gate `operator.certmanager.availabilitywatcher` enables these checks by default. Disable it in every operator and standalone webhook Deployment with `FEATURE_GATES=-operator.certmanager.availabilitywatcher` to retain startup-only detection and manual restarts. Include any other configured gates in the same comma-separated value.
+
 #### Without cert-manager (user-provided certificates)
 
 Set `useCertManager: false` and reference your own certificates through the `mtls.tls` block. cert-manager is not required; the operator mounts the referenced Secrets and ConfigMaps into the target allocator and collector pods.

@@ -17,7 +17,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -77,9 +76,10 @@ func runWebhookServer(cfg config.Config, configFile string, opts zap.Options, sc
 		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
 	}
-	if result.Config.CertManagerAvailability == certmanager.Available {
-		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
-		utilruntime.Must(cmv1.AddToScheme(scheme))
+	utilruntime.Must(cmv1.AddToScheme(scheme))
+	if err := operatorsetup.SetupCertManagerAvailabilityWatcher(result, nil); err != nil {
+		setupLog.Error(err, "unable to setup cert-manager availability watcher")
+		os.Exit(1)
 	}
 
 	signalCtx := ctrl.SetupSignalHandler()

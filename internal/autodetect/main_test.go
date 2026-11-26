@@ -404,6 +404,15 @@ func TestCertManagerAvailability(t *testing.T) {
 			}),
 			shouldError: false,
 		},
+		{
+			description:          "CertManager authorization evaluation fails",
+			namespace:            "default",
+			serviceAccount:       "defaultSA",
+			apiGroupList:         &metav1.APIGroupList{Groups: []metav1.APIGroup{{Name: "cert-manager.io"}}},
+			expectedAvailability: certmanager.NotAvailable,
+			clientGenerator:      reactorFactory(v1.SubjectAccessReviewStatus{EvaluationError: "authorizer unavailable"}),
+			shouldError:          true,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
@@ -432,6 +441,11 @@ func TestCertManagerAvailability(t *testing.T) {
 			assert.Equal(t, tt.expectedAvailability, cma)
 			if tt.shouldError {
 				require.Error(t, err)
+				if tt.description == "CertManager is installed but RBAC permissions are not granted" {
+					assert.ErrorIs(t, err, certmanager.ErrMissingPermissions)
+				} else {
+					assert.NotErrorIs(t, err, certmanager.ErrMissingPermissions)
+				}
 			} else {
 				assert.NoError(t, err)
 			}

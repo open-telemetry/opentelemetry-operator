@@ -105,6 +105,7 @@ func NewStandaloneBuildValidator(mgr ctrl.Manager, cfg config.Config, reviewer r
 			Reviewer:       reviewer,
 			ErrorAsWarning: true,
 		}
+		p.Config.CertManagerAvailability = cfg.GetCertManagerAvailability()
 
 		ta, err := getTargetAllocator(ctx, mgr.GetClient(), p)
 		if err != nil {

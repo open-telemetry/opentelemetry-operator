@@ -368,7 +368,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}
 	// validate mTLS configuration (cert-manager availability, or user-provided certificate Secrets)
-	if err := manifestutils.ValidateTAMTLS(r.Spec.TargetAllocator.Mtls, c.cfg.CertManagerAvailability == certmanager.Available); err != nil {
+	if err := manifestutils.ValidateTAMTLS(r.Spec.TargetAllocator.Mtls, c.cfg.GetCertManagerAvailability() == certmanager.Available); err != nil {
 		return nil, err
 	}
 
