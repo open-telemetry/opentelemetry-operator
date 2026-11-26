@@ -685,6 +685,60 @@ func TestInjectNginxSDKVolumemountAliasing(t *testing.T) {
 	assert.Equal(t, nginxAgentConfDirFull, lastMount.MountPath)
 }
 
+func TestInjectNginxSDKKeepsUnrelatedVolumeMounts(t *testing.T) {
+	mounts := []corev1.VolumeMount{
+		{Name: "app-conf", MountPath: "/opt/app-root/etc/nginx/conf.d"},
+		{Name: "sibling", MountPath: "/etc/nginx-extra"},
+		{Name: "conf-d", MountPath: "/etc/nginx/conf.d"},
+		{Name: "data", MountPath: "/data"},
+	}
+
+	pod := corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{VolumeMounts: mounts}}}}
+	result := injectNginxSDK(logr.Discard(), v1alpha1.Nginx{Image: "foo/bar:1"},
+		pod, false, &pod.Spec.Containers[0], "http://otlp:4317",
+		map[string]string{string(semconv.K8SDeploymentNameKey): "svc"}, v1alpha1.InstrumentationSpec{})
+
+	var names []string
+	for _, m := range result.Spec.Containers[0].VolumeMounts {
+		names = append(names, m.Name)
+	}
+	assert.Equal(t, []string{"app-conf", "sibling", "data", nginxAgentVolume, nginxAgentConfigVolume}, names)
+
+	clone := result.Spec.InitContainers[0]
+	assert.Contains(t, clone.VolumeMounts, mounts[2], "the clone container still needs the original config mount")
+}
+
+func TestWithoutMountsUnder(t *testing.T) {
+	tests := []struct {
+		name     string
+		dir      string
+		paths    []string
+		expected []string
+	}{
+		{name: "exact match", dir: "/etc/nginx", paths: []string{"/etc/nginx"}, expected: []string{}},
+		{name: "trailing slash on mount", dir: "/etc/nginx", paths: []string{"/etc/nginx/"}, expected: []string{}},
+		{name: "child", dir: "/etc/nginx", paths: []string{"/etc/nginx/conf.d"}, expected: []string{}},
+		{name: "substring in the middle", dir: "/etc/nginx", paths: []string{"/opt/etc/nginx/conf.d"}, expected: []string{"/opt/etc/nginx/conf.d"}},
+		{name: "sibling sharing the prefix", dir: "/etc/nginx", paths: []string{"/etc/nginx-extra"}, expected: []string{"/etc/nginx-extra"}},
+		{name: "parent", dir: "/etc/nginx", paths: []string{"/etc"}, expected: []string{"/etc"}},
+		{name: "root dir", dir: "/", paths: []string{"/a", "/"}, expected: []string{}},
+		{name: "relative dir", dir: ".", paths: []string{"/a"}, expected: []string{"/a"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mounts := make([]corev1.VolumeMount, 0, len(tt.paths))
+			for _, p := range tt.paths {
+				mounts = append(mounts, corev1.VolumeMount{MountPath: p})
+			}
+			got := make([]string, 0)
+			for _, m := range withoutMountsUnder(mounts, tt.dir) {
+				got = append(got, m.MountPath)
+			}
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func TestNginxInitContainerMissing(t *testing.T) {
 	tests := []struct {
 		name     string
