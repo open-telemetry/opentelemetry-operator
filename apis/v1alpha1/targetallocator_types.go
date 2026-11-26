@@ -104,6 +104,12 @@ type TargetAllocatorSpec struct {
 	// If enabled, the target allocator will communicate with the collector over mTLS.
 	// +optional
 	Mtls *v1beta1.TargetAllocatorMTLS `json:"mtls,omitempty"`
+	// PrometheusReceiverID is the ID of the Prometheus receiver in the collector configuration that the target
+	// allocator manages, for example "prometheus/ta". Other Prometheus receivers are left unchanged.
+	// The default is "prometheus".
+	// +optional
+	// +kubebuilder:validation:Pattern=`^prometheus(/.+)?$`
+	PrometheusReceiverID string `json:"prometheusReceiverID,omitempty"`
 	// LivenessProbe defines the liveness probe configuration for the Target Allocator container.
 	// +optional
 	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
