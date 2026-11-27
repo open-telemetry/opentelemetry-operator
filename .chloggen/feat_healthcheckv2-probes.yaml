@@ -1,0 +1,7 @@
+change_type: enhancement
+
+component: collector
+
+note: Generate readiness, liveness and startup probes for the `healthcheckv2` extension
+
+issues: [4220]
