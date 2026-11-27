@@ -1,0 +1,4 @@
+change_type: bug_fix
+component: collector
+note: Reject OpenShift Route ingress in sidecar mode in collector validating webhook.
+issues: [5990]
