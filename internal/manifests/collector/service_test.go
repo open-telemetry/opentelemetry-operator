@@ -602,6 +602,42 @@ func TestServiceWithIpFamily(t *testing.T) {
 	})
 }
 
+func TestExtensionServiceWithIpFamily(t *testing.T) {
+	extensionParams := func() manifests.Params {
+		params := deploymentParams()
+		params.OtelCol.Spec.Config.Extensions = &v1beta1.AnyConfig{
+			Object: map[string]any{
+				"health_check": map[string]any{
+					"endpoint": "0.0.0.0:13133",
+				},
+			},
+		}
+		params.OtelCol.Spec.Config.Service.Extensions = []string{"health_check"}
+		return params
+	}
+
+	t.Run("should return IPFamilies for IPv4 and IPv6", func(t *testing.T) {
+		params := extensionParams()
+		params.OtelCol.Spec.IpFamilies = []v1.IPFamily{
+			"IPv4",
+			"IPv6",
+		}
+		actual, err := ExtensionService(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.Equal(t, []v1.IPFamily{"IPv4", "IPv6"}, actual.Spec.IPFamilies)
+	})
+	t.Run("should return IPPolicy PreferDualStack", func(t *testing.T) {
+		params := extensionParams()
+		policy := v1.IPFamilyPolicyPreferDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &policy
+		actual, err := ExtensionService(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.Equal(t, params.OtelCol.Spec.IpFamilyPolicy, actual.Spec.IPFamilyPolicy)
+	})
+}
+
 func TestServiceWithSessionAffinity(t *testing.T) {
 	t.Run("should set SessionAffinity when specified", func(t *testing.T) {
 		params := deploymentParams()
