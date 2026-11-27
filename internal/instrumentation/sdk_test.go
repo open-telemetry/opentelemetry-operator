@@ -1868,10 +1868,6 @@ func TestInjectDotNet(t *testing.T) {
 }
 
 func TestInjectGo(t *testing.T) {
-	falsee := false
-	truee := true
-	zero := int64(0)
-
 	tests := []struct {
 		name     string
 		insts    languageInstrumentations
@@ -1895,7 +1891,7 @@ func TestInjectGo(t *testing.T) {
 			},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &falsee,
+					ShareProcessNamespace: new(false),
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -1905,7 +1901,7 @@ func TestInjectGo(t *testing.T) {
 			},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &falsee,
+					ShareProcessNamespace: new(false),
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -1979,18 +1975,14 @@ func TestInjectGo(t *testing.T) {
 			},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
-						{
-							Name:  "app",
-							Image: "app:latest",
-						},
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -1998,6 +1990,7 @@ func TestInjectGo(t *testing.T) {
 									Name:      kernelDebugVolumeName,
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 							Env: []corev1.EnvVar{
 								{
 									Name: "OTEL_NODE_IP",
@@ -2045,6 +2038,12 @@ func TestInjectGo(t *testing.T) {
 									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
 								},
 							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "app",
+							Image: "app:latest",
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -2096,18 +2095,14 @@ func TestInjectGo(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
-						{
-							Name:  "app",
-							Image: "app:latest",
-						},
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -2115,6 +2110,7 @@ func TestInjectGo(t *testing.T) {
 									Name:      kernelDebugVolumeName,
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 							Env: []corev1.EnvVar{
 								{
 									Name: "OTEL_NODE_IP",
@@ -2162,6 +2158,12 @@ func TestInjectGo(t *testing.T) {
 									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
 								},
 							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "app",
+							Image: "app:latest",
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -2219,22 +2221,14 @@ func TestInjectGo(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
-						{
-							Name:  "istio-proxy",
-							Image: "docker.io/istio/proxyv2:1.20.1",
-						},
-						{
-							Name:  "app",
-							Image: "app:latest",
-						},
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -2242,6 +2236,7 @@ func TestInjectGo(t *testing.T) {
 									Name:      kernelDebugVolumeName,
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 							Env: []corev1.EnvVar{
 								{
 									Name: "OTEL_NODE_IP",
@@ -2289,6 +2284,16 @@ func TestInjectGo(t *testing.T) {
 									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
 								},
 							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "istio-proxy",
+							Image: "docker.io/istio/proxyv2:1.20.1",
+						},
+						{
+							Name:  "app",
+							Image: "app:latest",
 						},
 					},
 					Volumes: []corev1.Volume{

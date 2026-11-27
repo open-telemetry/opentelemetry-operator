@@ -16,10 +16,6 @@ import (
 )
 
 func TestInjectGoSDK(t *testing.T) {
-	falsee := false
-	truee := true
-	zero := int64(0)
-
 	tests := []struct {
 		name string
 		v1alpha1.Go
@@ -33,12 +29,12 @@ func TestInjectGoSDK(t *testing.T) {
 			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &falsee,
+					ShareProcessNamespace: new(false),
 				},
 			},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &falsee,
+					ShareProcessNamespace: new(false),
 				},
 			},
 			err: errors.New("shared process namespace has been explicitly disabled"),
@@ -62,7 +58,7 @@ func TestInjectGoSDK(t *testing.T) {
 			},
 			err: errors.New("go instrumentation cannot be injected into a pod, multiple containers configured"),
 			config: config.Config{
-				EnableMultiInstrumentation: truee,
+				EnableMultiInstrumentation: true,
 			},
 		},
 		{
@@ -110,15 +106,15 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:      sideCarName,
 							Resources: testResourceRequirements,
 							Image:     "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -132,6 +128,7 @@ func TestInjectGoSDK(t *testing.T) {
 									Value: "bar",
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -172,14 +169,14 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -193,6 +190,7 @@ func TestInjectGoSDK(t *testing.T) {
 									Value: "foo",
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -226,14 +224,14 @@ func TestInjectGoSDK(t *testing.T) {
 			pod: corev1.Pod{},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -251,6 +249,7 @@ func TestInjectGoSDK(t *testing.T) {
 									Value: "bar",
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 						},
 					},
 					Volumes: []corev1.Volume{
