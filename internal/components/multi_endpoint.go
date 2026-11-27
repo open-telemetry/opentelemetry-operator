@@ -42,10 +42,12 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config any) (
 	}
 	var ports []corev1.ServicePort
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		defaultSvc, ok := m.portMappings[protocol]
+		template, ok := m.portMappings[protocol]
 		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
+		// The mappings are shared by every caller of this parser, so work on a copy.
+		defaultSvc := template.DeepCopy()
 		port := defaultSvc.Port
 		if ec != nil {
 			port = ec.GetPortNumOrDefault(logger, port)
