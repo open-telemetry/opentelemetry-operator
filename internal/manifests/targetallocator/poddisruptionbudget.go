@@ -43,7 +43,7 @@ func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
 	}
 
 	name := naming.TAPodDisruptionBudget(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, params.Config.LabelsFilter)
 	annotations := ResourceAnnotations(params.TargetAllocator, params.Config.AnnotationsFilter)
 
 	objectMeta := metav1.ObjectMeta{

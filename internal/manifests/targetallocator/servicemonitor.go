@@ -14,7 +14,7 @@ import (
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params Params) *monitoringv1.ServiceMonitor {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, params.Config.LabelsFilter)
 	manifestutils.AddExtraLabels(&params.Log, labels, params.TargetAllocator.Spec.Observability.Metrics.ExtraLabels)
 
 	return &monitoringv1.ServiceMonitor{
