@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,9 +23,7 @@ func TestLabelsFilterAppliesToAllObjects(t *testing.T) {
 
 	withLabels := func(params manifests.Params) manifests.Params {
 		params.OtelCol.Labels = map[string]string{"keep": "1"}
-		for k, v := range filtered {
-			params.OtelCol.Labels[k] = v
-		}
+		maps.Copy(params.OtelCol.Labels, filtered)
 		params.Config.LabelsFilter = []string{"argocd.argoproj.io/*", "filter.*"}
 		params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 		return params

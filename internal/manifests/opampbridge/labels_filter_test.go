@@ -4,6 +4,7 @@
 package opampbridge
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,9 +22,7 @@ func TestLabelsFilterAppliesToAllObjects(t *testing.T) {
 		"filter.me":                   "1",
 	}
 	labels := map[string]string{"keep": "1"}
-	for k, v := range filtered {
-		labels[k] = v
-	}
+	maps.Copy(labels, filtered)
 
 	params := manifests.Params{
 		Config: config.Config{LabelsFilter: []string{"argocd.argoproj.io/*", "filter.*"}},
