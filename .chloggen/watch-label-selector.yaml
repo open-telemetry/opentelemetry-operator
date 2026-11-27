@@ -1,0 +1,5 @@
+change_type: enhancement
+component: operator
+note: Add a label selector to limit which custom resources the operator manages.
+issues: [5881]
+subtext:

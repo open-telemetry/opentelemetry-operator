@@ -65,6 +65,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
 	f.String("watch-namespace", cfg.WatchNamespace, "Comma-separated list of namespaces the operator should watch for CustomResources. Empty means watch all namespaces.")
+	f.String("watch-label-selector", cfg.WatchLabelSelector, "Kubernetes label selector for CustomResources the operator should watch. Empty means watch all CustomResources.")
 	f.Int32("openshift-webhook-replicas", cfg.OpenShiftWebhookReplicas, "Number of replicas for the standalone pod webhook deployment on OpenShift. Set 0 to disable.")
 
 	return f
@@ -178,6 +179,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
 			case "watch-namespace":
 				cfg.WatchNamespace, _ = f.GetString("watch-namespace")
+			case "watch-label-selector":
+				cfg.WatchLabelSelector, _ = f.GetString("watch-label-selector")
 			case "openshift-webhook-replicas":
 				cfg.OpenShiftWebhookReplicas, _ = f.GetInt32("openshift-webhook-replicas")
 			}

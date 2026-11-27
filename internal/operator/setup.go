@@ -17,6 +17,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	"go.uber.org/zap/zapcore"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -29,6 +30,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	v1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	v1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/apiserverendpoints"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
@@ -53,11 +56,29 @@ type SetupResult struct {
 
 // cacheByObject returns per-type cache settings for the manager. Informers are started lazily, so a type only
 // listed here is not watched until a component requests it.
-func cacheByObject() map[client.Object]cache.ByObject {
+func cacheByObject(watchLabelSelector string) (map[client.Object]cache.ByObject, error) {
 	endpointSlice, endpointSliceCache := apiserverendpoints.CacheByObject()
-	return map[client.Object]cache.ByObject{
+	byObject := map[client.Object]cache.ByObject{
 		endpointSlice: endpointSliceCache,
 	}
+	if watchLabelSelector == "" {
+		return byObject, nil
+	}
+
+	selector, err := labels.Parse(watchLabelSelector)
+	if err != nil {
+		return nil, fmt.Errorf("invalid watch-label-selector: %w", err)
+	}
+	for _, object := range []client.Object{
+		&v1beta1.OpenTelemetryCollector{},
+		&v1alpha1.TargetAllocator{},
+		&v1alpha1.OpAMPBridge{},
+		&v1alpha1.Instrumentation{},
+		&v1alpha1.ClusterObservability{},
+	} {
+		byObject[object] = cache.ByObject{Label: selector}
+	}
+	return byObject, nil
 }
 
 // SetupManager performs the common manager setup shared between the operator and webhook commands.
@@ -84,6 +105,11 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 
 	restConfig := ctrl.GetConfigOrDie()
 	namespaces := parseWatchNamespaces(cfg.WatchNamespace)
+	byObject, err := cacheByObject(cfg.WatchLabelSelector)
+	if err != nil {
+		setupLog.Error(err, "unable to configure manager cache")
+		os.Exit(1)
+	}
 	tlsOptsFuncs, initialTLSProfile := buildTLSOptions(*cfg, restConfig, scheme)
 
 	if cfg.TLS.ConfigureOperands {
@@ -112,7 +138,7 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
-			ByObject:          cacheByObject(),
+			ByObject:          byObject,
 		},
 	}
 
