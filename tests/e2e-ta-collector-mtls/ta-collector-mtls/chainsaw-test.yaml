@@ -98,6 +98,7 @@ spec:
             file: 04-assert-restart.yaml
         - apply:
             file: 04-collector.yaml
+            # Server-side dry run invokes admission without creating a Collector while retrying for the expected rejection.
             dryRun: true
             timeout: 3m
             expect:
