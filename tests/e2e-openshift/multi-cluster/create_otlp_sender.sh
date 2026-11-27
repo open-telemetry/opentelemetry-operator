@@ -6,7 +6,7 @@ otlp_route_grpc=$(oc -n chainsaw-multi-cluster-receive get route otlp-grpc-otlp-
 
 # Define the collector content
 collector_content=$(cat <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: otel-sender
@@ -21,7 +21,7 @@ spec:
   volumeMounts:
     - name: chainsaw-certs
       mountPath: /certs
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
