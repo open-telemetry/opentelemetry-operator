@@ -38,7 +38,7 @@ func TestUpdateClusterObservabilityStatusReady(t *testing.T) {
 
 	cli := newStatusTestClient(t,
 		&v1beta1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{Name: name + "-agent", Namespace: namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-agent", Namespace: namespace, OwnerReferences: controllerOwner(uid)},
 		},
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{Name: name + "-agent-collector", Namespace: namespace},
@@ -48,7 +48,7 @@ func TestUpdateClusterObservabilityStatusReady(t *testing.T) {
 			},
 		},
 		&v1beta1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster", Namespace: namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster", Namespace: namespace, OwnerReferences: controllerOwner(uid)},
 		},
 		&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster-collector", Namespace: namespace},
@@ -89,12 +89,13 @@ func TestCheckClusterCollectorStatusRequiresReadyStatefulSet(t *testing.T) {
 		name      = "cluster-obs"
 		namespace = "observability"
 	)
+	uid := types.UID("cluster-observability-uid")
 	co := &v1alpha1.ClusterObservability{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: uid},
 	}
 	cli := newStatusTestClient(t,
 		&v1beta1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster", Namespace: namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster", Namespace: namespace, OwnerReferences: controllerOwner(uid)},
 		},
 		&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster-collector", Namespace: namespace},
@@ -108,6 +109,46 @@ func TestCheckClusterCollectorStatusRequiresReadyStatefulSet(t *testing.T) {
 	status := checkClusterCollectorStatus(context.Background(), cli, co)
 	assert.False(t, status.ready)
 	assert.Equal(t, "Cluster collector StatefulSet not ready: 0/1 replicas ready", status.message)
+}
+
+func TestCollectorStatusRequiresCurrentOwner(t *testing.T) {
+	const (
+		name      = "cluster-obs"
+		namespace = "observability"
+	)
+	co := &v1alpha1.ClusterObservability{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: "new-uid"},
+	}
+	// The collectors and their workloads are ready, but they belong to a
+	// ClusterObservability with the same name that has been deleted.
+	cli := newStatusTestClient(t,
+		&v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-agent", Namespace: namespace, OwnerReferences: controllerOwner("old-uid")},
+		},
+		&appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-agent-collector", Namespace: namespace},
+			Status:     appsv1.DaemonSetStatus{DesiredNumberScheduled: 1, NumberReady: 1},
+		},
+		&v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster", Namespace: namespace, OwnerReferences: controllerOwner("old-uid")},
+		},
+		&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{Name: name + "-cluster-collector", Namespace: namespace},
+			Status:     appsv1.StatefulSetStatus{Replicas: 1, ReadyReplicas: 1},
+		},
+	)
+
+	agent := checkAgentCollectorStatus(context.Background(), cli, co)
+	assert.False(t, agent.ready)
+	assert.Equal(t, "Agent collector OpenTelemetryCollector is not owned by this ClusterObservability", agent.message)
+
+	cluster := checkClusterCollectorStatus(context.Background(), cli, co)
+	assert.False(t, cluster.ready)
+	assert.Equal(t, "Cluster collector OpenTelemetryCollector is not owned by this ClusterObservability", cluster.message)
+}
+
+func controllerOwner(uid types.UID) []metav1.OwnerReference {
+	return []metav1.OwnerReference{{UID: uid, Controller: new(true)}}
 }
 
 func newStatusTestClient(t *testing.T, objects ...client.Object) client.Client {
