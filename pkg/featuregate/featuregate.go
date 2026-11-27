@@ -62,9 +62,9 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
-	// EnableInstrumentationImageVolumes is the feature gate that enables the operator to mount supported auto-instrumentation
+	// EnableImageVolumes is the feature gate that enables the operator to mount supported auto-instrumentation
 	// images as Kubernetes image volumes.
-	EnableInstrumentationImageVolumes = featuregate.GlobalRegistry().MustRegister(
+	EnableImageVolumes = featuregate.GlobalRegistry().MustRegister(
 		"operator.instrumentation.imagevolumes",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables Image Volume Support for supported auto-instrumentation images"),

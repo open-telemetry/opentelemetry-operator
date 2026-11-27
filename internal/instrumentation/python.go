@@ -69,7 +69,7 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: pythonInstrMountPath,
-		SubPath:   imageVolumeSubPath(useInstrImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate), autoInstrumentationSrc),
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate), autoInstrumentationSrc),
 	})
 	return nil
 }
@@ -82,7 +82,7 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, pythonInitContainerName) {
-		useImageVolume = useInstrImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate)
+		useImageVolume = shouldUseImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate)
 		if useImageVolume {
 			volume = instrImageVolume(pythonSpec.Image, pythonVolumeName, instSpec.ImagePullPolicy)
 		}

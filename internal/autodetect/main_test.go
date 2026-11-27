@@ -468,7 +468,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		NativeSidecarSupportFunc: func() (bool, error) {
 			return true, nil
 		},
-		InstrumentationImageVolumeSupportFunc: func() (bool, error) {
+		ImageVolumeSupportFunc: func() (bool, error) {
 			return true, nil
 		},
 	}
@@ -497,15 +497,15 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
 	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
-	require.Equal(t, false, cfg.Internal.InstrumentationImageVolumeSupport)
+	require.Equal(t, false, cfg.Internal.ImageVolumeSupport)
 }
 
-func TestInstrumentationImageVolumeSupport(t *testing.T) {
+func TestImageVolumeSupport(t *testing.T) {
 	registry := colfeaturegate.GlobalRegistry()
-	original := featuregate.EnableInstrumentationImageVolumes.IsEnabled()
-	require.NoError(t, registry.Set(featuregate.EnableInstrumentationImageVolumes.ID(), true))
+	original := featuregate.EnableImageVolumes.IsEnabled()
+	require.NoError(t, registry.Set(featuregate.EnableImageVolumes.ID(), true))
 	t.Cleanup(func() {
-		require.NoError(t, registry.Set(featuregate.EnableInstrumentationImageVolumes.ID(), original))
+		require.NoError(t, registry.Set(featuregate.EnableImageVolumes.ID(), original))
 	})
 
 	for _, tt := range []struct {
@@ -527,13 +527,13 @@ func TestInstrumentationImageVolumeSupport(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := config.New()
 			mock := &mockAutoDetect{
-				InstrumentationImageVolumeSupportFunc: func() (bool, error) {
+				ImageVolumeSupportFunc: func() (bool, error) {
 					return tt.available, nil
 				},
 			}
 
 			require.NoError(t, autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test")))
-			assert.Equal(t, tt.expected, cfg.Internal.InstrumentationImageVolumeSupport)
+			assert.Equal(t, tt.expected, cfg.Internal.ImageVolumeSupport)
 		})
 	}
 }
@@ -541,17 +541,17 @@ func TestInstrumentationImageVolumeSupport(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OpenShiftRoutesAvailabilityFunc       func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc         func() (prometheus.Availability, error)
-	ClusterRBACPermissionsFunc            func(ctx context.Context) (autoRBAC.Availability, error)
-	NamespacedRBACPermissionsFunc         func(ctx context.Context) (autoRBAC.Availability, error)
-	CertManagerAvailabilityFunc           func(ctx context.Context) (certmanager.Availability, error)
-	TargetAllocatorAvailabilityFunc       func() (targetallocator.Availability, error)
-	CollectorAvailabilityFunc             func() (collector.Availability, error)
-	OpAmpBridgeAvailabilityFunc           func() (opampbridge.Availability, error)
-	NativeSidecarSupportFunc              func() (bool, error)
-	InstrumentationImageVolumeSupportFunc func() (bool, error)
-	GatewayAPIsAvailabilityFunc           func() (gatewayapi.ApiAvailability, error)
+	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+	ClusterRBACPermissionsFunc      func(ctx context.Context) (autoRBAC.Availability, error)
+	NamespacedRBACPermissionsFunc   func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
+	CollectorAvailabilityFunc       func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	NativeSidecarSupportFunc        func() (bool, error)
+	ImageVolumeSupportFunc          func() (bool, error)
+	GatewayAPIsAvailabilityFunc     func() (gatewayapi.ApiAvailability, error)
 }
 
 func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
@@ -621,9 +621,9 @@ func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	return false, nil
 }
 
-func (m *mockAutoDetect) InstrumentationImageVolumeSupport() (bool, error) {
-	if m.InstrumentationImageVolumeSupportFunc != nil {
-		return m.InstrumentationImageVolumeSupportFunc()
+func (m *mockAutoDetect) ImageVolumeSupport() (bool, error) {
+	if m.ImageVolumeSupportFunc != nil {
+		return m.ImageVolumeSupportFunc()
 	}
 	return false, nil
 }

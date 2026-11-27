@@ -106,7 +106,7 @@ func (*mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	return false, nil
 }
 
-func (*mockAutoDetect) InstrumentationImageVolumeSupport() (bool, error) {
+func (*mockAutoDetect) ImageVolumeSupport() (bool, error) {
 	return false, nil
 }
 

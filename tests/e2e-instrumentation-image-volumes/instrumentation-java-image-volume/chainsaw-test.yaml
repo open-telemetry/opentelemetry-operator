@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-java-image-volume
+spec:
+  steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: Install instrumentation
+    try:
+    - apply:
+        file: 00-install-instrumentation.yaml
+  - name: Install app and verify image volume injection
+    try:
+    - apply:
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
+    - script:
+        content: |
+          test -z "$(kubectl get pod my-java-image-volume -n "$NAMESPACE" -o jsonpath='{.spec.initContainers[*].name}')"
+    catch:
+    - podLogs:
+        selector: app=my-java-image-volume

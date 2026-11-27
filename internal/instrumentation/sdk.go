@@ -49,22 +49,22 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		return pod
 	}
 	if insts.Java.Instrumentation != nil {
-		pod = i.injectJava(ctx, insts.Java, ns, pod, cfg.Internal.InstrumentationImageVolumeSupport)
+		pod = i.injectJava(ctx, insts.Java, ns, pod, cfg.Internal.ImageVolumeSupport)
 	}
 	if insts.NodeJS.Instrumentation != nil {
-		pod = i.injectNodeJS(ctx, insts.NodeJS, ns, pod, cfg.Internal.InstrumentationImageVolumeSupport)
+		pod = i.injectNodeJS(ctx, insts.NodeJS, ns, pod, cfg.Internal.ImageVolumeSupport)
 	}
 	if insts.Php.Instrumentation != nil {
 		pod = i.injectPhp(ctx, insts.Php, ns, pod)
 	}
 	if insts.Python.Instrumentation != nil {
-		pod = i.injectPython(ctx, insts.Python, ns, pod, cfg.Internal.InstrumentationImageVolumeSupport)
+		pod = i.injectPython(ctx, insts.Python, ns, pod, cfg.Internal.ImageVolumeSupport)
 	}
 	if insts.Ruby.Instrumentation != nil {
-		pod = i.injectRuby(ctx, insts.Ruby, ns, pod, cfg.Internal.InstrumentationImageVolumeSupport)
+		pod = i.injectRuby(ctx, insts.Ruby, ns, pod, cfg.Internal.ImageVolumeSupport)
 	}
 	if insts.DotNet.Instrumentation != nil {
-		pod = i.injectDotNet(ctx, insts.DotNet, ns, pod, cfg.Internal.InstrumentationImageVolumeSupport)
+		pod = i.injectDotNet(ctx, insts.DotNet, ns, pod, cfg.Internal.ImageVolumeSupport)
 	}
 	if insts.Go.Instrumentation != nil {
 		pod = i.injectGo(ctx, insts.Go, ns, pod, cfg)

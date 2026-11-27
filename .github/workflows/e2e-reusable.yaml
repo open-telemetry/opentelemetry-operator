@@ -92,6 +92,7 @@ jobs:
         - e2e-collector-metrics
         - e2e-instrumentation-default
         - e2e-instrumentation
+        - e2e-instrumentation-image-volumes
         - e2e-instrumentation-go
         - e2e-instrumentation-go-default
         - e2e-no-crds
@@ -109,6 +110,10 @@ jobs:
         - e2e-ta-collector-mtls
         - e2e-crd-validations
         - e2e-ta-standalone
+        exclude:
+        # Image volumes require Kubernetes 1.36 or newer.
+        - kube-version: "1.25"
+          group: e2e-instrumentation-image-volumes
         include:
         - group: e2e-clusterobservability
           # ClusterObservability is behind a feature gate and still maturing
@@ -118,6 +123,8 @@ jobs:
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation
           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+        - group: e2e-instrumentation-image-volumes
+          setup: "prepare-e2e-instrumentation-image-volumes"
         - group: e2e-instrumentation-go
           setup: "add-instrumentation-params prepare-e2e"
         - group: e2e-instrumentation-go-default

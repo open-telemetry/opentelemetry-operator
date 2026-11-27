@@ -151,19 +151,18 @@ func instrImageVolume(image, name string, pullPolicy corev1.PullPolicy) corev1.V
 	}
 }
 
-func useInstrImageVolume(enabled bool, volumeClaimTemplate corev1.PersistentVolumeClaimTemplate) bool {
-	return enabled && reflect.ValueOf(volumeClaimTemplate).IsZero()
+// shouldUseImageVolume reports whether an Image Volume can replace the copy-based volume.
+func shouldUseImageVolume(preferImageVolume bool, volumeClaimTemplate corev1.PersistentVolumeClaimTemplate) bool {
+	return preferImageVolume && reflect.ValueOf(volumeClaimTemplate).IsZero()
 }
 
-func instrImageVolumeSubPath(path string) string {
-	return strings.TrimPrefix(strings.TrimSuffix(path, "/."), "/")
-}
-
-func imageVolumeSubPath(enabled bool, path string) string {
-	if !enabled {
+// imageVolumeMountSubPath converts an image path to a volume mount subpath.
+func imageVolumeMountSubPath(useImageVolume bool, imagePath string) string {
+	if !useImageVolume {
 		return ""
 	}
-	return instrImageVolumeSubPath(path)
+
+	return strings.TrimPrefix(strings.TrimSuffix(imagePath, "/."), "/")
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {

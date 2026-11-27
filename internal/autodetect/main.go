@@ -44,7 +44,7 @@ type AutoDetect interface {
 	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 	NativeSidecarSupport() (bool, error)
-	InstrumentationImageVolumeSupport() (bool, error)
+	ImageVolumeSupport() (bool, error)
 	GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error)
 }
 
@@ -295,9 +295,9 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 	return currentVersion.AtLeast(minimumVersion), nil
 }
 
-// InstrumentationImageVolumeSupport checks if image volumes are available.
+// ImageVolumeSupport checks if image volumes are available.
 // This requires Kubernetes version >= 1.36.
-func (a *autoDetect) InstrumentationImageVolumeSupport() (bool, error) {
+func (a *autoDetect) ImageVolumeSupport() (bool, error) {
 	currentVersion, err := a.k8sDetector.GetKubernetesVersion()
 	if err != nil {
 		return false, err
@@ -409,13 +409,13 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	c.Internal.NativeSidecarSupport = nativeSidecarSupport
 	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
 
-	instrumentationImageVolumeSupport, err := autoDetect.InstrumentationImageVolumeSupport()
+	imageVolumeSupport, err := autoDetect.ImageVolumeSupport()
 	if err != nil {
-		logger.V(2).Info("failed to detect instrumentation image volume support", "reason", err)
+		logger.V(2).Info("failed to detect image volume support", "reason", err)
 		return err
 	}
-	c.Internal.InstrumentationImageVolumeSupport = featuregate.EnableInstrumentationImageVolumes.IsEnabled() && instrumentationImageVolumeSupport
-	logger.V(2).Info("determined instrumentation image volume support", "availability", c.Internal.InstrumentationImageVolumeSupport)
+	c.Internal.ImageVolumeSupport = featuregate.EnableImageVolumes.IsEnabled() && imageVolumeSupport
+	logger.V(2).Info("determined image volume support", "availability", c.Internal.ImageVolumeSupport)
 
 	gapiAvl, err := autoDetect.GatewayAPIsAvailability()
 	if err != nil {

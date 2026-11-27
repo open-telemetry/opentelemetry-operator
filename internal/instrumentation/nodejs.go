@@ -31,14 +31,14 @@ func injectNodeJSSDKToContainer(nodeJSSpec v1alpha1.NodeJS, container *corev1.Co
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: nodejsInstrMountPath,
-		SubPath:   imageVolumeSubPath(useInstrImageVolume(useImageVolume, nodeJSSpec.VolumeClaimTemplate), "autoinstrumentation"),
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, nodeJSSpec.VolumeClaimTemplate), "autoinstrumentation"),
 	})
 	return nil
 }
 
 func injectNodeJSSDKToPod(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
-	useImageVolume = useInstrImageVolume(useImageVolume, nodeJSSpec.VolumeClaimTemplate)
+	useImageVolume = shouldUseImageVolume(useImageVolume, nodeJSSpec.VolumeClaimTemplate)
 	if useImageVolume {
 		volume = instrImageVolume(nodeJSSpec.Image, nodejsVolumeName, instSpec.ImagePullPolicy)
 	}

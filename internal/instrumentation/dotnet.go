@@ -68,14 +68,14 @@ func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Co
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: dotnetInstrMountPath,
-		SubPath:   imageVolumeSubPath(useInstrImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate), "autoinstrumentation"),
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate), "autoinstrumentation"),
 	})
 	return nil
 }
 
 func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
-	useImageVolume = useInstrImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate)
+	useImageVolume = shouldUseImageVolume(useImageVolume, dotNetSpec.VolumeClaimTemplate)
 	if useImageVolume {
 		volume = instrImageVolume(dotNetSpec.Image, dotnetVolumeName, instSpec.ImagePullPolicy)
 	}

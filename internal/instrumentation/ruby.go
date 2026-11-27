@@ -41,14 +41,14 @@ func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Containe
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: rubyInstrMountPath,
-		SubPath:   imageVolumeSubPath(useInstrImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate), "autoinstrumentation"),
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate), "autoinstrumentation"),
 	})
 	return nil
 }
 
 func injectRubySDKToPod(rubySpec v1alpha1.Ruby, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, nil)
-	useImageVolume = useInstrImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate)
+	useImageVolume = shouldUseImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate)
 	if useImageVolume {
 		volume = instrImageVolume(rubySpec.Image, rubyVolumeName, instSpec.ImagePullPolicy)
 	}
