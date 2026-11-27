@@ -261,7 +261,7 @@ func (i *sdkInjector) injectGo(ctx context.Context, inst instrumentationWithCont
 	} else {
 		// Get container references from the modified pod
 		appContainer := getContainerByName(containerName, &pod)
-		goSidecar := &pod.Spec.Containers[len(pod.Spec.Containers)-1]
+		goSidecar := &pod.Spec.InitContainers[len(pod.Spec.InitContainers)-1]
 		// Common env vars and config need to be applied to the agent container (sidecar).
 		i.injectCommonEnvVar(otelinst, goSidecar)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, goSidecar, appContainer)

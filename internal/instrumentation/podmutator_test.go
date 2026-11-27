@@ -23,9 +23,6 @@ import (
 )
 
 func TestMutatePod(t *testing.T) {
-	truee := true
-	zero := int64(0)
-
 	tests := []struct {
 		name            string
 		err             string
@@ -282,12 +279,12 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:      "otel-auto-secret-my-certs",
-									ReadOnly:  truee,
+									ReadOnly:  true,
 									MountPath: "/otel-auto-instrumentation-secret-my-certs",
 								},
 								{
 									Name:      "otel-auto-configmap-my-ca-bundle",
-									ReadOnly:  truee,
+									ReadOnly:  true,
 									MountPath: "/otel-auto-instrumentation-configmap-my-ca-bundle",
 								},
 							},
@@ -874,7 +871,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableNodeJSAutoInstrumentation: truee,
+				EnableNodeJSAutoInstrumentation: true,
 			},
 		},
 		{
@@ -1157,7 +1154,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableNodeJSAutoInstrumentation: truee,
+				EnableNodeJSAutoInstrumentation: true,
 			},
 		},
 		{
@@ -1439,7 +1436,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:    true,
-				EnablePhpAutoInstrumentation: truee,
+				EnablePhpAutoInstrumentation: true,
 			},
 		},
 		{
@@ -1727,7 +1724,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:    true,
-				EnablePhpAutoInstrumentation: truee,
+				EnablePhpAutoInstrumentation: true,
 			},
 		},
 		{
@@ -1997,7 +1994,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnablePythonAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: true,
 			},
 		},
 		{
@@ -2304,7 +2301,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnablePythonAutoInstrumentation: truee,
+				EnablePythonAutoInstrumentation: true,
 			},
 		},
 		{
@@ -3167,7 +3164,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableDotNetAutoInstrumentation: truee,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -3366,7 +3363,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableDotNetAutoInstrumentation: truee,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -3677,7 +3674,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableDotNetAutoInstrumentation: truee,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -3834,17 +3831,14 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
+					ShareProcessNamespace: new(true),
+					InitContainers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  &zero,
-								Privileged: &truee,
+								RunAsUser:  new(int64(0)),
+								Privileged: new(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -3852,6 +3846,7 @@ func TestMutatePod(t *testing.T) {
 									Name:      kernelDebugVolumeName,
 								},
 							},
+							RestartPolicy: new(corev1.ContainerRestartPolicyAlways),
 							Env: []corev1.EnvVar{
 								{
 									Name: "OTEL_NODE_IP",
@@ -3924,6 +3919,11 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
 					Volumes: []corev1.Volume{
 						{
 							Name: kernelDebugVolumeName,
@@ -3938,7 +3938,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:   true,
-				EnableGoAutoInstrumentation: truee,
+				EnableGoAutoInstrumentation: true,
 			},
 		},
 		{
@@ -4208,7 +4208,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:        true,
-				EnableApacheHttpdInstrumentation: truee,
+				EnableApacheHttpdInstrumentation: true,
 			},
 		},
 		{
@@ -4480,7 +4480,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:      true,
-				EnableNginxAutoInstrumentation: truee,
+				EnableNginxAutoInstrumentation: true,
 			},
 		},
 		{
@@ -4564,9 +4564,9 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableMultiInstrumentation:      truee,
-				EnableNodeJSAutoInstrumentation: truee,
-				EnablePythonAutoInstrumentation: truee,
+				EnableMultiInstrumentation:      true,
+				EnableNodeJSAutoInstrumentation: true,
+				EnablePythonAutoInstrumentation: true,
 				EnableDotNetAutoInstrumentation: false,
 			},
 		},
@@ -5656,12 +5656,12 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableMultiInstrumentation:      truee,
-				EnableJavaAutoInstrumentation:   truee,
-				EnableNodeJSAutoInstrumentation: truee,
-				EnablePhpAutoInstrumentation:    truee,
-				EnablePythonAutoInstrumentation: truee,
-				EnableDotNetAutoInstrumentation: truee,
+				EnableMultiInstrumentation:      true,
+				EnableJavaAutoInstrumentation:   true,
+				EnableNodeJSAutoInstrumentation: true,
+				EnablePhpAutoInstrumentation:    true,
+				EnablePythonAutoInstrumentation: true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -6022,7 +6022,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:     true,
-				EnableMultiInstrumentation:    truee,
+				EnableMultiInstrumentation:    true,
 				EnableJavaAutoInstrumentation: false,
 			},
 		},
@@ -6230,8 +6230,8 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableMultiInstrumentation:      truee,
-				EnableDotNetAutoInstrumentation: truee,
+				EnableMultiInstrumentation:      true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -6334,7 +6334,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableInstrumentationCRDs:       true,
-				EnableMultiInstrumentation:      truee,
+				EnableMultiInstrumentation:      true,
 				EnableDotNetAutoInstrumentation: false,
 				EnableNodeJSAutoInstrumentation: false,
 			},
@@ -6816,11 +6816,9 @@ func TestInitContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
-	ape := false
-	rnr := true
 	targetSC := &corev1.SecurityContext{
-		AllowPrivilegeEscalation: &ape,
-		RunAsNonRoot:             &rnr,
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
 		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 	}
@@ -6863,9 +6861,8 @@ func TestRegularContainerInstrumentationCopiesSecurityContext(t *testing.T) {
 	defer func() { _ = k8sClient.Delete(t.Context(), inst) }()
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "default"}}
-	ape := false
 	targetSC := &corev1.SecurityContext{
-		AllowPrivilegeEscalation: &ape,
+		AllowPrivilegeEscalation: new(false),
 		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 	}

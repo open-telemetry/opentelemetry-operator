@@ -82,7 +82,7 @@ jobs:
         # All Kubernetes version in between expose the same APIs, hence the operator
         # should be compatible with them.
         kube-version:
-        - "1.25"
+        - "1.29"
         - "1.37"
         group:
         - e2e

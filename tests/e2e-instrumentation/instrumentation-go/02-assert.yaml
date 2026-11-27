@@ -22,6 +22,7 @@ spec:
       periodSeconds: 15
       successThreshold: 1
       timeoutSeconds: 2
+  initContainers:
   - env:
     - name: OTEL_NODE_IP
       valueFrom:
@@ -61,6 +62,7 @@ spec:
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: opentelemetry-auto-instrumentation
+    restartPolicy: Always
     volumeMounts:
     - mountPath: /sys/kernel/debug
       name: kernel-debug
@@ -71,6 +73,7 @@ status:
   - name: myapp
     ready: true
     started: true
+  initContainerStatuses:
   - name: opentelemetry-auto-instrumentation
     ready: true
     started: true

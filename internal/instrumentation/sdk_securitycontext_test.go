@@ -11,16 +11,13 @@ import (
 )
 
 func TestResolveInitContainerSecurityContext(t *testing.T) {
-	runAsNonRoot := true
-	readOnlyRootFS := true
 	specCtx := &corev1.SecurityContext{
-		RunAsNonRoot:           &runAsNonRoot,
-		ReadOnlyRootFilesystem: &readOnlyRootFS,
+		RunAsNonRoot:           new(true),
+		ReadOnlyRootFilesystem: new(true),
 	}
 
-	privileged := true
 	containerCtx := &corev1.SecurityContext{
-		Privileged: &privileged,
+		Privileged: new(true),
 	}
 
 	tests := []struct {

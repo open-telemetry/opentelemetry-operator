@@ -39,15 +39,13 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 		return pod, errors.New("go instrumentation cannot be injected into a pod, multiple containers configured")
 	}
 
-	truee := true
-	zero := int64(0)
-	pod.Spec.ShareProcessNamespace = &truee
+	pod.Spec.ShareProcessNamespace = new(true)
 
 	securityContext := goSpec.SecurityContext
 	if securityContext == nil {
 		securityContext = &corev1.SecurityContext{
-			RunAsUser:  &zero,
-			Privileged: &truee,
+			RunAsUser:  new(int64(0)),
+			Privileged: new(true),
 		}
 	}
 
@@ -63,6 +61,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 			},
 		},
 		ImagePullPolicy: instSpec.ImagePullPolicy,
+		RestartPolicy:   new(corev1.ContainerRestartPolicyAlways),
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
@@ -78,7 +77,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 	// For Go, env vars must be added to the agent contain
 	goAgent.Env = appendIfNotSet(goAgent.Env, goSpec.Env...)
 
-	pod.Spec.Containers = append(pod.Spec.Containers, goAgent)
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, goAgent)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: kernelDebugVolumeName,
 		VolumeSource: corev1.VolumeSource{
