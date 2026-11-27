@@ -58,6 +58,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              time.Minute,
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
 				HTTPS: HTTPSServerConfig{
@@ -154,6 +155,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
 				HTTPS: HTTPSServerConfig{
@@ -266,6 +268,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -363,6 +366,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -484,6 +488,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -587,6 +592,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 				},
 				HTTPS: HTTPSServerConfig{
 					ListenAddr: ":8443",
@@ -707,6 +713,7 @@ func TestLoadFromFile(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeProtocols:                 defaultScrapeProtocolsCR,
+					CRDRecheckInterval:              DefaultCRDRecheckInterval,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
