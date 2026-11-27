@@ -1,6 +1,7 @@
 metadata:
   name: test
   namespace: test
+  uid: 0cf40c70-7602-4412-81d5-f61b8ddb4a41
 spec:
   replicas: 1
   image: test
