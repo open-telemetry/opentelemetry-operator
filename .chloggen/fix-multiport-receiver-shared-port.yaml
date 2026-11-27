@@ -8,7 +8,7 @@ component: collector
 note: Fix a data race in the multi-protocol receiver port parser that could give a Service the wrong port names when collectors are processed concurrently.
 
 # One or more tracking issues related to the change
-issues: []
+issues: [5989]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
