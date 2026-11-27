@@ -1,0 +1,5 @@
+change_type: bug_fix
+component: collector
+note: Fix incorrect Service and container ports for Collector receivers using IPv6 endpoints.
+issues: [5782]
+subtext:
