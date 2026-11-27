@@ -105,6 +105,87 @@ Build the manifests, install the CRD and run the operator as a local process:
 make install run
 ```
 
+### Run the operator in a local cluster
+
+`make install run` needs a Kubernetes API server on the host and leaves the webhooks
+ineffective, as [Deployment with webhooks](#deployment-with-webhooks) explains. To run
+the operator in a cluster on your laptop, with its webhooks served by cert-manager, use
+the kind cluster the end-to-end tests already build.
+
+The build takes its version from the git tags, so a clone without tags fails with
+`invalid tag ".../opentelemetry-operator:"`. Fetch them first:
+
+```bash
+git fetch --tags https://github.com/open-telemetry/opentelemetry-operator.git
+```
+
+That command does not help a shallow clone (`git clone --depth 1`), because
+`git describe` cannot reach a tagged commit from the fetched history. Fetch the history
+as well in that case:
+
+```bash
+git fetch --unshallow https://github.com/open-telemetry/opentelemetry-operator.git
+git fetch --tags https://github.com/open-telemetry/opentelemetry-operator.git
+```
+
+`make prepare-e2e` downloads the tools it needs (`kind`, `chainsaw`, `kustomize`,
+`operator-sdk`) into the repository's `bin/` directory, creates a kind cluster named
+`otel-operator`, installs cert-manager, builds the images and loads them into the
+cluster, and deploys the operator. Creating the cluster downloads the node image and
+the Go modules, so the first run takes several minutes. Re-running it is safe: it
+skips the cluster when one is already there, and rebuilds and reloads the images.
+
+```bash
+make prepare-e2e
+kubectl -n opentelemetry-operator-system get pods
+```
+
+```text
+NAME                                                          READY   STATUS    RESTARTS   AGE
+opentelemetry-operator-controller-manager-...                 1/1     Running   0          ...
+```
+
+#### Rebuild after changing code
+
+After a change to the operator, run `make prepare-e2e` again. It rebuilds the images
+and loads them into the cluster, which takes about a minute, but the running pod keeps
+the old image until it restarts:
+
+```bash
+make prepare-e2e
+kubectl -n opentelemetry-operator-system rollout restart deployment/opentelemetry-operator-controller-manager
+kubectl -n opentelemetry-operator-system rollout status deployment/opentelemetry-operator-controller-manager
+```
+
+A change to the pod templates only shows up on newly created pods, because injection
+happens when a pod is created.
+
+`make prepare-e2e` also rewrites files under `config/` and adds image flags to the
+manifests. Do not commit those changes. `make reset` reverts them, and it does not stop
+the cluster. Run it twice: the first run restores `config/`, but regenerates the bundle
+before it does, so it leaves the image flags in `bundle/`. The second run clears those.
+
+```bash
+make reset
+make reset
+git status
+make stop-kind
+```
+
+`git status` should then only list the files you changed.
+
+#### Troubleshooting
+
+* `Bind for 0.0.0.0:80 failed: port is already allocated`: the `kind-*.yaml` files in
+  this repository map ports 80 and 443 of the cluster to your host. Stop whatever else
+  uses them, including another kind cluster created from these files.
+* `failed calling webhook ...: context deadline exceeded`: the operator has just
+  restarted. Wait a moment and run the command again.
+* The operator reconciles nothing for a few minutes after a restart: the new pod
+  waits for the leader lease, which is 137 seconds
+  (`internal/operator/setup.go`), and the pod reports `Running` meanwhile. Check
+  `kubectl -n opentelemetry-operator-system logs deployment/opentelemetry-operator-controller-manager --tail=5`.
+
 ### Deployment with webhooks
 
 When running `make run`, the webhooks aren't effective as it starts the manager in the local machine instead of in-cluster. To test the webhooks, you'll need to:
