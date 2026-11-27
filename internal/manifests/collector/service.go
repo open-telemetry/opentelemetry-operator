@@ -5,7 +5,6 @@ package collector
 
 import (
 	"fmt"
-	"maps"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -25,6 +24,11 @@ const (
 	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
 	serviceTypeLabel = "operator.opentelemetry.io/collector-service-type"
 	valueExists      = "Exists"
+
+	// servingCertSecretNameAnnotation tells OpenShift to issue a serving cert
+	// into the named Secret. A Secret is owned by one Service, so each Service
+	// must request a uniquely named Secret.
+	servingCertSecretNameAnnotation = "service.beta.openshift.io/serving-cert-secret-name" //nolint:gosec // G101: annotation key, not a credential
 )
 
 type ServiceType int
@@ -50,12 +54,9 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	h.Labels[headlessLabel] = valueExists
 	h.Labels[serviceTypeLabel] = HeadlessServiceType.String()
 
-	// copy to avoid modifying params.OtelCol.Annotations
-	annotations := map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
-	}
-	maps.Copy(annotations, h.Annotations)
-	h.Annotations = annotations
+	// Override the base service's request (inherited via Service) with a
+	// headless-unique name so the two don't share one Secret.
+	h.Annotations[servingCertSecretNameAnnotation] = fmt.Sprintf("%s-tls", h.Name)
 
 	h.Spec.ClusterIP = "None"
 	return h, nil
@@ -145,6 +146,10 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Request a serving cert for the base service (the default client endpoint)
+	// with a name unique to it.
+	annotations[servingCertSecretNameAnnotation] = fmt.Sprintf("%s-tls", name)
 
 	ports, err := otelconfig.GetReceiverAndExporterPorts(&params.OtelCol.Spec.Config, params.Log)
 	if err != nil {
