@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-java-image-volume
+  labels:
+    app: my-java-image-volume
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "true"
+spec:
+  containers:
+  - name: app
+    image: mirror.gcr.io/library/busybox:latest
+    command: ["sleep", "infinity"]

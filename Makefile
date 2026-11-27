@@ -565,6 +565,11 @@ e2e-instrumentation-default: e2e-instrumentation
 e2e-instrumentation: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
 
+# Instrumentation end-to-end tests using image volumes
+.PHONY: e2e-instrumentation-image-volumes
+e2e-instrumentation-image-volumes: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation-image-volumes --report-name e2e-instrumentation-image-volumes
+
 # no-crds end-to-tests
 .PHONY: e2e-no-crds
 e2e-no-crds: chainsaw
@@ -732,6 +737,11 @@ prepare-e2e-no-crds: chainsaw set-image-controller add-image-targetallocator add
 .PHONY: prepare-e2e-clusterobservability
 prepare-e2e-clusterobservability: add-rbac-permissions-to-operator
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.clusterobservability
+	@$(MAKE) prepare-e2e
+
+.PHONY: prepare-e2e-instrumentation-image-volumes
+prepare-e2e-instrumentation-image-volumes: add-instrumentation-params add-instrumentation-images
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--feature-gates=+operator.instrumentation.imagevolumes
 	@$(MAKE) prepare-e2e
 
 # Run operator-sdk scorecard tests for bundles

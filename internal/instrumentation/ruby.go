@@ -17,7 +17,7 @@ const (
 	rubyInstrMountPath    = "/otel-auto-instrumentation-ruby"
 )
 
-func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Container) error {
+func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Container, useImageVolume bool) error {
 	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, nil)
 
 	err := validateContainerEnv(container.Env, envRubyOptions)
@@ -41,16 +41,24 @@ func injectRubySDKToContainer(rubySpec v1alpha1.Ruby, container *corev1.Containe
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: rubyInstrMountPath,
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate), "autoinstrumentation"),
 	})
 	return nil
 }
 
-func injectRubySDKToPod(rubySpec v1alpha1.Ruby, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectRubySDKToPod(rubySpec v1alpha1.Ruby, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, nil)
+	useImageVolume = shouldUseImageVolume(useImageVolume, rubySpec.VolumeClaimTemplate)
+	if useImageVolume {
+		volume = instrImageVolume(rubySpec.Image, rubyVolumeName, instSpec.ImagePullPolicy)
+	}
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, rubyInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		if useImageVolume {
+			return pod
+		}
 
 		initContainer := corev1.Container{
 			Name:      rubyInitContainerName,
@@ -71,14 +79,15 @@ func injectRubySDKToPod(rubySpec v1alpha1.Ruby, pod corev1.Pod, firstContainerNa
 
 // injectRubySDK injects Ruby instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectRubySDK(rubySpec v1alpha1.Ruby, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+func injectRubySDK(rubySpec v1alpha1.Ruby, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec, imageVolumeEnabled ...bool) error {
+	useImageVolume := len(imageVolumeEnabled) > 0 && imageVolumeEnabled[0]
 	for _, container := range containers {
-		if err := injectRubySDKToContainer(rubySpec, container); err != nil {
+		if err := injectRubySDKToContainer(rubySpec, container, useImageVolume); err != nil {
 			return err
 		}
 	}
 	if len(containers) > 0 {
-		*pod = injectRubySDKToPod(rubySpec, *pod, containers[0].Name, instSpec)
+		*pod = injectRubySDKToPod(rubySpec, *pod, containers[0].Name, instSpec, useImageVolume)
 	}
 	return nil
 }

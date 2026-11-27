@@ -177,6 +177,8 @@ type Internal struct {
 	CreateNamespacedRBACPermissions autoRBAC.Availability `yaml:"-"`
 	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
 	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
+	// ImageVolumeSupport is set to true if the corresponding featuregate is enabled and the minimum required Kubernetes version is met.
+	ImageVolumeSupport bool `yaml:"image-volume-support"`
 	// OperandTLSProfile holds the TLS profile to inject into operand (collector) configurations.
 	// This is set at operator startup from the cluster's TLS security profile and is applied
 	// during reconciliation when generating ConfigMaps. When the cluster TLS profile changes,
@@ -252,6 +254,7 @@ func New() Config {
 			CreateClusterRBACPermissions:    autoRBAC.NotAvailable,
 			CreateNamespacedRBACPermissions: autoRBAC.NotAvailable,
 			NativeSidecarSupport:            false,
+			ImageVolumeSupport:              false,
 		},
 		EnableInstrumentationCRDs: true,
 		OpenShiftWebhookReplicas:  defaultOpenShiftWebhookReplicas,

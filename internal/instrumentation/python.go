@@ -40,7 +40,7 @@ func pythonPlatformSrc(platform string) (string, error) {
 	}
 }
 
-func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Container, platform string) error {
+func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Container, platform string, useImageVolume bool) error {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envPythonPath)
@@ -48,7 +48,7 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 		return err
 	}
 
-	_, err = pythonPlatformSrc(platform)
+	autoInstrumentationSrc, err := pythonPlatformSrc(platform)
 	if err != nil {
 		return err
 	}
@@ -69,11 +69,12 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: pythonInstrMountPath,
+		SubPath:   imageVolumeMountSubPath(shouldUseImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate), autoInstrumentationSrc),
 	})
 	return nil
 }
 
-func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName, platform string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName, platform string, instSpec v1alpha1.InstrumentationSpec, useImageVolume bool) corev1.Pod {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// This has been validated already
@@ -81,7 +82,14 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, pythonInitContainerName) {
+		useImageVolume = shouldUseImageVolume(useImageVolume, pythonSpec.VolumeClaimTemplate)
+		if useImageVolume {
+			volume = instrImageVolume(pythonSpec.Image, pythonVolumeName, instSpec.ImagePullPolicy)
+		}
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		if useImageVolume {
+			return pod
+		}
 
 		initContainer := corev1.Container{
 			Name:      pythonInitContainerName,
@@ -102,14 +110,15 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 
 // injectPythonSDK injects Python instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod *corev1.Pod, containers []*corev1.Container, platform string, instSpec v1alpha1.InstrumentationSpec) error {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod *corev1.Pod, containers []*corev1.Container, platform string, instSpec v1alpha1.InstrumentationSpec, imageVolumeEnabled ...bool) error {
+	useImageVolume := len(imageVolumeEnabled) > 0 && imageVolumeEnabled[0]
 	for _, container := range containers {
-		if err := injectPythonSDKToContainer(pythonSpec, container, platform); err != nil {
+		if err := injectPythonSDKToContainer(pythonSpec, container, platform, useImageVolume); err != nil {
 			return err
 		}
 	}
 	if len(containers) > 0 {
-		*pod = injectPythonSDKToPod(pythonSpec, *pod, containers[0].Name, platform, instSpec)
+		*pod = injectPythonSDKToPod(pythonSpec, *pod, containers[0].Name, platform, instSpec, useImageVolume)
 	}
 	return nil
 }

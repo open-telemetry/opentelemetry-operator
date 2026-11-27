@@ -62,6 +62,15 @@ var (
 		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
 		featuregate.WithRegisterFromVersion("v0.134.0"),
 	)
+	// EnableImageVolumes is the feature gate that enables the operator to mount supported auto-instrumentation
+	// images as Kubernetes image volumes.
+	EnableImageVolumes = featuregate.GlobalRegistry().MustRegister(
+		"operator.instrumentation.imagevolumes",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables Image Volume Support for supported auto-instrumentation images"),
+		featuregate.WithRegisterFromVersion("v0.165.0"),
+		featuregate.WithRegisterReferenceURL("https://github.com/open-telemetry/opentelemetry-operator/issues/3231"),
+	)
 	// UseCollectorDefaultTelemetryShape, when enabled (stable, always on), makes
 	// the operator-injected Prometheus telemetry reader use collector defaults
 	// for without_type_suffix, without_units, and without_scope_info — metric
