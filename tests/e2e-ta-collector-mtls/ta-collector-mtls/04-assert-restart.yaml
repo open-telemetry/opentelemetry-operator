@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ($controller.metadata.name)
+  namespace: opentelemetry-operator-system
+  uid: ($controller.metadata.uid)
+status:
+  containerStatuses:
+  - name: manager
+    ready: true
+    (restartCount > $initialRestarts): true
