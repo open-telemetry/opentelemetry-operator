@@ -1684,7 +1684,8 @@ func TestAgent_Start_ProxyConfig(t *testing.T) {
 	}
 }
 
-// testReporterFactory replaces newMetricReporter with a factory that builds reporters backed by in-memory readers.
+// testReporterFactory builds reporters backed by in-memory readers, so tests can inspect the reported metrics without
+// exporting over the network. Set an agent's newReporter to its build method.
 type testReporterFactory struct {
 	mu       sync.Mutex
 	readers  []*sdkmetric.ManualReader
@@ -1694,28 +1695,21 @@ type testReporterFactory struct {
 
 const invalidOwnMetricsEndpoint = "invalid-endpoint"
 
-func useTestMetricReporters(t *testing.T) *testReporterFactory {
-	t.Helper()
-	factory := &testReporterFactory{}
-	original := newMetricReporter
-	newMetricReporter = func(logger logr.Logger, settings *protobufs.TelemetryConnectionSettings, agentType, agentVersion string, instanceId uuid.UUID) (*metrics.MetricReporter, error) {
-		if settings.GetDestinationEndpoint() == invalidOwnMetricsEndpoint {
-			return nil, errors.New("invalid endpoint")
-		}
-		reader := sdkmetric.NewManualReader()
-		reporter, err := metrics.NewMetricReporterWithReader(logger, reader, agentType, agentVersion, instanceId)
-		if err != nil {
-			return nil, err
-		}
-		factory.mu.Lock()
-		defer factory.mu.Unlock()
-		factory.readers = append(factory.readers, reader)
-		factory.settings = append(factory.settings, settings)
-		factory.ids = append(factory.ids, instanceId)
-		return reporter, nil
+func (f *testReporterFactory) build(logger logr.Logger, settings *protobufs.TelemetryConnectionSettings, agentType, agentVersion string, instanceId uuid.UUID) (*metrics.MetricReporter, error) {
+	if settings.GetDestinationEndpoint() == invalidOwnMetricsEndpoint {
+		return nil, errors.New("invalid endpoint")
 	}
-	t.Cleanup(func() { newMetricReporter = original })
-	return factory
+	reader := sdkmetric.NewManualReader()
+	reporter, err := metrics.NewMetricReporterWithReader(logger, reader, agentType, agentVersion, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.readers = append(f.readers, reader)
+	f.settings = append(f.settings, settings)
+	f.ids = append(f.ids, instanceId)
+	return reporter, nil
 }
 
 func (f *testReporterFactory) created() int {
@@ -1775,9 +1769,10 @@ func remoteConfigEnabledConfig() *config.Config {
 }
 
 func TestAgent_OwnMetrics_ReportsBridgeWork(t *testing.T) {
-	factory := useTestMetricReporters(t)
+	factory := &testReporterFactory{}
 	applier := &recordingConfigApplier{}
 	agent := NewAgent(logr.Discard(), applier, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.newReporter = factory.build
 	require.NoError(t, agent.Start())
 	defer agent.Shutdown()
 
@@ -1803,8 +1798,9 @@ func TestAgent_OwnMetrics_ReportsBridgeWork(t *testing.T) {
 }
 
 func TestAgent_OwnMetrics_RecordsFailedConfigOperations(t *testing.T) {
-	factory := useTestMetricReporters(t)
+	factory := &testReporterFactory{}
 	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.newReporter = factory.build
 	defer agent.Shutdown()
 	agent.onMessage(t.Context(), ownMetricsMessage("http://otlp.example.com:4318/v1/metrics"))
 
@@ -1821,8 +1817,9 @@ func TestAgent_OwnMetrics_RecordsFailedConfigOperations(t *testing.T) {
 }
 
 func TestAgent_OwnMetrics_SettingsLifecycle(t *testing.T) {
-	factory := useTestMetricReporters(t)
+	factory := &testReporterFactory{}
 	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.newReporter = factory.build
 	defer agent.Shutdown()
 
 	first := "http://first.example.com:4318/v1/metrics"
@@ -1852,8 +1849,9 @@ func TestAgent_OwnMetrics_SettingsLifecycle(t *testing.T) {
 }
 
 func TestAgent_OwnMetrics_RecreatedOnIdentityChange(t *testing.T) {
-	factory := useTestMetricReporters(t)
+	factory := &testReporterFactory{}
 	agent := NewAgent(logr.Discard(), &recordingConfigApplier{}, remoteConfigEnabledConfig(), &mockOpampClient{}, newMockProxy(nil, nil, nil))
+	agent.newReporter = factory.build
 	defer agent.Shutdown()
 
 	agent.onMessage(t.Context(), ownMetricsMessage("http://otlp.example.com:4318/v1/metrics"))

@@ -23,13 +23,7 @@ const (
 )
 
 // exporterOptions translates the OpAMP TelemetryConnectionSettings offered by the server into the options for an
-// OTLP/HTTP metric exporter. Every field of the message is honoured:
-//   - destination_endpoint: full URL of the OTLP/HTTP metrics endpoint. The scheme selects plain HTTP or HTTPS, and
-//     /v1/metrics is used when the URL has no path.
-//   - headers: added to every export request.
-//   - certificate: client certificate (mTLS) and an optional CA used to verify the destination.
-//   - tls: CA, system pool, skip-verify, min/max version and cipher suites.
-//   - proxy: HTTP proxy URL and CONNECT headers.
+// OTLP/HTTP metric exporter.
 func exporterOptions(dest *protobufs.TelemetryConnectionSettings) ([]otlpmetrichttp.Option, error) {
 	if dest == nil {
 		return nil, errors.New("telemetry connection settings must not be nil")

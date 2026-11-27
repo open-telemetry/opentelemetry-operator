@@ -52,6 +52,10 @@ type Agent struct {
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
 
+	// newReporter builds the metric reporter for the settings offered by the server. It is a field so tests can
+	// replace it with a reporter that does not export over the network.
+	newReporter func(logr.Logger, *protobufs.TelemetryConnectionSettings, string, string, uuid.UUID) (*metrics.MetricReporter, error)
+
 	done   chan struct{}
 	ticker *time.Ticker
 }
@@ -72,6 +76,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
 		opampClient:         opampClient,
 		clock:               clock.RealClock{},
+		newReporter:         metrics.NewMetricReporter,
 		done:                make(chan struct{}, 1),
 		ticker:              t,
 	}
@@ -412,10 +417,6 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}, nil
 }
 
-// newMetricReporter builds a metric reporter from the given settings. It is a package-level variable so tests can
-// substitute a reporter that does not export over the network.
-var newMetricReporter = metrics.NewMetricReporter
-
 // initMeter configures the bridge's own metrics from the TelemetryConnectionSettings offered by the OpAMP server.
 //
 //   - Settings identical to the ones currently in use are ignored, so a server that repeats its offer on every
@@ -441,7 +442,7 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings, f
 		return
 	}
 
-	reporter, err := newMetricReporter(agent.logger.WithName("metrics"), settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
+	reporter, err := agent.newReporter(agent.logger.WithName("metrics"), settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
 	if err != nil {
 		agent.logger.Error(err, "failed to create metric reporter")
 		return

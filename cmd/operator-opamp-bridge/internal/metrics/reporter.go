@@ -177,8 +177,7 @@ func (reporter *MetricReporter) createInstruments() error {
 	// Process metrics reported according to the OpenTelemetry semantic conventions for process metrics.
 	reporter.process, err = process.NewProcess(int32(os.Getpid())) //nolint:gosec // this is guaranteed to not overflow
 	if err != nil {
-		errs = append(errs, fmt.Errorf("cannot query own process: %w", err))
-		return errors.Join(errs...)
+		return errors.Join(append(errs, fmt.Errorf("cannot query own process: %w", err))...)
 	}
 
 	reporter.processCpuTime, err = meter.Float64ObservableCounter(
