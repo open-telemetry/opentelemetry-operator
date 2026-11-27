@@ -170,7 +170,7 @@ To delete the kind cluster created by `make prepare-e2e` run `make stop-kind`.
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster.
 
-To install the OpenTelemetry operator, please follow the instructions in  [Operator Lifecycle Manager (OLM)](https://github.com/open-telemetry/opentelemetry-operator/blob/main/CONTRIBUTING.md#operator-lifecycle-manager-olm)
+To install a local build of the OpenTelemetry Operator, follow [Deployment on OpenShift](#deployment-on-openshift).
 
 Once the operator is installed, the tests can be executed using `make e2e-openshift`, which will call to the `e2e-openshift` target. Note that `kind` is disabled for the TestSuite as the requirement is to use an OpenShift cluster for these test cases.
 
@@ -359,13 +359,13 @@ When using OpenShift, the OLM is already installed.
 The following commands will generate two bundles (one for regular Kubernetes and another one for OpenShift) under `bundle/`, build an image with its contents, build and publish the operator image.
 
 ```bash
-BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/${USER}/opentelemetry-operator:latest make bundle container container-push bundle-build bundle-push
+BUNDLE_VARIANT=openshift BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/${USER}/opentelemetry-operator:latest make bundle container container-push bundle-build bundle-push
 ```
 
 ### Install the operator
 
 ```bash
-operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:latest
+./bin/operator-sdk run bundle --namespace openshift-opentelemetry-operator docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:latest
 ```
 
 ### Uninstall the operator
@@ -373,7 +373,5 @@ operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:l
 The operator can be uninstalled by deleting `subscriptions.operators.coreos.com` and `clusterserviceversion.operators.coreos.com` objects from the current namespace.
 
 ```bash
-kubectl delete catalogsources.operators.coreos.com --all
-kubectl delete clusterserviceversion.operators.coreos.com --all
-kubectl delete subscriptions.operators.coreos.com --all
+./bin/operator-sdk cleanup opentelemetry-operator --namespace openshift-opentelemetry-operator
 ```

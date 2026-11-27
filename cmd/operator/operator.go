@@ -108,6 +108,10 @@ func runOperator(cfg config.Config, configFile string, opts zap.Options, feature
 
 	mgr := result.Manager
 	clientset := result.Clientset
+	if err := operatorsetup.SetupCertManagerAvailabilityWatcher(result, cancel); err != nil {
+		setupLog.Error(err, "unable to setup cert-manager availability watcher")
+		os.Exit(1)
+	}
 
 	if result.Config.OpenshiftCreateDashboard {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))

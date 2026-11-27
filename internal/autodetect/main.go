@@ -175,7 +175,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 		return certmanager.NotAvailable, err
 	}
 	if w != nil {
-		return certmanager.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+		return certmanager.NotAvailable, fmt.Errorf("%w: %s", certmanager.ErrMissingPermissions, w)
 	}
 
 	return certmanager.Available, nil

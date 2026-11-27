@@ -171,6 +171,8 @@ type Config struct {
 
 // Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
 type Internal struct {
+	// CertManagerAvailability reads the current availability in standalone webhooks.
+	CertManagerAvailability func() certmanager.Availability `yaml:"-"`
 	// CreateClusterRBACPermissions is true when the operator can create cluster-scoped RBAC for SAs running a collector instance. Autodetected.
 	CreateClusterRBACPermissions autoRBAC.Availability `yaml:"-"`
 	// CreateNamespacedRBACPermissions is true when the operator can create namespace-scoped RBAC (Role/RoleBinding). Autodetected.
@@ -186,6 +188,14 @@ type Internal struct {
 	// APIServerEndpoints tracks the endpoints of the Kubernetes API server. It's set at operator startup, and is
 	// used to restrict egress to the API server in NetworkPolicies.
 	APIServerEndpoints *apiserverendpoints.Tracker `yaml:"-"`
+}
+
+// GetCertManagerAvailability returns the current availability, or the startup result when no watcher is configured.
+func (c Config) GetCertManagerAvailability() certmanager.Availability {
+	if c.Internal.CertManagerAvailability != nil {
+		return c.Internal.CertManagerAvailability()
+	}
+	return c.CertManagerAvailability
 }
 
 // New constructs a new configuration.

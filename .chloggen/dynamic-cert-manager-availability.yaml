@@ -1,0 +1,11 @@
+change_type: enhancement
+component: target allocator
+note: Detect cert-manager API and permission changes after startup.
+issues: [5838]
+subtext: |
+  Standalone webhooks update admission validation without restarting.
+  Controller processes restart to refresh cert-manager watches and configuration.
+  Combined controller and webhook processes briefly interrupt admission during restart.
+  The watcher is enabled by default. To enable it explicitly, set FEATURE_GATES=operator.certmanager.availabilitywatcher
+  in both the operator and standalone webhook Deployments. To disable it and retain startup-only detection,
+  set FEATURE_GATES=-operator.certmanager.availabilitywatcher. Include other configured gates in the same comma-separated value.

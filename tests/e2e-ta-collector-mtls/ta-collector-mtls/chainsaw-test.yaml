@@ -5,6 +5,8 @@ metadata:
   creationTimestamp: null
   name: targetallocator-collector-mtls
 spec:
+  # The operator's cert-manager permissions are shared by all tests.
+  concurrent: false
   namespace: chainsaw-targetallocator-collector-mtls
   steps:
     - name: Setup Target Allocator RBAC
@@ -66,3 +68,56 @@ spec:
       catch:
         - podLogs:
             selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: cert-manager-availability-changes
+      bindings:
+        - name: operatorRole
+          value: (x_k8s_get($client, 'rbac.authorization.k8s.io/v1', 'ClusterRole', '', 'opentelemetry-operator-manager-role'))
+      try:
+        - apply:
+            file: 04-collector.yaml
+            dryRun: true
+        - command:
+            entrypoint: kubectl
+            args:
+              - get
+              - pods
+              - -n
+              - opentelemetry-operator-system
+              - -l
+              - app.kubernetes.io/name=opentelemetry-operator,control-plane=controller-manager
+              - -o
+              - json
+            outputs:
+              - name: controller
+                value: (json_parse($stdout).items[0])
+              - name: initialRestarts
+                value: (json_parse($stdout).items[0].status.containerStatuses[?name == 'manager'].restartCount | [0])
+        - patch:
+            file: 04-revoke-rbac.yaml
+        - assert:
+            file: 04-assert-restart.yaml
+        - apply:
+            file: 04-collector.yaml
+            # Server-side dry run invokes admission without creating a Collector while retrying for the expected rejection.
+            dryRun: true
+            timeout: 3m
+            expect:
+              - check:
+                  ($error != null): true
+                  (contains($error, 'mTLS is enabled with useCertManager but cert-manager is not available')): true
+      finally:
+        - script:
+            timeout: 4m
+            env:
+              - name: ROLE_RULES
+                value: (to_string($operatorRole.rules))
+            content: |
+              set -e
+              kubectl patch clusterrole opentelemetry-operator-manager-role --type=merge -p "{\"rules\":$ROLE_RULES}"
+              for _attempt in $(seq 1 90); do
+                if kubectl --request-timeout=10s create --dry-run=server -n "$NAMESPACE" -f 04-collector.yaml; then
+                  exit 0
+                fi
+                sleep 2
+              done
+              exit 1

@@ -1,0 +1,5 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetry-operator-manager-role
+rules: ($operatorRole.rules[?apiGroups != `["cert-manager.io"]`])

@@ -10,6 +10,7 @@ import (
 	"math"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -1573,6 +1574,32 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			assert.Equal(t, len(test.expectedWarnings), len(warnings))
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
 		})
+	}
+}
+
+func TestCollectorMTLSAvailabilityChanges(t *testing.T) {
+	var current atomic.Int64
+	cfg := config.New()
+	cfg.Internal.CertManagerAvailability = func() certmanager.Availability { return certmanager.Availability(current.Load()) }
+	col := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				Enabled: true,
+				Mtls:    &v1beta1.TargetAllocatorMTLS{Enabled: true},
+			},
+		},
+	}
+	require.NoError(t, go_yaml.Unmarshal([]byte(cfgYaml), &col.Spec.Config))
+	w := webhook.NewCollectorWebhook(logr.Discard(), testScheme, cfg, getReviewer(false), nil, nil, nil, nil)
+	for _, availability := range []certmanager.Availability{certmanager.NotAvailable, certmanager.Available, certmanager.NotAvailable} {
+		current.Store(int64(availability))
+		_, err := w.ValidateCreate(t.Context(), &col)
+		if availability == certmanager.Available {
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, "cert-manager is not available")
+		}
 	}
 }
 
