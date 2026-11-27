@@ -17,6 +17,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -113,6 +114,11 @@ func SetupManager(cfg *config.Config, configFile string, opts zap.Options, schem
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
 			ByObject:          cacheByObject(),
+		},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{&corev1.Namespace{}},
+			},
 		},
 	}
 
