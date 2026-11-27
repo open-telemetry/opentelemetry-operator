@@ -14,7 +14,7 @@ import (
 
 func Service(params Params) *corev1.Service {
 	name := naming.TAService(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, params.Config.LabelsFilter)
 	selector := manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator)
 
 	ports := make([]corev1.ServicePort, 0)
