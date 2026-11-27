@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -18,6 +19,7 @@ import (
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/clock"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
@@ -38,12 +40,21 @@ type Agent struct {
 	agentDescription   *protobufs.AgentDescription
 	remoteConfigStatus *protobufs.RemoteConfigStatus
 
-	opampClient         client.OpAMPClient
-	proxy               proxy.Server
-	metricReporter      *metrics.MetricReporter
+	opampClient client.OpAMPClient
+	proxy       proxy.Server
+	// metricReporter is nil until the OpAMP server offers own-metrics connection settings. It is read from the
+	// heartbeat, proxy and OpAMP client goroutines, so it is stored atomically.
+	metricReporter atomic.Pointer[metrics.MetricReporter]
+	// ownMetricsSettings are the settings the current metricReporter was built from. They are only accessed from
+	// onMessage, which the OpAMP client invokes sequentially.
+	ownMetricsSettings  *protobufs.TelemetryConnectionSettings
 	config              *config.Config
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
+
+	// newReporter builds the metric reporter for the settings offered by the server. It is a field so tests can
+	// replace it with a reporter that does not export over the network.
+	newReporter func(logr.Logger, *protobufs.TelemetryConnectionSettings, string, string, uuid.UUID) (*metrics.MetricReporter, error)
 
 	done   chan struct{}
 	ticker *time.Ticker
@@ -65,6 +76,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Co
 		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
 		opampClient:         opampClient,
 		clock:               clock.RealClock{},
+		newReporter:         metrics.NewMetricReporter,
 		done:                make(chan struct{}, 1),
 		ticker:              t,
 	}
@@ -103,8 +115,27 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 			LastError:         err.Error(),
 		}
 	}
+	agent.recordCollectorHealth(health)
 	agent.addProxyHealth(componentHealth)
 	return componentHealth
+}
+
+// recordCollectorHealth reports how many of the collectors managed by the bridge are healthy.
+func (agent *Agent) recordCollectorHealth(health operator.Health) {
+	var healthy, unhealthy int64
+	for _, collector := range health.Children {
+		if collector.Healthy {
+			healthy++
+		} else {
+			unhealthy++
+		}
+	}
+	agent.reporter().RecordCollectors(context.Background(), healthy, unhealthy)
+}
+
+// reporter returns the current metric reporter, which may be nil. All of its Record methods are nil-safe.
+func (agent *Agent) reporter() *metrics.MetricReporter {
+	return agent.metricReporter.Load()
 }
 
 // componentHealthFromInternal converts the bridge's internal recursive Health tree into the OpAMP protobuf shape.
@@ -144,6 +175,7 @@ func (agent *Agent) componentHealthFromInternal(health operator.Health, statusTi
 // unmatched proxy agents are reported as root-level components.
 func (agent *Agent) addProxyHealth(rootHealth *protobufs.ComponentHealth) {
 	proxyHealth := agent.proxy.GetHealth()
+	agent.reporter().RecordProxyAgents(context.Background(), int64(len(proxyHealth)))
 	agentsByHostName := agent.proxy.GetAgentsByHostname()
 	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
 	for collectorName, collector := range rootHealth.ComponentHealthMap {
@@ -172,13 +204,15 @@ func (agent *Agent) addProxyHealth(rootHealth *protobufs.ComponentHealth) {
 }
 
 // onConnect is called when an agent is successfully connected to a server.
-func (agent *Agent) onConnect(context.Context) {
+func (agent *Agent) onConnect(ctx context.Context) {
 	agent.logger.V(3).Info("Connected to the server.")
+	agent.reporter().RecordConnectionAttempt(ctx, nil)
 }
 
 // onConnectFailed is called when an agent was unable to connect to a server.
-func (agent *Agent) onConnectFailed(_ context.Context, err error) {
+func (agent *Agent) onConnectFailed(ctx context.Context, err error) {
 	agent.logger.Error(err, "failed to connect to the server")
+	agent.reporter().RecordConnectionAttempt(ctx, err)
 }
 
 // onError is called when an agent receives an error response from the server.
@@ -315,6 +349,7 @@ func (agent *Agent) runHeartbeat() {
 		case <-agent.ticker.C:
 			agent.logger.V(4).Info("sending heartbeat")
 			err := agent.opampClient.SetHealth(agent.getHealth())
+			agent.reporter().RecordHeartbeat(context.Background(), err)
 			if err != nil {
 				agent.logger.Error(err, "failed to heartbeat")
 				return
@@ -382,20 +417,42 @@ func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveCon
 	}, nil
 }
 
-// initMeter initializes a metric reporter instance for the agent to report runtime metrics to the
-// configured destination. The settings received will be used to initialize a reporter, shutting down any previously
-// running metrics reporting instances.
-func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
-	reporter, err := metrics.NewMetricReporter(agent.logger, settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
+// initMeter configures the bridge's own metrics from the TelemetryConnectionSettings offered by the OpAMP server.
+//
+//   - Settings identical to the ones currently in use are ignored, so a server that repeats its offer on every
+//     message does not reset the bridge's counters.
+//   - Settings with an empty destination endpoint stop own-metrics reporting.
+//   - Otherwise a new reporter is created and replaces (and shuts down) the previous one. If the new settings are
+//     invalid, the previous reporter is left running.
+//
+// forceRecreate rebuilds the reporter even when the settings are unchanged, for example because the instance ID
+// reported in the metric resource has changed.
+func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings, forceRecreate bool) {
+	if !forceRecreate && agent.ownMetricsSettings != nil && proto.Equal(agent.ownMetricsSettings, settings) {
+		agent.logger.V(4).Info("own metrics connection settings unchanged")
+		return
+	}
+
+	if settings.GetDestinationEndpoint() == "" {
+		agent.logger.Info("own metrics destination removed by the server, stopping metrics reporting")
+		agent.ownMetricsSettings = nil
+		if previous := agent.metricReporter.Swap(nil); previous != nil {
+			previous.Shutdown()
+		}
+		return
+	}
+
+	reporter, err := agent.newReporter(agent.logger.WithName("metrics"), settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
 	if err != nil {
 		agent.logger.Error(err, "failed to create metric reporter")
 		return
 	}
 
-	if agent.metricReporter != nil {
-		agent.metricReporter.Shutdown()
+	agent.ownMetricsSettings = proto.Clone(settings).(*protobufs.TelemetryConnectionSettings)
+	if previous := agent.metricReporter.Swap(reporter); previous != nil {
+		previous.Shutdown()
 	}
-	agent.metricReporter = reporter
+	agent.logger.Info("reporting own metrics", "endpoint", settings.GetDestinationEndpoint())
 }
 
 // rebuildAppliedKeys reconstructs appliedKeys from the collectors currently in the cluster. appliedKeys
@@ -426,19 +483,26 @@ func (agent *Agent) rebuildAppliedKeys() error {
 // received configuration hash regardless of application status, as per the OpAMP spec.
 //
 // INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
-func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
+func (agent *Agent) applyRemoteConfig(ctx context.Context, config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
+	reporter := agent.reporter()
 	var errs []error
 	// Apply changes from the received config map
 	for key, file := range config.Config.GetConfigMap() {
 		if key == "" {
-			errs = append(errs, errors.New("remote config entry has empty name"))
+			err := errors.New("remote config entry has empty name")
+			reporter.RecordConfigOperation(ctx, metrics.OperationApply, err)
+			errs = append(errs, err)
 			continue
 		}
 		if len(file.Body) == 0 {
-			errs = append(errs, fmt.Errorf("remote config entry %q has empty body", key))
+			err := fmt.Errorf("remote config entry %q has empty body", key)
+			reporter.RecordConfigOperation(ctx, metrics.OperationApply, err)
+			errs = append(errs, err)
 			continue
 		}
-		if err := agent.applier.Apply(key, file); err != nil {
+		err := agent.applier.Apply(key, file)
+		reporter.RecordConfigOperation(ctx, metrics.OperationApply, err)
+		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -447,7 +511,9 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 	// Check if anything was deleted
 	for key := range agent.appliedKeys {
 		if _, ok := config.Config.GetConfigMap()[key]; !ok {
-			if err := agent.applier.Delete(key); err != nil {
+			err := agent.applier.Delete(key)
+			reporter.RecordConfigOperation(ctx, metrics.OperationDelete, err)
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -477,14 +543,20 @@ func (agent *Agent) Shutdown() {
 			agent.logger.Error(err, "failed to stop client")
 		}
 	}
-	if agent.metricReporter != nil {
-		agent.metricReporter.Shutdown()
+	if reporter := agent.metricReporter.Swap(nil); reporter != nil {
+		reporter.Shutdown()
 	}
 }
 
 // onCommand is called when the OpAMP server sends a ServerToAgentCommand.
 // Only CommandType_Restart is handled; all other command types return an error to the server.
 func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
+	err := agent.handleCommand(ctx, command)
+	agent.reporter().RecordCommand(ctx, command.GetType(), err)
+	return err
+}
+
+func (agent *Agent) handleCommand(ctx context.Context, command *protobufs.ServerToAgentCommand) error {
 	switch command.GetType() {
 	case protobufs.CommandType_CommandType_Restart:
 		if !agent.config.RestartCommandEnabled() {
@@ -509,10 +581,34 @@ func (agent *Agent) onCommand(ctx context.Context, command *protobufs.ServerToAg
 // for checking if it should apply a new remote configuration. The agent will also initialize metrics based on the
 // settings received from the server. The agent is also able to update its identifier if it needs to.
 func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
+	// The instance id is updated prior to the meter initialization so that the new meter will report using the updated
+	// instanceId.
+	identityChanged := false
+	if msg.AgentIdentification != nil {
+		uid, err := uuid.FromBytes(msg.AgentIdentification.NewInstanceUid)
+		if err != nil {
+			agent.logger.Error(err, "couldn't parse instance UID")
+		} else {
+			identityChanged = uid != agent.instanceId
+			agent.updateAgentIdentity(uid)
+		}
+	}
+
+	// Own metrics are configured before the remote configuration is applied, so that the work done for a remote
+	// configuration received in the same message is already reported.
+	switch {
+	case msg.OwnMetricsConnSettings != nil:
+		agent.initMeter(msg.OwnMetricsConnSettings, identityChanged)
+	case identityChanged && agent.ownMetricsSettings != nil:
+		// Rebuild the reporter so its resource carries the new service.instance.id.
+		agent.initMeter(agent.ownMetricsSettings, true)
+	}
+
 	// If we received remote configuration, and it's not the same as the previously applied one
 	if agent.remoteConfigEnabled && msg.RemoteConfig != nil && !bytes.Equal(agent.lastHash, msg.RemoteConfig.GetConfigHash()) {
-		var err error
-		status, err := agent.applyRemoteConfig(msg.RemoteConfig)
+		start := time.Now()
+		status, err := agent.applyRemoteConfig(ctx, msg.RemoteConfig)
+		agent.reporter().RecordRemoteConfig(ctx, time.Since(start), err)
 		if err != nil {
 			agent.logger.Error(err, "failed to apply remote config")
 		}
@@ -525,21 +621,6 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 		if err != nil {
 			agent.logger.Error(err, "failed to update effective config")
 		}
-	}
-
-	// The instance id is updated prior to the meter initialization so that the new meter will report using the updated
-	// instanceId.
-	if msg.AgentIdentification != nil {
-		uid, err := uuid.FromBytes(msg.AgentIdentification.NewInstanceUid)
-		if err != nil {
-			agent.logger.Error(err, "couldn't parse instance UID")
-			return
-		}
-		agent.updateAgentIdentity(uid)
-	}
-
-	if msg.OwnMetricsConnSettings != nil {
-		agent.initMeter(msg.OwnMetricsConnSettings)
 	}
 }
 
