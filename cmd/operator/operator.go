@@ -52,9 +52,12 @@ import (
 var setupLog = ctrl.Log.WithName("setup")
 
 // NewOperatorCmd creates the root cobra command for the operator.
-func NewOperatorCmd(scheme *k8sruntime.Scheme) *cobra.Command {
+func NewOperatorCmd(scheme *k8sruntime.Scheme) (*cobra.Command, error) {
 	cfg := config.New()
-	cliFlags := config.CreateCLIParser(cfg)
+	cliFlags, err := config.CreateCLIParser(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	opts := zap.Options{}
 	var zapFlagSet flag.FlagSet
@@ -77,7 +80,7 @@ func NewOperatorCmd(scheme *k8sruntime.Scheme) *cobra.Command {
 	}
 
 	cmd.Flags().AddFlagSet(cliFlags)
-	return cmd
+	return cmd, nil
 }
 
 func runOperator(cfg config.Config, configFile string, opts zap.Options, featureGates *flag.FlagSet, scheme *k8sruntime.Scheme) {

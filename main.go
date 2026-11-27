@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -34,8 +35,17 @@ func init() {
 }
 
 func main() {
-	rootCmd := operatorcmd.NewOperatorCmd(scheme)
-	rootCmd.AddCommand(webhookcmd.NewWebhookCmd(scheme))
+	rootCmd, err := operatorcmd.NewOperatorCmd(scheme)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	webhookCmd, err := webhookcmd.NewWebhookCmd(scheme)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	rootCmd.AddCommand(webhookCmd)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	if err := rootCmd.Execute(); err != nil {

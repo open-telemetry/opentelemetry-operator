@@ -28,9 +28,12 @@ import (
 var setupLog = ctrl.Log.WithName("setup")
 
 // NewWebhookCmd creates the webhook-server cobra subcommand.
-func NewWebhookCmd(scheme *k8sruntime.Scheme) *cobra.Command {
+func NewWebhookCmd(scheme *k8sruntime.Scheme) (*cobra.Command, error) {
 	cfg := config.New()
-	cliFlags := config.CreateCLIParser(cfg)
+	cliFlags, err := config.CreateCLIParser(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	opts := zap.Options{}
 	var zapFlagSet flag.FlagSet
@@ -50,7 +53,7 @@ func NewWebhookCmd(scheme *k8sruntime.Scheme) *cobra.Command {
 	}
 
 	cmd.Flags().AddFlagSet(cliFlags)
-	return cmd
+	return cmd, nil
 }
 
 // runWebhookServer runs only the webhooks without the controllers.
