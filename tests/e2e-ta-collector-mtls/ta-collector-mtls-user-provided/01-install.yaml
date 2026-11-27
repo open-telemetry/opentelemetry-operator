@@ -16,7 +16,7 @@ spec:
         certificateSecret:
           name: ta-client-cert
         keySecret:
-          name: ta-client-key
+          name: ta-client-cert
       serverCertificate:
         certificateSecret:
           name: ta-server-cert
@@ -85,3 +85,4 @@ spec:
         - name: ca
           configMap:
             name: mtls-ca
+
