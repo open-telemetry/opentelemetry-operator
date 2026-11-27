@@ -5,6 +5,7 @@ package components_test
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -570,4 +571,28 @@ func TestMultiPortReceiver_GetEnvironmentVariables(t *testing.T) {
 			assert.Equal(t, tt.expectedEnv, envVars)
 		})
 	}
+}
+
+func TestMultiPortReceiver_PortsConcurrent(t *testing.T) {
+	receiver := components.NewMultiPortReceiverBuilder("receiver").
+		AddPortMapping(components.NewProtocolBuilder("http", 80)).
+		AddPortMapping(components.NewProtocolBuilder("grpc", 81)).
+		MustBuild()
+
+	var wg sync.WaitGroup
+	for i := range 4 {
+		name := fmt.Sprintf("recv%d", i)
+		wg.Go(func() {
+			for range 200 {
+				ports, err := receiver.Ports(logr.Discard(), name, httpAndGrpcConfig)
+				assert.NoError(t, err)
+				var got []string
+				for _, port := range ports {
+					got = append(got, port.Name)
+				}
+				assert.ElementsMatch(t, []string{name + "-http", name + "-grpc"}, got)
+			}
+		})
+	}
+	wg.Wait()
 }
