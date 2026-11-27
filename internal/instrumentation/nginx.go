@@ -89,18 +89,9 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 
 		// drop volume mount with volume-provided Nginx config from original container
 		// since it could over-write configuration provided by the injection
-		idxFound := -1
-		for idx, volume := range container.VolumeMounts {
-			if strings.Contains(volume.MountPath, nginxConfDir) { // potentially passes config, which we want to pass to init copy only
-				idxFound = idx
-				break
-			}
-		}
-		if idxFound >= 0 {
-			volumeMounts := container.VolumeMounts
-			volumeMounts = append(volumeMounts[:idxFound], volumeMounts[idxFound+1:]...)
-			container.VolumeMounts = volumeMounts
-		}
+		// A mount that only shares a substring with the config directory, such as
+		// /opt/app/etc/nginx/conf.d, is not part of the config and must stay.
+		container.VolumeMounts = withoutMountsUnder(container.VolumeMounts, nginxConfDir)
 
 		// Inject volumes info instrumented container - Nginx config dir + Nginx agent
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -252,4 +243,19 @@ func getNginxConfFile(configuredFile string) string {
 	}
 	configFilenameOnly := filepath.Base(nginxConfFile)
 	return configFilenameOnly
+}
+
+// withoutMountsUnder returns the mounts that are neither dir itself nor located
+// below it. The input slice is left untouched.
+func withoutMountsUnder(mounts []corev1.VolumeMount, dir string) []corev1.VolumeMount {
+	dir = filepath.Clean(dir)
+	kept := make([]corev1.VolumeMount, 0, len(mounts))
+	for _, mount := range mounts {
+		mountPath := filepath.Clean(mount.MountPath)
+		if mountPath == dir || strings.HasPrefix(mountPath, strings.TrimSuffix(dir, "/")+"/") {
+			continue
+		}
+		kept = append(kept, mount)
+	}
+	return kept
 }

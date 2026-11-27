@@ -2,6 +2,67 @@
 
 <!-- next version -->
 
+## 0.164.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update the default .NET auto-instrumentation image to 1.20.0, which drops support for .NET 8 and .NET 9. (#5962)
+  Both frameworks reached end of support upstream.
+  Workloads that run on .NET 8 or .NET 9 can keep the previous version by setting
+  `spec.dotnet.image` in the Instrumentation resource to
+  `ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.19.1`.
+  
+- `collector`: The OpenTelemetryCollector v1alpha1 API version is no longer served. Use v1beta1 instead. (#5037)
+  Clients and tooling that explicitly use the v1alpha1 API version will receive a 404 error.
+  All manifests must be updated to use `apiVersion: opentelemetry.io/v1beta1`.
+  Existing objects that were stored in etcd as `v1alpha1` need to be migrated to `v1beta1`.
+  On Kubernetes 1.30+, the built-in StorageVersionMigration feature handles this automatically.
+  On older Kubernetes versions, manually trigger migration by reading and re-writing each object,
+  for example: `kubectl get otelcol -A -o json | kubectl apply -f -`.
+  As a temporary workaround, v1alpha1 can be re-enabled by editing the CRD directly:
+  `kubectl patch crd opentelemetrycollectors.opentelemetry.io --type=json -p='[{"op":"replace","path":"/spec/versions/0/served","value":true}]'`.
+  This change will be reverted on the next operator upgrade.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add the `operator.targetallocator.targetsremainingattributes` feature gate to record the `opentelemetry_allocator_targets_remaining` metric per job and namespace. (#4637)
+  When the gate is enabled, the operator passes `--feature-gates=targetallocator.targetsremainingattributes` to the target allocator,
+  which then records the metric with `job.name` and `k8s.namespace.name` attributes instead of a single total.
+  `k8s.namespace.name` is taken from the `__meta_kubernetes_namespace` label and is omitted for targets that do not have it.
+  The target allocator now accepts a `--feature-gates` flag.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Apply `spec.revisionHistoryLimit` to the collector DaemonSet in daemonset mode. (#5889)
+- `auto-instrumentation`: Skip Python injection, including the init container, when the `instrumentation.opentelemetry.io/otel-python-platform` annotation value is not supported. (#5892)
+  The operator added an init container that ran `cp -r "" /otel-auto-instrumentation-python`, which failed
+  and stopped the pod from starting.
+  
+- `target allocator`: Fix `/debug/target` writing both the Bad Request and Unknown Target pages when `target_hash` is not a number. (#5896)
+- `target allocator`: Apply `spec.dnsPolicy` of the TargetAllocator resource to the target allocator pod. (#5951)
+- `target allocator`: Apply `spec.hostPID` of the TargetAllocator resource to the target allocator pod. (#5961)
+- `target allocator`: Apply `spec.sessionAffinity` and `spec.sessionAffinityConfig` of the TargetAllocator resource to the target allocator Service. (#5965)
+- `collector`: Update an existing Ingress when `spec.ingress.ingressClassName` changes. (#5890)
+- `auto-instrumentation`: Apply `spec.imagePullPolicy` to the Java extension init containers. (#5893)
+- `opamp`: Add the volumes from `spec.volumes` of an OpAMPBridge to the bridge deployment. (#5895)
+- `target allocator`: Fix the `_link` value returned by `/jobs/{job}/targets`, which pointed to a `/debug` path that does not exist and returned 404. (#5897)
+
+### Components
+
+* [OpenTelemetry Collector - v0.164.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.164.0)
+* [OpenTelemetry Contrib - v0.164.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.164.0)
+* [Java auto-instrumentation - v2.34.0-1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v2.34.0)
+* [.NET auto-instrumentation - v1.20.0-1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0)
+* [Node.JS - v0.83.1-1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.83.1)
+* [Python - v0.66b2-6](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.66b2)
+* [Ruby - v0.1.0](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/releases/tag/v0.1.0)
+* [Go - v0.24.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.24.0)
+* [PHP - 1.4.2](https://packagist.org/packages/open-telemetry/ext-opentelemetry/#1.4.2)
+* [ApacheHTTPD - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4-5](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.163.0
 
 ### 💡 Enhancements 💡
