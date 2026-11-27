@@ -163,6 +163,29 @@ service:
 			},
 		},
 		{
+			description: "syslog receiver TCP listener",
+			specConfig: `receivers:
+  syslog/test:
+    tcp:
+      listen_address: "[::]:5142"
+exporters:
+  debug:
+service:
+  pipelines:
+    logs:
+      receivers: [syslog/test]
+      exporters: [debug]
+`,
+			expectedPorts: []corev1.ContainerPort{
+				metricContainerPort,
+				{
+					Name:          "syslog-test",
+					ContainerPort: 5142,
+					Protocol:      corev1.ProtocolTCP,
+				},
+			},
+		},
+		{
 			description: "ports in spec ContainerPorts",
 			specPorts: []v1beta1.PortsSpec{
 				{
