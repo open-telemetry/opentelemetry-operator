@@ -72,6 +72,18 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
+  initContainers:
+  - command:
+    - cp
+    - -r
+    - /autoinstrumentation/.
+    - /otel-auto-instrumentation-python
+    name: opentelemetry-auto-instrumentation-python
+    volumeMounts:
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
   - env:
     - name: OTEL_NODE_IP
       valueFrom:
@@ -113,29 +125,15 @@ spec:
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: opentelemetry-auto-instrumentation
+    restartPolicy: Always
     volumeMounts:
     - mountPath: /sys/kernel/debug
       name: kernel-debug
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-  initContainers:
-  - command:
-    - cp
-    - -r
-    - /autoinstrumentation/.
-    - /otel-auto-instrumentation-python
-    name: opentelemetry-auto-instrumentation-python
-    volumeMounts:
-    - mountPath: /otel-auto-instrumentation-python
-      name: opentelemetry-auto-instrumentation-python
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
 status:
   containerStatuses:
   - name: goapp
-    ready: true
-    started: true
-  - name: opentelemetry-auto-instrumentation
     ready: true
     started: true
   - name: pythonapp
@@ -147,6 +145,9 @@ status:
     state:
       terminated:
         reason: Completed
+  - name: opentelemetry-auto-instrumentation
+    ready: true
+    started: true
   phase: Running
 ---
 apiVersion: apps/v1
