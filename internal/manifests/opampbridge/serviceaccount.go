@@ -31,7 +31,7 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 			Name:        name,
 			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: params.OpAMPBridge.Annotations,
+			Annotations: Annotations(params.OpAMPBridge, params.Config.AnnotationsFilter),
 		},
 	}
 }
