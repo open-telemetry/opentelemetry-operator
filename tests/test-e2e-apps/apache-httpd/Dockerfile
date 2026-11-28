@@ -1,5 +1,5 @@
 
-FROM docker.io/library/httpd:2.4.71@sha256:19310e146a08911733b7a7703ddff97b6d8d510d4bc1e38a252db934e7437447
+FROM docker.io/library/httpd:2.4.71@sha256:eef26a140e2817b6d9fa9b9eba883eb79b5a40032ca988503c8f7e40f90d0959
 
 RUN sed -i "s#Listen 80#Listen 8080#g" /usr/local/apache2/conf/httpd.conf
 RUN chmod 777 -R /usr/local/apache2/
